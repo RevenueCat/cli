@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -70,6 +71,50 @@ func TestWriteJSONError_APIErrorPreservesContext(t *testing.T) {
 	}
 	if got.Error.DocURL == "" {
 		t.Errorf("doc_url should propagate, got empty")
+	}
+}
+
+func TestWriteJSONError_HintSurfacesForUnauthorized(t *testing.T) {
+	var buf bytes.Buffer
+	writeJSONError(&buf, &api.Error{Status: 401, Type: "unauthorized", Message: "bad key"})
+	var got struct {
+		Error struct {
+			Hint string `json:"hint"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Error.Hint == "" {
+		t.Fatal("expected hint for unauthorized; got empty")
+	}
+	if !strings.Contains(got.Error.Hint, "rc login") {
+		t.Errorf("hint should suggest `rc login`, got %q", got.Error.Hint)
+	}
+}
+
+func TestWriteJSONError_RetryAfterPropagates(t *testing.T) {
+	var buf bytes.Buffer
+	writeJSONError(&buf, &api.Error{
+		Status:            429,
+		Type:              "rate_limit_exceeded",
+		Message:           "slow down",
+		RetryAfterSeconds: 30,
+	})
+	var got struct {
+		Error struct {
+			RetryAfterSeconds int    `json:"retry_after_seconds"`
+			Hint              string `json:"hint"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Error.RetryAfterSeconds != 30 {
+		t.Errorf("want retry_after_seconds=30, got %d", got.Error.RetryAfterSeconds)
+	}
+	if !strings.Contains(got.Error.Hint, "30 seconds") {
+		t.Errorf("hint should mention 30 seconds, got %q", got.Error.Hint)
 	}
 }
 

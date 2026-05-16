@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 // Error is the typed error returned for all non-2xx API responses.
@@ -21,12 +22,13 @@ import (
 //
 // CLI exit codes are mapped from Type in internal/cli/runtime.go.
 type Error struct {
-	Status    int    `json:"-"`
-	Type      string `json:"type"`
-	Message   string `json:"message"`
-	DocURL    string `json:"doc_url,omitempty"`
-	Retryable bool   `json:"retryable,omitempty"`
-	RequestID string `json:"-"` // not in body; read from X-Request-Id
+	Status            int    `json:"-"`
+	Type              string `json:"type"`
+	Message           string `json:"message"`
+	DocURL            string `json:"doc_url,omitempty"`
+	Retryable         bool   `json:"retryable,omitempty"`
+	RequestID         string `json:"-"`                     // X-Request-Id header, not in body
+	RetryAfterSeconds int    `json:"retry_after,omitempty"` // Retry-After header on 429
 }
 
 func (e *Error) Error() string {
@@ -54,5 +56,30 @@ func parseError(resp *http.Response) error {
 			e.Type = "http_error"
 		}
 	}
+	if resp.StatusCode == 429 {
+		if v := resp.Header.Get("Retry-After"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				e.RetryAfterSeconds = n
+			}
+		}
+	}
 	return e
+}
+
+// Hint returns an actionable next step for the user, given the error type +
+// status. Returns empty when nothing useful can be said.
+func (e *Error) Hint() string {
+	switch e.Type {
+	case "unauthorized", "authentication_error":
+		return "Your API key may be revoked or expired. Run `rc login` again, or set RC_API_KEY."
+	case "rate_limit_exceeded":
+		if e.RetryAfterSeconds > 0 {
+			return fmt.Sprintf("Rate limited. Retry after %d seconds.", e.RetryAfterSeconds)
+		}
+		return "Rate limited. Back off and retry."
+	}
+	if e.Status >= 500 {
+		return "API issue. Retry, or check https://status.revenuecat.com."
+	}
+	return ""
 }

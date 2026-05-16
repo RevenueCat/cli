@@ -9,6 +9,9 @@ import (
 	"github.com/revenuecat/cli/internal/output"
 )
 
+// usageError signals exit 2 — bad user input that's not the API's fault.
+// Anything matching errors.Is(err, output.ErrBadFormat) lands here too.
+
 type runtimeKey struct{}
 
 type Runtime struct {
@@ -51,6 +54,9 @@ var ErrNotAuthenticated = errors.New("not authenticated: run `rc login` or pass 
 func ExitCodeFor(err error) int {
 	if err == nil {
 		return 0
+	}
+	if errors.Is(err, output.ErrBadFormat) {
+		return 2
 	}
 	var apiErr *api.Error
 	if errors.As(err, &apiErr) {

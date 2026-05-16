@@ -12,12 +12,19 @@ package output
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/itchyny/gojq"
 )
+
+// ErrBadFormat signals an unparseable --format expression. CLI maps this to
+// exit 2 (usage error) so agents can distinguish bad input from runtime
+// failures.
+var ErrBadFormat = errors.New("invalid --format expression")
 
 type Renderer struct {
 	stdout  io.Writer
@@ -61,20 +68,74 @@ func (r *Renderer) style(s lipgloss.Style, text string) string {
 }
 
 // Render writes the primary result. JSON mode emits a stable envelope so
-// agents can rely on shape.
+// agents can rely on shape. When --format is set alongside --json, the
+// envelope is fed through gojq; each output value is emitted on its own line.
 func (r *Renderer) Render(v any) error {
 	if r.json {
 		env := map[string]any{
 			"data":           v,
 			"schema_version": 1,
 		}
+		if r.format != "" {
+			return r.renderJSONFiltered(env)
+		}
 		enc := json.NewEncoder(r.stdout)
 		enc.SetIndent("", "  ")
 		return enc.Encode(env)
 	}
+	if r.format != "" {
+		// --format without --json: warn on stderr, fall through to pretty.
+		fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+"--format is only applied to --json output; ignoring")
+	}
 	enc := json.NewEncoder(r.stdout)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
+}
+
+// renderJSONFiltered runs the user's gojq expression over the envelope and
+// emits each result as a separate JSON-encoded line (NDJSON-ish). Strings
+// come out unquoted so `--format '.data.items[].id'` produces shell-friendly
+// output rather than `"id1"\n"id2"`.
+//
+// gojq works on plain JSON-decoded values (map[string]any / []any / scalars),
+// not on Go structs. We marshal the envelope and unmarshal back to `any` so
+// expressions like `.data.items[].id` work regardless of how typed the
+// underlying payload is.
+func (r *Renderer) renderJSONFiltered(env any) error {
+	q, err := gojq.Parse(r.format)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrBadFormat, err)
+	}
+	jsonBytes, err := json.Marshal(env)
+	if err != nil {
+		return err
+	}
+	var input any
+	if err := json.Unmarshal(jsonBytes, &input); err != nil {
+		return err
+	}
+	iter := q.Run(input)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			return nil
+		}
+		if e, isErr := v.(error); isErr {
+			return fmt.Errorf("%w: %v", ErrBadFormat, e)
+		}
+		switch t := v.(type) {
+		case string:
+			fmt.Fprintln(r.stdout, t)
+		case nil:
+			// jq emits nil for `.missing`; skip rather than print "null".
+		default:
+			b, err := json.Marshal(t)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(r.stdout, string(b))
+		}
+	}
 }
 
 // Table is a column-oriented view rendered as a simple aligned table in TTY
