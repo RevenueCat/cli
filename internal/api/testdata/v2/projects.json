@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "created_at": 1735689601000,
+      "icon_url": "https://www.appatar.io/com.revenuecat.PaywallsTester/small",
+      "icon_url_large": "https://www.appatar.io/com.revenuecat.PaywallsTester/large",
+      "id": "proj_test_001",
+      "name": "Test User",
+      "object": "project"
+    }
+  ],
+  "next_page": null,
+  "object": "list",
+  "url": "https://api.revenuecat.com/v2/projects"
+}

@@ -1,0 +1,71 @@
+{
+  "metrics": [
+    {
+      "description": "In total",
+      "id": "id_test_034",
+      "last_updated_at": null,
+      "last_updated_at_iso8601": null,
+      "name": "Test User",
+      "object": "overview_metric",
+      "period": "P0D",
+      "unit": "#",
+      "value": 0
+    },
+    {
+      "description": "In total",
+      "id": "id_test_035",
+      "last_updated_at": null,
+      "last_updated_at_iso8601": null,
+      "name": "Test User",
+      "object": "overview_metric",
+      "period": "P0D",
+      "unit": "#",
+      "value": 0
+    },
+    {
+      "description": "Monthly Recurring Revenue",
+      "id": "mrr",
+      "last_updated_at": null,
+      "last_updated_at_iso8601": null,
+      "name": "Test User",
+      "object": "overview_metric",
+      "period": "P28D",
+      "unit": "$",
+      "value": 0
+    },
+    {
+      "description": "Last 28 days",
+      "id": "revenue",
+      "last_updated_at": null,
+      "last_updated_at_iso8601": null,
+      "name": "Test User",
+      "object": "overview_metric",
+      "period": "P28D",
+      "unit": "$",
+      "value": 0
+    },
+    {
+      "description": "Last 28 days",
+      "id": "id_test_036",
+      "last_updated_at": null,
+      "last_updated_at_iso8601": null,
+      "name": "Test User",
+      "object": "overview_metric",
+      "period": "P28D",
+      "unit": "#",
+      "value": 0
+    },
+    {
+      "description": "Last 28 days",
+      "id": "id_test_037",
+      "last_updated_at": null,
+      "last_updated_at_iso8601": null,
+      "name": "Test User",
+      "object": "overview_metric",
+      "period": "P28D",
+      "unit": "#",
+      "value": 0
+    }
+  ],
+  "object": "overview_metrics"
+}

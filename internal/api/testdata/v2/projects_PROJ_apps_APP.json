@@ -1,0 +1,16 @@
+{
+  "created_at": 1735689604000,
+  "id": "appa_test_001",
+  "name": "Test User",
+  "object": "app",
+  "project_id": "proj_test_001",
+  "rc_billing": {
+    "app_name": "Company Call",
+    "default_currency": "USD",
+    "seller_company_name": "Company Call",
+    "seller_company_support_email": "user-001@example.com",
+    "stripe_account_id": null,
+    "support_email": "user-001@example.com"
+  },
+  "type": "rc_billing"
+}

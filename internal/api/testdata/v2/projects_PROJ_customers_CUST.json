@@ -1,0 +1,18 @@
+{
+  "active_entitlements": {
+    "items": [],
+    "next_page": null,
+    "object": "list",
+    "url": "https://api.revenuecat.com/v2/projects/proj_test_001/customers/id_test_033/active_entitlements"
+  },
+  "experiment": null,
+  "first_seen_at": 1735689612000,
+  "id": "id_test_033",
+  "last_seen_app_version": null,
+  "last_seen_at": 1735689613000,
+  "last_seen_country": "US",
+  "last_seen_platform": "web",
+  "last_seen_platform_version": null,
+  "object": "customer",
+  "project_id": "proj_test_001"
+}

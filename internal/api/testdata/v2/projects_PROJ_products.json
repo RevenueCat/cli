@@ -1,0 +1,119 @@
+{
+  "items": [
+    {
+      "app_id": "appa_test_001",
+      "created_at": 1735689629000,
+      "display_name": "Annual",
+      "id": "prod_test_002",
+      "object": "product",
+      "one_time": null,
+      "state": "active",
+      "store_identifier": "com.revenuecat.simpleapp.yearly",
+      "subscription": {
+        "duration": "P1Y",
+        "grace_period_duration": null,
+        "trial_duration": null
+      },
+      "type": "subscription"
+    },
+    {
+      "app_id": "appa_test_001",
+      "created_at": 1735689630000,
+      "display_name": "Monthly",
+      "id": "prod_test_003",
+      "object": "product",
+      "one_time": null,
+      "state": "active",
+      "store_identifier": "com.revenuecat.simpleapp.monthly",
+      "subscription": {
+        "duration": "P1M",
+        "grace_period_duration": "P6D",
+        "trial_duration": null
+      },
+      "type": "subscription"
+    },
+    {
+      "app_id": "appe_test_001",
+      "created_at": 1735689631000,
+      "display_name": "com.revenuecat.simpleapp.weekly",
+      "id": "prod_test_005",
+      "object": "product",
+      "one_time": null,
+      "state": "active",
+      "store_identifier": "com.revenuecat.simpleapp.weekly",
+      "subscription": {
+        "duration": null,
+        "grace_period_duration": null,
+        "trial_duration": null
+      },
+      "type": "subscription"
+    },
+    {
+      "app_id": "appe_test_001",
+      "created_at": 1735689632000,
+      "display_name": "com.revenuecat.simpleapp.six_month",
+      "id": "prod_test_004",
+      "object": "product",
+      "one_time": null,
+      "state": "active",
+      "store_identifier": "com.revenuecat.simpleapp.six_month",
+      "subscription": {
+        "duration": null,
+        "grace_period_duration": null,
+        "trial_duration": null
+      },
+      "type": "subscription"
+    },
+    {
+      "app_id": "appe_test_001",
+      "created_at": 1735689633000,
+      "display_name": "com.revenuecat.simpleapp.yearly",
+      "id": "prod_test_007",
+      "object": "product",
+      "one_time": null,
+      "state": "active",
+      "store_identifier": "com.revenuecat.simpleapp.yearly",
+      "subscription": {
+        "duration": null,
+        "grace_period_duration": null,
+        "trial_duration": null
+      },
+      "type": "subscription"
+    },
+    {
+      "app_id": "appe_test_001",
+      "created_at": 1735689634000,
+      "display_name": "com.revenuecat.simpleapp.lifetime",
+      "id": "prod_test_006",
+      "object": "product",
+      "one_time": null,
+      "state": "active",
+      "store_identifier": "com.revenuecat.simpleapp.lifetime",
+      "subscription": {
+        "duration": null,
+        "grace_period_duration": null,
+        "trial_duration": null
+      },
+      "type": "subscription"
+    },
+    {
+      "app_id": "appe_test_001",
+      "created_at": 1735689635000,
+      "display_name": "com.revenuecat.simpleapp.monthly",
+      "id": "prod_test_008",
+      "object": "product",
+      "one_time": null,
+      "state": "active",
+      "store_identifier": "com.revenuecat.simpleapp.monthly",
+      "subscription": {
+        "duration": null,
+        "grace_period_duration": null,
+        "trial_duration": null
+      },
+      "type": "subscription"
+    }
+  ],
+  "next_page": null,
+  "object": "list",
+  "url": "https://api.revenuecat.com/v2/projects/proj_test_001/products"
+}

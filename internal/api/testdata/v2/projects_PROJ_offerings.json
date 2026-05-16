@@ -1,0 +1,51 @@
+{
+  "items": [
+    {
+      "created_at": 1735689615000,
+      "display_name": "id_test_011",
+      "id": "ofrng_test_004",
+      "is_current": false,
+      "lookup_key": "id_test_011",
+      "metadata": null,
+      "object": "offering",
+      "project_id": "proj_test_001",
+      "state": "active"
+    },
+    {
+      "created_at": 1735689616000,
+      "display_name": "default",
+      "id": "ofrng_test_003",
+      "is_current": true,
+      "lookup_key": "default",
+      "metadata": null,
+      "object": "offering",
+      "project_id": "proj_test_001",
+      "state": "active"
+    },
+    {
+      "created_at": 1735689617000,
+      "display_name": "id_test_010",
+      "id": "ofrng_test_002",
+      "is_current": false,
+      "lookup_key": "id_test_010",
+      "metadata": null,
+      "object": "offering",
+      "project_id": "proj_test_001",
+      "state": "active"
+    },
+    {
+      "created_at": 1735689618000,
+      "display_name": "id_test_009",
+      "id": "ofrng_test_001",
+      "is_current": false,
+      "lookup_key": "id_test_009",
+      "metadata": null,
+      "object": "offering",
+      "project_id": "proj_test_001",
+      "state": "active"
+    }
+  ],
+  "next_page": null,
+  "object": "list",
+  "url": "https://api.revenuecat.com/v2/projects/proj_test_001/offerings"
+}

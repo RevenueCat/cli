@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "automatically_scale_font_size": true,
+      "created_at": 1735689625000,
+      "id": "pw_test_001",
+      "name": null,
+      "object": "paywall",
+      "offering_id": "ofrng_test_003",
+      "published_at": 1735689626000
+    },
+    {
+      "automatically_scale_font_size": true,
+      "created_at": 1735689627000,
+      "id": "pw_test_002",
+      "name": null,
+      "object": "paywall",
+      "offering_id": "ofrng_test_002",
+      "published_at": 1735689628000
+    }
+  ],
+  "next_page": null,
+  "object": "list",
+  "url": "https://api.revenuecat.com/v2/projects/proj_test_001/paywalls"
+}

@@ -1,0 +1,47 @@
+{
+  "items": [
+    {
+      "created_at": 1735689620000,
+      "display_name": "Weekly",
+      "id": "id_test_038",
+      "lookup_key": "$rc_weekly",
+      "object": "package",
+      "position": null
+    },
+    {
+      "created_at": 1735689621000,
+      "display_name": "Six Month",
+      "id": "id_test_039",
+      "lookup_key": "$rc_six_month",
+      "object": "package",
+      "position": null
+    },
+    {
+      "created_at": 1735689622000,
+      "display_name": "Monthly",
+      "id": "id_test_040",
+      "lookup_key": "$rc_monthly",
+      "object": "package",
+      "position": null
+    },
+    {
+      "created_at": 1735689623000,
+      "display_name": "Annual",
+      "id": "id_test_041",
+      "lookup_key": "$rc_annual",
+      "object": "package",
+      "position": null
+    },
+    {
+      "created_at": 1735689624000,
+      "display_name": "Lifetime",
+      "id": "id_test_042",
+      "lookup_key": "$rc_lifetime",
+      "object": "package",
+      "position": null
+    }
+  ],
+  "next_page": null,
+  "object": "list",
+  "url": "https://api.revenuecat.com/v2/projects/proj_test_001/offerings/ofrng_test_003/packages"
+}

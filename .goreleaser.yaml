@@ -1,0 +1,57 @@
+version: 2
+
+project_name: rc
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: rc
+    main: ./cmd/rc
+    binary: rc
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+brews:
+  - name: rc
+    repository:
+      owner: RevenueCat
+      name: homebrew-tap
+    homepage: "https://www.revenuecat.com"
+    description: "RevenueCat command line interface"
+    license: "MIT"
+    install: |
+      bin.install "rc"
+    test: |
+      system "#{bin}/rc --version"
