@@ -14,6 +14,7 @@ rc customer show cus_abc
 - [docs/command-surface.md](./docs/command-surface.md) — full command tree,
   naming decisions, and build order.
 - [docs/cookbook.md](./docs/cookbook.md) — common workflows and pipelines.
+- [docs/plan.md](./docs/plan.md) — UX gaps and phased plan to close them.
 - [AGENTS.md](./AGENTS.md) — conventions for humans and AI agents working
   in this repo.
 
