@@ -134,6 +134,44 @@ make cover               # coverage report
 go run ./cmd/rc --help
 ```
 
+## Roadmap
+
+Tracked in [docs/command-surface.md](./docs/command-surface.md) — this is the
+short version of what's intentionally not done yet.
+
+**Deferred — needs RevenueCat-internal answers:**
+- `rc find <type> <store-id>` — the v2 search endpoints (`/purchases/search`,
+  `/subscriptions/search`) return 404 with the param names the docs imply.
+  Need the actual query format.
+- `rc discounts` and `rc experiments` create/update — endpoints exist but
+  fixtures are empty, so write-body shapes aren't verified.
+- `rc currencies` (project-level virtual currency catalog) — same situation.
+- Integration sub-types beyond `/integrations/webhooks` — confirm what else
+  lives under `/integrations/<type>`.
+- `rc apps keys <id>` — shape unverified (didn't capture a fixture to avoid
+  leaking the test project's public API keys).
+
+**Deferred — blocked on backend:**
+- `rc events tail` — no public events stream endpoint yet.
+- `rc chat` — internal agent chat experience; design + endpoint TBD.
+
+**Nice-to-have polish:**
+- Generated per-command reference docs (`cobra gendocs` → `docs/reference/*.md`).
+- `Long:` + `Example:` on the ~30 mechanical CRUD leaves. Currently only the
+  intent commands have them; mechanical leaves are self-documenting from name
+  and flags.
+- Per-command happy-path tests via `httptest.Server` to lift CLI coverage
+  past the current contract-only level.
+- Wire `--format` jsonpath projection (flag is parsed but the evaluator is a
+  TODO in `internal/output/output.go`).
+
+**Not planned:**
+- Plugin system (oclif-style). Go's distribution model doesn't reward it,
+  and no concrete partner ask exists.
+- Auto-generated commands from the OpenAPI spec. The hand-crafted UX (composite
+  `customer show`, renamed verbs like `wallet`/`webhooks`, charts client-side
+  enum) is the whole pitch.
+
 ## Release
 
 Tag and push; GitHub Actions runs GoReleaser:
