@@ -52,10 +52,20 @@ func newChartsShowCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show <chart-name>",
 		Short: "Show chart data for a named chart",
-		Long: fmt.Sprintf(`Show data for a chart. Pass repeated --filter key=value flags to apply
-chart-specific filters (see 'rc charts options <name>' for available filters).
+		Long: fmt.Sprintf(`Show data for a named chart. The chart name is validated client-side
+against a fixed enum (the API enforces the same enum server-side; we validate
+locally to avoid a 400 round-trip and to provide shell completion).
 
-Valid names: %s`, strings.Join(api.ValidChartNames, ", ")),
+Pass repeated --filter key=value flags to apply chart-specific filters.
+Run 'rc charts options <name>' to see available filters and segments for
+a specific chart.
+
+Valid names:
+  %s`, strings.Join(api.ValidChartNames, ", ")),
+		Example: `  rc charts show mrr
+  rc charts show mrr --json
+  rc charts show actives --filter store=app_store --filter platform=ios
+  rc charts options mrr   # discover what filters mrr accepts`,
 		Args:              cobra.ExactArgs(1),
 		ValidArgs:         api.ValidChartNames,
 		ValidArgsFunction: cobra.FixedCompletions(api.ValidChartNames, cobra.ShellCompDirectiveNoFileComp),

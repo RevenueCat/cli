@@ -30,7 +30,26 @@ func NewRootCmd(version string) *cobra.Command {
 
 Designed for humans and AI agents alike: every interactive prompt is also
 available as a flag or environment variable, and every command supports
-machine-readable --json output with a stable schema.`,
+machine-readable --json output with a stable schema. Errors emit the same
+JSON envelope shape as the v2 API so the same parser handles both.
+
+Agent-friendly entrypoints:
+  rc commands --json     full command tree
+  rc schema <cmd>        per-command flag/arg/example schema
+  rc <cmd> --json        machine-readable output
+  rc <cmd> --no-input    fail rather than prompt
+  rc <cmd> --yes         skip confirmations`,
+		Example: `  # Human use
+  rc login
+  rc customer show cus_abc
+
+  # Scripted use
+  rc customer list --json | jq '.data.items[].id'
+  RC_API_KEY=sk_... rc entitlements list --json
+
+  # Agent discovery
+  rc commands --json
+  rc schema customer grant`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Version:       version,
@@ -84,6 +103,7 @@ machine-readable --json output with a stable schema.`,
 		newPackagesCmd(),
 		newSchemaCmd(root),
 		newCommandsCmd(root),
+		newVersionCmd(),
 	)
 
 	return root
