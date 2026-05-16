@@ -224,7 +224,14 @@ func newCustomerClearOverrideCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "clear-override <customer-id>",
 		Short: "Clear a customer's offering override",
-		Args:  cobra.ExactArgs(1),
+		Long: `Removes any offering override set via ` + "`rc customer override-offering`" + `.
+The customer will see whichever offering is the project default.
+
+Reversibility: re-apply with ` + "`rc customer override-offering`" + `.
+
+Confirmation: no prompt.`,
+		Example: `  rc customer clear-override cus_abc`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -249,7 +256,16 @@ func newCustomerRestoreGoogleCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "restore-google <customer-id> --token <purchase-token>",
 		Short: "Restore a Google Play purchase for a customer",
-		Args:  cobra.ExactArgs(1),
+		Long: `Re-syncs a Google Play purchase to a customer using a Google Play
+purchase token. Useful when a purchase was made on-device but didn't reach
+RevenueCat (network failure, app uninstall mid-purchase, etc.).
+
+Reversibility: the resulting subscription can be cancelled normally, but
+the original token consumption with Google cannot be undone.
+
+Confirmation: no prompt — idempotent (re-running with the same token is safe).`,
+		Example: `  rc customer restore-google cus_abc --token GPA.xxxx-xxxx-xxxx-xxxxx`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -502,6 +518,14 @@ func newCustomerRevokeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "revoke",
 		Short: "Revoke a promotional entitlement from a customer",
+		Long: `Revokes a previously-granted promotional entitlement. Only affects
+promotional grants made through ` + "`rc customer grant`" + ` — store
+purchases are not affected.
+
+Reversibility: re-grant with ` + "`rc customer grant`" + ` if needed.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc customer revoke --customer-id cus_abc --entitlement-id pro --yes`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

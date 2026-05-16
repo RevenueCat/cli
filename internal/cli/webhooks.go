@@ -158,7 +158,15 @@ func newWebhooksDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete <id>",
 		Short: "Delete a webhook",
-		Args:  cobra.ExactArgs(1),
+		Long: `Permanently deletes a webhook integration. Future events stop being
+delivered to the configured URL.
+
+Reversibility: irreversible. To temporarily disable delivery without
+deleting, prefer ` + "`rc webhooks update <id> --status paused`" + `.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc webhooks delete wh_old --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

@@ -83,7 +83,15 @@ func newPurchasesRefundCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "refund <id>",
 		Short: "Refund a Web Billing purchase",
-		Args:  cobra.ExactArgs(1),
+		Long: `Refunds a one-time purchase. Web Billing only — store-side refunds
+must be issued through the store.
+
+Reversibility: irreversible. Money is returned to the customer's payment
+method.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc purchases refund pur_abc --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

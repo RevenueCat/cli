@@ -40,7 +40,14 @@ func newEntitlementsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "archive <id>",
 		Short: "Archive an entitlement",
-		Args:  cobra.ExactArgs(1),
+		Long: `Archives an entitlement, removing it from new offerings while preserving
+historical access for existing subscribers.
+
+Reversibility: use ` + "`rc entitlements restore <id>`" + ` to undo.
+
+Confirmation: no prompt — this is a soft, reversible state change.`,
+		Example: `  rc entitlements archive entl_legacy`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -65,7 +72,14 @@ func newEntitlementsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "restore <id>",
 		Short: "Restore an archived entitlement (= unarchive)",
-		Args:  cobra.ExactArgs(1),
+		Long: `Restores a previously-archived entitlement so it can be added to new
+offerings again. Inverse of ` + "`rc entitlements archive`" + `.
+
+Reversibility: re-archive with ` + "`rc entitlements archive <id>`" + `.
+
+Confirmation: no prompt.`,
+		Example: `  rc entitlements restore entl_legacy`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -298,7 +312,15 @@ func newEntitlementsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete <id>",
 		Short: "Delete an entitlement",
-		Args:  cobra.ExactArgs(1),
+		Long: `Permanently deletes an entitlement from the project catalog.
+
+Reversibility: irreversible. If you only need to hide it from current
+offerings, prefer ` + "`rc entitlements archive`" + ` which can be undone with
+` + "`rc entitlements restore`" + `.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc entitlements delete entl_old --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

@@ -86,7 +86,14 @@ func newPaywallsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete <id>",
 		Short: "Delete a paywall",
-		Args:  cobra.ExactArgs(1),
+		Long: `Permanently deletes a paywall.
+
+Reversibility: irreversible. The v2 API does not currently expose paywall
+update or restore.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc paywalls delete pw_old --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
