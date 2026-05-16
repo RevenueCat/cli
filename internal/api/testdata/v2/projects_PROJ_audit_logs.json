@@ -1,0 +1,57 @@
+{
+  "items": [
+    {
+      "action_type": "api_key_created",
+      "actor_identifier": "RC17oQtpOPyO",
+      "actor_type": "user",
+      "additional_data": {
+        "actor": {
+          "email": "user@example.com",
+          "has_mfa": false,
+          "name": "Test User"
+        },
+        "metadata": {
+          "api_version": "v2",
+          "ip_address": "192.0.2.1",
+          "permissions": [
+            "charts_metrics:overview:read_write",
+            "charts_metrics:charts:read_write",
+            "charts_metrics:benchmarks:read_write",
+            "charts_metrics:experiment_results:read_write",
+            "customer_information:customers:read_write",
+            "customer_information:subscriptions:read_write",
+            "customer_information:purchases:read_write",
+            "customer_information:invoices:read_write",
+            "project_configuration:projects:read_write",
+            "project_configuration:collaborators:read_write",
+            "project_configuration:apps:read_write",
+            "project_configuration:audit_logs:read_write",
+            "project_configuration:entitlements:read_write",
+            "project_configuration:offerings:read_write",
+            "project_configuration:discounts:read_write",
+            "project_configuration:packages:read_write",
+            "project_configuration:products:read_write",
+            "project_configuration:integrations:read_write",
+            "project_configuration:experiments:read_write",
+            "project_configuration:virtual_currencies:read_write"
+          ],
+          "user_agent": "test-user-agent/1.0"
+        },
+        "target": {
+          "label": "Test Label",
+          "scope": "project",
+          "type": "secret"
+        }
+      },
+      "id": "log_test_001",
+      "object": "audit_log",
+      "occurred_at": 1735689605000,
+      "project_id": "proj_test_001",
+      "target_identifier": "apikeyb6a753cc2d",
+      "target_type": "api_key"
+    }
+  ],
+  "next_page": null,
+  "object": "list",
+  "url": "https://api.revenuecat.com/v2/projects/proj_test_001/audit_logs"
+}

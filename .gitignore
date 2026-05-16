@@ -1,0 +1,8 @@
+/dist/
+/rc
+*.test
+.DS_Store
+
+# Agent harness local state (Claude Code, Cursor, etc.)
+.claude/
+.cursor/mcp.json

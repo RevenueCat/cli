@@ -1,0 +1,43 @@
+{
+  "items": [
+    {
+      "experiment": null,
+      "first_seen_at": 1735689606000,
+      "id": "id_test_033",
+      "last_seen_app_version": null,
+      "last_seen_at": 1735689607000,
+      "last_seen_country": "US",
+      "last_seen_platform": "web",
+      "last_seen_platform_version": null,
+      "object": "customer",
+      "project_id": "proj_test_001"
+    },
+    {
+      "experiment": null,
+      "first_seen_at": 1735689608000,
+      "id": "$RCAnonymousID:21d71d2eb4ce401a8bc478e4d8919091",
+      "last_seen_app_version": "1.0",
+      "last_seen_at": 1735689609000,
+      "last_seen_country": "US",
+      "last_seen_platform": "iOS",
+      "last_seen_platform_version": "Version 18.2 (Build 22C150)",
+      "object": "customer",
+      "project_id": "proj_test_001"
+    },
+    {
+      "experiment": null,
+      "first_seen_at": 1735689610000,
+      "id": "$RC_PREVIEW_MODE_USER",
+      "last_seen_app_version": "1.2",
+      "last_seen_at": 1735689611000,
+      "last_seen_country": "US",
+      "last_seen_platform": "iOS",
+      "last_seen_platform_version": "Version 18.2 (Build 22C150)",
+      "object": "customer",
+      "project_id": "proj_test_001"
+    }
+  ],
+  "next_page": "https://api.revenuecat.com/v2/projects/proj_test_001/customers?starting_after=%24RC_PREVIEW_MODE_USER\u0026limit=3",
+  "object": "list",
+  "url": "https://api.revenuecat.com/v2/projects/proj_test_001/customers"
+}

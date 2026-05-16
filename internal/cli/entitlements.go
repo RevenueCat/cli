@@ -1,0 +1,189 @@
+package cli
+
+import (
+	"fmt"
+
+	"github.com/charmbracelet/huh"
+	"github.com/spf13/cobra"
+
+	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/output"
+	"github.com/revenuecat/cli/internal/tui"
+)
+
+// Entitlements is the first catalog-CRUD resource. The shape here is the
+// template for offerings/products/packages: list, show, create, update, delete.
+// If a third resource ends up identical, extract a generic helper — not before.
+
+func newEntitlementsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "entitlements",
+		Aliases: []string{"entitlement", "ent"},
+		Short:   "Manage entitlements in the project catalog",
+	}
+	cmd.AddCommand(
+		newEntitlementsListCmd(),
+		newEntitlementsShowCmd(),
+		newEntitlementsCreateCmd(),
+		newEntitlementsUpdateCmd(),
+		newEntitlementsDeleteCmd(),
+	)
+	return cmd
+}
+
+func newEntitlementsListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List entitlements",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			page, err := client.Entitlements.List(cmd.Context(), projectID)
+			if err != nil {
+				return err
+			}
+			rows := make([][]string, 0, len(page.Items))
+			for _, e := range page.Items {
+				rows = append(rows, []string{e.ID, e.LookupKey, e.DisplayName, formatMillis(e.CreatedAt)})
+			}
+			return rt.Out.RenderTable(output.Table{
+				Columns: []string{"ID", "LOOKUP KEY", "DISPLAY NAME", "CREATED"},
+				Rows:    rows,
+				Raw:     page,
+			})
+		},
+	}
+}
+
+func newEntitlementsShowCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "show <id>",
+		Short: "Show an entitlement",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			ent, err := client.Entitlements.Get(cmd.Context(), projectID, args[0])
+			if err != nil {
+				return err
+			}
+			return rt.Out.Render(ent)
+		},
+	}
+}
+
+func newEntitlementsCreateCmd() *cobra.Command {
+	var lookupKey, displayName string
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create an entitlement",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			if err := tui.Form(rt.Globals.NoInput).
+				Field(huh.NewInput().Title("Lookup key").Value(&lookupKey).Validate(tui.Required("lookup key"))).
+				Field(huh.NewInput().Title("Display name (optional)").Value(&displayName)).
+				Run(); err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			ent, err := client.Entitlements.Create(cmd.Context(), projectID, api.EntitlementCreate{
+				LookupKey:   lookupKey,
+				DisplayName: displayName,
+			})
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Created entitlement %s", ent.ID))
+			return rt.Out.Render(ent)
+		},
+	}
+	cmd.Flags().StringVar(&lookupKey, "lookup-key", "", "lookup key (required)")
+	cmd.Flags().StringVar(&displayName, "display-name", "", "display name")
+	return cmd
+}
+
+func newEntitlementsUpdateCmd() *cobra.Command {
+	var displayName string
+	cmd := &cobra.Command{
+		Use:   "update <id>",
+		Short: "Update an entitlement",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			body := api.EntitlementUpdate{}
+			if cmd.Flags().Changed("display-name") {
+				body.DisplayName = &displayName
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			ent, err := client.Entitlements.Update(cmd.Context(), projectID, args[0], body)
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Updated %s", ent.ID))
+			return rt.Out.Render(ent)
+		},
+	}
+	cmd.Flags().StringVar(&displayName, "display-name", "", "new display name")
+	return cmd
+}
+
+func newEntitlementsDeleteCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete <id>",
+		Short: "Delete an entitlement",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			if !rt.Globals.AssumeYes {
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete entitlement %q?", args[0]))
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return fmt.Errorf("aborted")
+				}
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			if err := client.Entitlements.Delete(cmd.Context(), projectID, args[0]); err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
+			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+		},
+	}
+}

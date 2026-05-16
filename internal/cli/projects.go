@@ -1,0 +1,161 @@
+package cli
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/charmbracelet/huh"
+	"github.com/spf13/cobra"
+
+	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/config"
+	"github.com/revenuecat/cli/internal/output"
+	"github.com/revenuecat/cli/internal/tui"
+)
+
+func newProjectsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "projects",
+		Aliases: []string{"project"},
+		Short:   "List and switch between projects",
+		// Bare `rc projects` runs `list` for convenience.
+		RunE: runProjectsList,
+	}
+	cmd.AddCommand(
+		newProjectsListCmd(),
+		newProjectsShowCmd(),
+		newProjectsUseCmd(),
+	)
+	return cmd
+}
+
+func newProjectsListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List projects",
+		RunE:  runProjectsList,
+	}
+}
+
+func runProjectsList(cmd *cobra.Command, _ []string) error {
+	rt := RuntimeFrom(cmd.Context())
+	client, err := rt.API()
+	if err != nil {
+		return err
+	}
+	page, err := client.Projects.List(cmd.Context())
+	if err != nil {
+		return err
+	}
+	active := rt.Config.ProjectID
+	rows := make([][]string, 0, len(page.Items))
+	for _, p := range page.Items {
+		marker := " "
+		if p.ID == active {
+			marker = "*"
+		}
+		rows = append(rows, []string{marker, p.ID, p.Name, formatMillis(p.CreatedAt)})
+	}
+	return rt.Out.RenderTable(output.Table{
+		Columns: []string{"", "ID", "NAME", "CREATED"},
+		Rows:    rows,
+		Raw:     page,
+	})
+}
+
+func newProjectsShowCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "show [project-id]",
+		Short: "Show a project's details",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			id := ""
+			if len(args) == 1 {
+				id = args[0]
+			} else {
+				id = rt.Config.ProjectID
+			}
+			if id == "" {
+				return fmt.Errorf("no project ID given and no active project: pass an ID or run `rc projects use`")
+			}
+			p, err := client.Projects.Get(cmd.Context(), id)
+			if err != nil {
+				return err
+			}
+			return rt.Out.Render(p)
+		},
+	}
+}
+
+func newProjectsUseCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "use [project-id]",
+		Short: "Set the active project for this profile",
+		Long: `Sets the default project for the current profile. Without an argument,
+opens an interactive picker (or fails under --no-input).`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+
+			var chosen string
+			if len(args) == 1 {
+				chosen = args[0]
+			} else {
+				page, err := client.Projects.List(cmd.Context())
+				if err != nil {
+					return err
+				}
+				if len(page.Items) == 0 {
+					return fmt.Errorf("no projects available on this account")
+				}
+				if len(page.Items) == 1 {
+					chosen = page.Items[0].ID
+					rt.Out.Info(fmt.Sprintf("Only one project available: %s (%s)", page.Items[0].Name, chosen))
+				} else {
+					opts := make([]huh.Option[string], 0, len(page.Items))
+					for _, p := range page.Items {
+						opts = append(opts, huh.NewOption(fmt.Sprintf("%s  %s", p.Name, p.ID), p.ID))
+					}
+					sel := huh.NewSelect[string]().Title("Project").Options(opts...).Value(&chosen)
+					if err := tui.Form(rt.Globals.NoInput).Field(sel).Run(); err != nil {
+						return err
+					}
+				}
+			}
+
+			// Verify and resolve name.
+			p, err := client.Projects.Get(cmd.Context(), chosen)
+			if err != nil {
+				return err
+			}
+
+			rt.Config.ProjectID = p.ID
+			if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+				return err
+			}
+
+			rt.Out.Success(fmt.Sprintf("Active project: %s (%s)", p.Name, p.ID))
+			return rt.Out.Render(map[string]any{
+				"profile":    config.ProfileName(rt.Globals.Profile),
+				"project_id": p.ID,
+				"name":       p.Name,
+			})
+		},
+	}
+}
+
+func formatMillis(m api.Millis) string {
+	if m == 0 {
+		return ""
+	}
+	return time.UnixMilli(int64(m)).UTC().Format("2006-01-02")
+}
