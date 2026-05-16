@@ -178,7 +178,14 @@ func newSubsExtendCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "extend <id> --by <duration>",
 		Short: "Extend a subscription's billing period",
-		Args:  cobra.ExactArgs(1),
+		Long: `Extends a subscription's current period by an ISO 8601 duration.
+Used for support gestures (free month after an outage, etc.).
+
+Duration format: P[n]Y[n]M[n]D — e.g. P1M (one month), P7D (seven days),
+P3M (three months).`,
+		Example: `  rc subscriptions extend sub_abc --by P1M
+  rc subscriptions extend sub_abc --by P7D --json`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

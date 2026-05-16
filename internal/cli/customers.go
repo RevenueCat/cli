@@ -92,7 +92,12 @@ func newCustomerSetAttributeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set-attribute <customer-id>",
 		Short: "Set one or more attributes on a customer (--set key=value, repeatable)",
-		Args:  cobra.ExactArgs(1),
+		Long: `Sets custom attributes on a customer. Pass --set key=value once per
+attribute. Existing attributes with the same key are overwritten; others
+are preserved.`,
+		Example: `  rc customer set-attribute cus_abc --set email=user@example.com
+  rc customer set-attribute cus_abc --set $segment=premium --set $churnRisk=low`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -139,7 +144,14 @@ func newCustomerTransferCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer <source-customer-id> --to <dest-customer-id>",
 		Short: "Transfer subscriptions and purchases from one customer to another",
-		Args:  cobra.ExactArgs(1),
+		Long: `Transfers all subscriptions and purchases from a source customer to a
+destination customer. Useful for merging duplicate customer records.
+
+This is destructive on the source customer's purchase history; pass --yes
+to skip the confirmation prompt.`,
+		Example: `  rc customer transfer cus_old --to cus_new
+  rc customer transfer cus_old --to cus_new --yes --json`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -178,7 +190,12 @@ func newCustomerOverrideOfferingCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "override-offering <customer-id> --offering <id>",
 		Short: "Assign an offering override to a customer",
-		Args:  cobra.ExactArgs(1),
+		Long: `Forces a specific offering to be shown to one customer regardless of
+which offering is currently the project default. Common for A/B tests or
+support overrides. Use 'rc customer clear-override' to remove.`,
+		Example: `  rc customer override-offering cus_abc --offering ofrng_promo_2026
+  rc customer clear-override cus_abc`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

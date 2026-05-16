@@ -145,3 +145,94 @@ func TestUnknownCommand_ReturnsUsageError(t *testing.T) {
 		t.Fatal("want error for unknown command")
 	}
 }
+
+func TestSchema_IncludesPositionalArgs(t *testing.T) {
+	out, _, err := runCmd(t, "schema", "entitlements", "attach", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	var got struct {
+		Data struct {
+			Path string `json:"path"`
+			Args []struct {
+				Name     string `json:"name"`
+				Required bool   `json:"required"`
+				Variadic bool   `json:"variadic"`
+			} `json:"args"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	if got.Data.Path != "rc entitlements attach" {
+		t.Errorf("want path 'rc entitlements attach', got %q", got.Data.Path)
+	}
+	if len(got.Data.Args) < 2 {
+		t.Fatalf("want at least 2 positional args (id, product-id), got %d", len(got.Data.Args))
+	}
+	if got.Data.Args[0].Name != "id" || !got.Data.Args[0].Required {
+		t.Errorf("first arg should be required <id>, got %+v", got.Data.Args[0])
+	}
+	// Last arg is [product-id...] — optional + variadic.
+	last := got.Data.Args[len(got.Data.Args)-1]
+	if !last.Variadic {
+		t.Errorf("last arg should be variadic, got %+v", last)
+	}
+}
+
+func TestSchema_IncludesAliases(t *testing.T) {
+	out, errb, err := runCmd(t, "schema", "customer", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v\nstderr: %s\nstdout: %s", err, errb, out)
+	}
+	var got struct {
+		Data struct {
+			Name        string   `json:"name"`
+			Aliases     []string `json:"aliases"`
+			Subcommands []string `json:"subcommands"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v\nstdout: %s", err, out)
+	}
+	if got.Data.Name != "customer" {
+		t.Fatalf("wrong command resolved: name=%q stdout=%s", got.Data.Name, out)
+	}
+	if !contains(got.Data.Aliases, "customers") {
+		t.Errorf("want 'customers' in aliases, got %v", got.Data.Aliases)
+	}
+	if !contains(got.Data.Subcommands, "grant") || !contains(got.Data.Subcommands, "revoke") {
+		t.Errorf("subcommands missing core verbs: %v", got.Data.Subcommands)
+	}
+}
+
+func TestVersion_JSONShape(t *testing.T) {
+	out, _, err := runCmd(t, "version", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	var got struct {
+		Data struct {
+			Version string `json:"version"`
+		} `json:"data"`
+		SchemaVersion int `json:"schema_version"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v", err)
+	}
+	if got.Data.Version != "test" {
+		t.Errorf("want version=test, got %q", got.Data.Version)
+	}
+	if got.SchemaVersion != 1 {
+		t.Errorf("want schema_version=1, got %d", got.SchemaVersion)
+	}
+}
+
+func contains(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
+}
