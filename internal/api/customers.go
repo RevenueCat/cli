@@ -37,27 +37,7 @@ type Entitlement struct {
 	Object      string `json:"object,omitempty"`
 }
 
-type Subscription struct {
-	ID                string `json:"id"`
-	CustomerID        string `json:"customer_id,omitempty"`
-	ProductID         string `json:"product_id,omitempty"`
-	Store             string `json:"store,omitempty"`
-	StartsAt          Millis `json:"starts_at,omitempty"`
-	CurrentPeriodEnds Millis `json:"current_period_ends_at,omitempty"`
-	GivesAccess       bool   `json:"gives_access,omitempty"`
-	AutoRenewalStatus string `json:"auto_renewal_status,omitempty"`
-	Status            string `json:"status,omitempty"`
-	Object            string `json:"object,omitempty"`
-}
-
-type Purchase struct {
-	ID          string `json:"id"`
-	CustomerID  string `json:"customer_id,omitempty"`
-	ProductID   string `json:"product_id,omitempty"`
-	Store       string `json:"store,omitempty"`
-	PurchasedAt Millis `json:"purchased_at,omitempty"`
-	Object      string `json:"object,omitempty"`
-}
+// Subscription and Purchase types live in subscriptions.go / purchases.go.
 
 type ListCustomersOptions struct {
 	Limit         int    // default 0 → server default

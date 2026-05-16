@@ -36,13 +36,22 @@ type Client struct {
 	http      *http.Client
 	userAgent string
 
-	Projects     *ProjectsService
-	Customers    *CustomersService
-	Entitlements *EntitlementsService
-	Offerings    *OfferingsService
-	Packages     *PackagesService
-	Products     *ProductsService
-	// add as we go: Apps, Subscriptions, Purchases, Webhooks, Charts, etc.
+	Projects      *ProjectsService
+	Customers     *CustomersService
+	Entitlements  *EntitlementsService
+	Offerings     *OfferingsService
+	Packages      *PackagesService
+	Products      *ProductsService
+	Subscriptions *SubscriptionsService
+	Purchases     *PurchasesService
+	Invoices      *InvoicesService
+	Webhooks      *WebhooksService
+	Paywalls      *PaywallsService
+	Charts        *ChartsService
+	Metrics       *MetricsService
+	Audit         *AuditService
+	Benchmarks    *BenchmarksService
+	// add as we go: Apps, Discounts, Experiments, VirtualCurrencies catalog
 }
 
 func NewClient(opts Options) *Client {
@@ -66,6 +75,15 @@ func NewClient(opts Options) *Client {
 	c.Offerings = &OfferingsService{c: c}
 	c.Packages = &PackagesService{c: c}
 	c.Products = &ProductsService{c: c}
+	c.Subscriptions = &SubscriptionsService{c: c}
+	c.Purchases = &PurchasesService{c: c}
+	c.Invoices = &InvoicesService{c: c}
+	c.Webhooks = &WebhooksService{c: c}
+	c.Paywalls = &PaywallsService{c: c}
+	c.Charts = &ChartsService{c: c}
+	c.Metrics = &MetricsService{c: c}
+	c.Audit = &AuditService{c: c}
+	c.Benchmarks = &BenchmarksService{c: c}
 	return c
 }
 
