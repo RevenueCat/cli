@@ -128,14 +128,106 @@ parser handles both transport errors and CLI errors:
 
 ## Development
 
+### Setup
+
 ```bash
-brew install go
-make check               # gofmt + vet + race tests
-make cover               # coverage report
-go run ./cmd/rc --help
+brew install go              # 1.23+
+git clone <repo> && cd revenuecat-cli
+go mod tidy
+make check                   # gofmt + vet + race tests; should pass clean
 ```
 
-## Roadmap
+### Dev loop
+
+Default flow — `go run` lets you iterate without rebuilding:
+
+```bash
+go run ./cmd/rc --help
+go run ./cmd/rc commands --json | jq    # see the full surface
+go run ./cmd/rc schema customer grant   # per-command schema
+```
+
+Build a local binary for shell testing:
+
+```bash
+go build -o /tmp/rc ./cmd/rc
+/tmp/rc --version
+```
+
+### Running against the real API
+
+Don't `rc login` and write a key to your real config — use env vars + an
+isolated config dir so dev runs don't bleed into your shell:
+
+```bash
+export RC_API_KEY="sk_..."             # throwaway / sandbox key
+export RC_PROJECT_ID="proj_..."        # optional default
+export RC_CONFIG_DIR="$(mktemp -d)"    # isolate from ~/.config/revenuecat
+
+go run ./cmd/rc projects list
+go run ./cmd/rc customer show <id>
+```
+
+When done: `unset RC_API_KEY` and revoke the key in the dashboard. The
+`mktemp` config dir self-cleans.
+
+### Running against local fixtures (no API key needed)
+
+Tests use scrubbed fixtures from `internal/api/testdata/v2/`. To exercise
+the CLI surface against them without hitting the network, the
+`fixtureServer` helper in `internal/api/projects_test.go` shows the pattern
+— spin one up and point `--api-key sk_test --api-base http://localhost:PORT`
+at it. (No CLI wrapper for this yet; raise a TODO if you want one.)
+
+### Common make targets
+
+```bash
+make build           # go build ./...
+make test            # go test -race ./...
+make cover           # coverage report (per-function)
+make fmt             # gofmt -w
+make fmt-check       # CI parity: fails if anything's unformatted
+make vet             # go vet
+make lint            # staticcheck (requires staticcheck installed)
+make check           # fmt-check + vet + test (run before pushing)
+make tidy            # go mod tidy
+```
+
+### Capturing new fixtures (when the API surface changes)
+
+`internal/api/testdata/scrub/scrub.go` is a small tool that scrubs raw v2
+responses to deterministic fakes (IDs → `proj_test_NNN`, emails →
+`user-NNN@example.com`, IPs → `192.0.2.NNN`, timestamps stable from
+2025-01-01). Use it like:
+
+```bash
+# 1. Capture raw responses with curl against a sandbox project
+mkdir /tmp/rc-fixtures
+curl -s -H "Authorization: Bearer $RC_API_KEY" \
+  https://api.revenuecat.com/v2/projects/$PROJ/<path> \
+  > /tmp/rc-fixtures/<name>.json
+
+# 2. Scrub + write to the committed fixture dir
+go run ./internal/api/testdata/scrub \
+  -in /tmp/rc-fixtures \
+  -out internal/api/testdata/v2
+
+# 3. Eyeball diffs (no real IDs/emails/IPs should remain)
+git diff internal/api/testdata/v2/
+grep -r "$REAL_ID\|<your-email>" internal/api/testdata/v2/ && echo "LEAK"
+```
+
+### Debugging tips
+
+```bash
+go run ./cmd/rc <cmd> --verbose         # extra logging
+go run ./cmd/rc <cmd> --json            # see raw envelope shape
+go run ./cmd/rc <cmd> --json --format '.' # pretty-print with jq semantics
+go run ./cmd/rc schema <cmd>            # confirm flag schema agents will see
+RC_CONFIG_DIR=$(mktemp -d) go run ./cmd/rc whoami   # test first-run UX
+```
+
+### Roadmap
 
 Tracked in [docs/command-surface.md](./docs/command-surface.md) — this is the
 short version of what's intentionally not done yet.
