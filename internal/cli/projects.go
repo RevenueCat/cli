@@ -96,8 +96,17 @@ func newProjectsUseCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "use [project-id]",
 		Short: "Set the active project for this profile",
-		Long: `Sets the default project for the current profile. Without an argument,
-opens an interactive picker (or fails under --no-input).`,
+		Long: `Sets the default project for the current profile so subsequent commands
+don't need --project-id.
+
+Without an argument, opens an interactive picker. Under --no-input the
+project ID is required.
+
+The chosen project is written to the active profile file (default:
+~/.config/revenuecat/default.json).`,
+		Example: `  rc projects use                     # interactive picker
+  rc projects use proj_abc            # explicit ID
+  rc projects use proj_abc --json     # machine-readable confirmation`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())

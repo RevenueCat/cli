@@ -294,6 +294,12 @@ func newCustomerListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List customers in the active project",
+		Long: `Lists customers, paginated. The TTY view prints a hint with the cursor
+ID for the next page; the --json view returns the next_page URL in the page
+envelope so agents can iterate without re-parsing.`,
+		Example: `  rc customer list --limit 10
+  rc customer list --json --limit 100 | jq '.data.items[].id'
+  rc customer list --cursor cus_xyz --limit 50`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -402,6 +408,21 @@ func newCustomerGrantCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "grant",
 		Short: "Grant a promotional entitlement to a customer",
+		Long: `Grants a promotional entitlement to a customer for a fixed duration.
+
+Under a TTY, missing inputs are prompted. Under --no-input, missing required
+inputs return a usage error. Confirmation is skipped if --yes is set.
+
+Duration must be one of: daily, three_day, weekly, monthly, two_month,
+three_month, six_month, yearly, lifetime.`,
+		Example: `  # Interactive (prompts for each field)
+  rc customer grant
+
+  # Non-interactive, scriptable
+  rc customer grant --customer-id cus_abc --entitlement-id pro --duration monthly --yes
+
+  # Agent-friendly
+  rc customer grant --customer-id cus_abc --entitlement-id pro --duration monthly --yes --json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

@@ -17,10 +17,24 @@ func newLoginCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "login",
 		Short: "Authenticate with RevenueCat",
-		Long: `Authenticate with RevenueCat by storing an API key in the active profile.
+		Long: `Stores an API key (and optional default project) in the active profile.
+The profile is written to ~/.config/revenuecat/<profile>.json with 0600
+permissions.
 
-All inputs can be supplied via flags for non-interactive use:
-  rc login --api-key sk_... --project-id proj_abc --no-input`,
+All inputs can be supplied via flags for non-interactive use. The API key
+can also be supplied via the RC_API_KEY environment variable instead of
+storing it on disk — useful for CI.`,
+		Example: `  # Interactive
+  rc login
+
+  # Non-interactive
+  rc login --api-key sk_... --project-id proj_abc --no-input
+
+  # Use a non-default profile (e.g. staging vs prod)
+  rc login --profile staging --api-key sk_staging_...
+
+  # CI: don't store on disk; pass via env each invocation
+  RC_API_KEY=sk_... rc customer list`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 
