@@ -51,7 +51,8 @@ type Client struct {
 	Metrics       *MetricsService
 	Audit         *AuditService
 	Benchmarks    *BenchmarksService
-	// add as we go: Apps, Discounts, Experiments, VirtualCurrencies catalog
+	Apps          *AppsService
+	// add as we go: Discounts, Experiments, VirtualCurrencies catalog
 }
 
 func NewClient(opts Options) *Client {
@@ -84,6 +85,7 @@ func NewClient(opts Options) *Client {
 	c.Metrics = &MetricsService{c: c}
 	c.Audit = &AuditService{c: c}
 	c.Benchmarks = &BenchmarksService{c: c}
+	c.Apps = &AppsService{c: c}
 	return c
 }
 

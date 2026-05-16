@@ -27,8 +27,143 @@ func newEntitlementsCmd() *cobra.Command {
 		newEntitlementsCreateCmd(),
 		newEntitlementsUpdateCmd(),
 		newEntitlementsDeleteCmd(),
+		newEntitlementsArchiveCmd(),
+		newEntitlementsRestoreCmd(),
+		newEntitlementsProductsCmd(),
+		newEntitlementsAttachCmd(),
+		newEntitlementsDetachCmd(),
 	)
 	return cmd
+}
+
+func newEntitlementsArchiveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "archive <id>",
+		Short: "Archive an entitlement",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			e, err := client.Entitlements.Archive(cmd.Context(), projectID, args[0])
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Archived %s", e.ID))
+			return rt.Out.Render(e)
+		},
+	}
+}
+
+func newEntitlementsRestoreCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "restore <id>",
+		Short: "Restore an archived entitlement (= unarchive)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			e, err := client.Entitlements.Restore(cmd.Context(), projectID, args[0])
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Restored %s", e.ID))
+			return rt.Out.Render(e)
+		},
+	}
+}
+
+func newEntitlementsProductsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "products <id>",
+		Short: "List products attached to an entitlement",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			page, err := client.Entitlements.ListProducts(cmd.Context(), projectID, args[0])
+			if err != nil {
+				return err
+			}
+			rows := make([][]string, 0, len(page.Items))
+			for _, p := range page.Items {
+				rows = append(rows, []string{p.ID, p.DisplayName, p.StoreIdentifier, p.Type})
+			}
+			return rt.Out.RenderTable(output.Table{
+				Columns: []string{"ID", "DISPLAY NAME", "STORE ID", "TYPE"},
+				Rows:    rows,
+				Raw:     page,
+			})
+		},
+	}
+}
+
+func newEntitlementsAttachCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "attach <id> <product-id> [product-id...]",
+		Short: "Attach products to an entitlement",
+		Args:  cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			if err := client.Entitlements.AttachProducts(cmd.Context(), projectID, args[0], args[1:]); err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Attached %d product(s) to %s", len(args)-1, args[0]))
+			return rt.Out.Render(map[string]any{"ok": true, "entitlement_id": args[0], "product_ids": args[1:]})
+		},
+	}
+}
+
+func newEntitlementsDetachCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "detach <id> <product-id> [product-id...]",
+		Short: "Detach products from an entitlement",
+		Args:  cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			if err := client.Entitlements.DetachProducts(cmd.Context(), projectID, args[0], args[1:]); err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Detached %d product(s) from %s", len(args)-1, args[0]))
+			return rt.Out.Render(map[string]any{"ok": true, "entitlement_id": args[0], "product_ids": args[1:]})
+		},
+	}
 }
 
 func newEntitlementsListCmd() *cobra.Command {

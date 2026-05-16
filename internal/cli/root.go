@@ -80,6 +80,8 @@ machine-readable --json output with a stable schema.`,
 		newMetricsCmd(),
 		newAuditCmd(),
 		newBenchmarksCmd(),
+		newAppsCmd(),
+		newPackagesCmd(),
 		newSchemaCmd(root),
 		newCommandsCmd(root),
 	)

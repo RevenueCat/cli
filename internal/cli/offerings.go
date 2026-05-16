@@ -23,9 +23,61 @@ func newOfferingsCmd() *cobra.Command {
 		newOfferingsCreateCmd(),
 		newOfferingsUpdateCmd(),
 		newOfferingsDeleteCmd(),
+		newOfferingsArchiveCmd(),
+		newOfferingsRestoreCmd(),
 		newOfferingsPackagesCmd(),
 	)
 	return cmd
+}
+
+func newOfferingsArchiveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "archive <id>",
+		Short: "Archive an offering",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			o, err := client.Offerings.Archive(cmd.Context(), projectID, args[0])
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Archived %s", o.ID))
+			return rt.Out.Render(o)
+		},
+	}
+}
+
+func newOfferingsRestoreCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "restore <id>",
+		Short: "Restore an archived offering (= unarchive)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			o, err := client.Offerings.Restore(cmd.Context(), projectID, args[0])
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Restored %s", o.ID))
+			return rt.Out.Render(o)
+		},
+	}
 }
 
 func newOfferingsListCmd() *cobra.Command {

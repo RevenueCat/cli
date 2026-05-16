@@ -125,3 +125,72 @@ func (s *CustomersService) RevokeEntitlement(ctx context.Context, projectID, cus
 	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/revoke_entitlement"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
+
+// GET /projects/{project_id}/customers/{customer_id}/aliases
+func (s *CustomersService) Aliases(ctx context.Context, projectID, customerID string) (*Page[map[string]any], error) {
+	var out Page[map[string]any]
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "aliases"), nil, &out)
+	return &out, err
+}
+
+// GET /projects/{project_id}/customers/{customer_id}/attributes
+//
+// Returns a Page envelope of {name, value, updated_at} objects (verified live);
+// not a flat key→value map as one might guess from the name.
+func (s *CustomersService) Attributes(ctx context.Context, projectID, customerID string) (*Page[map[string]any], error) {
+	var out Page[map[string]any]
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "attributes"), nil, &out)
+	return &out, err
+}
+
+// POST /projects/{project_id}/customers/{customer_id}/attributes
+//
+// Body shape assumed to be {"attributes": {k:v}}; not yet verified against a
+// real customer (avoiding mutating writes on the throwaway project without
+// an explicit go-ahead).
+func (s *CustomersService) SetAttributes(ctx context.Context, projectID, customerID string, attrs map[string]string) error {
+	body := map[string]any{"attributes": attrs}
+	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "attributes"), body, nil)
+}
+
+// POST /projects/{project_id}/customers/{customer_id}/actions/transfer
+func (s *CustomersService) Transfer(ctx context.Context, projectID, sourceCustomerID, destCustomerID string) error {
+	body := map[string]any{"destination_customer_id": destCustomerID}
+	path := encodePath("projects", projectID, "customers", sourceCustomerID, "actions") + "/transfer"
+	return s.c.do(ctx, http.MethodPost, path, body, nil)
+}
+
+// POST /projects/{project_id}/customers/{customer_id}/actions/offering_override
+//
+// Pass empty offeringID to clear the override (assumed; verify before relying on it).
+func (s *CustomersService) OverrideOffering(ctx context.Context, projectID, customerID, offeringID string) error {
+	body := map[string]any{"offering_id": offeringID}
+	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/offering_override"
+	return s.c.do(ctx, http.MethodPost, path, body, nil)
+}
+
+// POST /projects/{project_id}/customers/{customer_id}/actions/restore_google_play_purchase
+func (s *CustomersService) RestoreGooglePlay(ctx context.Context, projectID, customerID, token string) error {
+	body := map[string]any{"purchase_token": token}
+	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/restore_google_play_purchase"
+	return s.c.do(ctx, http.MethodPost, path, body, nil)
+}
+
+// GET /projects/{project_id}/customers/{customer_id}/virtual_currencies
+func (s *CustomersService) Wallet(ctx context.Context, projectID, customerID string) (*Page[map[string]any], error) {
+	var out Page[map[string]any]
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "virtual_currencies"), nil, &out)
+	return &out, err
+}
+
+// POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/balance
+func (s *CustomersService) WalletAdjustBalance(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
+	body := map[string]any{"currency_code": currencyCode, "amount": amount}
+	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "virtual_currencies", "balance"), body, nil)
+}
+
+// POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/transactions
+func (s *CustomersService) WalletTransaction(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
+	body := map[string]any{"currency_code": currencyCode, "amount": amount}
+	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "virtual_currencies", "transactions"), body, nil)
+}

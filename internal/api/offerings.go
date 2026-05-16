@@ -57,3 +57,17 @@ func (s *OfferingsService) Update(ctx context.Context, projectID, id string, bod
 func (s *OfferingsService) Delete(ctx context.Context, projectID, id string) error {
 	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "offerings", id), nil, nil)
 }
+
+func (s *OfferingsService) Archive(ctx context.Context, projectID, id string) (*Offering, error) {
+	var out Offering
+	path := encodePath("projects", projectID, "offerings", id, "actions") + "/archive"
+	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
+	return &out, err
+}
+
+func (s *OfferingsService) Restore(ctx context.Context, projectID, id string) (*Offering, error) {
+	var out Offering
+	path := encodePath("projects", projectID, "offerings", id, "actions") + "/unarchive"
+	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
+	return &out, err
+}
