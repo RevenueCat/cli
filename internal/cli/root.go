@@ -9,15 +9,15 @@ import (
 
 // Globals bound to root persistent flags. Every subcommand reads these via context.
 type Globals struct {
-	JSON        bool
-	NoInput     bool
-	Quiet       bool
-	Verbose     bool
-	Profile     string
-	APIKey      string
-	Format      string // jsonpath-style projection, applied to --json output
-	NoColor     bool
-	AssumeYes   bool
+	JSON      bool
+	NoInput   bool
+	Quiet     bool
+	Verbose   bool
+	Profile   string
+	APIKey    string
+	Format    string // jsonpath-style projection, applied to --json output
+	NoColor   bool
+	AssumeYes bool
 }
 
 func NewRootCmd(version string) *cobra.Command {

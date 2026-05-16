@@ -6,6 +6,8 @@
 //   - stdout is data.
 //   - stderr is chatter (Success / Info / Hint messages, spinners, errors).
 //   - --json never auto-activates from pipe detection; the user opts in.
+//   - --no-color (or NO_COLOR env) disables ALL ANSI output, including
+//     text-style attributes like bold (not just color).
 package output
 
 import (
@@ -18,10 +20,11 @@ import (
 )
 
 type Renderer struct {
-	stdout io.Writer
-	stderr io.Writer
-	json   bool
-	format string // jsonpath-style projection (TODO: wire to a jq-lite eval)
+	stdout  io.Writer
+	stderr  io.Writer
+	json    bool
+	noColor bool
+	format  string // jsonpath-style projection (TODO: wire to a jq-lite eval)
 
 	success lipgloss.Style
 	info    lipgloss.Style
@@ -30,21 +33,31 @@ type Renderer struct {
 }
 
 func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor bool, format string) *Renderer {
-	if noColor || os.Getenv("NO_COLOR") != "" {
-		r := lipgloss.NewRenderer(stderr)
-		r.SetColorProfile(0) // termenv.Ascii
-		lipgloss.SetDefaultRenderer(r)
-	}
-	return &Renderer{
+	noColor = noColor || os.Getenv("NO_COLOR") != ""
+	r := &Renderer{
 		stdout:  stdout,
 		stderr:  stderr,
 		json:    jsonMode,
+		noColor: noColor,
 		format:  format,
-		success: lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true),
-		info:    lipgloss.NewStyle().Foreground(lipgloss.Color("12")),
-		warn:    lipgloss.NewStyle().Foreground(lipgloss.Color("11")),
-		errSty:  lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true),
 	}
+	if !noColor {
+		r.success = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true)
+		r.info = lipgloss.NewStyle().Foreground(lipgloss.Color("12"))
+		r.warn = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
+		r.errSty = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true)
+	}
+	return r
+}
+
+// style returns either the styled rendering of s, or s unmodified when colors
+// are disabled. This is the single place we make that choice — every styled
+// write goes through here.
+func (r *Renderer) style(s lipgloss.Style, text string) string {
+	if r.noColor {
+		return text
+	}
+	return s.Render(text)
 }
 
 // Render writes the primary result. JSON mode emits a stable envelope so
@@ -59,7 +72,6 @@ func (r *Renderer) Render(v any) error {
 		enc.SetIndent("", "  ")
 		return enc.Encode(env)
 	}
-	// Pretty path: indented JSON fallback. Use RenderTable for list views.
 	enc := json.NewEncoder(r.stdout)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
@@ -81,7 +93,7 @@ func (r *Renderer) RenderTable(t Table) error {
 		return r.Render(t.Raw)
 	}
 	if len(t.Rows) == 0 {
-		fmt.Fprintln(r.stderr, r.info.Render("• ")+"no results")
+		fmt.Fprintln(r.stderr, r.style(r.info, "• ")+"no results")
 		return nil
 	}
 	widths := make([]int, len(t.Columns))
@@ -98,12 +110,12 @@ func (r *Renderer) RenderTable(t Table) error {
 			}
 		}
 	}
-	header := lipgloss.NewStyle().Bold(true)
+	headerStyle := lipgloss.NewStyle().Bold(true)
 	for i, c := range t.Columns {
 		if i > 0 {
 			fmt.Fprint(r.stdout, "  ")
 		}
-		fmt.Fprint(r.stdout, header.Render(padRight(c, widths[i])))
+		fmt.Fprint(r.stdout, r.style(headerStyle, padRight(c, widths[i])))
 	}
 	fmt.Fprintln(r.stdout)
 	for _, row := range t.Rows {
@@ -140,26 +152,26 @@ func (r *Renderer) Success(msg string) {
 	if r.json {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.success.Render("✓ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.success, "✓ ")+msg)
 }
 
 func (r *Renderer) Info(msg string) {
 	if r.json {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.info.Render("• ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.info, "• ")+msg)
 }
 
 func (r *Renderer) Warn(msg string) {
 	if r.json {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.warn.Render("! ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
 }
 
 func (r *Renderer) Error(msg string) {
 	if r.json {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.errSty.Render("✗ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+msg)
 }

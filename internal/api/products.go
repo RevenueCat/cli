@@ -8,7 +8,7 @@ import (
 type ProductsService struct{ c *Client }
 
 type ProductSubscription struct {
-	Duration            string `json:"duration,omitempty"`             // ISO 8601 duration, e.g. "P1Y"
+	Duration            string `json:"duration,omitempty"` // ISO 8601 duration, e.g. "P1Y"
 	GracePeriodDuration string `json:"grace_period_duration,omitempty"`
 	TrialDuration       string `json:"trial_duration,omitempty"`
 }
