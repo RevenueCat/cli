@@ -143,7 +143,15 @@ func newSubsCancelCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cancel <id>",
 		Short: "Cancel a Web Billing subscription",
-		Args:  cobra.ExactArgs(1),
+		Long: `Cancels a subscription. Web Billing only — App Store / Play Store
+subscriptions must be cancelled through the store.
+
+Reversibility: a cancelled subscription cannot be uncancelled via API; the
+customer would need to start a new subscription.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc subscriptions cancel sub_abc --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -215,7 +223,15 @@ func newSubsRefundCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "refund <id>",
 		Short: "Refund a Web Billing subscription",
-		Args:  cobra.ExactArgs(1),
+		Long: `Refunds the most recent payment on a Web Billing subscription. Web
+Billing only — store-side refunds must be issued through the store.
+
+Reversibility: irreversible. Money is returned to the customer's payment
+method; recouping requires charging again.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc subscriptions refund sub_abc --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

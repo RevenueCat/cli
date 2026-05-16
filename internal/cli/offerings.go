@@ -34,7 +34,14 @@ func newOfferingsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "archive <id>",
 		Short: "Archive an offering",
-		Args:  cobra.ExactArgs(1),
+		Long: `Archives an offering so it stops being served to new customers while
+existing subscribers keep their access.
+
+Reversibility: use ` + "`rc offerings restore <id>`" + ` to undo.
+
+Confirmation: no prompt — soft, reversible state change.`,
+		Example: `  rc offerings archive ofrng_q1_promo`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -59,7 +66,14 @@ func newOfferingsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "restore <id>",
 		Short: "Restore an archived offering (= unarchive)",
-		Args:  cobra.ExactArgs(1),
+		Long: `Restores a previously-archived offering. Inverse of
+` + "`rc offerings archive`" + `.
+
+Reversibility: re-archive with ` + "`rc offerings archive <id>`" + `.
+
+Confirmation: no prompt.`,
+		Example: `  rc offerings restore ofrng_q1_promo`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -211,7 +225,14 @@ func newOfferingsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete <id>",
 		Short: "Delete an offering",
-		Args:  cobra.ExactArgs(1),
+		Long: `Permanently deletes an offering from the project.
+
+Reversibility: irreversible. Prefer ` + "`rc offerings archive`" + ` for
+reversible removal.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc offerings delete ofrng_old --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

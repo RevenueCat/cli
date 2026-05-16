@@ -33,7 +33,14 @@ func newProductsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "archive <id>",
 		Short: "Archive a product",
-		Args:  cobra.ExactArgs(1),
+		Long: `Archives a product. Existing subscribers keep their access; new
+attaches are blocked.
+
+Reversibility: use ` + "`rc products restore <id>`" + ` to undo.
+
+Confirmation: no prompt — soft, reversible state change.`,
+		Example: `  rc products archive prod_legacy`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -58,7 +65,14 @@ func newProductsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "restore <id>",
 		Short: "Restore an archived product",
-		Args:  cobra.ExactArgs(1),
+		Long: `Restores a previously-archived product. Inverse of
+` + "`rc products archive`" + `.
+
+Reversibility: re-archive with ` + "`rc products archive <id>`" + `.
+
+Confirmation: no prompt.`,
+		Example: `  rc products restore prod_legacy`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -85,10 +99,14 @@ func newProductsPushCmd() *cobra.Command {
 		Short: "Push a product configuration to its underlying store",
 		Long: `Pushes a product's current configuration up to the underlying store
 (App Store, Play Store, Stripe, etc.). Required after editing pricing or
-metadata on platforms where RC manages the store-side config.`,
-		Example: `  rc products push prod_abc
-  rc products push prod_abc --yes --json`,
-		Args: cobra.ExactArgs(1),
+metadata on platforms where RC manages the store-side config.
+
+Reversibility: external side effect — once written to the store, undoing
+requires a follow-up push with the previous configuration.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc products push prod_abc --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -180,7 +198,14 @@ func newProductsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete <id>",
 		Short: "Delete a product",
-		Args:  cobra.ExactArgs(1),
+		Long: `Permanently deletes a product from the project.
+
+Reversibility: irreversible. Prefer ` + "`rc products archive`" + ` for
+reversible removal.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc products delete prod_old --yes`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

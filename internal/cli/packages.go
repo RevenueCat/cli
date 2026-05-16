@@ -130,7 +130,13 @@ func newPackagesDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete <offering-id> <package-id>",
 		Short: "Delete a package",
-		Args:  cobra.ExactArgs(2),
+		Long: `Permanently deletes a package from its offering.
+
+Reversibility: irreversible.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc packages delete ofrng_default pkg_legacy --yes`,
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
