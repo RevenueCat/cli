@@ -38,6 +38,14 @@ storing it on disk — useful for CI.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 
+			// Print the dashboard URL before prompting so users know where to
+			// get a key. We deliberately don't auto-open a browser — works in
+			// headless contexts and avoids the "did Claude just open my
+			// browser?" surprise.
+			if !rt.Globals.NoInput {
+				rt.Out.Info("Generate an API key at https://app.revenuecat.com/settings/api-keys")
+			}
+
 			// Every prompt is also a flag. tui.Form only renders fields that are unset.
 			err := tui.Form(rt.Globals.NoInput).
 				Field(huh.NewInput().

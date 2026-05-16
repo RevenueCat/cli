@@ -3,6 +3,7 @@ package output_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -108,6 +109,64 @@ func TestRenderTable_JSONMode_EmitsRawNotTable(t *testing.T) {
 	items, ok := got.Data["items"].([]any)
 	if !ok || len(items) != 1 {
 		t.Errorf("expected raw items passed through, got %+v", got.Data)
+	}
+}
+
+func TestRender_FormatExtractsScalar(t *testing.T) {
+	var out, errb bytes.Buffer
+	r := output.NewRenderer(&out, &errb, true, true, ".data.id")
+	if err := r.Render(map[string]any{"id": "cus_abc"}); err != nil {
+		t.Fatal(err)
+	}
+	got := strings.TrimSpace(out.String())
+	if got != "cus_abc" {
+		t.Errorf("want shell-friendly unquoted scalar 'cus_abc', got %q", got)
+	}
+}
+
+func TestRender_FormatExtractsObject(t *testing.T) {
+	var out, errb bytes.Buffer
+	r := output.NewRenderer(&out, &errb, true, true, ".data.items[]")
+	err := r.Render(map[string]any{"items": []any{
+		map[string]any{"id": "a"},
+		map[string]any{"id": "b"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("want 2 NDJSON lines, got %d:\n%s", len(lines), out.String())
+	}
+	if !strings.Contains(lines[0], `"id":"a"`) || !strings.Contains(lines[1], `"id":"b"`) {
+		t.Errorf("output: %v", lines)
+	}
+}
+
+func TestRender_FormatBadExpression_ReturnsErrBadFormat(t *testing.T) {
+	var out, errb bytes.Buffer
+	r := output.NewRenderer(&out, &errb, true, true, "..invalid..")
+	err := r.Render(map[string]any{"id": "x"})
+	if err == nil {
+		t.Fatal("want error for invalid jq expression")
+	}
+	if !errors.Is(err, output.ErrBadFormat) {
+		t.Errorf("want errors.Is(err, ErrBadFormat); got %T: %v", err, err)
+	}
+}
+
+func TestRender_FormatWithoutJSON_WarnsAndFallsThrough(t *testing.T) {
+	var out, errb bytes.Buffer
+	r := output.NewRenderer(&out, &errb, false, true, ".id")
+	if err := r.Render(map[string]any{"id": "x"}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(errb.String(), "--format is only applied to --json") {
+		t.Errorf("expected warning on stderr; got %q", errb.String())
+	}
+	// stdout should still have the pretty-JSON fallback, not the filtered output.
+	if !strings.Contains(out.String(), `"id"`) {
+		t.Errorf("expected fallback pretty output; got %q", out.String())
 	}
 }
 

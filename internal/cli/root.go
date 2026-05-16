@@ -78,13 +78,14 @@ Agent-friendly entrypoints:
 	pf.BoolVarP(&g.Verbose, "verbose", "v", false, "enable verbose logging")
 	pf.StringVar(&g.Profile, "profile", "", "configuration profile to use (default: active profile)")
 	pf.StringVar(&g.APIKey, "api-key", "", "RevenueCat API key (overrides profile; or set RC_API_KEY)")
-	pf.StringVar(&g.Format, "format", "", "jsonpath projection applied to --json output (e.g. .data[].id)")
+	pf.StringVar(&g.Format, "format", "", "jq expression applied to --json output (e.g. '.data.items[].id')")
 	pf.BoolVar(&g.NoColor, "no-color", false, "disable ANSI color (also honors NO_COLOR)")
 	pf.BoolVarP(&g.AssumeYes, "yes", "y", false, "assume yes for confirmation prompts")
 
 	root.AddCommand(
 		newLoginCmd(),
 		newWhoamiCmd(),
+		newProfilesCmd(),
 		newProjectsCmd(),
 		newCustomersCmd(),
 		newEntitlementsCmd(),

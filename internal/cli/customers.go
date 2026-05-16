@@ -418,18 +418,23 @@ document.`,
 			if err != nil {
 				return err
 			}
-			// Best-effort enrichment; surface partial data instead of failing if
-			// one of the subresources errors (e.g. plan limits).
-			var subs *api.Page[api.Subscription]
-			var purs *api.Page[api.Purchase]
-			subs, _ = client.Customers.Subscriptions(cmd.Context(), projectID, id)
-			purs, _ = client.Customers.Purchases(cmd.Context(), projectID, id)
+			// Best-effort enrichment; partial errors are surfaced in the envelope
+			// so a JSON consumer sees what's missing rather than silently getting nil.
+			subs, subsErr := client.Customers.Subscriptions(cmd.Context(), projectID, id)
+			purs, pursErr := client.Customers.Purchases(cmd.Context(), projectID, id)
 
-			return rt.Out.Render(map[string]any{
+			raw := map[string]any{
 				"customer":      customer,
 				"subscriptions": subs,
 				"purchases":     purs,
-			})
+			}
+			if subsErr != nil {
+				raw["subscriptions_error"] = subsErr.Error()
+			}
+			if pursErr != nil {
+				raw["purchases_error"] = pursErr.Error()
+			}
+			return rt.Out.RenderCard(customerCard(customer, subs, purs, raw))
 		},
 	}
 	cmd.Flags().StringVar(&id, "id", "", "customer ID")
@@ -565,4 +570,76 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 	cmd.Flags().StringVar(&customerID, "customer-id", "", "customer ID")
 	cmd.Flags().StringVar(&entitlementID, "entitlement-id", "", "entitlement ID")
 	return cmd
+}
+
+// customerCard composes the pretty TTY view of `rc customer show`. JSON
+// callers never touch this — they get `raw` straight through Render().
+func customerCard(c *api.Customer, subs *api.Page[api.Subscription], purs *api.Page[api.Purchase], raw any) output.Card {
+	card := output.Card{
+		Title: c.ID,
+		Raw:   raw,
+	}
+	if c.LastSeenPlatform != "" || c.LastSeenCountry != "" {
+		card.Title += "  ·  " + nonEmpty(c.LastSeenPlatform, "—") + "  ·  " + nonEmpty(c.LastSeenCountry, "—")
+	}
+	first := formatMillis(c.FirstSeenAt)
+	last := formatMillis(c.LastSeenAt)
+	if first != "" || last != "" {
+		card.Subtitle = fmt.Sprintf("first seen %s · last seen %s", nonEmpty(first, "—"), nonEmpty(last, "—"))
+	}
+
+	// Active entitlements as chips.
+	entSection := output.CardSection{Heading: "Active entitlements", Empty: "no active entitlements"}
+	if c.ActiveEntitlements != nil {
+		for _, e := range c.ActiveEntitlements.Items {
+			label := e.LookupKey
+			if label == "" {
+				label = e.ID
+			}
+			entSection.Chips = append(entSection.Chips, output.Chip{Label: label, Tone: output.ToneActive})
+		}
+	}
+	card.Sections = append(card.Sections, entSection)
+
+	// Subscriptions table.
+	subSection := output.CardSection{Heading: "Subscriptions", Empty: "no subscriptions"}
+	if subs != nil && len(subs.Items) > 0 {
+		tab := &output.CardTable{Columns: []string{"ID", "PRODUCT", "STORE", "STATUS", "PERIOD ENDS"}}
+		for _, s := range subs.Items {
+			tab.Rows = append(tab.Rows, []string{
+				s.ID,
+				nonEmpty(s.ProductID, "—"),
+				nonEmpty(s.Store, "—"),
+				nonEmpty(s.Status, "—"),
+				formatMillis(s.CurrentPeriodEnds),
+			})
+		}
+		subSection.Table = tab
+	}
+	card.Sections = append(card.Sections, subSection)
+
+	// Purchases (collapsed: just IDs as a comma-separated list when many).
+	purSection := output.CardSection{Heading: "Purchases", Empty: "no purchases"}
+	if purs != nil && len(purs.Items) > 0 {
+		tab := &output.CardTable{Columns: []string{"ID", "PRODUCT", "STORE", "PURCHASED"}}
+		for _, p := range purs.Items {
+			tab.Rows = append(tab.Rows, []string{
+				p.ID,
+				nonEmpty(p.ProductID, "—"),
+				nonEmpty(p.Store, "—"),
+				formatMillis(p.PurchasedAt),
+			})
+		}
+		purSection.Table = tab
+	}
+	card.Sections = append(card.Sections, purSection)
+
+	return card
+}
+
+func nonEmpty(s, fallback string) string {
+	if s == "" {
+		return fallback
+	}
+	return s
 }

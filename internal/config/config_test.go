@@ -122,6 +122,90 @@ func TestLoad_EnvOverridesFile(t *testing.T) {
 	}
 }
 
+func TestActiveProfilePointer_RoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("RC_CONFIG_DIR", dir)
+	t.Setenv("RC_PROFILE", "")
+
+	// Create two profiles.
+	for _, name := range []string{"default", "staging"} {
+		if err := config.Save(name, &config.Config{APIKey: "k_" + name}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// No pointer yet → fall back to "default".
+	if got := config.ProfileName(""); got != "default" {
+		t.Errorf("with no pointer file, want 'default', got %q", got)
+	}
+
+	// Set staging as active.
+	if err := config.SetActiveProfile("staging"); err != nil {
+		t.Fatal(err)
+	}
+	if got := config.ProfileName(""); got != "staging" {
+		t.Errorf("after SetActiveProfile(staging), want 'staging', got %q", got)
+	}
+
+	// Env var beats pointer.
+	t.Setenv("RC_PROFILE", "default")
+	if got := config.ProfileName(""); got != "default" {
+		t.Errorf("env should beat pointer, got %q", got)
+	}
+	t.Setenv("RC_PROFILE", "")
+
+	// Explicit arg beats both.
+	if got := config.ProfileName("override"); got != "override" {
+		t.Errorf("explicit arg should beat pointer, got %q", got)
+	}
+}
+
+func TestSetActiveProfile_RejectsNonexistent(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("RC_CONFIG_DIR", dir)
+	if err := config.SetActiveProfile("does-not-exist"); err == nil {
+		t.Fatal("expected error for nonexistent profile")
+	}
+}
+
+func TestListProfiles(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("RC_CONFIG_DIR", dir)
+	for _, name := range []string{"alpha", "beta", "gamma"} {
+		if err := config.Save(name, &config.Config{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	names, err := config.ListProfiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 3 {
+		t.Errorf("want 3 profiles, got %d: %v", len(names), names)
+	}
+}
+
+func TestDeleteProfile_ClearsActivePointer(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("RC_CONFIG_DIR", dir)
+	t.Setenv("RC_PROFILE", "")
+	if err := config.Save("doomed", &config.Config{APIKey: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SetActiveProfile("doomed"); err != nil {
+		t.Fatal(err)
+	}
+	if got := config.ProfileName(""); got != "doomed" {
+		t.Fatalf("setup: want 'doomed' active, got %q", got)
+	}
+	if err := config.DeleteProfile("doomed"); err != nil {
+		t.Fatal(err)
+	}
+	if got := config.ProfileName(""); got != "default" {
+		t.Errorf("after deleting active profile, should fall back to 'default'; got %q", got)
+	}
+}
+
 func TestLoad_CorruptFileErrors(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("RC_CONFIG_DIR", dir)
