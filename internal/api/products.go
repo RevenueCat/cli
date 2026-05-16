@@ -41,3 +41,25 @@ func (s *ProductsService) Get(ctx context.Context, projectID, id string) (*Produ
 func (s *ProductsService) Delete(ctx context.Context, projectID, id string) error {
 	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "products", id), nil, nil)
 }
+
+func (s *ProductsService) Archive(ctx context.Context, projectID, id string) (*Product, error) {
+	var out Product
+	path := encodePath("projects", projectID, "products", id, "actions") + "/archive"
+	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
+	return &out, err
+}
+
+func (s *ProductsService) Restore(ctx context.Context, projectID, id string) (*Product, error) {
+	var out Product
+	path := encodePath("projects", projectID, "products", id, "actions") + "/unarchive"
+	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
+	return &out, err
+}
+
+// POST /projects/{project_id}/products/{id}/actions/push
+//
+// Push the product configuration to the underlying store.
+func (s *ProductsService) Push(ctx context.Context, projectID, id string) error {
+	path := encodePath("projects", projectID, "products", id, "actions") + "/push"
+	return s.c.do(ctx, http.MethodPost, path, nil, nil)
+}

@@ -256,11 +256,12 @@ rc chat                                                  # internal agent chat
 ## Build order
 
 1. **`projects`** (list, show, use) — ✅ shipped.
-2. **`customers`** (list + composite show + grant + revoke) — ✅ shipped. Live-verified entitlement grant/revoke + composite `show` (customer + subs + purchases). `transfer`, `override-offering`, `restore-google`, `attributes`, `aliases`, `wallet` still TODO.
-3. **Catalog CRUD**: `entitlements` ✅, `offerings` ✅, `products` ✅. `packages` write ops + `entitlements` attach/detach/archive/restore + `products` push still TODO. No `crud` helper — pattern still readable inline.
+2. **`customers`** ✅ — list, composite show, grant, revoke, aliases, attributes (+ set-attribute), transfer, override-offering, clear-override, restore-google, wallet.
+3. **Catalog CRUD** ✅ — entitlements (+ archive/restore/products/attach/detach), offerings (+ archive/restore), products (+ archive/restore/push), packages (show/create/update/delete/products/attach/detach). No `crud` helper extracted — readable enough inline.
 4. **Support toolkit**: `subscriptions` ✅ (show/transactions/entitlements/management-url/cancel/extend/refund), `purchases` ✅, `invoices` ✅. `customer wallet` still TODO.
 5. **Long tail**: `webhooks` ✅ (under `/integrations/webhooks`), `paywalls` ✅. `currencies` catalog, `discounts`, `experiments` deferred — fixtures empty so write shapes unverified.
 6. **Cross-resource utilities**: `metrics` ✅, `charts list/show/options` ✅ (with client-side enum validation + shell completion), `benchmarks` ✅, `audit` ✅. `find` still TODO (search query format unconfirmed).
+7. **Apps** ✅ — list/show/create/update/delete/keys.
 4. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
 5. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
 6. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
