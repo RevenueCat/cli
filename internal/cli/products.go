@@ -83,7 +83,12 @@ func newProductsPushCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "push <id>",
 		Short: "Push a product configuration to its underlying store",
-		Args:  cobra.ExactArgs(1),
+		Long: `Pushes a product's current configuration up to the underlying store
+(App Store, Play Store, Stripe, etc.). Required after editing pricing or
+metadata on platforms where RC manages the store-side config.`,
+		Example: `  rc products push prod_abc
+  rc products push prod_abc --yes --json`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

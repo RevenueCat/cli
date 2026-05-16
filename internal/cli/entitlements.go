@@ -122,7 +122,11 @@ func newEntitlementsAttachCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "attach <id> <product-id> [product-id...]",
 		Short: "Attach products to an entitlement",
-		Args:  cobra.MinimumNArgs(2),
+		Long: `Attaches one or more products to an entitlement. The entitlement will
+then grant access to anyone who purchases any of the listed products.`,
+		Example: `  rc entitlements attach pro prod_monthly prod_yearly
+  rc entitlements attach pro prod_monthly --json`,
+		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

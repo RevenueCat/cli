@@ -13,6 +13,12 @@ func newAuditCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "audit",
 		Short: "List recent audit log entries",
+		Long: `Lists audit log entries for the project, newest first. Each entry
+records the actor (user or API key), action type, and target. Useful for
+compliance review and debugging "who changed this?" questions.`,
+		Example: `  rc audit --limit 50
+  rc audit --json | jq '.data.items[] | select(.action_type | contains("delete"))'
+  rc audit --cursor log_abc --limit 100`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
