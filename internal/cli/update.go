@@ -17,13 +17,13 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/revenuecat/cli/internal/tui"
 )
 
 const githubReleasesURL = "https://api.github.com/repos/RevenueCat/revenuecat-cli/releases/latest"
 
 var errUpdateAvailable = errors.New("update available")
-
-var updateHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
 type githubRelease struct {
 	TagName string        `json:"tag_name"`
@@ -65,7 +65,8 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 			}
 
 			rt.Out.Info("Checking for updates…")
-			release, err := fetchLatestRelease(cmd.Context())
+			hc := &http.Client{Timeout: 30 * time.Second}
+			release, err := fetchLatestRelease(cmd.Context(), hc)
 			if err != nil {
 				return fmt.Errorf("checking for updates: %w", err)
 			}
@@ -73,7 +74,8 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 			latestTag := release.TagName
 			latestVersion := strings.TrimPrefix(latestTag, "v")
 
-			if latestVersion == currentVersion {
+			// Guard against downgrades (e.g. snapshot/pre-release tags).
+			if !isNewer(latestVersion, currentVersion) {
 				if rt.Globals.JSON {
 					return rt.Out.Render(map[string]any{
 						"current_version": currentVersion,
@@ -89,14 +91,26 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 
 			if checkOnly {
 				if rt.Globals.JSON {
-					// Render JSON first, then return the sentinel so exit code is 1.
-					_ = rt.Out.Render(map[string]any{
+					if err := rt.Out.Render(map[string]any{
 						"current_version": currentVersion,
 						"latest_version":  latestVersion,
 						"up_to_date":      false,
-					})
+					}); err != nil {
+						return err
+					}
 				}
 				return fmt.Errorf("%w: %s (current: %s)", errUpdateAvailable, latestVersion, currentVersion)
+			}
+
+			if !rt.Globals.AssumeYes {
+				ok, err := tui.Confirm(rt.Globals.NoInput,
+					fmt.Sprintf("Update rc from %s to %s?", currentVersion, latestVersion))
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return fmt.Errorf("aborted")
+				}
 			}
 
 			assetName := assetFilename(latestVersion)
@@ -113,7 +127,7 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 			}
 
 			rt.Out.Info(fmt.Sprintf("Downloading %s…", assetName))
-			tmpPath, err := downloadAsset(cmd.Context(), downloadURL, assetName)
+			tmpPath, err := downloadAsset(cmd.Context(), hc, downloadURL, assetName)
 			if err != nil {
 				return fmt.Errorf("downloading update: %w", err)
 			}
@@ -148,22 +162,66 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 	return cmd
 }
 
-func fetchLatestRelease(ctx context.Context) (*githubRelease, error) {
+// isNewer returns true only when latest is strictly greater than current using
+// simple semver comparison. Returns false for equal or unparseable versions so
+// we never downgrade.
+func isNewer(latest, current string) bool {
+	lp := parseSemver(latest)
+	cp := parseSemver(current)
+	if lp == nil || cp == nil {
+		// Can't parse — treat as equal to avoid unintended updates.
+		return false
+	}
+	if lp[0] != cp[0] {
+		return lp[0] > cp[0]
+	}
+	if lp[1] != cp[1] {
+		return lp[1] > cp[1]
+	}
+	return lp[2] > cp[2]
+}
+
+// parseSemver parses "X.Y.Z" or "vX.Y.Z" into [major, minor, patch].
+func parseSemver(v string) []int {
+	v = strings.TrimPrefix(v, "v")
+	parts := strings.SplitN(v, ".", 3)
+	if len(parts) != 3 {
+		return nil
+	}
+	nums := make([]int, 3)
+	for i, p := range parts {
+		// Stop at any pre-release suffix (e.g. "0-next").
+		p, _, _ = strings.Cut(p, "-")
+		n := 0
+		for _, c := range p {
+			if c < '0' || c > '9' {
+				return nil
+			}
+			n = n*10 + int(c-'0')
+		}
+		nums[i] = n
+	}
+	return nums
+}
+
+func fetchLatestRelease(ctx context.Context, hc *http.Client) (*githubRelease, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, githubReleasesURL, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Set("User-Agent", "revenuecat-cli")
 
-	resp, err := updateHTTPClient.Do(req)
+	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GitHub API returned %s", resp.Status)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("GitHub API returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
 	}
 
 	var release githubRelease
@@ -183,12 +241,12 @@ func assetFilename(version string) string {
 }
 
 // downloadAsset fetches the asset and extracts the rc binary to a temp file.
-func downloadAsset(ctx context.Context, url, assetName string) (string, error) {
+func downloadAsset(ctx context.Context, hc *http.Client, url, assetName string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
-	resp, err := updateHTTPClient.Do(req)
+	resp, err := hc.Do(req)
 	if err != nil {
 		return "", err
 	}
