@@ -40,7 +40,7 @@ internal/
     ... (17 services)
   config/                # profile + env layering (~/.config/revenuecat/*.json)
   output/                # pretty TTY vs --json renderer (stdout=data, stderr=chatter)
-  tui/                   # huh wrapper: every prompt also a flag, fails clean under --no-input
+  tui/                   # huh wrapper + BubbleTea chart viewer; every prompt also a flag
 ```
 
 The CLI shape is **not** a mirror of the API. `rc customer show` composes the
@@ -131,8 +131,9 @@ parser handles both transport errors and CLI errors:
 ### Setup
 
 ```bash
-brew install go              # 1.23+
+brew install mise            # Go version manager
 git clone <repo> && cd revenuecat-cli
+mise install                 # installs Go 1.25 per mise.toml
 go mod tidy
 make check                   # gofmt + vet + race tests; should pass clean
 ```

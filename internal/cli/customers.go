@@ -1,12 +1,14 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
@@ -315,10 +317,73 @@ func newCustomerWalletCmd() *cobra.Command {
 }
 
 func requireProject(rt *Runtime) (string, error) {
-	if rt.Config.ProjectID == "" {
+	if rt.Config.ProjectID != "" {
+		return rt.Config.ProjectID, nil
+	}
+	if rt.Globals.NoInput {
 		return "", fmt.Errorf("no active project: run `rc projects use <id>` or pass --project-id")
 	}
-	return rt.Config.ProjectID, nil
+	return pickProjectInteractive(context.Background(), rt)
+}
+
+func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
+	client, err := rt.API()
+	if err != nil {
+		return "", err
+	}
+	page, err := client.Projects.List(ctx)
+	if err != nil {
+		return "", fmt.Errorf("fetching projects: %w", err)
+	}
+	if len(page.Items) == 0 {
+		return "", fmt.Errorf("no projects found; create one at https://app.revenuecat.com")
+	}
+	if len(page.Items) == 1 {
+		rt.Out.Info(fmt.Sprintf("Using project: %s (%s)", page.Items[0].Name, page.Items[0].ID))
+		return page.Items[0].ID, nil
+	}
+
+	const noDefault = "__no_default__"
+	projectOpts := make([]huh.Option[string], len(page.Items))
+	for i, p := range page.Items {
+		projectOpts[i] = huh.NewOption(fmt.Sprintf("%s  (%s)", p.Name, p.ID), p.ID)
+	}
+	allOpts := append([]huh.Option[string]{
+		huh.NewOption("Ask me every time  (don't save a default)", noDefault),
+	}, projectOpts...)
+
+	var projectID string
+	sel := huh.NewSelect[string]().
+		Title("Select a project").
+		Description("Type to filter  ·  Enter to confirm").
+		Options(allOpts...).
+		Filtering(true).
+		Value(&projectID)
+	if err := tui.Form(false).Field(sel).Run(); err != nil {
+		return "", err
+	}
+
+	if projectID == noDefault {
+		// Clear any saved default so future commands also prompt, then pick for this command.
+		rt.Config.ProjectID = ""
+		_ = config.Save(rt.Globals.Profile, rt.Config)
+
+		var pick string
+		pickSel := huh.NewSelect[string]().
+			Title("Select a project for this command").
+			Description("Type to filter  ·  Enter to confirm").
+			Options(projectOpts...).
+			Filtering(true).
+			Value(&pick)
+		if err := tui.Form(false).Field(pickSel).Run(); err != nil {
+			return "", err
+		}
+		return pick, nil
+	}
+
+	rt.Config.ProjectID = projectID
+	_ = config.Save(rt.Globals.Profile, rt.Config)
+	return projectID, nil
 }
 
 func newCustomerListCmd() *cobra.Command {
