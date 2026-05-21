@@ -61,9 +61,12 @@ case "$ARCH" in
     ;;
 esac
 
-# Resolve version
+# Resolve version — always normalize to include the 'v' prefix for the tag
 if [ -n "$PINNED_VERSION" ]; then
-  VERSION="$PINNED_VERSION"
+  case "$PINNED_VERSION" in
+    v*) VERSION="$PINNED_VERSION" ;;
+    *)  VERSION="v$PINNED_VERSION" ;;
+  esac
 else
   echo "Fetching latest version…"
   VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
@@ -112,14 +115,21 @@ fi
 
 chmod +x "$EXTRACTED"
 
+# On Windows (Git Bash/MSYS), install as rc.exe
+if [ "$GOOS" = "windows" ]; then
+  INSTALL_NAME="rc.exe"
+else
+  INSTALL_NAME="rc"
+fi
+
 # Install
 mkdir -p "$INSTALL_DIR"
-if mv "$EXTRACTED" "$INSTALL_DIR/$BINARY" 2>/dev/null; then
-  echo "Installed to $INSTALL_DIR/$BINARY"
+if mv "$EXTRACTED" "$INSTALL_DIR/$INSTALL_NAME" 2>/dev/null; then
+  echo "Installed to $INSTALL_DIR/$INSTALL_NAME"
 else
   echo "Permission denied. Retrying with sudo…"
-  sudo mv "$EXTRACTED" "$INSTALL_DIR/$BINARY"
-  echo "Installed to $INSTALL_DIR/$BINARY"
+  sudo mv "$EXTRACTED" "$INSTALL_DIR/$INSTALL_NAME"
+  echo "Installed to $INSTALL_DIR/$INSTALL_NAME"
 fi
 
 # Verify
