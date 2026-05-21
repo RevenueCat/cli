@@ -59,7 +59,7 @@ changelog:
       - '^style:'
       - 'Co-Authored-By:'
 
-homebrew:
+brews:
   - name: rc
     repository:
       owner: RevenueCat
