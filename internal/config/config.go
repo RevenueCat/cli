@@ -5,12 +5,47 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Config struct {
-	APIKey    string `json:"api_key,omitempty"`
+	// API key auth (original).
+	APIKey string `json:"api_key,omitempty"`
+
+	// OAuth auth. All fields are omitempty so old profiles remain valid.
+	AccessToken    string    `json:"access_token,omitempty"`
+	RefreshToken   string    `json:"refresh_token,omitempty"`
+	TokenExpiresAt time.Time `json:"token_expires_at,omitempty"`
+	TokenType      string    `json:"token_type,omitempty"` // "oauth" | "" (api_key)
+
 	ProjectID string `json:"project_id,omitempty"`
 	BaseURL   string `json:"base_url,omitempty"`
+}
+
+// BearerToken returns whichever auth credential should be sent as the
+// Authorization: Bearer header. OAuth access token takes priority.
+func (c *Config) BearerToken() string {
+	if c.TokenType == "oauth" && c.AccessToken != "" {
+		return c.AccessToken
+	}
+	return c.APIKey
+}
+
+// IsOAuth reports whether this profile holds OAuth credentials.
+func (c *Config) IsOAuth() bool {
+	return c.TokenType == "oauth"
+}
+
+// NeedsRefresh reports whether the OAuth access token is expired or within
+// 5 minutes of expiry and a refresh token is available.
+func (c *Config) NeedsRefresh() bool {
+	if !c.IsOAuth() || c.RefreshToken == "" {
+		return false
+	}
+	if c.TokenExpiresAt.IsZero() {
+		return false
+	}
+	return time.Now().Add(5 * time.Minute).After(c.TokenExpiresAt)
 }
 
 const defaultProfile = "default"

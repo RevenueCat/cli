@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
+	"github.com/revenuecat/cli/internal/tui"
 )
 
 func newChartsCmd() *cobra.Command {
@@ -91,11 +93,21 @@ Valid names:
 			if err != nil {
 				return err
 			}
-			data, err := client.Charts.Show(cmd.Context(), projectID, name, filters)
+			data, err := client.Charts.Show(cmd.Context(), projectID, name, api.ChartShowOptions{Filters: filters})
 			if err != nil {
 				return err
 			}
-			return rt.Out.Render(data)
+			if rt.Globals.JSON {
+				return rt.Out.Render(data)
+			}
+			fetchFn := func(resID string, startUnix int64) (*api.ChartData, error) {
+				return client.Charts.Show(context.Background(), projectID, name, api.ChartShowOptions{
+					Resolution: resID,
+					StartDate:  startUnix,
+					Filters:    filters,
+				})
+			}
+			return tui.RunChartView(data, fetchFn, rt.Globals.NoColor)
 		},
 	}
 	cmd.Flags().StringArrayVar(&filterFlags, "filter", nil, "filter key=value (repeatable)")

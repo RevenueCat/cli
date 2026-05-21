@@ -8,8 +8,9 @@ user feedback.
 
 - **`--format` flag**: implement via `github.com/itchyny/gojq` (no exec dep,
   ~clean Go integration). Adds binary size but pulls in full jq semantics.
-- **First-run browser open**: print the URL only. Don't auto-open. Security
-  preference + works in headless contexts.
+- **First-run browser open**: auto-open via `open`/`xdg-open` and also print
+  the URL. Browser errors are silently ignored — URL is always printed as a
+  fallback for headless contexts.
 - **Pagination**: **no `--all` flag, no auto-pagination.** Keep the existing
   opt-in `--cursor <id>` model. Users who need to walk many pages will
   script it; the CLI surface stays predictable.
@@ -101,14 +102,21 @@ yellow=trial. Plumb a `CellStyleFn` into `output.Table`.
 
 ### 2.2 First-run UX (M, 3h)
 
-- `rc login` prints the dashboard API-keys URL prominently before prompting.
+- ✅ `rc login` now supports two methods: browser OAuth (PKCE + state, opens
+  browser, local callback server) and API key paste. Interactive picker on bare
+  `rc login`.
+- ✅ Project selection removed from login. `requireProject` prompts on first
+  use with a filterable picker; "Ask me every time" option clears the default.
+  `rc projects use` also has the filterable picker + "ask every time" option.
 - `rc init` runs `login` → `projects use` → `whoami` in sequence.
 - `rc whoami` becomes richer: include resolved project name, not just ID.
 
 ### 2.3 Chart output that's actually usable (M, 4–6h)
 
+- ✅ Interactive TUI chart viewer in TTY mode: bar/line toggle, resolution
+  (daily/weekly/monthly/quarterly/yearly) + range controls via keyboard,
+  braille line chart, scrollable bar chart. ETag-cached fetches.
 - `--csv` flag for spreadsheet export.
-- ASCII sparkline in TTY mode for single-measure charts.
 - `--last 30d` / `--since YYYY-MM-DD` sugar that maps to the right
   start/end-date params.
 

@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -30,11 +31,17 @@ type Options struct {
 	UserAgent  string
 }
 
+type cacheEntry struct {
+	etag string
+	body []byte
+}
+
 type Client struct {
 	baseURL   *url.URL
 	apiKey    string
 	http      *http.Client
 	userAgent string
+	cache     sync.Map // url string → cacheEntry; GET-only, session-scoped
 
 	Projects      *ProjectsService
 	Customers     *CustomersService
@@ -116,11 +123,26 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 		req.Header.Set("Content-Type", "application/json")
 	}
 
+	// ETag cache: send If-None-Match on repeat GETs.
+	if method == http.MethodGet {
+		if v, ok := c.cache.Load(urlStr); ok {
+			req.Header.Set("If-None-Match", v.(cacheEntry).etag)
+		}
+	}
+
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
+	// 304: serve from cache.
+	if resp.StatusCode == http.StatusNotModified {
+		if v, ok := c.cache.Load(urlStr); ok && out != nil {
+			return json.Unmarshal(v.(cacheEntry).body, out)
+		}
+		return nil
+	}
 
 	if resp.StatusCode >= 400 {
 		return parseError(resp)
@@ -128,7 +150,18 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	if out == nil || resp.StatusCode == http.StatusNoContent {
 		return nil
 	}
-	return json.NewDecoder(resp.Body).Decode(out)
+
+	// Read body once so we can both cache it and decode it.
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if method == http.MethodGet {
+		if etag := resp.Header.Get("ETag"); etag != "" {
+			c.cache.Store(urlStr, cacheEntry{etag: etag, body: data})
+		}
+	}
+	return json.Unmarshal(data, out)
 }
 
 // Page wraps cursor-paginated list responses.
