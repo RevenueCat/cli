@@ -102,6 +102,23 @@ rc schema <cmd>      # flags, args, and examples for any command
 | 5 | Not found |
 | 6 | Rate limited |
 
+## Releasing
+
+Releases are fully automated via GoReleaser. To cut a release:
+
+1. Make sure `main` is green on CI.
+2. Tag the commit:
+   ```bash
+   git tag v0.1.0 && git push --tags
+   ```
+3. GitHub Actions runs GoReleaser, which:
+   - Cross-compiles for macOS, Linux, and Windows (amd64 + arm64)
+   - Creates a GitHub release with binaries and checksums
+   - Updates the [homebrew-tap](https://github.com/RevenueCat/homebrew-tap) formula automatically
+
+**Prerequisites** (one-time setup):
+- Add a `HOMEBREW_TAP_GITHUB_TOKEN` secret to this repo with write access to `RevenueCat/homebrew-tap`
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for dev setup, testing, and how to send a PR.
