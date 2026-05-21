@@ -57,7 +57,7 @@ func newWebhooksListCmd() *cobra.Command {
 						ID:     w.ID,
 						Label:  w.URL,
 						Meta:   w.Status,
-						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/integrations", projectID),
+						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/integrations", dashboardProjectID(projectID)),
 						Fields: []tui.BrowserField{
 							{Key: "ID", Value: w.ID},
 							{Key: "URL", Value: w.URL},

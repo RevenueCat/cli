@@ -211,7 +211,7 @@ func newEntitlementsListCmd() *cobra.Command {
 						ID:     e.ID,
 						Label:  e.LookupKey,
 						Meta:   e.DisplayName,
-						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", projectID, e.ID),
+						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", dashboardProjectID(projectID), e.ID),
 						Fields: []tui.BrowserField{
 							{Key: "ID", Value: e.ID},
 							{Key: "Lookup key", Value: e.LookupKey},
@@ -232,7 +232,7 @@ func newEntitlementsListCmd() *cobra.Command {
 											ID:     p.ID,
 											Label:  p.DisplayName,
 											Meta:   p.StoreIdentifier,
-											WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", projectID, e.ID),
+											WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", dashboardProjectID(projectID), e.ID),
 											Fields: []tui.BrowserField{
 												{Key: "ID", Value: p.ID},
 												{Key: "Display name", Value: p.DisplayName},

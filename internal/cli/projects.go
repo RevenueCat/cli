@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/huh"
@@ -185,4 +186,14 @@ func formatMillis(m api.Millis) string {
 		return ""
 	}
 	return time.UnixMilli(int64(m)).UTC().Format("2006-01-02")
+}
+
+// dashboardProjectID strips the resource-type prefix from an API project ID
+// so it can be used in dashboard URLs.
+// e.g. "proj_5adb8697abc" → "5adb8697abc"
+func dashboardProjectID(id string) string {
+	if i := strings.LastIndex(id, "_"); i >= 0 {
+		return id[i+1:]
+	}
+	return id
 }
