@@ -61,7 +61,7 @@ func TestCommandsJSON_AgentDiscovery(t *testing.T) {
 	}
 	// Spot-check a few critical subcommands exist for agents to find.
 	tree := string(out)
-	for _, want := range []string{`"login"`, `"customer"`, `"entitlements"`, `"schema"`, `"projects"`} {
+	for _, want := range []string{`"auth"`, `"customer"`, `"entitlements"`, `"schema"`, `"projects"`} {
 		if !strings.Contains(tree, want) {
 			t.Errorf("expected %s in command tree", want)
 		}
@@ -69,7 +69,7 @@ func TestCommandsJSON_AgentDiscovery(t *testing.T) {
 }
 
 func TestSchemaCommand_ReturnsFlagSchema(t *testing.T) {
-	out, _, err := runCmd(t, "schema", "login", "--json")
+	out, _, err := runCmd(t, "schema", "auth", "login", "--json")
 	if err != nil {
 		t.Fatalf("execute: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestSchemaCommand_ReturnsFlagSchema(t *testing.T) {
 	if got.Data.Name != "login" {
 		t.Errorf("want name=login, got %q", got.Data.Name)
 	}
-	// `login` must expose api-key + project-id flags so agents can drive it.
+	// auth login must expose api-key + project-id flags so agents can drive it non-interactively.
 	want := map[string]bool{"api-key": false, "project-id": false}
 	for _, f := range got.Data.Flags {
 		if _, ok := want[f.Name]; ok {

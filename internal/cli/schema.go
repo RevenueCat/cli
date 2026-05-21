@@ -62,7 +62,7 @@ func newVersionCmd() *cobra.Command {
 
 func commandSchema(c *cobra.Command) map[string]any {
 	flags := []map[string]any{}
-	c.Flags().VisitAll(func(f *pflag.Flag) {
+	addFlag := func(f *pflag.Flag) {
 		if f.Hidden {
 			return
 		}
@@ -73,7 +73,9 @@ func commandSchema(c *cobra.Command) map[string]any {
 			"default":     f.DefValue,
 			"description": f.Usage,
 		})
-	})
+	}
+	c.Flags().VisitAll(addFlag)
+	c.InheritedFlags().VisitAll(addFlag)
 
 	subs := []string{}
 	for _, sc := range c.Commands() {
