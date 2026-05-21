@@ -430,10 +430,10 @@ pass --json for machine-readable output or --no-input to disable the browser.`,
 			for _, c := range page.Items {
 				rows = append(rows, []string{
 					c.ID,
-					c.LastSeenPlatform,
-					c.LastSeenCountry,
+					derefStr(c.LastSeenPlatform),
+					derefStr(c.LastSeenCountry),
 					formatMillis(c.FirstSeenAt),
-					formatMillis(c.LastSeenAt),
+					formatMillisPtr(c.LastSeenAt),
 				})
 			}
 			if err := rt.Out.RenderTable(output.Table{
@@ -659,11 +659,13 @@ func customerCard(c *api.Customer, subs *api.Page[api.Subscription], purs *api.P
 		Title: c.ID,
 		Raw:   raw,
 	}
-	if c.LastSeenPlatform != "" || c.LastSeenCountry != "" {
-		card.Title += "  ·  " + nonEmpty(c.LastSeenPlatform, "—") + "  ·  " + nonEmpty(c.LastSeenCountry, "—")
+	platform := derefStr(c.LastSeenPlatform)
+	country := derefStr(c.LastSeenCountry)
+	if platform != "" || country != "" {
+		card.Title += "  ·  " + nonEmpty(platform, "—") + "  ·  " + nonEmpty(country, "—")
 	}
 	first := formatMillis(c.FirstSeenAt)
-	last := formatMillis(c.LastSeenAt)
+	last := formatMillisPtr(c.LastSeenAt)
 	if first != "" || last != "" {
 		card.Subtitle = fmt.Sprintf("first seen %s · last seen %s", nonEmpty(first, "—"), nonEmpty(last, "—"))
 	}
@@ -672,10 +674,7 @@ func customerCard(c *api.Customer, subs *api.Page[api.Subscription], purs *api.P
 	entSection := output.CardSection{Heading: "Active entitlements", Empty: "no active entitlements"}
 	if c.ActiveEntitlements != nil {
 		for _, e := range c.ActiveEntitlements.Items {
-			label := e.LookupKey
-			if label == "" {
-				label = e.ID
-			}
+			label := e.EntitlementID
 			entSection.Chips = append(entSection.Chips, output.Chip{Label: label, Tone: output.ToneActive})
 		}
 	}
@@ -688,10 +687,10 @@ func customerCard(c *api.Customer, subs *api.Page[api.Subscription], purs *api.P
 		for _, s := range subs.Items {
 			tab.Rows = append(tab.Rows, []string{
 				s.ID,
-				nonEmpty(s.ProductID, "—"),
-				nonEmpty(s.Store, "—"),
-				nonEmpty(s.Status, "—"),
-				formatMillis(s.CurrentPeriodEnds),
+				nonEmpty(derefStr(s.ProductID), "—"),
+				nonEmpty(string(s.Store), "—"),
+				nonEmpty(string(s.Status), "—"),
+				formatMillisPtr(s.CurrentPeriodEndsAt),
 			})
 		}
 		subSection.Table = tab
@@ -706,7 +705,7 @@ func customerCard(c *api.Customer, subs *api.Page[api.Subscription], purs *api.P
 			tab.Rows = append(tab.Rows, []string{
 				p.ID,
 				nonEmpty(p.ProductID, "—"),
-				nonEmpty(p.Store, "—"),
+				nonEmpty(string(p.Store), "—"),
 				formatMillis(p.PurchasedAt),
 			})
 		}
@@ -736,27 +735,30 @@ func customersToItems(ctx context.Context, client *api.Client, projectID string,
 }
 
 func customerToItem(ctx context.Context, client *api.Client, projectID string, c api.Customer) tui.BrowserItem {
+	platform := derefStr(c.LastSeenPlatform)
+	country := derefStr(c.LastSeenCountry)
+	appVersion := derefStr(c.LastSeenAppVersion)
 	var metaParts []string
-	if c.LastSeenPlatform != "" {
-		metaParts = append(metaParts, c.LastSeenPlatform)
+	if platform != "" {
+		metaParts = append(metaParts, platform)
 	}
-	if c.LastSeenCountry != "" {
-		metaParts = append(metaParts, c.LastSeenCountry)
+	if country != "" {
+		metaParts = append(metaParts, country)
 	}
 	customerURL := fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), c.ID)
 	return tui.BrowserItem{
 		ID:     c.ID,
 		Label:  c.ID,
 		Meta:   strings.Join(metaParts, " · "),
-		Row:    []string{c.ID, c.LastSeenPlatform, c.LastSeenCountry, formatMillis(c.FirstSeenAt), formatMillis(c.LastSeenAt)},
+		Row:    []string{c.ID, platform, country, formatMillis(c.FirstSeenAt), formatMillisPtr(c.LastSeenAt)},
 		WebURL: customerURL,
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: c.ID},
-			{Key: "Platform", Value: c.LastSeenPlatform},
-			{Key: "Country", Value: c.LastSeenCountry},
-			{Key: "App version", Value: c.LastSeenAppVersion},
+			{Key: "Platform", Value: platform},
+			{Key: "Country", Value: country},
+			{Key: "App version", Value: appVersion},
 			{Key: "First seen", Value: formatMillis(c.FirstSeenAt)},
-			{Key: "Last seen", Value: formatMillis(c.LastSeenAt)},
+			{Key: "Last seen", Value: formatMillisPtr(c.LastSeenAt)},
 		},
 		AutoLoad: func() ([]tui.BrowserSection, error) {
 			// Parallel fetch of all customer sub-resources.
@@ -811,13 +813,13 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 			var sections []tui.BrowserSection
 
 			// Active entitlements — selectable, drills to entitlement detail
-			sec0 := tui.BrowserSection{Title: "Active Entitlements", Cols: []string{"LOOKUP KEY", "SOURCE", "EXPIRES"}, Empty: "no active entitlements"}
+			sec0 := tui.BrowserSection{Title: "Active Entitlements", Cols: []string{"LOOKUP KEY", "CREATED", "EXPIRES"}, Empty: "no active entitlements"}
 			if res.ents != nil {
 				for _, e := range res.ents.Items {
 					e := e
 					item := entitlementToItem(ctx, client, projectID, e)
 					sec0.Rows = append(sec0.Rows, tui.BrowserSectionRow{
-						Cells: []string{nonEmpty(e.LookupKey, e.ID), e.Source, formatMillis(e.ExpiresAt)},
+						Cells: []string{nonEmpty(e.LookupKey, e.ID), formatMillis(e.CreatedAt), ""},
 						Item:  &item,
 					})
 				}
@@ -831,7 +833,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 					s := s
 					item := subscriptionToItem(ctx, client, projectID, c.ID, s)
 					sec1.Rows = append(sec1.Rows, tui.BrowserSectionRow{
-						Cells: []string{s.ProductID, s.Store, s.Status, formatMillis(s.CurrentPeriodEnds)},
+						Cells: []string{derefStr(s.ProductID), string(s.Store), string(s.Status), formatMillisPtr(s.CurrentPeriodEndsAt)},
 						Item:  &item,
 					})
 				}
@@ -845,7 +847,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 					p := p
 					item := purchaseToItem(ctx, client, projectID, c.ID, p)
 					sec2.Rows = append(sec2.Rows, tui.BrowserSectionRow{
-						Cells: []string{p.ProductID, p.Store, formatMillis(p.PurchasedAt)},
+						Cells: []string{p.ProductID, string(p.Store), formatMillis(p.PurchasedAt)},
 						Item:  &item,
 					})
 				}
@@ -857,7 +859,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 			if res.invs != nil {
 				for _, inv := range res.invs.Items {
 					sec3.Rows = append(sec3.Rows, tui.BrowserSectionRow{
-						Cells: []string{inv.ID, formatMillis(inv.IssuedAt), inv.Status},
+						Cells: []string{inv.ID, formatMillis(int64(inv.IssuedAt)), inv.Status},
 					})
 				}
 			}
@@ -875,20 +877,21 @@ func subscriptionToItem(ctx context.Context, client *api.Client, projectID, cust
 	if s.GivesAccess {
 		givesAccess = "yes"
 	}
+	productID := derefStr(s.ProductID)
 	return tui.BrowserItem{
 		ID:     s.ID,
-		Label:  s.ProductID,
-		Meta:   s.Status,
+		Label:  productID,
+		Meta:   string(s.Status),
 		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: s.ID},
-			{Key: "Product", Value: s.ProductID},
-			{Key: "Store", Value: s.Store},
-			{Key: "Status", Value: s.Status},
-			{Key: "Auto-renewal", Value: s.AutoRenewalStatus},
+			{Key: "Product", Value: productID},
+			{Key: "Store", Value: string(s.Store)},
+			{Key: "Status", Value: string(s.Status)},
+			{Key: "Auto-renewal", Value: string(s.AutoRenewalStatus)},
 			{Key: "Gives access", Value: givesAccess},
 			{Key: "Starts", Value: formatMillis(s.StartsAt)},
-			{Key: "Period ends", Value: formatMillis(s.CurrentPeriodEnds)},
+			{Key: "Period ends", Value: formatMillisPtr(s.CurrentPeriodEndsAt)},
 		},
 		AutoLoad: func() ([]tui.BrowserSection, error) {
 			var sections []tui.BrowserSection
@@ -912,12 +915,12 @@ func subscriptionToItem(ctx context.Context, client *api.Client, projectID, cust
 			// Entitlements — selectable, drills to entitlement detail
 			entPage, err := client.Subscriptions.Entitlements(ctx, projectID, s.ID)
 			if err == nil {
-				sec := tui.BrowserSection{Title: "Entitlements", Cols: []string{"LOOKUP KEY", "SOURCE"}, Empty: "no entitlements"}
+				sec := tui.BrowserSection{Title: "Entitlements", Cols: []string{"LOOKUP KEY", "DISPLAY NAME"}, Empty: "no entitlements"}
 				for _, e := range entPage.Items {
 					e := e
 					item := entitlementToItem(ctx, client, projectID, e)
 					sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
-						Cells: []string{nonEmpty(e.LookupKey, e.ID), e.Source},
+						Cells: []string{nonEmpty(e.LookupKey, e.ID), e.DisplayName},
 						Item:  &item,
 					})
 				}
@@ -934,12 +937,12 @@ func purchaseToItem(ctx context.Context, client *api.Client, projectID, customer
 	return tui.BrowserItem{
 		ID:     p.ID,
 		Label:  p.ProductID,
-		Meta:   p.Store,
+		Meta:   string(p.Store),
 		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: p.ID},
 			{Key: "Product", Value: p.ProductID},
-			{Key: "Store", Value: p.Store},
+			{Key: "Store", Value: string(p.Store)},
 			{Key: "Purchased", Value: formatMillis(p.PurchasedAt)},
 		},
 		AutoLoad: func() ([]tui.BrowserSection, error) {
@@ -947,12 +950,12 @@ func purchaseToItem(ctx context.Context, client *api.Client, projectID, customer
 			if err != nil {
 				return nil, err
 			}
-			sec := tui.BrowserSection{Title: "Entitlements", Cols: []string{"LOOKUP KEY", "SOURCE"}, Empty: "no entitlements"}
+			sec := tui.BrowserSection{Title: "Entitlements", Cols: []string{"LOOKUP KEY", "DISPLAY NAME"}, Empty: "no entitlements"}
 			for _, e := range entPage.Items {
 				e := e
 				item := entitlementToItem(ctx, client, projectID, e)
 				sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
-					Cells: []string{nonEmpty(e.LookupKey, e.ID), e.Source},
+					Cells: []string{nonEmpty(e.LookupKey, e.ID), e.DisplayName},
 					Item:  &item,
 				})
 			}

@@ -9,35 +9,7 @@ import (
 
 type CustomersService struct{ c *Client }
 
-// Customer shape verified against real GET /v2/projects/.../customers responses.
-// The single-customer GET also embeds active_entitlements as a Page[Entitlement].
-type Customer struct {
-	ID                      string             `json:"id"`
-	ProjectID               string             `json:"project_id,omitempty"`
-	FirstSeenAt             Millis             `json:"first_seen_at,omitempty"`
-	LastSeenAt              Millis             `json:"last_seen_at,omitempty"`
-	LastSeenAppVersion      string             `json:"last_seen_app_version,omitempty"`
-	LastSeenCountry         string             `json:"last_seen_country,omitempty"`
-	LastSeenPlatform        string             `json:"last_seen_platform,omitempty"`
-	LastSeenPlatformVersion string             `json:"last_seen_platform_version,omitempty"`
-	Experiment              any                `json:"experiment,omitempty"`
-	Object                  string             `json:"object,omitempty"`
-	ActiveEntitlements      *Page[Entitlement] `json:"active_entitlements,omitempty"`
-}
-
-type Entitlement struct {
-	ID          string `json:"id"`
-	LookupKey   string `json:"lookup_key,omitempty"`
-	DisplayName string `json:"display_name,omitempty"`
-	ProjectID   string `json:"project_id,omitempty"`
-	CreatedAt   Millis `json:"created_at,omitempty"`
-	ExpiresAt   Millis `json:"expires_at,omitempty"`
-	GrantedAt   Millis `json:"granted_at,omitempty"`
-	Source      string `json:"source,omitempty"`
-	Object      string `json:"object,omitempty"`
-}
-
-// Subscription and Purchase types live in subscriptions.go / purchases.go.
+// Customer, Entitlement types are generated in types_gen.go.
 
 type ListCustomersOptions struct {
 	Limit         int    // default 0 → server default

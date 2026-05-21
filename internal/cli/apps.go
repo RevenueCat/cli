@@ -69,7 +69,7 @@ func newAppsListCmd() *cobra.Command {
 
 			rows := make([][]string, 0, len(page.Items))
 			for _, a := range page.Items {
-				rows = append(rows, []string{a.ID, a.Name, a.Type, formatMillis(a.CreatedAt)})
+				rows = append(rows, []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt)})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "NAME", "TYPE", "CREATED"},
@@ -221,13 +221,13 @@ func appToItem(projectID string, a api.App) tui.BrowserItem {
 	return tui.BrowserItem{
 		ID:     a.ID,
 		Label:  a.Name,
-		Meta:   a.Type,
-		Row:    []string{a.ID, a.Name, a.Type, formatMillis(a.CreatedAt)},
+		Meta:   string(a.Type),
+		Row:    []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt)},
 		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/apps/%s", dashboardProjectID(projectID), a.ID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: a.ID},
 			{Key: "Name", Value: a.Name},
-			{Key: "Type", Value: a.Type},
+			{Key: "Type", Value: string(a.Type)},
 			{Key: "Created", Value: formatMillis(a.CreatedAt)},
 		},
 	}

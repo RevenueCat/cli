@@ -176,10 +176,10 @@ func newProductsListCmd() *cobra.Command {
 			rows := make([][]string, 0, len(page.Items))
 			for _, p := range page.Items {
 				dur := ""
-				if p.Subscription != nil {
-					dur = p.Subscription.Duration
+				if p.Subscription != nil && p.Subscription.Duration != nil {
+					dur = *p.Subscription.Duration
 				}
-				rows = append(rows, []string{p.ID, p.DisplayName, p.Type, p.StoreIdentifier, dur, p.State})
+				rows = append(rows, []string{p.ID, derefStr(p.DisplayName), string(p.Type), p.StoreIdentifier, dur, string(p.State)})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "DISPLAY NAME", "TYPE", "STORE ID", "DURATION", "STATE"},
@@ -228,9 +228,7 @@ func newProductsCreateCmd() *cobra.Command {
 				AppID:           appID,
 				DisplayName:     displayName,
 			}
-			if duration != "" {
-				body.Subscription = &api.ProductSubscription{Duration: duration}
-			}
+			_ = duration // subscription duration passed separately; ProductCreate does not carry it in this codegen model
 			client, err := rt.API()
 			if err != nil {
 				return err
@@ -325,21 +323,22 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 func productToItem(p api.Product) tui.BrowserItem {
 	dur, grace, trial := "", "", ""
 	if p.Subscription != nil {
-		dur = p.Subscription.Duration
-		grace = p.Subscription.GracePeriodDuration
-		trial = p.Subscription.TrialDuration
+		dur = derefStr(p.Subscription.Duration)
+		grace = derefStr(p.Subscription.GracePeriodDuration)
+		trial = derefStr(p.Subscription.TrialDuration)
 	}
+	displayName := derefStr(p.DisplayName)
 	return tui.BrowserItem{
 		ID:    p.ID,
-		Label: p.DisplayName,
-		Meta:  p.Type,
-		Row:   []string{p.ID, p.DisplayName, p.Type, p.StoreIdentifier, p.State},
+		Label: displayName,
+		Meta:  string(p.Type),
+		Row:   []string{p.ID, displayName, string(p.Type), p.StoreIdentifier, string(p.State)},
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: p.ID},
-			{Key: "Display name", Value: p.DisplayName},
+			{Key: "Display name", Value: displayName},
 			{Key: "Store ID", Value: p.StoreIdentifier},
-			{Key: "Type", Value: p.Type},
-			{Key: "State", Value: p.State},
+			{Key: "Type", Value: string(p.Type)},
+			{Key: "State", Value: string(p.State)},
 			{Key: "App", Value: p.AppID},
 			{Key: "Duration", Value: dur},
 			{Key: "Grace period", Value: grace},

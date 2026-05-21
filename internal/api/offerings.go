@@ -7,17 +7,7 @@ import (
 
 type OfferingsService struct{ c *Client }
 
-type Offering struct {
-	ID          string `json:"id"`
-	LookupKey   string `json:"lookup_key,omitempty"`
-	DisplayName string `json:"display_name,omitempty"`
-	IsCurrent   bool   `json:"is_current,omitempty"`
-	State       string `json:"state,omitempty"`
-	Metadata    any    `json:"metadata,omitempty"`
-	ProjectID   string `json:"project_id,omitempty"`
-	CreatedAt   Millis `json:"created_at,omitempty"`
-	Object      string `json:"object,omitempty"`
-}
+// Offering type is generated in types_gen.go.
 
 type OfferingCreate struct {
 	LookupKey   string `json:"lookup_key"`

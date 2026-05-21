@@ -129,7 +129,7 @@ func newOfferingsListCmd() *cobra.Command {
 				if o.IsCurrent {
 					current = "*"
 				}
-				rows = append(rows, []string{current, o.ID, o.LookupKey, o.DisplayName, o.State, formatMillis(o.CreatedAt)})
+				rows = append(rows, []string{current, o.ID, o.LookupKey, o.DisplayName, string(o.State), formatMillis(o.CreatedAt)})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"", "ID", "LOOKUP KEY", "DISPLAY NAME", "STATE", "CREATED"},
@@ -279,7 +279,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 // ── browser helpers ──────────────────────────────────────────────────────────
 
 func offeringToItem(ctx context.Context, client *api.Client, projectID string, o api.Offering) tui.BrowserItem {
-	meta := o.State
+	state := string(o.State)
+	meta := state
 	if o.IsCurrent {
 		meta = "current · " + meta
 	}
@@ -288,13 +289,13 @@ func offeringToItem(ctx context.Context, client *api.Client, projectID string, o
 		ID:     o.ID,
 		Label:  o.LookupKey,
 		Meta:   meta,
-		Row:    []string{o.ID, o.LookupKey, o.DisplayName, o.State},
+		Row:    []string{o.ID, o.LookupKey, o.DisplayName, state},
 		WebURL: offeringURL,
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: o.ID},
 			{Key: "Lookup key", Value: o.LookupKey},
 			{Key: "Display name", Value: o.DisplayName},
-			{Key: "State", Value: o.State},
+			{Key: "State", Value: state},
 			{Key: "Current", Value: fmt.Sprintf("%v", o.IsCurrent)},
 			{Key: "Created", Value: formatMillis(o.CreatedAt)},
 		},
@@ -339,7 +340,7 @@ func offeringToItem(ctx context.Context, client *api.Client, projectID string, o
 					pw := pw
 					item := paywallToItem(projectID, pw)
 					sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
-						Cells: []string{pw.Name, formatMillis(pw.PublishedAt)},
+						Cells: []string{pw.Name, formatMillis(int64(pw.PublishedAt))},
 						Item:  &item,
 					})
 				}
@@ -379,7 +380,7 @@ func packageToItem(ctx context.Context, client *api.Client, projectID, offeringI
 				prod := prod
 				item := productToItem(prod)
 				sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
-					Cells: []string{prod.DisplayName, prod.StoreIdentifier, prod.Type, prod.State},
+					Cells: []string{derefStr(prod.DisplayName), prod.StoreIdentifier, string(prod.Type), string(prod.State)},
 					Item:  &item,
 				})
 			}
@@ -397,14 +398,14 @@ func paywallToItem(projectID string, pw api.Paywall) tui.BrowserItem {
 	return tui.BrowserItem{
 		ID:     pw.ID,
 		Label:  pw.Name,
-		Meta:   formatMillis(pw.PublishedAt),
+		Meta:   formatMillis(int64(pw.PublishedAt)),
 		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings", dashboardProjectID(projectID)),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: pw.ID},
 			{Key: "Name", Value: pw.Name},
 			{Key: "Auto-scale fonts", Value: scaleFonts},
-			{Key: "Created", Value: formatMillis(pw.CreatedAt)},
-			{Key: "Published", Value: formatMillis(pw.PublishedAt)},
+			{Key: "Created", Value: formatMillis(int64(pw.CreatedAt))},
+			{Key: "Published", Value: formatMillis(int64(pw.PublishedAt))},
 		},
 	}
 }
