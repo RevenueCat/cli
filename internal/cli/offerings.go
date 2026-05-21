@@ -145,9 +145,10 @@ func newOfferingsListCmd() *cobra.Command {
 									pitems := make([]tui.BrowserItem, len(pp.Items))
 									for j, p := range pp.Items {
 										pitems[j] = tui.BrowserItem{
-											ID:    p.ID,
-											Label: p.LookupKey,
-											Meta:  p.DisplayName,
+											ID:     p.ID,
+											Label:  p.LookupKey,
+											Meta:   p.DisplayName,
+											WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", projectID, o.ID),
 											Fields: []tui.BrowserField{
 												{Key: "ID", Value: p.ID},
 												{Key: "Lookup key", Value: p.LookupKey},

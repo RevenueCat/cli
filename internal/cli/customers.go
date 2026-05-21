@@ -773,7 +773,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 					if err != nil {
 						return "", nil, err
 					}
-					return "Purchases", purchasesToItems(page.Items), nil
+					return "Purchases", purchasesToItems(projectID, c.ID, page.Items), nil
 				},
 			},
 			{
@@ -783,7 +783,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 					if err != nil {
 						return "", nil, err
 					}
-					return "Active entitlements", activeEntitlementsToItems(page.Items), nil
+					return "Active entitlements", activeEntitlementsToItems(projectID, page.Items), nil
 				},
 			},
 		},
@@ -802,9 +802,10 @@ func subscriptionsToItems(ctx context.Context, client *api.Client, projectID, cu
 			metaParts = append(metaParts, s.Store)
 		}
 		items[i] = tui.BrowserItem{
-			ID:    s.ID,
-			Label: s.ID,
-			Meta:  strings.Join(metaParts, " · "),
+			ID:     s.ID,
+			Label:  s.ID,
+			Meta:   strings.Join(metaParts, " · "),
+			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", projectID, customerID),
 			Fields: []tui.BrowserField{
 				{Key: "ID", Value: s.ID},
 				{Key: "Product", Value: s.ProductID},
@@ -832,7 +833,7 @@ func subscriptionsToItems(ctx context.Context, client *api.Client, projectID, cu
 						if err != nil {
 							return "", nil, err
 						}
-						return "Entitlements", activeEntitlementsToItems(page.Items), nil
+						return "Entitlements", activeEntitlementsToItems(projectID, page.Items), nil
 					},
 				},
 			},
@@ -841,13 +842,14 @@ func subscriptionsToItems(ctx context.Context, client *api.Client, projectID, cu
 	return items
 }
 
-func purchasesToItems(purchases []api.Purchase) []tui.BrowserItem {
+func purchasesToItems(projectID, customerID string, purchases []api.Purchase) []tui.BrowserItem {
 	items := make([]tui.BrowserItem, len(purchases))
 	for i, p := range purchases {
 		items[i] = tui.BrowserItem{
-			ID:    p.ID,
-			Label: p.ID,
-			Meta:  p.Store,
+			ID:     p.ID,
+			Label:  p.ID,
+			Meta:   p.Store,
+			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", projectID, customerID),
 			Fields: []tui.BrowserField{
 				{Key: "ID", Value: p.ID},
 				{Key: "Product", Value: p.ProductID},
@@ -876,7 +878,7 @@ func transactionsToItems(txns []api.Transaction) []tui.BrowserItem {
 	return items
 }
 
-func activeEntitlementsToItems(ents []api.Entitlement) []tui.BrowserItem {
+func activeEntitlementsToItems(projectID string, ents []api.Entitlement) []tui.BrowserItem {
 	items := make([]tui.BrowserItem, len(ents))
 	for i, e := range ents {
 		label := e.LookupKey
@@ -884,9 +886,10 @@ func activeEntitlementsToItems(ents []api.Entitlement) []tui.BrowserItem {
 			label = e.ID
 		}
 		items[i] = tui.BrowserItem{
-			ID:    e.ID,
-			Label: label,
-			Meta:  e.Source,
+			ID:     e.ID,
+			Label:  label,
+			Meta:   e.Source,
+			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", projectID, e.ID),
 			Fields: []tui.BrowserField{
 				{Key: "ID", Value: e.ID},
 				{Key: "Lookup key", Value: e.LookupKey},

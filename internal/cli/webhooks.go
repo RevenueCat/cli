@@ -54,9 +54,10 @@ func newWebhooksListCmd() *cobra.Command {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, w := range page.Items {
 					items[i] = tui.BrowserItem{
-						ID:    w.ID,
-						Label: w.URL,
-						Meta:  w.Status,
+						ID:     w.ID,
+						Label:  w.URL,
+						Meta:   w.Status,
+						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/integrations", projectID),
 						Fields: []tui.BrowserField{
 							{Key: "ID", Value: w.ID},
 							{Key: "URL", Value: w.URL},
