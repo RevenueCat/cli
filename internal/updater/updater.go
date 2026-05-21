@@ -16,6 +16,9 @@ import (
 
 const releasesURL = "https://api.github.com/repos/RevenueCat/revenuecat-cli/releases/latest"
 
+// maxBinaryBytes is a sanity cap on the extracted binary size (64 MiB).
+const maxBinaryBytes = 64 << 20
+
 type Release struct {
 	TagName string  `json:"tag_name"`
 	HTMLURL string  `json:"html_url"`
@@ -225,13 +228,22 @@ func downloadTarGz(ctx context.Context, hc *http.Client, url string) (string, er
 			os.Remove(tmpName)
 			return "", err
 		}
-		// Accept only the top-level binary; reject path traversal attempts.
-		if filepath.Base(hdr.Name) == "rc" && hdr.Typeflag == tar.TypeReg &&
-			!strings.Contains(hdr.Name, "..") {
-			if _, err := io.Copy(tmp, tr); err != nil {
+		// Accept only a true top-level "rc" entry: no path separators and no
+		// dot-dot components, so nested paths like "bin/rc" are rejected.
+		clean := filepath.Clean(hdr.Name)
+		isTopLevel := clean == "rc" || clean == filepath.Base(clean) && !strings.ContainsAny(hdr.Name, "/\\")
+		if isTopLevel && filepath.Base(hdr.Name) == "rc" && hdr.Typeflag == tar.TypeReg {
+			lr := io.LimitReader(tr, maxBinaryBytes+1)
+			n, err := io.Copy(tmp, lr)
+			if err != nil {
 				tmp.Close()
 				os.Remove(tmpName)
 				return "", err
+			}
+			if n > maxBinaryBytes {
+				tmp.Close()
+				os.Remove(tmpName)
+				return "", fmt.Errorf("binary exceeds maximum allowed size (%d MiB)", maxBinaryBytes>>20)
 			}
 			tmp.Close()
 			return tmpName, nil

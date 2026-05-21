@@ -38,6 +38,15 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 			currentVersion := cmd.Root().Version
 
 			if currentVersion == "dev" {
+				if rt.Globals.JSON {
+					return rt.Out.Render(map[string]any{
+						"installed_version": "dev",
+						"latest_version":    "",
+						"up_to_date":        true,
+						"updated":           false,
+						"development_build": true,
+					})
+				}
 				rt.Out.Info("Running development build — skipping update.")
 				return nil
 			}
