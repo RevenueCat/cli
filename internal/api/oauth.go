@@ -106,7 +106,7 @@ func (s *OAuthService) postToken(ctx context.Context, body url.Values) (*TokenRe
 			Error            string `json:"error"`
 			ErrorDescription string `json:"error_description"`
 		}
-		json.NewDecoder(resp.Body).Decode(&e) //nolint:errcheck
+		_ = json.NewDecoder(resp.Body).Decode(&e)
 		if e.ErrorDescription != "" {
 			return nil, fmt.Errorf("token request failed: %s", e.ErrorDescription)
 		}

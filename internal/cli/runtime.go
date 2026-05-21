@@ -61,6 +61,9 @@ func (r *Runtime) API() (*api.Client, error) {
 // silentRefresh attempts to refresh the OAuth token without surfacing errors —
 // if the refresh fails the caller will get a 401 on the next request, which
 // maps to exit 4 and prompts the user to re-login.
+//
+// Not goroutine-safe: the CLI is single-threaded by design; do not call from
+// concurrent goroutines without adding a mutex to Runtime.
 func (r *Runtime) silentRefresh() {
 	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
 	tr, err := svc.Refresh(context.Background(), r.Config.RefreshToken)
