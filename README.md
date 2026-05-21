@@ -19,10 +19,10 @@ Or download a binary from the [releases page](../../releases).
 ## Quick start
 
 ```bash
-# Log in (browser OAuth or paste an API key)
+# 1. Log in (browser OAuth or paste an API key)
 rc auth login
 
-# Pick a project
+# 2. Set your active project
 rc projects use
 
 # Look up a customer
