@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -421,7 +422,8 @@ pass --json for machine-readable output or --no-input to disable the browser.`,
 			}
 
 			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
-				return tui.RunBrowser("Customers", customersToItems(cmd.Context(), client, projectID, page.Items))
+				cols := []string{"ID", "PLATFORM", "COUNTRY", "FIRST SEEN", "LAST SEEN"}
+				return tui.RunBrowserTable("Customers", cols, customersToItems(cmd.Context(), client, projectID, page.Items))
 			}
 
 			rows := make([][]string, 0, len(page.Items))
@@ -741,12 +743,13 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 	if c.LastSeenCountry != "" {
 		metaParts = append(metaParts, c.LastSeenCountry)
 	}
-
+	customerURL := fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), c.ID)
 	return tui.BrowserItem{
 		ID:     c.ID,
 		Label:  c.ID,
 		Meta:   strings.Join(metaParts, " · "),
-		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), c.ID),
+		Row:    []string{c.ID, c.LastSeenPlatform, c.LastSeenCountry, formatMillis(c.FirstSeenAt), formatMillis(c.LastSeenAt)},
+		WebURL: customerURL,
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: c.ID},
 			{Key: "Platform", Value: c.LastSeenPlatform},
@@ -755,150 +758,205 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 			{Key: "First seen", Value: formatMillis(c.FirstSeenAt)},
 			{Key: "Last seen", Value: formatMillis(c.LastSeenAt)},
 		},
-		Links: []tui.BrowserLink{
-			{
-				Label: "Subscriptions",
-				Load: func() (string, []tui.BrowserItem, error) {
-					page, err := client.Customers.Subscriptions(ctx, projectID, c.ID)
-					if err != nil {
-						return "", nil, err
-					}
-					return "Subscriptions", subscriptionsToItems(ctx, client, projectID, c.ID, page.Items), nil
-				},
-			},
-			{
-				Label: "Purchases",
-				Load: func() (string, []tui.BrowserItem, error) {
-					page, err := client.Customers.Purchases(ctx, projectID, c.ID)
-					if err != nil {
-						return "", nil, err
-					}
-					return "Purchases", purchasesToItems(projectID, c.ID, page.Items), nil
-				},
-			},
-			{
-				Label: "Active entitlements",
-				Load: func() (string, []tui.BrowserItem, error) {
-					page, err := client.Customers.ActiveEntitlements(ctx, projectID, c.ID)
-					if err != nil {
-						return "", nil, err
-					}
-					return "Active entitlements", activeEntitlementsToItems(projectID, page.Items), nil
-				},
-			},
+		AutoLoad: func() ([]tui.BrowserSection, error) {
+			// Parallel fetch of all customer sub-resources.
+			type results struct {
+				ents *api.Page[api.Entitlement]
+				subs *api.Page[api.Subscription]
+				purs *api.Page[api.Purchase]
+				invs *api.Page[api.Invoice]
+			}
+			var res results
+			var mu sync.Mutex
+			var wg sync.WaitGroup
+			wg.Add(4)
+			go func() {
+				defer wg.Done()
+				p, err := client.Customers.ActiveEntitlements(ctx, projectID, c.ID)
+				if err == nil {
+					mu.Lock()
+					res.ents = p
+					mu.Unlock()
+				}
+			}()
+			go func() {
+				defer wg.Done()
+				p, err := client.Customers.Subscriptions(ctx, projectID, c.ID)
+				if err == nil {
+					mu.Lock()
+					res.subs = p
+					mu.Unlock()
+				}
+			}()
+			go func() {
+				defer wg.Done()
+				p, err := client.Customers.Purchases(ctx, projectID, c.ID)
+				if err == nil {
+					mu.Lock()
+					res.purs = p
+					mu.Unlock()
+				}
+			}()
+			go func() {
+				defer wg.Done()
+				p, err := client.Invoices.ListForCustomer(ctx, projectID, c.ID)
+				if err == nil {
+					mu.Lock()
+					res.invs = p
+					mu.Unlock()
+				}
+			}()
+			wg.Wait()
+
+			var sections []tui.BrowserSection
+
+			// Active entitlements — selectable, drills to entitlement detail
+			sec0 := tui.BrowserSection{Title: "Active Entitlements", Cols: []string{"LOOKUP KEY", "SOURCE", "EXPIRES"}, Empty: "no active entitlements"}
+			if res.ents != nil {
+				for _, e := range res.ents.Items {
+					e := e
+					item := entitlementToItem(ctx, client, projectID, e)
+					sec0.Rows = append(sec0.Rows, tui.BrowserSectionRow{
+						Cells: []string{nonEmpty(e.LookupKey, e.ID), e.Source, formatMillis(e.ExpiresAt)},
+						Item:  &item,
+					})
+				}
+			}
+			sections = append(sections, sec0)
+
+			// Subscriptions — selectable, drills to subscription detail
+			sec1 := tui.BrowserSection{Title: "Subscriptions", Cols: []string{"PRODUCT", "STORE", "STATUS", "PERIOD ENDS"}, Empty: "no subscriptions"}
+			if res.subs != nil {
+				for _, s := range res.subs.Items {
+					s := s
+					item := subscriptionToItem(ctx, client, projectID, c.ID, s)
+					sec1.Rows = append(sec1.Rows, tui.BrowserSectionRow{
+						Cells: []string{s.ProductID, s.Store, s.Status, formatMillis(s.CurrentPeriodEnds)},
+						Item:  &item,
+					})
+				}
+			}
+			sections = append(sections, sec1)
+
+			// Purchases — selectable, drills to purchase detail
+			sec2 := tui.BrowserSection{Title: "Purchases", Cols: []string{"PRODUCT", "STORE", "PURCHASED"}, Empty: "no purchases"}
+			if res.purs != nil {
+				for _, p := range res.purs.Items {
+					p := p
+					item := purchaseToItem(ctx, client, projectID, c.ID, p)
+					sec2.Rows = append(sec2.Rows, tui.BrowserSectionRow{
+						Cells: []string{p.ProductID, p.Store, formatMillis(p.PurchasedAt)},
+						Item:  &item,
+					})
+				}
+			}
+			sections = append(sections, sec2)
+
+			// Invoices — display only
+			sec3 := tui.BrowserSection{Title: "Invoices", Cols: []string{"ID", "ISSUED", "STATUS"}, Empty: "no invoices"}
+			if res.invs != nil {
+				for _, inv := range res.invs.Items {
+					sec3.Rows = append(sec3.Rows, tui.BrowserSectionRow{
+						Cells: []string{inv.ID, formatMillis(inv.IssuedAt), inv.Status},
+					})
+				}
+			}
+			sections = append(sections, sec3)
+
+			return sections, nil
 		},
 	}
 }
 
-func subscriptionsToItems(ctx context.Context, client *api.Client, projectID, customerID string, subs []api.Subscription) []tui.BrowserItem {
-	items := make([]tui.BrowserItem, len(subs))
-	for i, s := range subs {
-		s := s
-		var metaParts []string
-		if s.Status != "" {
-			metaParts = append(metaParts, s.Status)
-		}
-		if s.Store != "" {
-			metaParts = append(metaParts, s.Store)
-		}
-		items[i] = tui.BrowserItem{
-			ID:     s.ID,
-			Label:  s.ID,
-			Meta:   strings.Join(metaParts, " · "),
-			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
-			Fields: []tui.BrowserField{
-				{Key: "ID", Value: s.ID},
-				{Key: "Product", Value: s.ProductID},
-				{Key: "Store", Value: s.Store},
-				{Key: "Status", Value: s.Status},
-				{Key: "Auto-renewal", Value: s.AutoRenewalStatus},
-				{Key: "Starts", Value: formatMillis(s.StartsAt)},
-				{Key: "Period ends", Value: formatMillis(s.CurrentPeriodEnds)},
-			},
-			Links: []tui.BrowserLink{
-				{
-					Label: "Transactions",
-					Load: func() (string, []tui.BrowserItem, error) {
-						page, err := client.Subscriptions.Transactions(ctx, projectID, s.ID)
-						if err != nil {
-							return "", nil, err
-						}
-						return "Transactions", transactionsToItems(page.Items), nil
-					},
-				},
-				{
-					Label: "Entitlements",
-					Load: func() (string, []tui.BrowserItem, error) {
-						page, err := client.Subscriptions.Entitlements(ctx, projectID, s.ID)
-						if err != nil {
-							return "", nil, err
-						}
-						return "Entitlements", activeEntitlementsToItems(projectID, page.Items), nil
-					},
-				},
-			},
-		}
+// subscriptionToItem builds a detail item for a subscription, with inline
+// transactions and entitlements loaded via AutoLoad.
+func subscriptionToItem(ctx context.Context, client *api.Client, projectID, customerID string, s api.Subscription) tui.BrowserItem {
+	givesAccess := "no"
+	if s.GivesAccess {
+		givesAccess = "yes"
 	}
-	return items
+	return tui.BrowserItem{
+		ID:     s.ID,
+		Label:  s.ProductID,
+		Meta:   s.Status,
+		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: s.ID},
+			{Key: "Product", Value: s.ProductID},
+			{Key: "Store", Value: s.Store},
+			{Key: "Status", Value: s.Status},
+			{Key: "Auto-renewal", Value: s.AutoRenewalStatus},
+			{Key: "Gives access", Value: givesAccess},
+			{Key: "Starts", Value: formatMillis(s.StartsAt)},
+			{Key: "Period ends", Value: formatMillis(s.CurrentPeriodEnds)},
+		},
+		AutoLoad: func() ([]tui.BrowserSection, error) {
+			var sections []tui.BrowserSection
+
+			// Transactions — display only (no sub-detail for a transaction)
+			txPage, err := client.Subscriptions.Transactions(ctx, projectID, s.ID)
+			if err == nil {
+				sec := tui.BrowserSection{Title: "Transactions", Cols: []string{"ID", "PURCHASED", "REVENUE USD"}, Empty: "no transactions"}
+				for _, t := range txPage.Items {
+					rev := ""
+					if t.RevenueInUSD != nil {
+						rev = fmt.Sprintf("%v", t.RevenueInUSD)
+					}
+					sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
+						Cells: []string{t.ID, formatMillis(t.PurchasedAt), rev},
+					})
+				}
+				sections = append(sections, sec)
+			}
+
+			// Entitlements — selectable, drills to entitlement detail
+			entPage, err := client.Subscriptions.Entitlements(ctx, projectID, s.ID)
+			if err == nil {
+				sec := tui.BrowserSection{Title: "Entitlements", Cols: []string{"LOOKUP KEY", "SOURCE"}, Empty: "no entitlements"}
+				for _, e := range entPage.Items {
+					e := e
+					item := entitlementToItem(ctx, client, projectID, e)
+					sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
+						Cells: []string{nonEmpty(e.LookupKey, e.ID), e.Source},
+						Item:  &item,
+					})
+				}
+				sections = append(sections, sec)
+			}
+
+			return sections, nil
+		},
+	}
 }
 
-func purchasesToItems(projectID, customerID string, purchases []api.Purchase) []tui.BrowserItem {
-	items := make([]tui.BrowserItem, len(purchases))
-	for i, p := range purchases {
-		items[i] = tui.BrowserItem{
-			ID:     p.ID,
-			Label:  p.ID,
-			Meta:   p.Store,
-			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
-			Fields: []tui.BrowserField{
-				{Key: "ID", Value: p.ID},
-				{Key: "Product", Value: p.ProductID},
-				{Key: "Store", Value: p.Store},
-				{Key: "Purchased", Value: formatMillis(p.PurchasedAt)},
-			},
-		}
+// purchaseToItem builds a detail item for a one-time purchase.
+func purchaseToItem(ctx context.Context, client *api.Client, projectID, customerID string, p api.Purchase) tui.BrowserItem {
+	return tui.BrowserItem{
+		ID:     p.ID,
+		Label:  p.ProductID,
+		Meta:   p.Store,
+		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: p.ID},
+			{Key: "Product", Value: p.ProductID},
+			{Key: "Store", Value: p.Store},
+			{Key: "Purchased", Value: formatMillis(p.PurchasedAt)},
+		},
+		AutoLoad: func() ([]tui.BrowserSection, error) {
+			entPage, err := client.Purchases.Entitlements(ctx, projectID, p.ID)
+			if err != nil {
+				return nil, err
+			}
+			sec := tui.BrowserSection{Title: "Entitlements", Cols: []string{"LOOKUP KEY", "SOURCE"}, Empty: "no entitlements"}
+			for _, e := range entPage.Items {
+				e := e
+				item := entitlementToItem(ctx, client, projectID, e)
+				sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
+					Cells: []string{nonEmpty(e.LookupKey, e.ID), e.Source},
+					Item:  &item,
+				})
+			}
+			return []tui.BrowserSection{sec}, nil
+		},
 	}
-	return items
-}
-
-func transactionsToItems(txns []api.Transaction) []tui.BrowserItem {
-	items := make([]tui.BrowserItem, len(txns))
-	for i, t := range txns {
-		items[i] = tui.BrowserItem{
-			ID:    t.ID,
-			Label: t.ID,
-			Meta:  formatMillis(t.PurchasedAt),
-			Fields: []tui.BrowserField{
-				{Key: "ID", Value: t.ID},
-				{Key: "Subscription", Value: t.SubscriptionID},
-				{Key: "Purchased", Value: formatMillis(t.PurchasedAt)},
-			},
-		}
-	}
-	return items
-}
-
-func activeEntitlementsToItems(projectID string, ents []api.Entitlement) []tui.BrowserItem {
-	items := make([]tui.BrowserItem, len(ents))
-	for i, e := range ents {
-		label := e.LookupKey
-		if label == "" {
-			label = e.ID
-		}
-		items[i] = tui.BrowserItem{
-			ID:     e.ID,
-			Label:  label,
-			Meta:   e.Source,
-			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", dashboardProjectID(projectID), e.ID),
-			Fields: []tui.BrowserField{
-				{Key: "ID", Value: e.ID},
-				{Key: "Lookup key", Value: e.LookupKey},
-				{Key: "Display name", Value: e.DisplayName},
-				{Key: "Source", Value: e.Source},
-				{Key: "Granted", Value: formatMillis(e.GrantedAt)},
-				{Key: "Expires", Value: formatMillis(e.ExpiresAt)},
-			},
-		}
-	}
-	return items
 }

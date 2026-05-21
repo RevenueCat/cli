@@ -53,20 +53,9 @@ func newWebhooksListCmd() *cobra.Command {
 			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, w := range page.Items {
-					items[i] = tui.BrowserItem{
-						ID:     w.ID,
-						Label:  w.URL,
-						Meta:   w.Status,
-						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/integrations", dashboardProjectID(projectID)),
-						Fields: []tui.BrowserField{
-							{Key: "ID", Value: w.ID},
-							{Key: "URL", Value: w.URL},
-							{Key: "Status", Value: w.Status},
-							{Key: "Created", Value: formatMillis(w.CreatedAt)},
-						},
-					}
+					items[i] = webhookToItem(projectID, w)
 				}
-				return tui.RunBrowser("Webhooks", items)
+				return tui.RunBrowserTable("Webhooks", []string{"ID", "URL", "STATUS"}, items)
 			}
 
 			rows := make([][]string, 0, len(page.Items))
@@ -78,6 +67,24 @@ func newWebhooksListCmd() *cobra.Command {
 				Rows:    rows,
 				Raw:     page,
 			})
+		},
+	}
+}
+
+// ── browser helpers ──────────────────────────────────────────────────────────
+
+func webhookToItem(projectID string, w api.Webhook) tui.BrowserItem {
+	return tui.BrowserItem{
+		ID:     w.ID,
+		Label:  w.URL,
+		Meta:   w.Status,
+		Row:    []string{w.ID, w.URL, w.Status},
+		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/integrations", dashboardProjectID(projectID)),
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: w.ID},
+			{Key: "URL", Value: w.URL},
+			{Key: "Status", Value: w.Status},
+			{Key: "Created", Value: formatMillis(w.CreatedAt)},
 		},
 	}
 }
@@ -100,6 +107,10 @@ func newWebhooksShowCmd() *cobra.Command {
 			w, err := client.Webhooks.Get(cmd.Context(), projectID, args[0])
 			if err != nil {
 				return err
+			}
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				item := webhookToItem(projectID, *w)
+				return tui.RunBrowser("Webhook", []tui.BrowserItem{item})
 			}
 			return rt.Out.Render(w)
 		},

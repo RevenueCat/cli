@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/charmbracelet/huh"
@@ -207,47 +208,9 @@ func newEntitlementsListCmd() *cobra.Command {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, e := range page.Items {
 					e := e
-					items[i] = tui.BrowserItem{
-						ID:     e.ID,
-						Label:  e.LookupKey,
-						Meta:   e.DisplayName,
-						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", dashboardProjectID(projectID), e.ID),
-						Fields: []tui.BrowserField{
-							{Key: "ID", Value: e.ID},
-							{Key: "Lookup key", Value: e.LookupKey},
-							{Key: "Display name", Value: e.DisplayName},
-							{Key: "Created", Value: formatMillis(e.CreatedAt)},
-						},
-						Links: []tui.BrowserLink{
-							{
-								Label: "Products",
-								Load: func() (string, []tui.BrowserItem, error) {
-									pp, err := client.Entitlements.ListProducts(cmd.Context(), projectID, e.ID)
-									if err != nil {
-										return "", nil, err
-									}
-									pitems := make([]tui.BrowserItem, len(pp.Items))
-									for j, p := range pp.Items {
-										pitems[j] = tui.BrowserItem{
-											ID:     p.ID,
-											Label:  p.DisplayName,
-											Meta:   p.StoreIdentifier,
-											WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", dashboardProjectID(projectID), e.ID),
-											Fields: []tui.BrowserField{
-												{Key: "ID", Value: p.ID},
-												{Key: "Display name", Value: p.DisplayName},
-												{Key: "Store ID", Value: p.StoreIdentifier},
-												{Key: "Type", Value: p.Type},
-											},
-										}
-									}
-									return "Products for " + e.LookupKey, pitems, nil
-								},
-							},
-						},
-					}
+					items[i] = entitlementToItem(cmd.Context(), client, projectID, e)
 				}
-				return tui.RunBrowser("Entitlements", items)
+				return tui.RunBrowserTable("Entitlements", []string{"ID", "LOOKUP KEY", "DISPLAY NAME"}, items)
 			}
 
 			rows := make([][]string, 0, len(page.Items))
@@ -281,6 +244,10 @@ func newEntitlementsShowCmd() *cobra.Command {
 			ent, err := client.Entitlements.Get(cmd.Context(), projectID, args[0])
 			if err != nil {
 				return err
+			}
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				item := entitlementToItem(cmd.Context(), client, projectID, *ent)
+				return tui.RunBrowser("Entitlement", []tui.BrowserItem{item})
 			}
 			return rt.Out.Render(ent)
 		},
@@ -393,6 +360,53 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			}
 			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
 			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+		},
+	}
+}
+
+// ── browser helpers ──────────────────────────────────────────────────────────
+
+// entitlementToItem works for both catalog entitlements and active/contextual
+// entitlements (Source/Granted/Expires are shown when non-zero).
+func entitlementToItem(ctx context.Context, client *api.Client, projectID string, e api.Entitlement) tui.BrowserItem {
+	label := e.LookupKey
+	if label == "" {
+		label = e.ID
+	}
+	return tui.BrowserItem{
+		ID:     e.ID,
+		Label:  label,
+		Meta:   e.DisplayName,
+		Row:    []string{e.ID, nonEmpty(e.LookupKey, e.ID), e.DisplayName},
+		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", dashboardProjectID(projectID), e.ID),
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: e.ID},
+			{Key: "Lookup key", Value: e.LookupKey},
+			{Key: "Display name", Value: e.DisplayName},
+			{Key: "Source", Value: e.Source},
+			{Key: "Granted", Value: formatMillis(e.GrantedAt)},
+			{Key: "Expires", Value: formatMillis(e.ExpiresAt)},
+			{Key: "Created", Value: formatMillis(e.CreatedAt)},
+		},
+		AutoLoad: func() ([]tui.BrowserSection, error) {
+			pp, err := client.Entitlements.ListProducts(ctx, projectID, e.ID)
+			if err != nil {
+				return nil, err
+			}
+			sec := tui.BrowserSection{
+				Title: "Products",
+				Cols:  []string{"DISPLAY NAME", "STORE ID", "TYPE", "STATE"},
+				Empty: "no products attached",
+			}
+			for _, p := range pp.Items {
+				p := p
+				item := productToItem(p)
+				sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
+					Cells: []string{p.DisplayName, p.StoreIdentifier, p.Type, p.State},
+					Item:  &item,
+				})
+			}
+			return []tui.BrowserSection{sec}, nil
 		},
 	}
 }

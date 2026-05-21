@@ -105,6 +105,7 @@ Agent-friendly entrypoints:
 		whoamiAlias,
 		newProfilesCmd(),
 		newProjectsCmd(),
+		newBrowseCmd(),
 		newCustomersCmd(),
 		newEntitlementsCmd(),
 		newOfferingsCmd(),

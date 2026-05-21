@@ -17,6 +17,7 @@ func newChartsCmd() *cobra.Command {
 		Use:     "charts",
 		Aliases: []string{"chart"},
 		Short:   "Inspect project charts",
+		RunE:    runChartsList,
 	}
 	cmd.AddCommand(
 		newChartsListCmd(),
@@ -34,19 +35,35 @@ func newChartsListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List valid chart names",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			rt := RuntimeFrom(cmd.Context())
-			rows := make([][]string, len(api.ValidChartNames))
-			for i, n := range api.ValidChartNames {
-				rows[i] = []string{n}
-			}
-			return rt.Out.RenderTable(output.Table{
-				Columns: []string{"NAME"},
-				Rows:    rows,
-				Raw:     map[string]any{"names": api.ValidChartNames},
-			})
-		},
+		RunE:  runChartsList,
 	}
+}
+
+func runChartsList(cmd *cobra.Command, _ []string) error {
+	rt := RuntimeFrom(cmd.Context())
+
+	if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+		projectID, err := requireProject(rt)
+		if err != nil {
+			return err
+		}
+		client, err := rt.API()
+		if err != nil {
+			return err
+		}
+		items := chartActionItems(cmd.Context(), client, projectID, rt.Globals.NoColor)
+		return tui.RunBrowserTable("Charts", []string{"NAME"}, items)
+	}
+
+	rows := make([][]string, len(api.ValidChartNames))
+	for i, n := range api.ValidChartNames {
+		rows[i] = []string{n}
+	}
+	return rt.Out.RenderTable(output.Table{
+		Columns: []string{"NAME"},
+		Rows:    rows,
+		Raw:     map[string]any{"names": api.ValidChartNames},
+	})
 }
 
 func newChartsShowCmd() *cobra.Command {
