@@ -205,4 +205,34 @@ func encodePath(parts ...string) string {
 	return out
 }
 
+// Raw executes a raw HTTP request and returns the response body and status code.
+// Auth headers are set from the client's API key. Useful for the `rc api` passthrough command.
+func (c *Client) Raw(ctx context.Context, method, path string, body []byte) ([]byte, int, error) {
+	var rdr io.Reader
+	if len(body) > 0 {
+		rdr = bytes.NewReader(body)
+	}
+	urlStr, err := c.buildURL(path)
+	if err != nil {
+		return nil, 0, err
+	}
+	req, err := http.NewRequestWithContext(ctx, method, urlStr, rdr)
+	if err != nil {
+		return nil, 0, err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", c.userAgent)
+	if len(body) > 0 {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	return data, resp.StatusCode, err
+}
+
 var _ = fmt.Sprintf

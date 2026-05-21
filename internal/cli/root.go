@@ -119,6 +119,7 @@ Agent-friendly entrypoints:
 		newBenchmarksCmd(),
 		newAppsCmd(),
 		newPackagesCmd(),
+		newAPICmd(),
 		newSchemaCmd(root),
 		newCommandsCmd(root),
 		newVersionCmd(),

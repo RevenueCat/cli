@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"net/url"
 )
 
 type ProductsService struct{ c *Client }
@@ -26,9 +27,31 @@ type Product struct {
 	Object          string               `json:"object,omitempty"`
 }
 
-func (s *ProductsService) List(ctx context.Context, projectID string) (*Page[Product], error) {
+type ProductListOptions struct {
+	AppID string
+}
+
+type ProductCreate struct {
+	StoreIdentifier string               `json:"store_identifier"`
+	Type            string               `json:"type"` // "subscription" | "one_time"
+	AppID           string               `json:"app_id"`
+	DisplayName     string               `json:"display_name,omitempty"`
+	Subscription    *ProductSubscription `json:"subscription,omitempty"`
+}
+
+func (s *ProductsService) List(ctx context.Context, projectID string, opts *ProductListOptions) (*Page[Product], error) {
+	path := encodePath("projects", projectID, "products")
+	if opts != nil && opts.AppID != "" {
+		path += "?app_id=" + url.QueryEscape(opts.AppID)
+	}
 	var out Page[Product]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "products"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
+	return &out, err
+}
+
+func (s *ProductsService) Create(ctx context.Context, projectID string, body ProductCreate) (*Product, error) {
+	var out Product
+	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "products"), body, &out)
 	return &out, err
 }
 
