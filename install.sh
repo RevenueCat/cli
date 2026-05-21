@@ -77,11 +77,20 @@ if [ -n "${PINNED_VERSION:-}" ]; then
   esac
 else
   echo "Fetching latest version…"
-  VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-    -H "Accept: application/vnd.github+json" \
-    | grep '"tag_name"' \
-    | sed 's/.*"tag_name": *"\(.*\)".*/\1/')"
-  if [ -z "$VERSION" ]; then
+  API_RESPONSE="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+    -H "Accept: application/vnd.github+json")"
+
+  # Use jq if available; fall back to a tightly anchored grep/sed
+  if command -v jq >/dev/null 2>&1; then
+    VERSION="$(printf '%s' "$API_RESPONSE" | jq -r '.tag_name')"
+  else
+    VERSION="$(printf '%s' "$API_RESPONSE" \
+      | grep -o '"tag_name": *"[^"]*"' \
+      | head -1 \
+      | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
+  fi
+
+  if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
     echo "Could not determine latest version. Check your internet connection." >&2
     exit 1
   fi
@@ -92,9 +101,11 @@ VERSION_NUM="${VERSION#v}"
 
 if [ "$GOOS" = "windows" ]; then
   ARCHIVE="${BINARY}_${VERSION_NUM}_${GOOS}_${GOARCH}.zip"
+  BINARY_IN_ARCHIVE="${BINARY}.exe"
   INSTALL_NAME="rc.exe"
 else
   ARCHIVE="${BINARY}_${VERSION_NUM}_${GOOS}_${GOARCH}.tar.gz"
+  BINARY_IN_ARCHIVE="${BINARY}"
   INSTALL_NAME="rc"
 fi
 
@@ -109,13 +120,12 @@ trap 'rm -rf "$TMP"' EXIT
 # Download
 curl -fsSL "$DOWNLOAD_URL" -o "$TMP/$ARCHIVE"
 
-# Extract
+# Extract only the rc binary — don't unpack the whole archive
+EXTRACTED="$TMP/$INSTALL_NAME"
 if [ "$GOOS" = "windows" ]; then
-  unzip -q "$TMP/$ARCHIVE" -d "$TMP"
-  EXTRACTED="$TMP/${BINARY}.exe"
+  unzip -q -j "$TMP/$ARCHIVE" "$BINARY_IN_ARCHIVE" -d "$TMP"
 else
-  tar -xzf "$TMP/$ARCHIVE" -C "$TMP"
-  EXTRACTED="$TMP/${BINARY}"
+  tar -xzf "$TMP/$ARCHIVE" -C "$TMP" "$BINARY_IN_ARCHIVE"
 fi
 
 if [ ! -f "$EXTRACTED" ]; then
@@ -125,9 +135,11 @@ fi
 
 chmod +x "$EXTRACTED"
 
-# Install — create dir and move binary, falling back to sudo if needed
 DEST="$INSTALL_DIR/$INSTALL_NAME"
 
+# Install — mkdir and mv in one function so sudo covers both operations.
+# sudo is invoked with explicit arguments (not via sh -c) to avoid
+# shell-injection from user-supplied --install-dir values.
 install_binary() {
   mkdir -p "$INSTALL_DIR" && mv "$EXTRACTED" "$DEST"
 }
@@ -136,7 +148,8 @@ if install_binary 2>/dev/null; then
   echo "Installed to $DEST"
 else
   echo "Permission denied. Retrying with sudo…"
-  sudo sh -c "mkdir -p '$INSTALL_DIR' && mv '$EXTRACTED' '$DEST'"
+  sudo mkdir -p -- "$INSTALL_DIR"
+  sudo mv -- "$EXTRACTED" "$DEST"
   echo "Installed to $DEST"
 fi
 
