@@ -9,21 +9,7 @@ import (
 
 type AuditService struct{ c *Client }
 
-// AuditLog is loosely typed because the additional_data shape varies per
-// action_type. Callers needing strong typing on a specific action should cast
-// AdditionalData themselves.
-type AuditLog struct {
-	ID               string         `json:"id"`
-	ActionType       string         `json:"action_type,omitempty"`
-	ActorType        string         `json:"actor_type,omitempty"`
-	ActorIdentifier  string         `json:"actor_identifier,omitempty"`
-	TargetType       string         `json:"target_type,omitempty"`
-	TargetIdentifier string         `json:"target_identifier,omitempty"`
-	OccurredAt       Millis         `json:"occurred_at,omitempty"`
-	ProjectID        string         `json:"project_id,omitempty"`
-	AdditionalData   map[string]any `json:"additional_data,omitempty"`
-	Object           string         `json:"object,omitempty"`
-}
+// AuditLog type is generated in types_gen.go.
 
 type ListAuditOptions struct {
 	Limit         int

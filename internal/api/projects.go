@@ -7,15 +7,7 @@ import (
 
 type ProjectsService struct{ c *Client }
 
-// Project shape verified against real GET /v2/projects responses.
-type Project struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	CreatedAt    Millis `json:"created_at"`
-	IconURL      string `json:"icon_url,omitempty"`
-	IconURLLarge string `json:"icon_url_large,omitempty"`
-	Object       string `json:"object,omitempty"`
-}
+// Project type is generated in types_gen.go.
 
 // GET /projects
 func (s *ProjectsService) List(ctx context.Context) (*Page[Project], error) {
@@ -39,5 +31,5 @@ func (s *ProjectsService) Get(ctx context.Context, id string) (*Project, error) 
 			return &page.Items[i], nil
 		}
 	}
-	return nil, &Error{Status: 404, Type: "resource_missing", Message: "project " + id + " not found"}
+	return nil, &APIError{Status: 404, Type: "resource_missing", Message: "project " + id + " not found"}
 }
