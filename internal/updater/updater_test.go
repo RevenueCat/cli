@@ -73,11 +73,7 @@ func TestFetchRelease_Success(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	orig := updater.ReleasesURL
-	updater.ReleasesURL = srv.URL
-	defer func() { updater.ReleasesURL = orig }()
-
-	r, err := updater.FetchRelease(context.Background(), &http.Client{})
+	r, err := updater.FetchRelease(context.Background(), &http.Client{}, srv.URL)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -96,11 +92,7 @@ func TestFetchRelease_NonOKIncludesBody(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	orig := updater.ReleasesURL
-	updater.ReleasesURL = srv.URL
-	defer func() { updater.ReleasesURL = orig }()
-
-	_, err := updater.FetchRelease(context.Background(), &http.Client{})
+	_, err := updater.FetchRelease(context.Background(), &http.Client{}, srv.URL)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -113,7 +105,7 @@ func TestFetchRelease_NonOKIncludesBody(t *testing.T) {
 
 func TestDownloadBinary_Success(t *testing.T) {
 	const fakeContent = "#!/bin/sh\necho hello"
-	tarGzData := makeTarGz(t, "rc", []byte(fakeContent))
+	tarGzData := makeTarGzNamed(t, "rc", []byte(fakeContent))
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write(tarGzData)
@@ -123,9 +115,7 @@ func TestDownloadBinary_Success(t *testing.T) {
 	release := &updater.Release{
 		TagName: "v1.2.3",
 		HTMLURL: "https://example.com",
-		Assets: []updater.Asset{
-			{Name: "rc_1.2.3_linux_amd64.tar.gz", BrowserDownloadURL: srv.URL + "/rc.tar.gz"},
-		},
+		Assets:  []updater.Asset{{Name: "rc_1.2.3_linux_amd64.tar.gz", BrowserDownloadURL: srv.URL + "/rc.tar.gz"}},
 	}
 
 	path, err := updater.DownloadBinary(context.Background(), &http.Client{}, release, "linux", "amd64")
@@ -160,11 +150,8 @@ func TestDownloadBinary_MissingAsset(t *testing.T) {
 }
 
 func TestDownloadBinary_RejectsNestedPath(t *testing.T) {
-	// Archive contains "bin/rc" — should not be accepted as the top-level binary.
-	tarGzData := makeTarGzNamed(t, "bin/rc", []byte("fake"))
-
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write(tarGzData)
+		w.Write(makeTarGzNamed(t, "bin/rc", []byte("fake")))
 	}))
 	defer srv.Close()
 
@@ -179,11 +166,93 @@ func TestDownloadBinary_RejectsNestedPath(t *testing.T) {
 	}
 }
 
+func TestDownloadBinary_RejectsTraversalBypass(t *testing.T) {
+	// "bin/../rc" normalises to "rc" via filepath.Clean — must still be rejected.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(makeTarGzNamed(t, "bin/../rc", []byte("fake")))
+	}))
+	defer srv.Close()
+
+	release := &updater.Release{
+		TagName: "v1.0.0",
+		HTMLURL: "https://example.com",
+		Assets:  []updater.Asset{{Name: "rc_1.0.0_linux_amd64.tar.gz", BrowserDownloadURL: srv.URL}},
+	}
+	_, err := updater.DownloadBinary(context.Background(), &http.Client{}, release, "linux", "amd64")
+	if err == nil {
+		t.Fatal("expected error: traversal path bin/../rc should be rejected")
+	}
+}
+
+// --- Install ---
+
+func TestInstall_ReplacesDestination(t *testing.T) {
+	src := writeTempFile(t, []byte("new binary content"))
+	dest := writeTempFile(t, []byte("old binary content"))
+
+	if err := updater.Install(src, dest); err != nil {
+		t.Fatalf("Install: %v", err)
+	}
+
+	got, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("reading dest: %v", err)
+	}
+	if string(got) != "new binary content" {
+		t.Errorf("dest not updated: got %q", got)
+	}
+}
+
+func TestInstall_DestIsExecutable(t *testing.T) {
+	src := writeTempFile(t, []byte("#!/bin/sh"))
+	dest := writeTempFile(t, []byte("old"))
+
+	if err := updater.Install(src, dest); err != nil {
+		t.Fatalf("Install: %v", err)
+	}
+
+	info, err := os.Stat(dest)
+	if err != nil {
+		t.Fatalf("stat: %v", err)
+	}
+	if info.Mode()&0111 == 0 {
+		t.Errorf("dest should be executable, mode=%v", info.Mode())
+	}
+}
+
+func TestInstall_CleansUpTempOnFailure(t *testing.T) {
+	src := writeTempFile(t, []byte("content"))
+	dir := t.TempDir()
+	// Destination in a read-only directory — Install should fail.
+	if err := os.Chmod(dir, 0555); err != nil {
+		t.Skip("cannot make dir read-only:", err)
+	}
+	t.Cleanup(func() { os.Chmod(dir, 0755) })
+
+	dest := dir + "/rc"
+	err := updater.Install(src, dest)
+	if err == nil {
+		t.Fatal("expected error installing to read-only dir")
+	}
+
+	// No temp files should be left behind in the dir.
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 0 {
+		t.Errorf("temp file left behind after failed install: %v", entries)
+	}
+}
+
 // --- helpers ---
 
-func makeTarGz(t *testing.T, name string, content []byte) []byte {
+func writeTempFile(t *testing.T, content []byte) string {
 	t.Helper()
-	return makeTarGzNamed(t, name, content)
+	f, err := os.CreateTemp(t.TempDir(), "updater-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Write(content)
+	f.Close()
+	return f.Name()
 }
 
 func makeTarGzNamed(t *testing.T, name string, content []byte) []byte {
@@ -204,13 +273,10 @@ func makeTarGzNamed(t *testing.T, name string, content []byte) []byte {
 }
 
 func contains(s, sub string) bool {
-	return len(s) >= len(sub) && (s == sub || len(sub) == 0 ||
-		func() bool {
-			for i := 0; i <= len(s)-len(sub); i++ {
-				if s[i:i+len(sub)] == sub {
-					return true
-				}
-			}
-			return false
-		}())
+	for i := 0; i <= len(s)-len(sub); i++ {
+		if s[i:i+len(sub)] == sub {
+			return true
+		}
+	}
+	return false
 }

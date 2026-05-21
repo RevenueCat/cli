@@ -8,19 +8,14 @@ import (
 	"testing"
 
 	"github.com/revenuecat/cli/internal/cli"
-	"github.com/revenuecat/cli/internal/updater"
 )
 
-// serveRelease starts a test server that returns the given release JSON and
-// optionally serves the archive at /download. It sets updater.ReleasesURL and
-// restores the original value via t.Cleanup.
-func serveRelease(t *testing.T, tagName string, archiveData []byte) *httptest.Server {
+// serveRelease starts a test server returning the given release JSON and sets
+// RC_UPDATER_RELEASES_URL so the update command picks it up without any
+// package-level state mutation.
+func serveRelease(t *testing.T, tagName string) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/download" {
-			w.Write(archiveData)
-			return
-		}
 		json.NewEncoder(w).Encode(map[string]any{
 			"tag_name": tagName,
 			"html_url": "https://github.com/example",
@@ -30,25 +25,19 @@ func serveRelease(t *testing.T, tagName string, archiveData []byte) *httptest.Se
 			}},
 		})
 	}))
-	orig := updater.ReleasesURL
-	updater.ReleasesURL = srv.URL
-	t.Cleanup(func() {
-		srv.Close()
-		updater.ReleasesURL = orig
-	})
+	t.Setenv("RC_UPDATER_RELEASES_URL", srv.URL)
+	t.Cleanup(srv.Close)
 	return srv
 }
 
 // TestUpdate_DevBuild_JSON verifies that a dev build emits JSON with
 // development_build=true and exits 0 — not silence.
 func TestUpdate_DevBuild_JSON(t *testing.T) {
-	// Use version "dev" (the default for NewRootCmd("dev")).
 	t.Setenv("RC_CONFIG_DIR", t.TempDir())
 	var out, errBuf bytes.Buffer
 	root := newRootWithBuffers(t, "dev", &out, &errBuf)
 	root.SetArgs([]string{"update", "--json"})
-	err := root.Execute()
-	if err != nil {
+	if err := root.Execute(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if errBuf.Len() != 0 {
@@ -73,13 +62,11 @@ func TestUpdate_DevBuild_JSON(t *testing.T) {
 }
 
 // TestUpdate_UpToDate_JSON verifies the up-to-date JSON shape.
+// runCmd uses version "test" (non-semver) so IsNewer returns false.
 func TestUpdate_UpToDate_JSON(t *testing.T) {
-	serveRelease(t, "v1.2.3", nil)
-	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	serveRelease(t, "v1.2.3")
 
 	out, errb, err := runCmd(t, "update", "--json")
-	// runCmd uses version "test" which is not a valid semver, so IsNewer returns
-	// false and we get the up-to-date path.
 	if err != nil {
 		t.Fatalf("unexpected error: %v\nstderr: %s", err, errb)
 	}
@@ -104,30 +91,22 @@ func TestUpdate_UpToDate_JSON(t *testing.T) {
 	}
 }
 
-// TestUpdate_Check_UpdateAvailable_JSON verifies that --check --json writes one
-// JSON document to stdout and exits 1, with nothing on stderr (no second
-// error envelope).
+// TestUpdate_Check_UpdateAvailable_JSON verifies --check --json writes exactly
+// one JSON document to stdout and exits 1 with nothing on stderr.
 func TestUpdate_Check_UpdateAvailable_JSON(t *testing.T) {
-	serveRelease(t, "v9.9.9", nil)
-	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	serveRelease(t, "v9.9.9")
 
-	// runCmd uses version "test" (non-semver) so IsNewer("9.9.9","test")=false
-	// and we get the up-to-date path. We need a real semver current version.
-	// Use a fresh root with version "1.0.0".
 	var out, errBuf bytes.Buffer
 	root := newRootWithBuffers(t, "1.0.0", &out, &errBuf)
 	root.SetArgs([]string{"update", "--check", "--json"})
 	execErr := root.Execute()
 
-	// Should exit non-zero.
 	if execErr == nil {
 		t.Fatal("want non-zero exit for --check when update is available")
 	}
-	// stderr must be empty — no second JSON error envelope.
 	if errBuf.Len() != 0 {
 		t.Errorf("--check --json must not write to stderr; got %q", errBuf.String())
 	}
-	// stdout must be valid JSON with up_to_date=false.
 	var got struct {
 		Data struct {
 			UpToDate  bool   `json:"up_to_date"`
@@ -146,17 +125,15 @@ func TestUpdate_Check_UpdateAvailable_JSON(t *testing.T) {
 	}
 }
 
-// TestUpdate_Check_UpdateAvailable_Human verifies the human-mode --check path
-// exits non-zero with an informative message.
+// TestUpdate_Check_UpdateAvailable_Human verifies human-mode --check exits 1
+// with nothing on stdout.
 func TestUpdate_Check_UpdateAvailable_Human(t *testing.T) {
-	serveRelease(t, "v9.9.9", nil)
-	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	serveRelease(t, "v9.9.9")
 
 	var out, errBuf bytes.Buffer
 	root := newRootWithBuffers(t, "1.0.0", &out, &errBuf)
 	root.SetArgs([]string{"update", "--check"})
-	err := root.Execute()
-	if err == nil {
+	if err := root.Execute(); err == nil {
 		t.Fatal("want non-zero exit")
 	}
 	if out.Len() != 0 {
@@ -164,11 +141,10 @@ func TestUpdate_Check_UpdateAvailable_Human(t *testing.T) {
 	}
 }
 
-// TestUpdate_ConsistentJSONSchema verifies that installed_version/latest_version/
-// up_to_date/updated are present in all JSON output paths.
+// TestUpdate_ConsistentJSONSchema verifies the four stable keys are present
+// on every JSON output path.
 func TestUpdate_ConsistentJSONSchema(t *testing.T) {
-	serveRelease(t, "v1.0.0", nil)
-	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	serveRelease(t, "v1.0.0")
 
 	out, errb, err := runCmd(t, "update", "--json")
 	if err != nil {
@@ -187,8 +163,7 @@ func TestUpdate_ConsistentJSONSchema(t *testing.T) {
 	}
 }
 
-// newRootWithBuffers builds a root command wired to explicit buffers so tests
-// can capture output independently of runCmd's version string.
+// newRootWithBuffers builds a root command wired to explicit output buffers.
 func newRootWithBuffers(t *testing.T, version string, out, errBuf *bytes.Buffer) interface {
 	SetArgs([]string)
 	Execute() error
