@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
@@ -153,6 +154,15 @@ func newProductsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				items := make([]tui.BrowserItem, len(page.Items))
+				for i, p := range page.Items {
+					items[i] = productToItem(p)
+				}
+				return tui.RunBrowserTable("Products", []string{"ID", "DISPLAY NAME", "TYPE", "STORE ID", "STATE"}, items)
+			}
+
 			rows := make([][]string, 0, len(page.Items))
 			for _, p := range page.Items {
 				dur := ""
@@ -188,6 +198,10 @@ func newProductsShowCmd() *cobra.Command {
 			p, err := client.Products.Get(cmd.Context(), projectID, args[0])
 			if err != nil {
 				return err
+			}
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				item := productToItem(*p)
+				return tui.RunBrowser("Product", []tui.BrowserItem{item})
 			}
 			return rt.Out.Render(p)
 		},
@@ -230,6 +244,36 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			}
 			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
 			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+		},
+	}
+}
+
+// ── browser helpers ──────────────────────────────────────────────────────────
+
+// productToItem builds a leaf detail item for a product (no further drill-down).
+func productToItem(p api.Product) tui.BrowserItem {
+	dur, grace, trial := "", "", ""
+	if p.Subscription != nil {
+		dur = p.Subscription.Duration
+		grace = p.Subscription.GracePeriodDuration
+		trial = p.Subscription.TrialDuration
+	}
+	return tui.BrowserItem{
+		ID:    p.ID,
+		Label: p.DisplayName,
+		Meta:  p.Type,
+		Row:   []string{p.ID, p.DisplayName, p.Type, p.StoreIdentifier, p.State},
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: p.ID},
+			{Key: "Display name", Value: p.DisplayName},
+			{Key: "Store ID", Value: p.StoreIdentifier},
+			{Key: "Type", Value: p.Type},
+			{Key: "State", Value: p.State},
+			{Key: "App", Value: p.AppID},
+			{Key: "Duration", Value: dur},
+			{Key: "Grace period", Value: grace},
+			{Key: "Trial", Value: trial},
+			{Key: "Created", Value: formatMillis(p.CreatedAt)},
 		},
 	}
 }

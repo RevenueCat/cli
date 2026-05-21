@@ -62,20 +62,9 @@ func newAppsListCmd() *cobra.Command {
 			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, a := range page.Items {
-					items[i] = tui.BrowserItem{
-						ID:     a.ID,
-						Label:  a.Name,
-						Meta:   a.Type,
-						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/apps/%s", dashboardProjectID(projectID), a.ID),
-						Fields: []tui.BrowserField{
-							{Key: "ID", Value: a.ID},
-							{Key: "Name", Value: a.Name},
-							{Key: "Type", Value: a.Type},
-							{Key: "Created", Value: formatMillis(a.CreatedAt)},
-						},
-					}
+					items[i] = appToItem(projectID, a)
 				}
-				return tui.RunBrowser("Apps", items)
+				return tui.RunBrowserTable("Apps", []string{"ID", "NAME", "TYPE", "CREATED"}, items)
 			}
 
 			rows := make([][]string, 0, len(page.Items))
@@ -109,6 +98,10 @@ func newAppsShowCmd() *cobra.Command {
 			a, err := client.Apps.Get(cmd.Context(), projectID, args[0])
 			if err != nil {
 				return err
+			}
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				item := appToItem(projectID, *a)
+				return tui.RunBrowser("App", []tui.BrowserItem{item})
 			}
 			return rt.Out.Render(a)
 		},
@@ -218,6 +211,24 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			}
 			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
 			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+		},
+	}
+}
+
+// ── browser helpers ──────────────────────────────────────────────────────────
+
+func appToItem(projectID string, a api.App) tui.BrowserItem {
+	return tui.BrowserItem{
+		ID:     a.ID,
+		Label:  a.Name,
+		Meta:   a.Type,
+		Row:    []string{a.ID, a.Name, a.Type, formatMillis(a.CreatedAt)},
+		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/apps/%s", dashboardProjectID(projectID), a.ID),
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: a.ID},
+			{Key: "Name", Value: a.Name},
+			{Key: "Type", Value: a.Type},
+			{Key: "Created", Value: formatMillis(a.CreatedAt)},
 		},
 	}
 }

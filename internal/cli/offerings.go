@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/charmbracelet/huh"
@@ -117,53 +118,9 @@ func newOfferingsListCmd() *cobra.Command {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, o := range page.Items {
 					o := o
-					meta := o.State
-					if o.IsCurrent {
-						meta = "current · " + meta
-					}
-					items[i] = tui.BrowserItem{
-						ID:     o.ID,
-						Label:  o.LookupKey,
-						Meta:   meta,
-						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", dashboardProjectID(projectID), o.ID),
-						Fields: []tui.BrowserField{
-							{Key: "ID", Value: o.ID},
-							{Key: "Lookup key", Value: o.LookupKey},
-							{Key: "Display name", Value: o.DisplayName},
-							{Key: "State", Value: o.State},
-							{Key: "Current", Value: fmt.Sprintf("%v", o.IsCurrent)},
-							{Key: "Created", Value: formatMillis(o.CreatedAt)},
-						},
-						Links: []tui.BrowserLink{
-							{
-								Label: "Packages",
-								Load: func() (string, []tui.BrowserItem, error) {
-									pp, err := client.Packages.List(cmd.Context(), projectID, o.ID)
-									if err != nil {
-										return "", nil, err
-									}
-									pitems := make([]tui.BrowserItem, len(pp.Items))
-									for j, p := range pp.Items {
-										pitems[j] = tui.BrowserItem{
-											ID:     p.ID,
-											Label:  p.LookupKey,
-											Meta:   p.DisplayName,
-											WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", dashboardProjectID(projectID), o.ID),
-											Fields: []tui.BrowserField{
-												{Key: "ID", Value: p.ID},
-												{Key: "Lookup key", Value: p.LookupKey},
-												{Key: "Display name", Value: p.DisplayName},
-												{Key: "Created", Value: formatMillis(p.CreatedAt)},
-											},
-										}
-									}
-									return "Packages in " + o.LookupKey, pitems, nil
-								},
-							},
-						},
-					}
+					items[i] = offeringToItem(cmd.Context(), client, projectID, o)
 				}
-				return tui.RunBrowser("Offerings", items)
+				return tui.RunBrowserTable("Offerings", []string{"ID", "LOOKUP KEY", "DISPLAY NAME", "STATE"}, items)
 			}
 
 			rows := make([][]string, 0, len(page.Items))
@@ -201,6 +158,10 @@ func newOfferingsShowCmd() *cobra.Command {
 			o, err := client.Offerings.Get(cmd.Context(), projectID, args[0])
 			if err != nil {
 				return err
+			}
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				item := offeringToItem(cmd.Context(), client, projectID, *o)
+				return tui.RunBrowser("Offering", []tui.BrowserItem{item})
 			}
 			return rt.Out.Render(o)
 		},
@@ -311,6 +272,139 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			}
 			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
 			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+		},
+	}
+}
+
+// ── browser helpers ──────────────────────────────────────────────────────────
+
+func offeringToItem(ctx context.Context, client *api.Client, projectID string, o api.Offering) tui.BrowserItem {
+	meta := o.State
+	if o.IsCurrent {
+		meta = "current · " + meta
+	}
+	offeringURL := fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", dashboardProjectID(projectID), o.ID)
+	return tui.BrowserItem{
+		ID:     o.ID,
+		Label:  o.LookupKey,
+		Meta:   meta,
+		Row:    []string{o.ID, o.LookupKey, o.DisplayName, o.State},
+		WebURL: offeringURL,
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: o.ID},
+			{Key: "Lookup key", Value: o.LookupKey},
+			{Key: "Display name", Value: o.DisplayName},
+			{Key: "State", Value: o.State},
+			{Key: "Current", Value: fmt.Sprintf("%v", o.IsCurrent)},
+			{Key: "Created", Value: formatMillis(o.CreatedAt)},
+		},
+		AutoLoad: func() ([]tui.BrowserSection, error) {
+			var sections []tui.BrowserSection
+
+			// Packages — selectable, drills to package detail
+			pp, err := client.Packages.List(ctx, projectID, o.ID)
+			if err == nil {
+				sec := tui.BrowserSection{
+					Title: "Packages",
+					Cols:  []string{"LOOKUP KEY", "DISPLAY NAME", "POSITION"},
+					Empty: "no packages",
+				}
+				for _, p := range pp.Items {
+					p := p
+					item := packageToItem(ctx, client, projectID, o.ID, p)
+					pos := ""
+					if p.Position != nil {
+						pos = fmt.Sprintf("%d", *p.Position)
+					}
+					sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
+						Cells: []string{p.LookupKey, p.DisplayName, pos},
+						Item:  &item,
+					})
+				}
+				sections = append(sections, sec)
+			}
+
+			// Paywalls — selectable, drills to paywall detail (leaf)
+			pws, err := client.Paywalls.List(ctx, projectID)
+			if err == nil {
+				sec := tui.BrowserSection{
+					Title: "Paywalls",
+					Cols:  []string{"NAME", "PUBLISHED"},
+					Empty: "no paywalls",
+				}
+				for _, pw := range pws.Items {
+					if pw.OfferingID != o.ID {
+						continue
+					}
+					pw := pw
+					item := paywallToItem(projectID, pw)
+					sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
+						Cells: []string{pw.Name, formatMillis(pw.PublishedAt)},
+						Item:  &item,
+					})
+				}
+				sections = append(sections, sec)
+			}
+
+			return sections, nil
+		},
+	}
+}
+
+// packageToItem builds a detail item for a package, with its products loaded via AutoLoad.
+func packageToItem(ctx context.Context, client *api.Client, projectID, offeringID string, p api.Package) tui.BrowserItem {
+	offeringURL := fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", dashboardProjectID(projectID), offeringID)
+	return tui.BrowserItem{
+		ID:     p.ID,
+		Label:  p.LookupKey,
+		Meta:   p.DisplayName,
+		WebURL: offeringURL,
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: p.ID},
+			{Key: "Lookup key", Value: p.LookupKey},
+			{Key: "Display name", Value: p.DisplayName},
+			{Key: "Created", Value: formatMillis(p.CreatedAt)},
+		},
+		AutoLoad: func() ([]tui.BrowserSection, error) {
+			prods, err := client.Packages.ListProducts(ctx, projectID, offeringID, p.ID)
+			if err != nil {
+				return nil, err
+			}
+			sec := tui.BrowserSection{
+				Title: "Products",
+				Cols:  []string{"DISPLAY NAME", "STORE ID", "TYPE", "STATE"},
+				Empty: "no products attached",
+			}
+			for _, prod := range prods.Items {
+				prod := prod
+				item := productToItem(prod)
+				sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
+					Cells: []string{prod.DisplayName, prod.StoreIdentifier, prod.Type, prod.State},
+					Item:  &item,
+				})
+			}
+			return []tui.BrowserSection{sec}, nil
+		},
+	}
+}
+
+// paywallToItem builds a leaf detail item for a paywall.
+func paywallToItem(projectID string, pw api.Paywall) tui.BrowserItem {
+	scaleFonts := "no"
+	if pw.AutomaticallyScaleFontSize {
+		scaleFonts = "yes"
+	}
+	return tui.BrowserItem{
+		ID:     pw.ID,
+		Label:  pw.Name,
+		Meta:   formatMillis(pw.PublishedAt),
+		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings", dashboardProjectID(projectID)),
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: pw.ID},
+			{Key: "Name", Value: pw.Name},
+			{Key: "Auto-scale fonts", Value: scaleFonts},
+			{Key: "Created", Value: formatMillis(pw.CreatedAt)},
+			{Key: "Published", Value: formatMillis(pw.PublishedAt)},
 		},
 	}
 }
