@@ -14,6 +14,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
@@ -231,6 +232,143 @@ func TestVersion_JSONShape(t *testing.T) {
 	}
 	if got.SchemaVersion != 1 {
 		t.Errorf("want schema_version=1, got %d", got.SchemaVersion)
+	}
+}
+
+func TestSkills_List_JSON(t *testing.T) {
+	out, _, err := runCmd(t, "skills", "list", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	var got struct {
+		Data struct {
+			Items []struct {
+				Name        string `json:"name"`
+				Description string `json:"description"`
+			} `json:"items"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	if len(got.Data.Items) == 0 {
+		t.Fatal("want at least one skill, got none")
+	}
+	// Every item must have a name and description.
+	for _, s := range got.Data.Items {
+		if s.Name == "" {
+			t.Errorf("skill missing name: %+v", s)
+		}
+		if s.Description == "" {
+			t.Errorf("skill %q missing description", s.Name)
+		}
+	}
+	// Check a known skill is always present.
+	names := make([]string, len(got.Data.Items))
+	for i, s := range got.Data.Items {
+		names[i] = s.Name
+	}
+	for _, want := range []string{"setup-offering", "debug-customer"} {
+		if !contains(names, want) {
+			t.Errorf("want skill %q in list, got %v", want, names)
+		}
+	}
+}
+
+func TestSkills_Show(t *testing.T) {
+	out, _, err := runCmd(t, "skills", "show", "setup-offering")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	if !strings.Contains(out, "rc offerings create") {
+		t.Errorf("setup-offering skill should mention 'rc offerings create'; got:\n%s", out)
+	}
+}
+
+func TestSkills_Show_UnknownName(t *testing.T) {
+	_, _, err := runCmd(t, "skills", "show", "definitely-not-a-skill")
+	if err == nil {
+		t.Fatal("want error for unknown skill name")
+	}
+}
+
+func TestSkills_Install(t *testing.T) {
+	dir := t.TempDir()
+	out, _, err := runCmd(t, "skills", "install", "--dir", dir, "--json")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	var got struct {
+		Data struct {
+			Installed []string `json:"installed"`
+			Directory string   `json:"directory"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	if len(got.Data.Installed) == 0 {
+		t.Fatal("want at least one installed file")
+	}
+	// Every reported file must actually exist on disk.
+	for _, f := range got.Data.Installed {
+		path := got.Data.Directory + "/" + f
+		if _, err := os.Stat(path); err != nil {
+			t.Errorf("installed file missing on disk: %s", path)
+		}
+	}
+	// Files must be prefixed rc-.
+	for _, f := range got.Data.Installed {
+		if !strings.HasPrefix(f, "rc-") {
+			t.Errorf("installed filename should start with rc-, got %q", f)
+		}
+	}
+}
+
+func TestSkills_Install_SingleSkill(t *testing.T) {
+	dir := t.TempDir()
+	_, _, err := runCmd(t, "skills", "install", "setup-offering", "--dir", dir)
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 1 {
+		t.Fatalf("want exactly 1 file, got %d", len(entries))
+	}
+	if entries[0].Name() != "rc-setup-offering.md" {
+		t.Errorf("want rc-setup-offering.md, got %q", entries[0].Name())
+	}
+}
+
+func TestSchema_IncludesCapabilities(t *testing.T) {
+	out, _, err := runCmd(t, "schema", "products", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	var got struct {
+		Data struct {
+			Capabilities []string `json:"capabilities"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	for _, want := range []string{"list", "show", "create", "delete", "archive"} {
+		if !contains(got.Data.Capabilities, want) {
+			t.Errorf("want capability %q in products schema, got %v", want, got.Data.Capabilities)
+		}
+	}
+}
+
+func TestCommandTree_IncludesNewCommands(t *testing.T) {
+	out, _, err := runCmd(t, "commands", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	for _, want := range []string{`"skills"`, `"api"`, `"packages"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("want %s in command tree", want)
+		}
 	}
 }
 
