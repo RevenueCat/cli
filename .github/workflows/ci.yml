@@ -14,6 +14,19 @@ jobs:
         with:
           go-version: stable
           cache: true
+      - name: Install Python deps for codegen
+        run: pip install pyyaml
+
+      - name: Verify generated types are up to date
+        run: |
+          cp internal/api/types_gen.go /tmp/types_gen_committed.go
+          make gen
+          if ! diff -q internal/api/types_gen.go /tmp/types_gen_committed.go > /dev/null 2>&1; then
+            echo "::error::internal/api/types_gen.go is out of date. Run 'make gen' and commit the result."
+            diff /tmp/types_gen_committed.go internal/api/types_gen.go || true
+            exit 1
+          fi
+
       - name: gofmt
         run: |
           out=$(gofmt -l ./internal ./cmd)
