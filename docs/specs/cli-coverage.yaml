@@ -1,0 +1,167 @@
+# Maps RevenueCat v2 Developer API spec endpoints to CLI implementation.
+# Used by scripts/spec-diff.py --coverage to classify spec changes by severity:
+#   CRITICAL = CLI-implemented endpoint has a breaking change
+#   WARNING  = CLI-implemented endpoint changed non-breakingly or deprecated
+#   NEW      = spec endpoint not yet in CLI
+#   INFO     = change to an endpoint the CLI doesn't use
+#
+# Update this file whenever internal/api/ gains or loses endpoints.
+
+endpoints:
+  # Projects
+  - method: GET
+    path: /projects
+  - method: GET
+    path: /projects/{project_id}
+
+  # Apps
+  - method: GET
+    path: /projects/{project_id}/apps
+  - method: POST
+    path: /projects/{project_id}/apps
+  - method: GET
+    path: /projects/{project_id}/apps/{app_id}
+  - method: POST
+    path: /projects/{project_id}/apps/{app_id}
+  - method: DELETE
+    path: /projects/{project_id}/apps/{app_id}
+  - method: GET
+    path: /projects/{project_id}/apps/{app_id}/public_api_keys
+
+  # Customers
+  - method: GET
+    path: /projects/{project_id}/customers
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}/active_entitlements
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}/aliases
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}/attributes
+  - method: POST
+    path: /projects/{project_id}/customers/{customer_id}/attributes
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}/invoices
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}/purchases
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}/subscriptions
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}/virtual_currencies
+  - method: POST
+    path: /projects/{project_id}/customers/{customer_id}/virtual_currencies/balance
+  - method: POST
+    path: /projects/{project_id}/customers/{customer_id}/virtual_currencies/transactions
+
+  # Entitlements
+  - method: GET
+    path: /projects/{project_id}/entitlements
+  - method: POST
+    path: /projects/{project_id}/entitlements
+  - method: GET
+    path: /projects/{project_id}/entitlements/{entitlement_id}
+  - method: POST
+    path: /projects/{project_id}/entitlements/{entitlement_id}
+  - method: DELETE
+    path: /projects/{project_id}/entitlements/{entitlement_id}
+  - method: GET
+    path: /projects/{project_id}/entitlements/{entitlement_id}/products
+  - method: POST
+    path: /projects/{project_id}/entitlements/{entitlement_id}/products/actions/attach
+  - method: POST
+    path: /projects/{project_id}/entitlements/{entitlement_id}/products/actions/detach
+
+  # Offerings
+  - method: GET
+    path: /projects/{project_id}/offerings
+  - method: POST
+    path: /projects/{project_id}/offerings
+  - method: GET
+    path: /projects/{project_id}/offerings/{offering_id}
+  - method: POST
+    path: /projects/{project_id}/offerings/{offering_id}
+  - method: DELETE
+    path: /projects/{project_id}/offerings/{offering_id}
+
+  # Packages
+  - method: GET
+    path: /projects/{project_id}/offerings/{offering_id}/packages
+  - method: POST
+    path: /projects/{project_id}/offerings/{offering_id}/packages
+  - method: GET
+    path: /projects/{project_id}/offerings/{offering_id}/packages/{package_id}
+  - method: POST
+    path: /projects/{project_id}/offerings/{offering_id}/packages/{package_id}
+  - method: DELETE
+    path: /projects/{project_id}/offerings/{offering_id}/packages/{package_id}
+  - method: GET
+    path: /projects/{project_id}/offerings/{offering_id}/packages/{package_id}/products
+  - method: POST
+    path: /projects/{project_id}/offerings/{offering_id}/packages/actions/attach
+  - method: POST
+    path: /projects/{project_id}/offerings/{offering_id}/packages/actions/detach
+
+  # Products
+  - method: GET
+    path: /projects/{project_id}/products
+  - method: GET
+    path: /projects/{project_id}/products/{product_id}
+  - method: DELETE
+    path: /projects/{project_id}/products/{product_id}
+
+  # Paywalls
+  - method: GET
+    path: /projects/{project_id}/paywalls
+  - method: GET
+    path: /projects/{project_id}/paywalls/{paywall_id}
+  - method: DELETE
+    path: /projects/{project_id}/paywalls/{paywall_id}
+
+  # Webhooks
+  - method: GET
+    path: /projects/{project_id}/integrations/webhooks
+  - method: POST
+    path: /projects/{project_id}/integrations/webhooks
+  - method: GET
+    path: /projects/{project_id}/integrations/webhooks/{webhook_id}
+  - method: POST
+    path: /projects/{project_id}/integrations/webhooks/{webhook_id}
+  - method: DELETE
+    path: /projects/{project_id}/integrations/webhooks/{webhook_id}
+
+  # Subscriptions
+  - method: GET
+    path: /projects/{project_id}/subscriptions/{subscription_id}
+  - method: GET
+    path: /projects/{project_id}/subscriptions/{subscription_id}/entitlements
+  - method: GET
+    path: /projects/{project_id}/subscriptions/{subscription_id}/management_url
+  - method: GET
+    path: /projects/{project_id}/subscriptions/{subscription_id}/transactions
+
+  # Purchases
+  - method: GET
+    path: /projects/{project_id}/purchases/{purchase_id}
+  - method: GET
+    path: /projects/{project_id}/purchases/{purchase_id}/entitlements
+
+  # Invoices
+  - method: GET
+    path: /projects/{project_id}/invoices/{invoice_id}
+  - method: GET
+    path: /projects/{project_id}/customers/{customer_id}/invoices
+
+  # Charts & Metrics
+  - method: GET
+    path: /projects/{project_id}/charts/{chart_name}
+  - method: GET
+    path: /projects/{project_id}/charts/{chart_name}/options
+  - method: GET
+    path: /projects/{project_id}/metrics/overview
+
+  # Audit & Benchmarks
+  - method: GET
+    path: /projects/{project_id}/audit_logs
+  - method: GET
+    path: /projects/{project_id}/benchmarks
