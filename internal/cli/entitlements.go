@@ -202,6 +202,53 @@ func newEntitlementsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				items := make([]tui.BrowserItem, len(page.Items))
+				for i, e := range page.Items {
+					e := e
+					items[i] = tui.BrowserItem{
+						ID:     e.ID,
+						Label:  e.LookupKey,
+						Meta:   e.DisplayName,
+						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", projectID, e.ID),
+						Fields: []tui.BrowserField{
+							{Key: "ID", Value: e.ID},
+							{Key: "Lookup key", Value: e.LookupKey},
+							{Key: "Display name", Value: e.DisplayName},
+							{Key: "Created", Value: formatMillis(e.CreatedAt)},
+						},
+						Links: []tui.BrowserLink{
+							{
+								Label: "Products",
+								Load: func() (string, []tui.BrowserItem, error) {
+									pp, err := client.Entitlements.ListProducts(cmd.Context(), projectID, e.ID)
+									if err != nil {
+										return "", nil, err
+									}
+									pitems := make([]tui.BrowserItem, len(pp.Items))
+									for j, p := range pp.Items {
+										pitems[j] = tui.BrowserItem{
+											ID:    p.ID,
+											Label: p.DisplayName,
+											Meta:  p.StoreIdentifier,
+											Fields: []tui.BrowserField{
+												{Key: "ID", Value: p.ID},
+												{Key: "Display name", Value: p.DisplayName},
+												{Key: "Store ID", Value: p.StoreIdentifier},
+												{Key: "Type", Value: p.Type},
+											},
+										}
+									}
+									return "Products for " + e.LookupKey, pitems, nil
+								},
+							},
+						},
+					}
+				}
+				return tui.RunBrowser("Entitlements", items)
+			}
+
 			rows := make([][]string, 0, len(page.Items))
 			for _, e := range page.Items {
 				rows = append(rows, []string{e.ID, e.LookupKey, e.DisplayName, formatMillis(e.CreatedAt)})

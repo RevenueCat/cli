@@ -58,6 +58,26 @@ func newAppsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				items := make([]tui.BrowserItem, len(page.Items))
+				for i, a := range page.Items {
+					items[i] = tui.BrowserItem{
+						ID:     a.ID,
+						Label:  a.Name,
+						Meta:   a.Type,
+						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/apps/%s", projectID, a.ID),
+						Fields: []tui.BrowserField{
+							{Key: "ID", Value: a.ID},
+							{Key: "Name", Value: a.Name},
+							{Key: "Type", Value: a.Type},
+							{Key: "Created", Value: formatMillis(a.CreatedAt)},
+						},
+					}
+				}
+				return tui.RunBrowser("Apps", items)
+			}
+
 			rows := make([][]string, 0, len(page.Items))
 			for _, a := range page.Items {
 				rows = append(rows, []string{a.ID, a.Name, a.Type, formatMillis(a.CreatedAt)})
