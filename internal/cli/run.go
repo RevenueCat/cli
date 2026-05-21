@@ -22,6 +22,12 @@ func Run(version string) int {
 	if err == nil {
 		return 0
 	}
+	// SilentExitError means the command already wrote its output; skip the
+	// error envelope so there is only one JSON document on stdout.
+	var silent *SilentExitError
+	if errors.As(err, &silent) {
+		return silent.Code
+	}
 	jsonMode, _ := root.PersistentFlags().GetBool("json")
 	if jsonMode {
 		writeJSONError(os.Stderr, err)

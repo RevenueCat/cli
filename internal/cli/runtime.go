@@ -92,6 +92,13 @@ func oauthClientID() string {
 
 var ErrNotAuthenticated = errors.New("not authenticated: run `rc login` or pass --api-key / set RC_API_KEY")
 
+// SilentExitError signals a specific exit code when the command has already
+// written its own complete output. run.go skips the error envelope for this
+// type so there is no duplicate output.
+type SilentExitError struct{ Code int }
+
+func (e *SilentExitError) Error() string { return "" }
+
 func ExitCodeFor(err error) int {
 	if err == nil {
 		return 0
