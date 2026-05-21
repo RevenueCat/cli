@@ -366,7 +366,9 @@ func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
 	if projectID == noDefault {
 		// Clear any saved default so future commands also prompt, then pick for this command.
 		rt.Config.ProjectID = ""
-		_ = config.Save(rt.Globals.Profile, rt.Config)
+		if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+			rt.Out.Info(fmt.Sprintf("note: couldn't save profile: %v", err))
+		}
 
 		var pick string
 		pickSel := huh.NewSelect[string]().
@@ -382,7 +384,9 @@ func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
 	}
 
 	rt.Config.ProjectID = projectID
-	_ = config.Save(rt.Globals.Profile, rt.Config)
+	if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+		rt.Out.Info(fmt.Sprintf("note: couldn't save profile: %v", err))
+	}
 	return projectID, nil
 }
 
