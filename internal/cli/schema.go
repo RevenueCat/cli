@@ -77,27 +77,63 @@ func commandSchema(c *cobra.Command) map[string]any {
 	c.Flags().VisitAll(addFlag)
 	c.InheritedFlags().VisitAll(addFlag)
 
-	subs := []string{}
+	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
 		if sc.Hidden {
 			continue
 		}
-		subs = append(subs, sc.Name())
+		subs = append(subs, map[string]any{
+			"name":     sc.Name(),
+			"short":    sc.Short,
+			"aliases":  sc.Aliases,
+			"runnable": sc.Runnable(),
+		})
 	}
 
 	return map[string]any{
-		"name":        c.Name(),
-		"path":        commandPath(c),
-		"aliases":     c.Aliases,
-		"use":         c.Use,
-		"short":       c.Short,
-		"long":        c.Long,
-		"args":        parseArgsFromUse(c.Use),
-		"example":     c.Example,
-		"flags":       flags,
-		"subcommands": subs,
-		"runnable":    c.Runnable(),
+		"name":         c.Name(),
+		"path":         commandPath(c),
+		"aliases":      c.Aliases,
+		"use":          c.Use,
+		"short":        c.Short,
+		"long":         c.Long,
+		"args":         parseArgsFromUse(c.Use),
+		"example":      c.Example,
+		"flags":        flags,
+		"subcommands":  subs,
+		"runnable":     c.Runnable(),
+		"capabilities": inferCapabilities(c),
 	}
+}
+
+// inferCapabilities returns CRUD-style capability labels by inspecting subcommand names.
+// This lets agents know what operations are available without reading every subcommand.
+func inferCapabilities(c *cobra.Command) []string {
+	known := map[string]string{
+		"list":    "list",
+		"show":    "show",
+		"get":     "show",
+		"create":  "create",
+		"update":  "update",
+		"delete":  "delete",
+		"archive": "archive",
+		"restore": "restore",
+		"push":    "push",
+		"attach":  "attach",
+		"detach":  "detach",
+	}
+	seen := map[string]bool{}
+	var caps []string
+	for _, sc := range c.Commands() {
+		if sc.Hidden {
+			continue
+		}
+		if cap, ok := known[sc.Name()]; ok && !seen[cap] {
+			seen[cap] = true
+			caps = append(caps, cap)
+		}
+	}
+	return caps
 }
 
 // parseArgsFromUse extracts <required> and [optional] tokens from a cobra Use
@@ -148,9 +184,12 @@ func commandTree(c *cobra.Command) map[string]any {
 		subs = append(subs, commandTree(sc))
 	}
 	return map[string]any{
-		"name":     c.Name(),
-		"short":    c.Short,
-		"aliases":  c.Aliases,
-		"commands": subs,
+		"name":         c.Name(),
+		"path":         commandPath(c),
+		"short":        c.Short,
+		"aliases":      c.Aliases,
+		"runnable":     c.Runnable(),
+		"capabilities": inferCapabilities(c),
+		"commands":     subs,
 	}
 }

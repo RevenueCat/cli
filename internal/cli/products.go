@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -22,6 +23,7 @@ func newProductsCmd() *cobra.Command {
 	cmd.AddCommand(
 		newProductsListCmd(),
 		newProductsShowCmd(),
+		newProductsCreateCmd(),
 		newProductsDeleteCmd(),
 		newProductsArchiveCmd(),
 		newProductsRestoreCmd(),
@@ -137,9 +139,13 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 }
 
 func newProductsListCmd() *cobra.Command {
-	return &cobra.Command{
+	var appID string
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List products",
+		Example: `  rc products list
+  rc products list --app-id app_abc
+  rc products list --json | jq '.data.items[] | select(.type == "subscription")'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -150,7 +156,11 @@ func newProductsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			page, err := client.Products.List(cmd.Context(), projectID)
+			var opts *api.ProductListOptions
+			if appID != "" {
+				opts = &api.ProductListOptions{AppID: appID}
+			}
+			page, err := client.Products.List(cmd.Context(), projectID, opts)
 			if err != nil {
 				return err
 			}
@@ -178,6 +188,67 @@ func newProductsListCmd() *cobra.Command {
 			})
 		},
 	}
+	cmd.Flags().StringVar(&appID, "app-id", "", "filter by app ID")
+	return cmd
+}
+
+func newProductsCreateCmd() *cobra.Command {
+	var storeID, productType, appID, displayName, duration string
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a product",
+		Long: `Create a new product in the project catalog.
+
+--type must be "subscription" or "one_time".
+--app-id is the RevenueCat app ID (rc apps list to find it).
+--store-id is the product identifier on the platform store.
+--duration (optional, subscriptions only) is an ISO 8601 duration, e.g. P1M, P1Y.`,
+		Example: `  rc products create --store-id com.example.monthly --type subscription --app-id app_abc
+  rc products create --store-id com.example.once --type one_time --app-id app_abc --display-name "Unlock Everything"`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			if err := tui.Form(rt.Globals.NoInput).
+				Field(huh.NewInput().Title("Store identifier").Value(&storeID).Validate(tui.Required("store identifier"))).
+				Field(huh.NewSelect[string]().Title("Type").Options(
+					huh.NewOption("Subscription", "subscription"),
+					huh.NewOption("One-time purchase", "one_time"),
+				).Value(&productType)).
+				Field(huh.NewInput().Title("App ID").Value(&appID).Validate(tui.Required("app ID"))).
+				Field(huh.NewInput().Title("Display name (optional)").Value(&displayName)).
+				Run(); err != nil {
+				return err
+			}
+			body := api.ProductCreate{
+				StoreIdentifier: storeID,
+				Type:            productType,
+				AppID:           appID,
+				DisplayName:     displayName,
+			}
+			if duration != "" {
+				body.Subscription = &api.ProductSubscription{Duration: duration}
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			p, err := client.Products.Create(cmd.Context(), projectID, body)
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Created product %s", p.ID))
+			return rt.Out.Render(p)
+		},
+	}
+	cmd.Flags().StringVar(&storeID, "store-id", "", "store product identifier (required)")
+	cmd.Flags().StringVar(&productType, "type", "", "product type: subscription or one_time (required)")
+	cmd.Flags().StringVar(&appID, "app-id", "", "app ID to associate this product with (required)")
+	cmd.Flags().StringVar(&displayName, "display-name", "", "human-readable display name")
+	cmd.Flags().StringVar(&duration, "duration", "", "subscription duration as ISO 8601 (e.g. P1M, P1Y)")
+	return cmd
 }
 
 func newProductsShowCmd() *cobra.Command {

@@ -20,8 +20,11 @@ func newPackagesCmd() *cobra.Command {
 		Use:     "packages",
 		Aliases: []string{"package", "pkg"},
 		Short:   "Manage packages within offerings",
+		// Bare `rc packages` runs list for discovery.
+		RunE: runPackagesList,
 	}
 	cmd.AddCommand(
+		newPackagesListCmd(),
 		newPackagesShowCmd(),
 		newPackagesCreateCmd(),
 		newPackagesUpdateCmd(),
@@ -33,11 +36,109 @@ func newPackagesCmd() *cobra.Command {
 	return cmd
 }
 
+func newPackagesListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List all packages across all offerings",
+		Long: `Lists every package in the active project, grouped across all offerings.
+Each row includes the offering ID so you know where to find the package.
+
+To create, update, or delete a package you need both the offering ID and
+the package ID. This command is the fastest way to discover them.`,
+		Example: `  rc packages list
+  rc packages list --json | jq '.data.items[] | select(.lookup_key == "$rc_monthly")'`,
+		RunE: runPackagesList,
+	}
+}
+
+func runPackagesList(cmd *cobra.Command, _ []string) error {
+	rt := RuntimeFrom(cmd.Context())
+	projectID, err := requireProject(rt)
+	if err != nil {
+		return err
+	}
+	client, err := rt.API()
+	if err != nil {
+		return err
+	}
+	offerings, err := client.Offerings.List(cmd.Context(), projectID)
+	if err != nil {
+		return err
+	}
+	type flatPkg struct {
+		offeringID  string
+		offeringKey string
+		pkg         api.Package
+	}
+	var all []flatPkg
+	for _, o := range offerings.Items {
+		pkgs, err := client.Packages.List(cmd.Context(), projectID, o.ID)
+		if err != nil {
+			return fmt.Errorf("listing packages for offering %s: %w", o.ID, err)
+		}
+		key := o.LookupKey
+		if key == "" {
+			key = o.ID
+		}
+		for _, p := range pkgs.Items {
+			all = append(all, flatPkg{o.ID, key, p})
+		}
+	}
+
+	if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+		items := make([]tui.BrowserItem, len(all))
+		for i, fp := range all {
+			fp := fp
+			label := fp.pkg.LookupKey
+			if fp.pkg.DisplayName != "" {
+				label = fp.pkg.DisplayName
+			}
+			items[i] = tui.BrowserItem{
+				ID:    fp.pkg.ID,
+				Label: label,
+				Meta:  fp.offeringKey,
+				Row:   []string{fp.pkg.ID, fp.pkg.LookupKey, fp.pkg.DisplayName, fp.offeringID},
+				Fields: []tui.BrowserField{
+					{Key: "ID", Value: fp.pkg.ID},
+					{Key: "Lookup key", Value: fp.pkg.LookupKey},
+					{Key: "Display name", Value: fp.pkg.DisplayName},
+					{Key: "Offering ID", Value: fp.offeringID},
+					{Key: "Offering key", Value: fp.offeringKey},
+					{Key: "Created", Value: formatMillis(fp.pkg.CreatedAt)},
+				},
+			}
+		}
+		return tui.RunBrowserTable("Packages", []string{"ID", "LOOKUP KEY", "DISPLAY NAME", "OFFERING"}, items)
+	}
+
+	rawItems := make([]map[string]any, len(all))
+	rows := make([][]string, len(all))
+	for i, fp := range all {
+		rows[i] = []string{fp.pkg.ID, fp.pkg.LookupKey, fp.pkg.DisplayName, fp.offeringID}
+		rawItems[i] = map[string]any{
+			"id":           fp.pkg.ID,
+			"lookup_key":   fp.pkg.LookupKey,
+			"display_name": fp.pkg.DisplayName,
+			"offering_id":  fp.offeringID,
+			"offering_key": fp.offeringKey,
+		}
+	}
+	return rt.Out.RenderTable(output.Table{
+		Columns: []string{"ID", "LOOKUP KEY", "DISPLAY NAME", "OFFERING"},
+		Rows:    rows,
+		Raw:     map[string]any{"items": rawItems},
+	})
+}
+
 func newPackagesShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show <offering-id> <package-id>",
 		Short: "Show a package",
-		Args:  cobra.ExactArgs(2),
+		Long: `Show details for a specific package. Both the offering ID and package ID
+are required — run 'rc packages list' to discover them.`,
+		Example: `  rc packages list                   # discover offering-id and package-id
+  rc packages show ofrng_abc pkg_xyz  # show the package`,
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
