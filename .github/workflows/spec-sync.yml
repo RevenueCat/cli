@@ -45,8 +45,9 @@ jobs:
 
           run_diff() {
             local label="$1" old="$2" new="$3"
+            shift 3
             # exit 1 from spec-diff.py means changes found; exit 0 means identical
-            if section=$(python3 scripts/spec-diff.py "$old" "$new" --title "$label"); then
+            if section=$(python3 scripts/spec-diff.py "$old" "$new" --title "$label" "$@"); then
               : # no changes
             else
               SUMMARY="${SUMMARY}${section}
@@ -57,7 +58,7 @@ jobs:
           }
 
           run_diff "v1 Subscribers API"  docs/specs/v1-subscribers.yaml /tmp/v1-subscribers.yaml
-          run_diff "v2 Developer API"    docs/specs/v2-developer.yaml   /tmp/v2-developer.yaml
+          run_diff "v2 Developer API"    docs/specs/v2-developer.yaml   /tmp/v2-developer.yaml   --coverage docs/specs/cli-coverage.yaml
           run_diff "v2 External API"     docs/specs/v2-external.yaml    /tmp/v2-external.yaml
 
           if [ "$CHANGED" = "false" ]; then
