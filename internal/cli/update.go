@@ -55,9 +55,10 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 			if !updater.IsNewer(latestVersion, currentVersion) {
 				if rt.Globals.JSON {
 					return rt.Out.Render(map[string]any{
-						"current_version": currentVersion,
-						"latest_version":  latestVersion,
-						"up_to_date":      true,
+						"installed_version": currentVersion,
+						"latest_version":    latestVersion,
+						"up_to_date":        true,
+						"updated":           false,
 					})
 				}
 				rt.Out.Success(fmt.Sprintf("Already up to date (%s).", currentVersion))
@@ -71,9 +72,10 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 					// Write the JSON result to stdout, then return SilentExitError so
 					// run.go exits 1 without also emitting a JSON error envelope.
 					if err := rt.Out.Render(map[string]any{
-						"current_version": currentVersion,
-						"latest_version":  latestVersion,
-						"up_to_date":      false,
+						"installed_version": currentVersion,
+						"latest_version":    latestVersion,
+						"up_to_date":        false,
+						"updated":           false,
 					}); err != nil {
 						return err
 					}
@@ -115,9 +117,10 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 
 			if rt.Globals.JSON {
 				return rt.Out.Render(map[string]any{
-					"previous_version": currentVersion,
-					"current_version":  latestVersion,
-					"up_to_date":       true,
+					"installed_version": latestVersion,
+					"latest_version":    latestVersion,
+					"up_to_date":        true,
+					"updated":           true,
 				})
 			}
 			rt.Out.Success(fmt.Sprintf("Updated to %s.", latestVersion))
