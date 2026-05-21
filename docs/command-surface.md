@@ -217,7 +217,7 @@ rc webhooks delete <id>
 # Charts & metrics
 rc metrics                                               # overview (project-wide KPIs)
 rc charts list                                           # static enum, prints the 22 names
-rc charts show <name> [--filter k=v --segment ...]      # GET /charts/{name}
+rc charts show <name> [--filter k=v --segment ...]      # interactive TUI in TTY; --json for raw data
 rc charts options <name>                                # GET /charts/{name}/options
 rc benchmarks                                            # GET /benchmarks
 

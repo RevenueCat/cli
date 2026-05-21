@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"time"
 )
 
 type ChartsService struct{ c *Client }
@@ -38,21 +39,51 @@ type ChartData struct {
 	EndDate           int64          `json:"end_date,omitempty"`
 	LastComputedAt    any            `json:"last_computed_at,omitempty"`
 	Measures          []any          `json:"measures,omitempty"`
-	Values            []any          `json:"values,omitempty"`
+	Values            []ChartValue   `json:"values,omitempty"`
 	Segments          any            `json:"segments,omitempty"`
 	Summary           map[string]any `json:"summary,omitempty"`
 	UserSelectors     map[string]any `json:"user_selectors,omitempty"`
 	UnsupportedParams any            `json:"unsupported_params,omitempty"`
 	Object            string         `json:"object,omitempty"`
+	YAxis             string         `json:"yaxis,omitempty"`
+	YAxisCurrency     string         `json:"yaxis_currency,omitempty"`
 }
 
-func (s *ChartsService) Show(ctx context.Context, projectID, name string, filters map[string]string) (*ChartData, error) {
+// ChartValue is one data point in the values array. Cohort is unix seconds.
+type ChartValue struct {
+	Cohort     int64   `json:"cohort"`
+	Value      float64 `json:"value"`
+	Measure    float64 `json:"measure"`
+	Incomplete bool    `json:"incomplete"`
+}
+
+// ChartShowOptions controls what the chart endpoint returns.
+type ChartShowOptions struct {
+	// Resolution: "0"=day "1"=week "2"=month "3"=quarter "4"=year (empty = server default)
+	Resolution string
+	// StartDate / EndDate are unix seconds. Zero means no filter.
+	StartDate int64
+	EndDate   int64
+	// Filters are chart-specific key=value params (from --filter flags).
+	Filters map[string]string
+}
+
+func (s *ChartsService) Show(ctx context.Context, projectID, name string, opts ChartShowOptions) (*ChartData, error) {
 	path := encodePath("projects", projectID, "charts", name)
-	if len(filters) > 0 {
-		q := url.Values{}
-		for k, v := range filters {
-			q.Set(k, v)
-		}
+	q := url.Values{}
+	if opts.Resolution != "" {
+		q.Set("resolution", opts.Resolution)
+	}
+	if opts.StartDate != 0 {
+		q.Set("start_date", time.Unix(opts.StartDate, 0).UTC().Format("2006-01-02"))
+	}
+	if opts.EndDate != 0 {
+		q.Set("end_date", time.Unix(opts.EndDate, 0).UTC().Format("2006-01-02"))
+	}
+	for k, v := range opts.Filters {
+		q.Set(k, v)
+	}
+	if len(q) > 0 {
 		path += "?" + q.Encode()
 	}
 	var out ChartData

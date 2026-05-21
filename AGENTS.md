@@ -106,7 +106,7 @@ To add e.g. `offerings`:
 ## Conventions
 
 - **Module path**: `github.com/revenuecat/cli`
-- **Go version**: 1.23+
+- **Go version**: 1.25 (pinned via `mise.toml`; run `mise install` once)
 - **Formatting**: `gofmt` / `go vet` clean. CI enforces.
 - **Errors**: return typed `*api.Error` from the API layer. CLI layer maps to
   exit codes via `runtime.go:ExitCodeFor`. Use `errors.As`, never string match.
@@ -114,7 +114,10 @@ To add e.g. `offerings`:
   `cmd.Context()` through.
 - **Config**: lives in `~/.config/revenuecat/<profile>.json`. Env vars
   (`RC_API_KEY`, `RC_PROJECT_ID`, `RC_BASE_URL`, `RC_PROFILE`) override file.
-  Flags override env.
+  Flags override env. OAuth fields (`access_token`, `refresh_token`,
+  `token_expires_at`) live alongside `api_key` in the same file; `BearerToken()`
+  picks the right one. Tokens are silently refreshed by `Runtime.API()` when
+  within 5 minutes of expiry.
 - **Time**: store API timestamps as `string` (ISO 8601) in structs. Parse to
   `time.Time` only when needed for display. Avoids JSON round-trip lossiness.
 - **No globals.** State flows through `cli.Runtime` on `cmd.Context()`.
@@ -122,7 +125,8 @@ To add e.g. `offerings`:
 ## Local development
 
 ```bash
-brew install go              # only needed once
+brew install mise            # only needed once
+mise install                 # installs Go 1.25 from mise.toml
 go mod tidy
 go run ./cmd/rc --help
 go test ./...
@@ -154,6 +158,8 @@ git tag v0.1.0 && git push --tags
 | Exit code mapping | `internal/cli/runtime.go:ExitCodeFor` |
 | Output rendering | `internal/output/output.go` |
 | Interactive prompts | use `internal/tui/prompt.go` (don't call `huh` directly) |
+| Interactive chart TUI | `internal/tui/chartview.go` — BubbleTea model; inject data + fetchFn |
+| OAuth token flow | `internal/api/oauth.go` — PKCE helpers, token exchange, refresh |
 | Profile / config | `internal/config/config.go` |
 | HTTP behavior (retry, timeout, headers) | `internal/api/client.go` only |
 | Release / distribution | `.goreleaser.yaml`, `.github/workflows/release.yml` |

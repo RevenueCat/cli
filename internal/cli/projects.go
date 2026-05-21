@@ -130,13 +130,31 @@ The chosen project is written to the active profile file (default:
 					chosen = page.Items[0].ID
 					rt.Out.Info(fmt.Sprintf("Only one project available: %s (%s)", page.Items[0].Name, chosen))
 				} else {
-					opts := make([]huh.Option[string], 0, len(page.Items))
+					const noDefault = "__no_default__"
+					opts := make([]huh.Option[string], 0, len(page.Items)+1)
+					opts = append(opts, huh.NewOption("Ask me every time  (don't save a default)", noDefault))
 					for _, p := range page.Items {
-						opts = append(opts, huh.NewOption(fmt.Sprintf("%s  %s", p.Name, p.ID), p.ID))
+						opts = append(opts, huh.NewOption(fmt.Sprintf("%s  (%s)", p.Name, p.ID), p.ID))
 					}
-					sel := huh.NewSelect[string]().Title("Project").Options(opts...).Value(&chosen)
+					sel := huh.NewSelect[string]().
+						Title("Project").
+						Description("Type to filter  ·  Enter to confirm").
+						Options(opts...).
+						Filtering(true).
+						Value(&chosen)
 					if err := tui.Form(rt.Globals.NoInput).Field(sel).Run(); err != nil {
 						return err
+					}
+					if chosen == noDefault {
+						rt.Config.ProjectID = ""
+						if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+							return err
+						}
+						rt.Out.Success("No default project set — you'll be prompted on each command.")
+						return rt.Out.Render(map[string]any{
+							"profile":    config.ProfileName(rt.Globals.Profile),
+							"project_id": "",
+						})
 					}
 				}
 			}
