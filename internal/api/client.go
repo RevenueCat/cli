@@ -164,43 +164,6 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	return json.Unmarshal(data, out)
 }
 
-// stream opens a long-lived SSE-style connection. Used by future `rc events tail`
-// and the planned chat experience. Caller owns closing the response body.
-func (c *Client) stream(ctx context.Context, method, path string, body any) (*http.Response, error) {
-	var rdr io.Reader
-	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		rdr = bytes.NewReader(b)
-	}
-	urlStr, err := c.buildURL(path)
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequestWithContext(ctx, method, urlStr, rdr)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	req.Header.Set("Accept", "text/event-stream")
-	req.Header.Set("User-Agent", c.userAgent)
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode >= 400 {
-		err := parseError(resp)
-		resp.Body.Close()
-		return nil, err
-	}
-	return resp, nil
-}
-
 // Page wraps cursor-paginated list responses.
 //
 // RevenueCat v2 uses Stripe-style envelopes: a full URL in `next_page` is the
