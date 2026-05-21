@@ -746,7 +746,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 		ID:     c.ID,
 		Label:  c.ID,
 		Meta:   strings.Join(metaParts, " · "),
-		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", projectID, c.ID),
+		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), c.ID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: c.ID},
 			{Key: "Platform", Value: c.LastSeenPlatform},
@@ -805,7 +805,7 @@ func subscriptionsToItems(ctx context.Context, client *api.Client, projectID, cu
 			ID:     s.ID,
 			Label:  s.ID,
 			Meta:   strings.Join(metaParts, " · "),
-			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", projectID, customerID),
+			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
 			Fields: []tui.BrowserField{
 				{Key: "ID", Value: s.ID},
 				{Key: "Product", Value: s.ProductID},
@@ -849,7 +849,7 @@ func purchasesToItems(projectID, customerID string, purchases []api.Purchase) []
 			ID:     p.ID,
 			Label:  p.ID,
 			Meta:   p.Store,
-			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", projectID, customerID),
+			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
 			Fields: []tui.BrowserField{
 				{Key: "ID", Value: p.ID},
 				{Key: "Product", Value: p.ProductID},
@@ -889,7 +889,7 @@ func activeEntitlementsToItems(projectID string, ents []api.Entitlement) []tui.B
 			ID:     e.ID,
 			Label:  label,
 			Meta:   e.Source,
-			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", projectID, e.ID),
+			WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", dashboardProjectID(projectID), e.ID),
 			Fields: []tui.BrowserField{
 				{Key: "ID", Value: e.ID},
 				{Key: "Lookup key", Value: e.LookupKey},

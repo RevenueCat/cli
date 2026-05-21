@@ -66,7 +66,7 @@ func newAppsListCmd() *cobra.Command {
 						ID:     a.ID,
 						Label:  a.Name,
 						Meta:   a.Type,
-						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/apps/%s", projectID, a.ID),
+						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/apps/%s", dashboardProjectID(projectID), a.ID),
 						Fields: []tui.BrowserField{
 							{Key: "ID", Value: a.ID},
 							{Key: "Name", Value: a.Name},
