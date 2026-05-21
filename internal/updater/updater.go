@@ -14,7 +14,9 @@ import (
 	"strings"
 )
 
-const releasesURL = "https://api.github.com/repos/RevenueCat/revenuecat-cli/releases/latest"
+// ReleasesURL is the GitHub API endpoint for the latest release. Tests may
+// override this to point at an httptest.Server.
+var ReleasesURL = "https://api.github.com/repos/RevenueCat/revenuecat-cli/releases/latest"
 
 // maxBinaryBytes is a sanity cap on the extracted binary size (64 MiB).
 const maxBinaryBytes = 64 << 20
@@ -42,7 +44,7 @@ func (r *Release) AssetName(goos, goarch string) string {
 
 // FetchRelease returns the latest release metadata.
 func FetchRelease(ctx context.Context, hc *http.Client) (*Release, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, releasesURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ReleasesURL, nil)
 	if err != nil {
 		return nil, err
 	}
