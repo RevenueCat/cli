@@ -15,6 +15,7 @@ type Globals struct {
 	Verbose   bool
 	Profile   string
 	APIKey    string
+	ProjectID string
 	Format    string // jsonpath-style projection, applied to --json output
 	NoColor   bool
 	AssumeYes bool
@@ -61,6 +62,9 @@ Agent-friendly entrypoints:
 			if g.APIKey != "" {
 				cfg.APIKey = g.APIKey
 			}
+			if g.ProjectID != "" {
+				cfg.ProjectID = g.ProjectID
+			}
 			ctx := WithRuntime(cmd.Context(), &Runtime{
 				Globals: g,
 				Config:  cfg,
@@ -78,6 +82,7 @@ Agent-friendly entrypoints:
 	pf.BoolVarP(&g.Verbose, "verbose", "v", false, "enable verbose logging")
 	pf.StringVar(&g.Profile, "profile", "", "configuration profile to use (default: active profile)")
 	pf.StringVar(&g.APIKey, "api-key", "", "RevenueCat API key (overrides profile; or set RC_API_KEY)")
+	pf.StringVar(&g.ProjectID, "project-id", "", "RevenueCat project ID (overrides profile; or set RC_PROJECT_ID)")
 	pf.StringVar(&g.Format, "format", "", "jq expression applied to --json output (e.g. '.data.items[].id')")
 	pf.BoolVar(&g.NoColor, "no-color", false, "disable ANSI color (also honors NO_COLOR)")
 	pf.BoolVarP(&g.AssumeYes, "yes", "y", false, "assume yes for confirmation prompts")
