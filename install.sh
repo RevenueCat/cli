@@ -16,6 +16,10 @@ INSTALL_DIR="/usr/local/bin"
 while [ $# -gt 0 ]; do
   case "$1" in
     --install-dir)
+      if [ -z "${2:-}" ]; then
+        echo "Error: --install-dir requires a value" >&2
+        exit 1
+      fi
       INSTALL_DIR="$2"
       shift 2
       ;;
@@ -24,6 +28,10 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     --version)
+      if [ -z "${2:-}" ]; then
+        echo "Error: --version requires a value" >&2
+        exit 1
+      fi
       PINNED_VERSION="$2"
       shift 2
       ;;
@@ -62,7 +70,7 @@ case "$ARCH" in
 esac
 
 # Resolve version — always normalize to include the 'v' prefix for the tag
-if [ -n "$PINNED_VERSION" ]; then
+if [ -n "${PINNED_VERSION:-}" ]; then
   case "$PINNED_VERSION" in
     v*) VERSION="$PINNED_VERSION" ;;
     *)  VERSION="v$PINNED_VERSION" ;;
@@ -84,8 +92,10 @@ VERSION_NUM="${VERSION#v}"
 
 if [ "$GOOS" = "windows" ]; then
   ARCHIVE="${BINARY}_${VERSION_NUM}_${GOOS}_${GOARCH}.zip"
+  INSTALL_NAME="rc.exe"
 else
   ARCHIVE="${BINARY}_${VERSION_NUM}_${GOOS}_${GOARCH}.tar.gz"
+  INSTALL_NAME="rc"
 fi
 
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE}"
@@ -115,28 +125,26 @@ fi
 
 chmod +x "$EXTRACTED"
 
-# On Windows (Git Bash/MSYS), install as rc.exe
-if [ "$GOOS" = "windows" ]; then
-  INSTALL_NAME="rc.exe"
-else
-  INSTALL_NAME="rc"
-fi
+# Install — create dir and move binary, falling back to sudo if needed
+DEST="$INSTALL_DIR/$INSTALL_NAME"
 
-# Install
-mkdir -p "$INSTALL_DIR"
-if mv "$EXTRACTED" "$INSTALL_DIR/$INSTALL_NAME" 2>/dev/null; then
-  echo "Installed to $INSTALL_DIR/$INSTALL_NAME"
+install_binary() {
+  mkdir -p "$INSTALL_DIR" && mv "$EXTRACTED" "$DEST"
+}
+
+if install_binary 2>/dev/null; then
+  echo "Installed to $DEST"
 else
   echo "Permission denied. Retrying with sudo…"
-  sudo mv "$EXTRACTED" "$INSTALL_DIR/$INSTALL_NAME"
-  echo "Installed to $INSTALL_DIR/$INSTALL_NAME"
+  sudo sh -c "mkdir -p '$INSTALL_DIR' && mv '$EXTRACTED' '$DEST'"
+  echo "Installed to $DEST"
 fi
 
-# Verify
-if command -v "$BINARY" >/dev/null 2>&1; then
-  echo "$(rc --version)"
+# Verify using the installed path directly, not whatever is first on PATH
+if [ -x "$DEST" ]; then
+  "$DEST" --version
 else
   echo ""
-  echo "Make sure $INSTALL_DIR is in your PATH:"
+  echo "Installed, but $INSTALL_DIR is not on your PATH. Add it:"
   echo "  export PATH=\"\$PATH:$INSTALL_DIR\""
 fi
