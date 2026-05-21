@@ -76,3 +76,6 @@ func Required(label string) func(string) error {
 func isInteractive() bool {
 	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
+
+// IsInteractive reports whether both stdin and stdout are connected to a TTY.
+func IsInteractive() bool { return isInteractive() }
