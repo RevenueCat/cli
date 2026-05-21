@@ -52,7 +52,7 @@ func (s *OAuthService) AuthorizeURL(redirectURI, challenge, state string) string
 		"code_challenge_method": {"S256"},
 		"state":                 {state},
 	}
-	return s.baseURL + "/auth/authorize?" + q.Encode()
+	return s.baseURL + "/oauth2/authorize?" + q.Encode()
 }
 
 // GenerateState returns a random URL-safe string suitable for use as the OAuth
@@ -87,7 +87,7 @@ func (s *OAuthService) Refresh(ctx context.Context, refreshToken string) (*Token
 
 func (s *OAuthService) postToken(ctx context.Context, body url.Values) (*TokenResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		s.baseURL+"/auth/token",
+		s.baseURL+"/oauth2/token",
 		strings.NewReader(body.Encode()))
 	if err != nil {
 		return nil, err

@@ -476,16 +476,6 @@ func processBars(data *api.ChartData, completeStyle, incompleteStyle lipgloss.St
 	return bars, maxVal, unit
 }
 
-// hasIncomplete returns true if any bar is marked incomplete.
-func hasIncomplete(bars []processedBar) bool {
-	for _, b := range bars {
-		if b.incomplete {
-			return true
-		}
-	}
-	return false
-}
-
 // resolutionIDFromString maps the server resolution string to our toolbar index.
 func resolutionIDFromString(res string) int {
 	switch strings.ToLower(res) {
@@ -627,17 +617,6 @@ func chartDateLabel(t time.Time, resolution string) string {
 	default:
 		return t.Format("1/2")
 	}
-}
-
-func buildChartSubtitle(data *api.ChartData) string {
-	s := data.Resolution
-	if data.YAxis != "" && data.YAxis != data.YAxisCurrency {
-		s = data.YAxis + " · " + s
-	}
-	if data.YAxisCurrency != "" {
-		s = data.YAxisCurrency + " · " + s
-	}
-	return s
 }
 
 func fmtChartVal(val float64, unit string) string {
