@@ -64,6 +64,7 @@ brews:
     repository:
       owner: RevenueCat
       name: homebrew-tap
+      branch: main
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://www.revenuecat.com"
     description: "RevenueCat command line interface"
@@ -71,4 +72,4 @@ brews:
     install: |
       bin.install "rc"
     test: |
-      system "#{bin}/rc --version"
+      system "#{bin}/rc", "--version"
