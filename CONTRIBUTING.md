@@ -103,13 +103,33 @@ GitHub Actions picks up the tag, runs GoReleaser, publishes binaries to the GitH
 
 Use [semver](https://semver.org): `v0.x.y` while pre-1.0, `v1.x.y` after stable release.
 
+## Commit messages
+
+This repo uses [Conventional Commits](https://www.conventionalcommits.org). The pre-commit hook enforces it automatically after `make install-hooks`.
+
+```
+<type>(<scope>): <description>
+
+Types: feat  fix  docs  refactor  perf  test  chore  ci  build  revert
+```
+
+Examples:
+```
+feat(auth): add OAuth browser login
+fix(charts): filter future cohort periods
+docs: update README quick start
+```
+
+Release notes are auto-generated from commit history — `feat` and `fix` commits show up in the GitHub release, others are filtered out.
+
 ## Sending a PR
 
 1. Check [AGENTS.md](./AGENTS.md) — it documents the architecture and conventions.
 2. Check [docs/command-surface.md](./docs/command-surface.md) before adding or renaming a command.
 3. Open an issue first if you're unsure whether something's in scope.
 4. Make sure `make check` passes before pushing.
-5. Open a PR with a clear description of what changed and why.
+5. Use conventional commit messages — the hook will tell you if the format is wrong.
+6. Open a PR with a clear description of what changed and why.
 
 ## Architecture overview
 

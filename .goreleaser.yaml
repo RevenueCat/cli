@@ -37,11 +37,27 @@ snapshot:
 
 changelog:
   sort: asc
+  use: conventional
+  groups:
+    - title: "New features"
+      regexp: '^feat'
+      order: 0
+    - title: "Bug fixes"
+      regexp: '^fix'
+      order: 1
+    - title: "Performance"
+      regexp: '^perf'
+      order: 2
+    - title: "Other"
+      order: 999
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+      - '^style:'
+      - 'Co-Authored-By:'
 
 brews:
   - name: rc
