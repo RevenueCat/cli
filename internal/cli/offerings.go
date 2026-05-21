@@ -112,6 +112,59 @@ func newOfferingsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				items := make([]tui.BrowserItem, len(page.Items))
+				for i, o := range page.Items {
+					o := o
+					meta := o.State
+					if o.IsCurrent {
+						meta = "current · " + meta
+					}
+					items[i] = tui.BrowserItem{
+						ID:     o.ID,
+						Label:  o.LookupKey,
+						Meta:   meta,
+						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", projectID, o.ID),
+						Fields: []tui.BrowserField{
+							{Key: "ID", Value: o.ID},
+							{Key: "Lookup key", Value: o.LookupKey},
+							{Key: "Display name", Value: o.DisplayName},
+							{Key: "State", Value: o.State},
+							{Key: "Current", Value: fmt.Sprintf("%v", o.IsCurrent)},
+							{Key: "Created", Value: formatMillis(o.CreatedAt)},
+						},
+						Links: []tui.BrowserLink{
+							{
+								Label: "Packages",
+								Load: func() (string, []tui.BrowserItem, error) {
+									pp, err := client.Packages.List(cmd.Context(), projectID, o.ID)
+									if err != nil {
+										return "", nil, err
+									}
+									pitems := make([]tui.BrowserItem, len(pp.Items))
+									for j, p := range pp.Items {
+										pitems[j] = tui.BrowserItem{
+											ID:    p.ID,
+											Label: p.LookupKey,
+											Meta:  p.DisplayName,
+											Fields: []tui.BrowserField{
+												{Key: "ID", Value: p.ID},
+												{Key: "Lookup key", Value: p.LookupKey},
+												{Key: "Display name", Value: p.DisplayName},
+												{Key: "Created", Value: formatMillis(p.CreatedAt)},
+											},
+										}
+									}
+									return "Packages in " + o.LookupKey, pitems, nil
+								},
+							},
+						},
+					}
+				}
+				return tui.RunBrowser("Offerings", items)
+			}
+
 			rows := make([][]string, 0, len(page.Items))
 			for _, o := range page.Items {
 				current := " "

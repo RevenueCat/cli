@@ -49,6 +49,25 @@ func newWebhooksListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				items := make([]tui.BrowserItem, len(page.Items))
+				for i, w := range page.Items {
+					items[i] = tui.BrowserItem{
+						ID:    w.ID,
+						Label: w.URL,
+						Meta:  w.Status,
+						Fields: []tui.BrowserField{
+							{Key: "ID", Value: w.ID},
+							{Key: "URL", Value: w.URL},
+							{Key: "Status", Value: w.Status},
+							{Key: "Created", Value: formatMillis(w.CreatedAt)},
+						},
+					}
+				}
+				return tui.RunBrowser("Webhooks", items)
+			}
+
 			rows := make([][]string, 0, len(page.Items))
 			for _, w := range page.Items {
 				rows = append(rows, []string{w.ID, w.URL, w.Status, formatMillis(w.CreatedAt)})

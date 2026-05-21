@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -396,10 +397,9 @@ func newCustomerListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List customers in the active project",
-		Long: `Lists customers, paginated. The TTY view prints a hint with the cursor
-ID for the next page; the --json view returns the next_page URL in the page
-envelope so agents can iterate without re-parsing.`,
-		Example: `  rc customer list --limit 10
+		Long: `Lists customers, paginated. In TTY mode launches an interactive browser;
+pass --json for machine-readable output or --no-input to disable the browser.`,
+		Example: `  rc customer list
   rc customer list --json --limit 100 | jq '.data.items[].id'
   rc customer list --cursor cus_xyz --limit 50`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -419,6 +419,11 @@ envelope so agents can iterate without re-parsing.`,
 			if err != nil {
 				return err
 			}
+
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				return tui.RunBrowser("Customers", customersToItems(cmd.Context(), client, projectID, page.Items))
+			}
+
 			rows := make([][]string, 0, len(page.Items))
 			for _, c := range page.Items {
 				rows = append(rows, []string{
@@ -460,8 +465,8 @@ func newCustomerShowCmd() *cobra.Command {
 		Use:   "show [customer-id]",
 		Short: "Show a complete view of a customer",
 		Long: `Composes the customer record (which already embeds active entitlements),
-subscriptions, and purchases into one envelope. Use --json for the raw merged
-document.`,
+subscriptions, and purchases into one envelope. In TTY mode launches an
+interactive detail view with drill-down. Use --json for the raw merged document.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -487,8 +492,12 @@ document.`,
 			if err != nil {
 				return err
 			}
-			// Best-effort enrichment; partial errors are surfaced in the envelope
-			// so a JSON consumer sees what's missing rather than silently getting nil.
+
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				item := customerToItem(cmd.Context(), client, projectID, *customer)
+				return tui.RunBrowser("Customer", []tui.BrowserItem{item})
+			}
+
 			subs, subsErr := client.Customers.Subscriptions(cmd.Context(), projectID, id)
 			purs, pursErr := client.Customers.Purchases(cmd.Context(), projectID, id)
 
@@ -711,4 +720,182 @@ func nonEmpty(s, fallback string) string {
 		return fallback
 	}
 	return s
+}
+
+// ── browser helpers ──────────────────────────────────────────────────────────
+
+func customersToItems(ctx context.Context, client *api.Client, projectID string, customers []api.Customer) []tui.BrowserItem {
+	items := make([]tui.BrowserItem, len(customers))
+	for i, c := range customers {
+		c := c
+		items[i] = customerToItem(ctx, client, projectID, c)
+	}
+	return items
+}
+
+func customerToItem(ctx context.Context, client *api.Client, projectID string, c api.Customer) tui.BrowserItem {
+	var metaParts []string
+	if c.LastSeenPlatform != "" {
+		metaParts = append(metaParts, c.LastSeenPlatform)
+	}
+	if c.LastSeenCountry != "" {
+		metaParts = append(metaParts, c.LastSeenCountry)
+	}
+
+	return tui.BrowserItem{
+		ID:     c.ID,
+		Label:  c.ID,
+		Meta:   strings.Join(metaParts, " · "),
+		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", projectID, c.ID),
+		Fields: []tui.BrowserField{
+			{Key: "ID", Value: c.ID},
+			{Key: "Platform", Value: c.LastSeenPlatform},
+			{Key: "Country", Value: c.LastSeenCountry},
+			{Key: "App version", Value: c.LastSeenAppVersion},
+			{Key: "First seen", Value: formatMillis(c.FirstSeenAt)},
+			{Key: "Last seen", Value: formatMillis(c.LastSeenAt)},
+		},
+		Links: []tui.BrowserLink{
+			{
+				Label: "Subscriptions",
+				Load: func() (string, []tui.BrowserItem, error) {
+					page, err := client.Customers.Subscriptions(ctx, projectID, c.ID)
+					if err != nil {
+						return "", nil, err
+					}
+					return "Subscriptions", subscriptionsToItems(ctx, client, projectID, c.ID, page.Items), nil
+				},
+			},
+			{
+				Label: "Purchases",
+				Load: func() (string, []tui.BrowserItem, error) {
+					page, err := client.Customers.Purchases(ctx, projectID, c.ID)
+					if err != nil {
+						return "", nil, err
+					}
+					return "Purchases", purchasesToItems(page.Items), nil
+				},
+			},
+			{
+				Label: "Active entitlements",
+				Load: func() (string, []tui.BrowserItem, error) {
+					page, err := client.Customers.ActiveEntitlements(ctx, projectID, c.ID)
+					if err != nil {
+						return "", nil, err
+					}
+					return "Active entitlements", activeEntitlementsToItems(page.Items), nil
+				},
+			},
+		},
+	}
+}
+
+func subscriptionsToItems(ctx context.Context, client *api.Client, projectID, customerID string, subs []api.Subscription) []tui.BrowserItem {
+	items := make([]tui.BrowserItem, len(subs))
+	for i, s := range subs {
+		s := s
+		var metaParts []string
+		if s.Status != "" {
+			metaParts = append(metaParts, s.Status)
+		}
+		if s.Store != "" {
+			metaParts = append(metaParts, s.Store)
+		}
+		items[i] = tui.BrowserItem{
+			ID:    s.ID,
+			Label: s.ID,
+			Meta:  strings.Join(metaParts, " · "),
+			Fields: []tui.BrowserField{
+				{Key: "ID", Value: s.ID},
+				{Key: "Product", Value: s.ProductID},
+				{Key: "Store", Value: s.Store},
+				{Key: "Status", Value: s.Status},
+				{Key: "Auto-renewal", Value: s.AutoRenewalStatus},
+				{Key: "Starts", Value: formatMillis(s.StartsAt)},
+				{Key: "Period ends", Value: formatMillis(s.CurrentPeriodEnds)},
+			},
+			Links: []tui.BrowserLink{
+				{
+					Label: "Transactions",
+					Load: func() (string, []tui.BrowserItem, error) {
+						page, err := client.Subscriptions.Transactions(ctx, projectID, s.ID)
+						if err != nil {
+							return "", nil, err
+						}
+						return "Transactions", transactionsToItems(page.Items), nil
+					},
+				},
+				{
+					Label: "Entitlements",
+					Load: func() (string, []tui.BrowserItem, error) {
+						page, err := client.Subscriptions.Entitlements(ctx, projectID, s.ID)
+						if err != nil {
+							return "", nil, err
+						}
+						return "Entitlements", activeEntitlementsToItems(page.Items), nil
+					},
+				},
+			},
+		}
+	}
+	return items
+}
+
+func purchasesToItems(purchases []api.Purchase) []tui.BrowserItem {
+	items := make([]tui.BrowserItem, len(purchases))
+	for i, p := range purchases {
+		items[i] = tui.BrowserItem{
+			ID:    p.ID,
+			Label: p.ID,
+			Meta:  p.Store,
+			Fields: []tui.BrowserField{
+				{Key: "ID", Value: p.ID},
+				{Key: "Product", Value: p.ProductID},
+				{Key: "Store", Value: p.Store},
+				{Key: "Purchased", Value: formatMillis(p.PurchasedAt)},
+			},
+		}
+	}
+	return items
+}
+
+func transactionsToItems(txns []api.Transaction) []tui.BrowserItem {
+	items := make([]tui.BrowserItem, len(txns))
+	for i, t := range txns {
+		items[i] = tui.BrowserItem{
+			ID:    t.ID,
+			Label: t.ID,
+			Meta:  formatMillis(t.PurchasedAt),
+			Fields: []tui.BrowserField{
+				{Key: "ID", Value: t.ID},
+				{Key: "Subscription", Value: t.SubscriptionID},
+				{Key: "Purchased", Value: formatMillis(t.PurchasedAt)},
+			},
+		}
+	}
+	return items
+}
+
+func activeEntitlementsToItems(ents []api.Entitlement) []tui.BrowserItem {
+	items := make([]tui.BrowserItem, len(ents))
+	for i, e := range ents {
+		label := e.LookupKey
+		if label == "" {
+			label = e.ID
+		}
+		items[i] = tui.BrowserItem{
+			ID:    e.ID,
+			Label: label,
+			Meta:  e.Source,
+			Fields: []tui.BrowserField{
+				{Key: "ID", Value: e.ID},
+				{Key: "Lookup key", Value: e.LookupKey},
+				{Key: "Display name", Value: e.DisplayName},
+				{Key: "Source", Value: e.Source},
+				{Key: "Granted", Value: formatMillis(e.GrantedAt)},
+				{Key: "Expires", Value: formatMillis(e.ExpiresAt)},
+			},
+		}
+	}
+	return items
 }
