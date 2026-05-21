@@ -1,4 +1,4 @@
-.PHONY: build test check fmt fmt-check vet lint cover install-hooks lefthook
+.PHONY: build test check fmt fmt-check vet lint cover install-hooks lefthook gen
 
 build:
 	go build ./...
@@ -34,3 +34,15 @@ tidy:
 install-hooks:
 	@command -v lefthook >/dev/null || go install github.com/evilmartians/lefthook@latest
 	lefthook install
+
+gen: ## Regenerate API types from OpenAPI spec
+	@if ! python3 -c "import yaml" 2>/dev/null; then \
+		echo "Installing pyyaml into /tmp/pyyaml-env ..."; \
+		python3 -m venv /tmp/pyyaml-env && /tmp/pyyaml-env/bin/pip install -q pyyaml; \
+		PYTHON=/tmp/pyyaml-env/bin/python3; \
+	else \
+		PYTHON=python3; \
+	fi; \
+	$$PYTHON scripts/preprocess-spec.py docs/specs/v2-developer.yaml /tmp/v2-clean.yaml
+	go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen \
+		--config oapi-codegen.yaml /tmp/v2-clean.yaml

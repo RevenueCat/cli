@@ -43,7 +43,7 @@ func Run(version string) int {
 // hintFor surfaces the actionable next-step text for an error. Pulled out so
 // both human stderr and the JSON envelope use the same source of truth.
 func hintFor(err error) string {
-	var apiErr *api.Error
+	var apiErr *api.APIError
 	if errors.As(err, &apiErr) {
 		return apiErr.Hint()
 	}
@@ -77,7 +77,7 @@ func writeJSONError(w io.Writer, err error) {
 		Type:     "cli_error",
 		Hint:     hintFor(err),
 	}
-	var apiErr *api.Error
+	var apiErr *api.APIError
 	if errors.As(err, &apiErr) {
 		env.Type = apiErr.Type
 		env.Message = apiErr.Message

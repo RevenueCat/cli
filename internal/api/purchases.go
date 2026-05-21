@@ -7,14 +7,7 @@ import (
 
 type PurchasesService struct{ c *Client }
 
-type Purchase struct {
-	ID          string `json:"id"`
-	CustomerID  string `json:"customer_id,omitempty"`
-	ProductID   string `json:"product_id,omitempty"`
-	Store       string `json:"store,omitempty"`
-	PurchasedAt Millis `json:"purchased_at,omitempty"`
-	Object      string `json:"object,omitempty"`
-}
+// Purchase type is generated in types_gen.go.
 
 // GET /projects/{project_id}/purchases/{id}
 func (s *PurchasesService) Get(ctx context.Context, projectID, id string) (*Purchase, error) {

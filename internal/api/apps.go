@@ -7,24 +7,8 @@ import (
 
 type AppsService struct{ c *Client }
 
-// App is loosely typed for store-specific blocks (rc_billing, app_store,
-// play_store, amazon, mac_app_store, roku, stripe). Use Type to discriminate
-// and the per-store fields as needed.
-type App struct {
-	ID        string         `json:"id"`
-	Name      string         `json:"name,omitempty"`
-	Type      string         `json:"type,omitempty"`
-	ProjectID string         `json:"project_id,omitempty"`
-	CreatedAt Millis         `json:"created_at,omitempty"`
-	AppStore  map[string]any `json:"app_store,omitempty"`
-	PlayStore map[string]any `json:"play_store,omitempty"`
-	Amazon    map[string]any `json:"amazon,omitempty"`
-	MacAppStr map[string]any `json:"mac_app_store,omitempty"`
-	Roku      map[string]any `json:"roku,omitempty"`
-	Stripe    map[string]any `json:"stripe,omitempty"`
-	RCBilling map[string]any `json:"rc_billing,omitempty"`
-	Object    string         `json:"object,omitempty"`
-}
+// AppCreate and AppUpdate are request bodies used by Create/Update methods.
+// The App, AppType etc. response types are generated in types_gen.go.
 
 type AppCreate struct {
 	Name string `json:"name"`
