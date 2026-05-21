@@ -5,7 +5,7 @@ AI agents.
 
 ```
 brew install RevenueCat/tap/rc   # (future)
-rc login
+rc auth login
 rc customer show cus_abc
 ```
 
@@ -157,7 +157,7 @@ go build -o /tmp/rc ./cmd/rc
 
 ### Running against the real API
 
-Don't `rc login` and write a key to your real config — use env vars + an
+Don't `rc auth login` and write a key to your real config — use env vars + an
 isolated config dir so dev runs don't bleed into your shell:
 
 ```bash
