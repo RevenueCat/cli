@@ -22,7 +22,20 @@ const (
 	loginMethodAPIKey = "api_key"
 )
 
-func newLoginCmd() *cobra.Command {
+func newAuthCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "auth",
+		Short: "Authenticate and manage credentials",
+	}
+	cmd.AddCommand(
+		newAuthLoginCmd(),
+		newAuthLogoutCmd(),
+		newAuthStatusCmd(),
+	)
+	return cmd
+}
+
+func newAuthLoginCmd() *cobra.Command {
 	var apiKey string
 	var useOAuth bool
 
@@ -43,35 +56,29 @@ Two login methods are available:
 The API key can also be supplied via RC_API_KEY for CI use without storing
 anything on disk.`,
 		Example: `  # Interactive — prompts for method
-  rc login
+  rc auth login
 
   # Browser OAuth (non-interactive)
-  rc login --oauth
+  rc auth login --oauth
 
   # API key (non-interactive)
-  rc login --api-key sk_...
+  rc auth login --api-key sk_...
 
   # CI: don't store on disk
   RC_API_KEY=sk_... rc customer list`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 
-			// --api-key flag skips the picker entirely.
 			if apiKey != "" {
 				return loginWithAPIKey(cmd.Context(), rt, apiKey)
 			}
-
-			// --oauth flag skips the picker.
 			if useOAuth {
 				return loginWithOAuth(cmd.Context(), rt)
 			}
-
-			// Under --no-input there is nothing to prompt.
 			if rt.Globals.NoInput {
 				return fmt.Errorf("pass --api-key or set RC_API_KEY for non-interactive login")
 			}
 
-			// Interactive: let the user choose.
 			var method string
 			sel := huh.NewSelect[string]().
 				Title("Login method").
@@ -98,7 +105,84 @@ anything on disk.`,
 	return cmd
 }
 
-// loginWithAPIKeyInteractive prompts for the key then calls loginWithAPIKey.
+func newAuthLogoutCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "logout",
+		Short: "Remove stored credentials from the active profile",
+		Long: `Clears the API key and OAuth tokens from the active profile file.
+The profile file itself is kept; only the auth fields are zeroed.
+
+To remove the profile entirely, use: rc profiles delete <name>`,
+		Example: `  rc auth logout
+  rc auth logout --profile staging`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+
+			rt.Config.APIKey = ""
+			rt.Config.AccessToken = ""
+			rt.Config.RefreshToken = ""
+			rt.Config.TokenExpiresAt = time.Time{}
+			rt.Config.TokenType = ""
+
+			if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+				return err
+			}
+
+			profileName := config.ProfileName(rt.Globals.Profile)
+			rt.Out.Success(fmt.Sprintf("Logged out (profile: %s)", profileName))
+			return rt.Out.Render(map[string]any{
+				"profile": profileName,
+			})
+		},
+	}
+}
+
+func newAuthStatusCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "status",
+		Short: "Show the current authentication state",
+		Long:  `Displays the active profile, auth method, and project context. Does not make any API calls.`,
+		Example: `  rc auth status
+  rc auth status --json`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+
+			profileName := config.ProfileName(rt.Globals.Profile)
+			authenticated := rt.Config.BearerToken() != ""
+
+			var method string
+			switch {
+			case rt.Config.IsOAuth():
+				if rt.Config.TokenExpiresAt.IsZero() {
+					method = "oauth"
+				} else if time.Now().After(rt.Config.TokenExpiresAt) {
+					method = "oauth (expired)"
+				} else {
+					method = fmt.Sprintf("oauth (expires %s)", rt.Config.TokenExpiresAt.Local().Format("2006-01-02 15:04"))
+				}
+			case rt.Config.APIKey != "":
+				method = "api_key"
+			default:
+				method = "none"
+			}
+
+			if !authenticated {
+				rt.Out.Info(fmt.Sprintf("Not logged in (profile: %s) — run `rc auth login`", profileName))
+			} else {
+				rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", profileName))
+			}
+
+			return rt.Out.Render(map[string]any{
+				"profile":       profileName,
+				"authenticated": authenticated,
+				"method":        method,
+				"project_id":    rt.Config.ProjectID,
+				"base_url":      rt.Config.BaseURL,
+			})
+		},
+	}
+}
+
 func loginWithAPIKeyInteractive(ctx context.Context, rt *Runtime) error {
 	rt.Out.Info("Generate an API key at https://app.revenuecat.com/settings/api-keys")
 	var key string
@@ -116,7 +200,7 @@ func loginWithAPIKeyInteractive(ctx context.Context, rt *Runtime) error {
 
 func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 	rt.Config.APIKey = key
-	rt.Config.TokenType = "" // clear any previous OAuth state
+	rt.Config.TokenType = ""
 	rt.Config.AccessToken = ""
 	rt.Config.RefreshToken = ""
 	rt.Config.TokenExpiresAt = time.Time{}
@@ -138,7 +222,6 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 		return fmt.Errorf("generating state: %w", err)
 	}
 
-	// Spin up a one-shot local HTTP server to catch the redirect.
 	listener, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		return fmt.Errorf("starting callback server: %w", err)
@@ -149,10 +232,9 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
 	authURL := svc.AuthorizeURL(redirectURI, challenge, state)
 
-	rt.Out.Info(fmt.Sprintf("Opening browser for authorization…"))
+	rt.Out.Info("Opening browser for authorization…")
 	rt.Out.Info(fmt.Sprintf("If the browser doesn't open, visit:\n  %s", authURL))
 
-	// Non-blocking: ignore browser-open errors — the URL is printed above.
 	_ = openBrowser(authURL)
 
 	codeCh := make(chan string, 1)
@@ -207,9 +289,8 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	rt.Config.AccessToken = tr.AccessToken
 	rt.Config.RefreshToken = tr.RefreshToken
 	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
-	rt.Config.APIKey = "" // clear any previous API key
+	rt.Config.APIKey = ""
 
-	// Rebuild the API client with the new token.
 	rt.client = nil
 	client, err := rt.API()
 	if err != nil {
@@ -218,9 +299,6 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	return finishLogin(ctx, rt, client)
 }
 
-// finishLogin saves credentials and reports success. Project selection is
-// deferred — the first command that needs a project will prompt for one.
-// Use `rc projects use` to set a persistent default.
 func finishLogin(ctx context.Context, rt *Runtime, _ *api.Client) error {
 	if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 		return err
