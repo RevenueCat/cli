@@ -14,9 +14,8 @@ import (
 	"strings"
 )
 
-// ReleasesURL is the GitHub API endpoint for the latest release. Tests may
-// override this to point at an httptest.Server.
-var ReleasesURL = "https://api.github.com/repos/RevenueCat/revenuecat-cli/releases/latest"
+// DefaultReleasesURL is the GitHub API endpoint for the latest release.
+const DefaultReleasesURL = "https://api.github.com/repos/RevenueCat/revenuecat-cli/releases/latest"
 
 // maxBinaryBytes is a sanity cap on the extracted binary size (64 MiB).
 const maxBinaryBytes = 64 << 20
@@ -42,9 +41,10 @@ func (r *Release) AssetName(goos, goarch string) string {
 	return archiveName(r.Version(), goos, goarch)
 }
 
-// FetchRelease returns the latest release metadata.
-func FetchRelease(ctx context.Context, hc *http.Client) (*Release, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ReleasesURL, nil)
+// FetchRelease returns the latest release metadata from the given URL.
+// Pass DefaultReleasesURL in production; tests may pass an httptest.Server URL.
+func FetchRelease(ctx context.Context, hc *http.Client, url string) (*Release, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -230,11 +230,10 @@ func downloadTarGz(ctx context.Context, hc *http.Client, url string) (string, er
 			os.Remove(tmpName)
 			return "", err
 		}
-		// Accept only a true top-level "rc" entry: no path separators and no
-		// dot-dot components, so nested paths like "bin/rc" are rejected.
-		clean := filepath.Clean(hdr.Name)
-		isTopLevel := clean == "rc" || clean == filepath.Base(clean) && !strings.ContainsAny(hdr.Name, "/\\")
-		if isTopLevel && filepath.Base(hdr.Name) == "rc" && hdr.Typeflag == tar.TypeReg {
+		// Require the entry to be named exactly "rc" with no path components.
+		// filepath.Clean is intentionally avoided here — it can normalise
+		// traversal sequences like "bin/../rc" into "rc" and bypass the check.
+		if hdr.Name == "rc" && hdr.Typeflag == tar.TypeReg {
 			lr := io.LimitReader(tr, maxBinaryBytes+1)
 			n, err := io.Copy(tmp, lr)
 			if err != nil {

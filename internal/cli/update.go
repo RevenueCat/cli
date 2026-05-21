@@ -54,7 +54,11 @@ https://github.com/RevenueCat/revenuecat-cli/releases`,
 			hc := &http.Client{Timeout: 30 * time.Second}
 
 			rt.Out.Info("Checking for updates…")
-			release, err := updater.FetchRelease(cmd.Context(), hc)
+			releasesURL := updater.DefaultReleasesURL
+			if override := os.Getenv("RC_UPDATER_RELEASES_URL"); override != "" {
+				releasesURL = override
+			}
+			release, err := updater.FetchRelease(cmd.Context(), hc, releasesURL)
 			if err != nil {
 				return fmt.Errorf("checking for updates: %w", err)
 			}
