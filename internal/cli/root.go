@@ -84,9 +84,19 @@ Agent-friendly entrypoints:
 	pf.BoolVar(&g.NoColor, "no-color", false, "disable ANSI color (also honors NO_COLOR)")
 	pf.BoolVarP(&g.AssumeYes, "yes", "y", false, "assume yes for confirmation prompts")
 
+	// Hidden top-level aliases for muscle memory / back-compat.
+	loginAlias := newAuthLoginCmd()
+	loginAlias.Use = "login"
+	loginAlias.Hidden = true
+
+	whoamiAlias := newAuthStatusCmd()
+	whoamiAlias.Use = "whoami"
+	whoamiAlias.Hidden = true
+
 	root.AddCommand(
-		newLoginCmd(),
-		newWhoamiCmd(),
+		newAuthCmd(),
+		loginAlias,
+		whoamiAlias,
 		newProfilesCmd(),
 		newProjectsCmd(),
 		newCustomersCmd(),

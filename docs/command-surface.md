@@ -79,9 +79,9 @@ names; there's no list endpoint.
 
 ```
 # Auth / meta
-rc login
-rc logout
-rc whoami                                                # active profile + project
+rc auth login                                            # browser OAuth or API key; rc login is a hidden alias
+rc auth logout                                           # clears credentials from profile
+rc auth status                                           # show auth state (method, expiry, project); rc whoami is a hidden alias
 rc config                                                # show resolved config
 rc commands                                              # agent discovery (tree)
 rc schema <cmd>                                          # agent discovery (flags)
