@@ -45,9 +45,9 @@ func newPaywallsListCmd() *cobra.Command {
 			for _, p := range page.Items {
 				published := "—"
 				if p.PublishedAt != 0 {
-					published = formatMillis(p.PublishedAt)
+					published = formatMillis(int64(p.PublishedAt))
 				}
-				rows = append(rows, []string{p.ID, p.OfferingID, formatMillis(p.CreatedAt), published})
+				rows = append(rows, []string{p.ID, p.OfferingID, formatMillis(int64(p.CreatedAt)), published})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "OFFERING", "CREATED", "PUBLISHED"},

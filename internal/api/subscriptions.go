@@ -7,23 +7,13 @@ import (
 
 type SubscriptionsService struct{ c *Client }
 
-type Subscription struct {
-	ID                string `json:"id"`
-	CustomerID        string `json:"customer_id,omitempty"`
-	ProductID         string `json:"product_id,omitempty"`
-	Store             string `json:"store,omitempty"`
-	StartsAt          Millis `json:"starts_at,omitempty"`
-	CurrentPeriodEnds Millis `json:"current_period_ends_at,omitempty"`
-	GivesAccess       bool   `json:"gives_access,omitempty"`
-	AutoRenewalStatus string `json:"auto_renewal_status,omitempty"`
-	Status            string `json:"status,omitempty"`
-	Object            string `json:"object,omitempty"`
-}
+// Subscription type is generated in types_gen.go.
+// Transaction and ManagementURL are hand-written below (not in spec).
 
 type Transaction struct {
 	ID             string `json:"id"`
 	SubscriptionID string `json:"subscription_id,omitempty"`
-	PurchasedAt    Millis `json:"purchased_at,omitempty"`
+	PurchasedAt    int64  `json:"purchased_at,omitempty"`
 	RevenueInUSD   any    `json:"revenue_in_usd,omitempty"`
 	Object         string `json:"object,omitempty"`
 }

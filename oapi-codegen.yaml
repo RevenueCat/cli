@@ -1,0 +1,27 @@
+package: api
+generate:
+  models: true
+output: internal/api/types_gen.go
+output-options:
+  name-normalizer: ToCamelCaseWithInitialisms
+  exclude-schemas:
+    - Error
+    - AppCreate
+    - ChartData
+    - ChartDataValues0
+    - ChartDataValues1
+    - ChartData_Values_Item
+    - WebhookIntegration
+    - WebhookIntegrationEnvironment
+    - WebhookIntegrationObject
+    - ListWebhookIntegrations
+    - ListWebhookIntegrationsObject
+    - Invoice
+    - InvoiceLineItem
+    - InvoiceLineItemObject
+    - InvoiceObject
+    - Paywall
+    - PaywallComponents
+    - PaywallComponentsVersion
+    - PaywallComponentsVersionObject
+    - PaywallObject
