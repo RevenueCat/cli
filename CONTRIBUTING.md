@@ -9,7 +9,7 @@ brew install mise
 git clone https://github.com/RevenueCat/revenuecat-cli && cd revenuecat-cli
 mise install          # installs Go 1.25 per mise.toml
 go mod tidy
-make install-hooks    # installs pre-commit hook (fmt + vet + test)
+make install-hooks    # installs git hooks via lefthook (fmt + vet + test on commit)
 make check            # verify everything passes clean
 ```
 
