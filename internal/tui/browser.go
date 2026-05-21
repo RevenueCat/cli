@@ -229,11 +229,11 @@ func (m *browser) handleDetailKey(f *bframe, msg tea.KeyMsg) (tea.Model, tea.Cmd
 		return m, tea.Quit
 	case "esc":
 		m.stack = m.stack[:len(m.stack)-1]
-	case "left", "h", "shift+tab":
+	case "up", "k":
 		if f.linkCur > 0 {
 			f.linkCur--
 		}
-	case "right", "l", "tab":
+	case "down", "j":
 		if f.linkCur < len(f.item.Links)-1 {
 			f.linkCur++
 		}
@@ -416,24 +416,20 @@ func (m *browser) viewDetail(f *bframe) string {
 
 	// Child navigation links
 	if len(f.item.Links) > 0 {
-		sb.WriteString("\n  " + brSection.Render("Navigate to") + "\n  ")
+		sb.WriteString("\n  " + brSection.Render("Navigate to") + "\n")
 		for i, link := range f.item.Links {
-			if i > 0 {
-				sb.WriteString("  ")
-			}
 			if i == f.linkCur {
-				sb.WriteString(brLinkSel.Render(" " + link.Label + " "))
+				sb.WriteString("  " + brCursor.Render("▶") + " " + brLinkSel.Render(link.Label) + "\n")
 			} else {
-				sb.WriteString(brLink.Render(" " + link.Label + " "))
+				sb.WriteString("    " + brLink.Render(link.Label) + "\n")
 			}
 		}
-		sb.WriteString("\n")
 	}
 
 	// Hint bar
 	var hints []string
 	if len(f.item.Links) > 0 {
-		hints = append(hints, "←→ select", "enter open")
+		hints = append(hints, "↑↓ move", "enter open")
 	}
 	if f.item.WebURL != "" {
 		hints = append(hints, "o web")
@@ -456,15 +452,8 @@ var (
 	brFilter   = lipgloss.NewStyle().Foreground(lipgloss.Color("226"))
 	brSection  = lipgloss.NewStyle().Foreground(lipgloss.Color("33")).Bold(true)
 	brErr      = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true)
-	brLink     = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("33")).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("240"))
-	brLinkSel = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("10")).
-			Bold(true).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("10"))
+	brLink     = lipgloss.NewStyle().Foreground(lipgloss.Color("33"))
+	brLinkSel  = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true)
 )
 
 // ── helpers ──────────────────────────────────────────────────────────────────
