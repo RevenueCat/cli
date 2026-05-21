@@ -125,7 +125,7 @@ func newOfferingsListCmd() *cobra.Command {
 						ID:     o.ID,
 						Label:  o.LookupKey,
 						Meta:   meta,
-						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", projectID, o.ID),
+						WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", dashboardProjectID(projectID), o.ID),
 						Fields: []tui.BrowserField{
 							{Key: "ID", Value: o.ID},
 							{Key: "Lookup key", Value: o.LookupKey},
@@ -148,7 +148,7 @@ func newOfferingsListCmd() *cobra.Command {
 											ID:     p.ID,
 											Label:  p.LookupKey,
 											Meta:   p.DisplayName,
-											WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", projectID, o.ID),
+											WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", dashboardProjectID(projectID), o.ID),
 											Fields: []tui.BrowserField{
 												{Key: "ID", Value: p.ID},
 												{Key: "Lookup key", Value: p.LookupKey},
