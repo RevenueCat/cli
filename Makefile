@@ -1,4 +1,4 @@
-.PHONY: build test check fmt fmt-check vet lint cover
+.PHONY: build test check fmt fmt-check vet lint cover install-hooks
 
 build:
 	go build ./...
@@ -30,3 +30,8 @@ check: fmt-check vet test
 
 tidy:
 	go mod tidy
+
+install-hooks:
+	@cp scripts/pre-commit .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "pre-commit hook installed"
