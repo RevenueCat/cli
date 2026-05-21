@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
-	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
@@ -209,11 +208,27 @@ The chosen project is written to the active profile file (default:
 	}
 }
 
-func formatMillis(m api.Millis) string {
+func formatMillis(m int64) string {
 	if m == 0 {
 		return ""
 	}
-	return time.UnixMilli(int64(m)).UTC().Format("2006-01-02")
+	return time.UnixMilli(m).UTC().Format("2006-01-02")
+}
+
+// formatMillisPtr formats a nullable millisecond timestamp pointer.
+func formatMillisPtr(m *int64) string {
+	if m == nil {
+		return ""
+	}
+	return formatMillis(*m)
+}
+
+// derefStr dereferences a *string safely, returning "" if nil.
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 // dashboardProjectID strips the alphabetic type prefix (and optional underscore

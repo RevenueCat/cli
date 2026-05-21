@@ -73,7 +73,7 @@ func TestProjectsGetWorkaround(t *testing.T) {
 	if err == nil {
 		t.Fatal("want error for missing project")
 	}
-	apiErr, ok := err.(*api.Error)
+	apiErr, ok := err.(*api.APIError)
 	if !ok || apiErr.Type != "resource_missing" {
 		t.Errorf("want resource_missing error, got %v", err)
 	}

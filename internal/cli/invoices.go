@@ -67,7 +67,7 @@ func newInvoicesForCustomerCmd() *cobra.Command {
 			}
 			rows := make([][]string, 0, len(page.Items))
 			for _, inv := range page.Items {
-				rows = append(rows, []string{inv.ID, inv.Status, formatMillis(inv.IssuedAt)})
+				rows = append(rows, []string{inv.ID, inv.Status, formatMillis(int64(inv.IssuedAt))})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "STATUS", "ISSUED"},

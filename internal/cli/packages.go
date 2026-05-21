@@ -287,7 +287,7 @@ func newPackagesProductsCmd() *cobra.Command {
 			}
 			rows := make([][]string, 0, len(page.Items))
 			for _, p := range page.Items {
-				rows = append(rows, []string{p.ID, p.DisplayName, p.StoreIdentifier})
+				rows = append(rows, []string{p.ID, derefStr(p.DisplayName), p.StoreIdentifier})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "DISPLAY NAME", "STORE ID"},

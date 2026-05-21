@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-// Error is the typed error returned for all non-2xx API responses.
+// APIError is the typed error returned for all non-2xx API responses.
 //
 // Wire shape, learned from real fixtures:
 //
@@ -21,7 +21,7 @@ import (
 //	}
 //
 // CLI exit codes are mapped from Type in internal/cli/runtime.go.
-type Error struct {
+type APIError struct {
 	Status            int    `json:"-"`
 	Type              string `json:"type"`
 	Message           string `json:"message"`
@@ -31,7 +31,7 @@ type Error struct {
 	RetryAfterSeconds int    `json:"retry_after,omitempty"` // Retry-After header on 429
 }
 
-func (e *Error) Error() string {
+func (e *APIError) Error() string {
 	if e.Type != "" {
 		return fmt.Sprintf("%s: %s", e.Type, e.Message)
 	}
@@ -40,7 +40,7 @@ func (e *Error) Error() string {
 
 func parseError(resp *http.Response) error {
 	body, _ := io.ReadAll(resp.Body)
-	e := &Error{Status: resp.StatusCode, RequestID: resp.Header.Get("X-Request-Id")}
+	e := &APIError{Status: resp.StatusCode, RequestID: resp.Header.Get("X-Request-Id")}
 	if json.Unmarshal(body, e) != nil || (e.Type == "" && e.Message == "") {
 		e.Message = string(body)
 	}
@@ -68,7 +68,7 @@ func parseError(resp *http.Response) error {
 
 // Hint returns an actionable next step for the user, given the error type +
 // status. Returns empty when nothing useful can be said.
-func (e *Error) Hint() string {
+func (e *APIError) Hint() string {
 	switch e.Type {
 	case "unauthorized", "authentication_error":
 		return "Your API key may be revoked or expired. Run `rc login` again, or set RC_API_KEY."

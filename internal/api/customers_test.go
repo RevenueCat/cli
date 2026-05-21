@@ -45,8 +45,8 @@ func TestCustomersGet_EmbedsActiveEntitlements(t *testing.T) {
 	if got.ID != cust {
 		t.Errorf("want %s, got %s", cust, got.ID)
 	}
-	if got.LastSeenCountry != "US" {
-		t.Errorf("want country US, got %q", got.LastSeenCountry)
+	if got.LastSeenCountry == nil || *got.LastSeenCountry != "US" {
+		t.Errorf("want country US, got %v", got.LastSeenCountry)
 	}
 	if got.ActiveEntitlements == nil {
 		t.Fatal("want active_entitlements embedded; got nil")
