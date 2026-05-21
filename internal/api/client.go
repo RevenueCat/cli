@@ -125,7 +125,9 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	// ETag cache: send If-None-Match on repeat GETs.
 	if method == http.MethodGet {
 		if v, ok := c.cache.Load(urlStr); ok {
-			req.Header.Set("If-None-Match", v.(cacheEntry).etag)
+			if entry, ok := v.(cacheEntry); ok {
+				req.Header.Set("If-None-Match", entry.etag)
+			}
 		}
 	}
 
@@ -138,7 +140,9 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	// 304: serve from cache.
 	if resp.StatusCode == http.StatusNotModified {
 		if v, ok := c.cache.Load(urlStr); ok && out != nil {
-			return json.Unmarshal(v.(cacheEntry).body, out)
+			if entry, ok := v.(cacheEntry); ok {
+				return json.Unmarshal(entry.body, out)
+			}
 		}
 		return nil
 	}
