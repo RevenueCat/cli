@@ -60,6 +60,8 @@ rc charts show mrr
 | **Subscriptions** | `show` · `cancel` · `extend` · `refund` · `transactions` |
 | **Entitlements** | `list` · `show` · `create` · `update` · `attach` · `detach` |
 | **Offerings** | `list` · `show` · `create` · `update` · `archive` |
+| **Packages** | `list` (across all offerings) · `show` · `create` · `update` · `delete` · `attach` · `detach` |
+| **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
 | **Apps** | `list` · `show` · `create` · `update` · `delete` |
 | **Audit log** | `rc audit` with `--limit` and `--since` |
@@ -95,9 +97,31 @@ RC_API_KEY=sk_... rc entitlements list --json --no-input
 Discover the full surface programmatically:
 
 ```bash
-rc commands --json   # full command tree
-rc schema <cmd>      # flags, args, and examples for any command
+rc commands --json       # full command tree with capabilities
+rc schema <cmd>          # flags, args, and examples for any command
 ```
+
+Hit any API endpoint not yet in the CLI surface:
+
+```bash
+rc api GET /projects/proj_abc/customers
+rc api POST /projects/proj_abc/offerings --body '{"lookup_key":"sale"}'
+```
+
+## Skills
+
+Skills are step-by-step workflow guides for common multi-step tasks. Read
+them directly or install them as Claude Code slash commands:
+
+```bash
+rc skills list                    # see available skills
+rc skills show setup-offering     # read a skill
+rc skills install                 # write all to .claude/commands/ in current repo
+rc skills install --global        # write to ~/.claude/commands/ for all projects
+```
+
+Once installed, skills are available as `/project:rc-<name>` slash commands
+in Claude Code. Commit `.claude/commands/` to share them with your whole team.
 
 ## Global flags
 
