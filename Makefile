@@ -1,4 +1,4 @@
-.PHONY: build test check fmt fmt-check vet lint cover install-hooks
+.PHONY: build test check fmt fmt-check vet lint cover install-hooks lefthook
 
 build:
 	go build ./...
@@ -32,6 +32,5 @@ tidy:
 	go mod tidy
 
 install-hooks:
-	@cp scripts/pre-commit .git/hooks/pre-commit
-	@chmod +x .git/hooks/pre-commit
-	@echo "pre-commit hook installed"
+	@command -v lefthook >/dev/null || go install github.com/evilmartians/lefthook@latest
+	lefthook install
