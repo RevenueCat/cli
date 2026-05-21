@@ -34,6 +34,8 @@ rc update          # download and install the latest version
 rc update --check  # exit 1 if an update is available (useful in CI)
 ```
 
+> **Windows:** `rc update` is not supported on Windows. Download the latest release directly from the [releases page](../../releases).
+
 ## Quick start
 
 ```bash
