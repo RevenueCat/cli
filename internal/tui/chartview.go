@@ -82,7 +82,14 @@ type chartApp struct {
 	noColor         bool
 	completeStyle   lipgloss.Style
 	incompleteStyle lipgloss.Style
+
+	// quitting is set when the user presses q/esc. The parent model (browser or
+	// standalone wrapper) is responsible for acting on it — chartApp itself does
+	// not return tea.Quit so it can be safely embedded.
+	quitting bool
 }
+
+func (m *chartApp) Done() bool { return m.quitting }
 
 func (m *chartApp) Init() tea.Cmd {
 	return m.doFetch()
@@ -117,17 +124,15 @@ func (m *chartApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.title = msg.data.DisplayName
 			}
 		}
-		// Reset scroll to end
-		ps := m.barPageSize()
-		m.barOffset = len(m.bars) - ps
-		if m.barOffset < 0 {
-			m.barOffset = 0
-		}
+		// Reset scroll to end (overshoots intentionally; clampBarOffset pins to max).
+		m.barOffset = len(m.bars)
+		m.clampBarOffset()
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
+			m.quitting = true
+			return m, nil
 
 		case "tab":
 			m.groupFocus = (m.groupFocus + 1) % 3
@@ -223,9 +228,8 @@ func (m *chartApp) labelWidth() int {
 }
 
 func (m *chartApp) barPageSize() int {
-	const minBW = 5
 	cw := m.chartW()
-	if len(m.bars)*(minBW+1) <= cw {
+	if len(m.bars)*(minBarWidth+1) <= cw {
 		return len(m.bars)
 	}
 	n := cw / 4
@@ -501,6 +505,47 @@ func buildChartSubtitleFromParts(resLabel, unit string) string {
 	return unit + "  ·  " + resLabel
 }
 
+// NewChartApp builds a chart model from fetched data for embedding in the
+// browser. Terminal size is set by the browser via tea.WindowSizeMsg.
+func NewChartApp(
+	data *api.ChartData,
+	fetchFn func(resID string, startUnix int64) (*api.ChartData, error),
+	noColor bool,
+) tea.Model {
+	return newChartApp(data, fetchFn, noColor)
+}
+
+func newChartApp(
+	data *api.ChartData,
+	fetchFn func(resID string, startUnix int64) (*api.ChartData, error),
+	noColor bool,
+) *chartApp {
+	completeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("39"))
+	incompleteStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	if noColor {
+		completeStyle = lipgloss.NewStyle()
+		incompleteStyle = lipgloss.NewStyle().Faint(true)
+	}
+	bars, maxVal, unit := processBars(data, completeStyle, incompleteStyle)
+	resIdx := resolutionIDFromString(data.Resolution)
+	app := &chartApp{
+		resolutionIdx:   resIdx,
+		rangeIdx:        2,
+		bars:            bars,
+		maxVal:          maxVal,
+		unit:            unit,
+		title:           data.DisplayName,
+		fetchFn:         fetchFn,
+		noColor:         noColor,
+		completeStyle:   completeStyle,
+		incompleteStyle: incompleteStyle,
+	}
+	// Start anchored at the most recent data; clampBarOffset pins to valid range.
+	app.barOffset = len(bars)
+	app.clampBarOffset()
+	return app
+}
+
 // RunChartView runs an interactive scrollable chart viewer. Returns an error if
 // stdout is not a TTY — callers should fall back to --json.
 func RunChartView(
@@ -511,52 +556,38 @@ func RunChartView(
 	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		return fmt.Errorf("chart view requires a terminal — pass --json for machine-readable output")
 	}
-
-	completeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("39"))
-	incompleteStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	if noColor {
-		completeStyle = lipgloss.NewStyle()
-		incompleteStyle = lipgloss.NewStyle().Faint(true)
-	}
-
-	bars, maxVal, unit := processBars(data, completeStyle, incompleteStyle)
-
-	resIdx := resolutionIDFromString(data.Resolution)
-
-	app := &chartApp{
-		groupFocus:      0,
-		chartTypeIdx:    0,
-		resolutionIdx:   resIdx,
-		rangeIdx:        2, // 6M default
-		bars:            bars,
-		maxVal:          maxVal,
-		unit:            unit,
-		title:           data.DisplayName,
-		fetchFn:         fetchFn,
-		loading:         false,
-		noColor:         noColor,
-		completeStyle:   completeStyle,
-		incompleteStyle: incompleteStyle,
-	}
-
-	// Set terminal size
+	app := newChartApp(data, fetchFn, noColor)
 	w, h, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		w, h = 100, 30
 	}
 	app.termW = w
 	app.termH = h
-
-	// Start anchored at the most recent data
-	ps := app.barPageSize()
-	app.barOffset = len(bars) - ps
-	if app.barOffset < 0 {
-		app.barOffset = 0
-	}
-
-	_, err = tea.NewProgram(app, tea.WithAltScreen()).Run()
+	_, err = tea.NewProgram(&standaloneChart{app}, tea.WithAltScreen()).Run()
 	return err
 }
+
+// standaloneChart wraps chartApp for use as a top-level BubbleTea program.
+// It converts chartApp.quitting into tea.Quit so the program exits normally.
+type standaloneChart struct{ *chartApp }
+
+func (s *standaloneChart) Init() tea.Cmd { return s.chartApp.Init() }
+
+func (s *standaloneChart) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m, cmd := s.chartApp.Update(msg)
+	app, ok := m.(*chartApp)
+	if !ok {
+		// Should never happen; exit rather than corrupt state.
+		return s, tea.Quit
+	}
+	s.chartApp = app
+	if s.chartApp.quitting {
+		return s, tea.Quit
+	}
+	return s, cmd
+}
+
+func (s *standaloneChart) View() string { return s.chartApp.View() }
 
 // tick holds a y-axis tick value and the row it maps to.
 type tick struct {
@@ -567,9 +598,17 @@ type tick struct {
 // niceTickRows computes ~numTicks evenly spaced y-axis tick marks with "nice"
 // round values. Row 0 is the top (maxVal); row barAreaH is the axis line ($0).
 func niceTickRows(maxVal float64, barAreaH, numTicks int) []tick {
+	if maxVal <= 0 {
+		maxVal = 1
+	}
 	step := niceStep(maxVal, numTicks)
 	var ticks []tick
-	for v := 0.0; v <= maxVal+step*0.01; v += step {
+	// Use integer loop index to avoid floating-point accumulation error.
+	for i := 0; ; i++ {
+		v := float64(i) * step
+		if v > maxVal+step*0.01 {
+			break
+		}
 		if v > maxVal {
 			v = maxVal
 		}

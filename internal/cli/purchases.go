@@ -9,6 +9,8 @@ import (
 	"github.com/revenuecat/cli/internal/tui"
 )
 
+// purchases.go — show opens the TUI browser in TTY mode.
+
 func newPurchasesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "purchases",
@@ -41,6 +43,10 @@ func newPurchasesShowCmd() *cobra.Command {
 			p, err := client.Purchases.Get(cmd.Context(), projectID, args[0])
 			if err != nil {
 				return err
+			}
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				item := purchaseToItem(cmd.Context(), client, projectID, p.CustomerID, *p)
+				return tui.RunBrowser("Purchase", []tui.BrowserItem{item})
 			}
 			return rt.Out.Render(p)
 		},

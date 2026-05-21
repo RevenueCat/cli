@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/charmbracelet/huh"
@@ -48,6 +47,32 @@ func runProjectsList(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
+
+	if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+		items := make([]tui.BrowserItem, len(page.Items))
+		for i, p := range page.Items {
+			p := p
+			meta := formatMillis(p.CreatedAt)
+			if p.ID == rt.Config.ProjectID {
+				meta = "active · " + meta
+			}
+			items[i] = tui.BrowserItem{
+				ID:    p.ID,
+				Label: p.Name,
+				Meta:  meta,
+				Fields: []tui.BrowserField{
+					{Key: "ID", Value: p.ID},
+					{Key: "Name", Value: p.Name},
+					{Key: "Created", Value: formatMillis(p.CreatedAt)},
+				},
+				DirectLoad: func() (string, []string, []tui.BrowserItem, error) {
+					return p.Name, nil, browseHubItems(cmd.Context(), client, p.ID, rt.Globals.NoColor), nil
+				},
+			}
+		}
+		return tui.RunBrowser("Projects", items)
+	}
+
 	active := rt.Config.ProjectID
 	rows := make([][]string, 0, len(page.Items))
 	for _, p := range page.Items {
@@ -87,6 +112,9 @@ func newProjectsShowCmd() *cobra.Command {
 			p, err := client.Projects.Get(cmd.Context(), id)
 			if err != nil {
 				return err
+			}
+			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+				return tui.RunBrowser(p.Name, browseHubItems(cmd.Context(), client, p.ID, rt.Globals.NoColor))
 			}
 			return rt.Out.Render(p)
 		},
@@ -188,12 +216,22 @@ func formatMillis(m api.Millis) string {
 	return time.UnixMilli(int64(m)).UTC().Format("2006-01-02")
 }
 
-// dashboardProjectID strips the resource-type prefix from an API project ID
-// so it can be used in dashboard URLs.
-// e.g. "proj_5adb8697abc" → "5adb8697abc"
+// dashboardProjectID strips the alphabetic type prefix (and optional underscore
+// separator) from an API resource ID so it can be used in dashboard URLs.
+//
+//	"proj5adb8697"  → "5adb8697"   (no underscore)
+//	"app_abc123"    → "abc123"     (underscore separator)
+//	"ofrng_xyz"     → "xyz"
 func dashboardProjectID(id string) string {
-	if i := strings.LastIndex(id, "_"); i >= 0 {
-		return id[i+1:]
+	i := 0
+	for i < len(id) && ((id[i] >= 'a' && id[i] <= 'z') || (id[i] >= 'A' && id[i] <= 'Z')) {
+		i++
+	}
+	if i < len(id) && id[i] == '_' {
+		i++
+	}
+	if i < len(id) {
+		return id[i:]
 	}
 	return id
 }
