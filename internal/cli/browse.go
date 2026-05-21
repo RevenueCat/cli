@@ -112,7 +112,7 @@ func browseHubItems(ctx context.Context, client *api.Client, projectID string, n
 			Label: "Products",
 			Meta:  "store products catalog",
 			DirectLoad: func() (string, []string, []tui.BrowserItem, error) {
-				page, err := client.Products.List(ctx, projectID)
+				page, err := client.Products.List(ctx, projectID, nil)
 				if err != nil {
 					return "", nil, nil, err
 				}

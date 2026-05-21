@@ -189,7 +189,9 @@ func TestSchema_IncludesAliases(t *testing.T) {
 		Data struct {
 			Name        string   `json:"name"`
 			Aliases     []string `json:"aliases"`
-			Subcommands []string `json:"subcommands"`
+			Subcommands []struct {
+				Name string `json:"name"`
+			} `json:"subcommands"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal([]byte(out), &got); err != nil {
@@ -201,8 +203,12 @@ func TestSchema_IncludesAliases(t *testing.T) {
 	if !contains(got.Data.Aliases, "customers") {
 		t.Errorf("want 'customers' in aliases, got %v", got.Data.Aliases)
 	}
-	if !contains(got.Data.Subcommands, "grant") || !contains(got.Data.Subcommands, "revoke") {
-		t.Errorf("subcommands missing core verbs: %v", got.Data.Subcommands)
+	subNames := make([]string, len(got.Data.Subcommands))
+	for i, s := range got.Data.Subcommands {
+		subNames[i] = s.Name
+	}
+	if !contains(subNames, "grant") || !contains(subNames, "revoke") {
+		t.Errorf("subcommands missing core verbs: %v", subNames)
 	}
 }
 
