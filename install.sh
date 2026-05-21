@@ -137,21 +137,23 @@ chmod +x "$EXTRACTED"
 
 DEST="$INSTALL_DIR/$INSTALL_NAME"
 
-# Install — mkdir and mv in one function so sudo covers both operations.
-# sudo is invoked with explicit arguments (not via sh -c) to avoid
-# shell-injection from user-supplied --install-dir values.
-install_binary() {
-  mkdir -p "$INSTALL_DIR" && mv "$EXTRACTED" "$DEST"
-}
-
-if install_binary 2>/dev/null; then
+# Install — sudo is invoked with explicit arguments (not via sh -c) to avoid
+# shell injection from user-supplied --install-dir values.
+# Capture the real error before falling back to sudo so we can report it
+# accurately if sudo also fails.
+INSTALL_ERR="$( { mkdir -p "$INSTALL_DIR" && mv "$EXTRACTED" "$DEST"; } 2>&1 )" && {
   echo "Installed to $DEST"
-else
-  echo "Permission denied. Retrying with sudo…"
+} || {
+  if [ -d "$INSTALL_DIR" ] && [ ! -w "$INSTALL_DIR" ]; then
+    echo "No write permission to $INSTALL_DIR. Retrying with sudo…"
+  else
+    echo "Install failed: $INSTALL_ERR" >&2
+    echo "Retrying with sudo…"
+  fi
   sudo mkdir -p -- "$INSTALL_DIR"
   sudo mv -- "$EXTRACTED" "$DEST"
   echo "Installed to $DEST"
-fi
+}
 
 # Verify using the installed path directly, not whatever is first on PATH
 if [ -x "$DEST" ]; then
