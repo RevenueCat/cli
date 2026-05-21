@@ -88,6 +88,21 @@ grep -r "$REAL_ID" internal/api/testdata/v2/ && echo "LEAK"
 | `make check` | fmt-check + vet + test |
 | `make tidy` | `go mod tidy` |
 
+## Cutting a release
+
+Releases are automated — maintainers only need to push a tag:
+
+```bash
+# Make sure main is green, then:
+git tag v0.1.0 && git push --tags
+```
+
+GitHub Actions picks up the tag, runs GoReleaser, publishes binaries to the GitHub release, and updates the Homebrew formula in `RevenueCat/homebrew-tap` automatically.
+
+**One-time setup**: add a `HOMEBREW_TAP_GITHUB_TOKEN` repo secret with write access to `RevenueCat/homebrew-tap`.
+
+Use [semver](https://semver.org): `v0.x.y` while pre-1.0, `v1.x.y` after stable release.
+
 ## Sending a PR
 
 1. Check [AGENTS.md](./AGENTS.md) — it documents the architecture and conventions.
