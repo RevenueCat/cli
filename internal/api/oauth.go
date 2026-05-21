@@ -32,7 +32,7 @@ func NewOAuthService(baseURL, clientID string) *OAuthService {
 	}
 }
 
-// TokenResponse is the successful response from /auth/beta/token.
+// TokenResponse is the successful response from /oauth2/token.
 type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
