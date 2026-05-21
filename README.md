@@ -22,7 +22,7 @@ Or download a binary from the [releases page](../../releases).
 # 1. Log in (browser OAuth or paste an API key)
 rc auth login
 
-# 2. Set your active project
+# 2. Set a default project — or choose "Ask me every time" for multi-project workflows
 rc projects use
 
 # Look up a customer
