@@ -114,7 +114,7 @@ DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE}
 echo "Installing ${BINARY} ${VERSION} (${GOOS}/${GOARCH})…"
 
 # Create a temp dir
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/rc.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 
 # Download

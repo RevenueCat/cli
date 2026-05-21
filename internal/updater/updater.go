@@ -246,7 +246,10 @@ func downloadTarGz(ctx context.Context, hc *http.Client, url string) (string, er
 				os.Remove(tmpName)
 				return "", fmt.Errorf("binary exceeds maximum allowed size (%d MiB)", maxBinaryBytes>>20)
 			}
-			tmp.Close()
+			if err := tmp.Close(); err != nil {
+				os.Remove(tmpName)
+				return "", fmt.Errorf("flushing extracted binary: %w", err)
+			}
 			return tmpName, nil
 		}
 	}
