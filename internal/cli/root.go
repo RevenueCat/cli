@@ -19,10 +19,11 @@ type Globals struct {
 	Format    string // jsonpath-style projection, applied to --json output
 	NoColor   bool
 	AssumeYes bool
+	Version   string
 }
 
 func NewRootCmd(version string) *cobra.Command {
-	g := &Globals{}
+	g := &Globals{Version: version}
 
 	root := &cobra.Command{
 		Use:   "rc",

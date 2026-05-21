@@ -3,7 +3,9 @@ package cli
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -52,8 +54,9 @@ func (r *Runtime) API() (*api.Client, error) {
 		return nil, ErrNotAuthenticated
 	}
 	r.client = api.NewClient(api.Options{
-		APIKey:  r.Config.BearerToken(), // works for both API keys and OAuth tokens
-		BaseURL: r.Config.BaseURL,
+		APIKey:    r.Config.BearerToken(), // works for both API keys and OAuth tokens
+		BaseURL:   r.Config.BaseURL,
+		UserAgent: userAgent(r.Globals.Version),
 	})
 	return r.client, nil
 }
@@ -88,6 +91,13 @@ func oauthClientID() string {
 		return v
 	}
 	return api.DefaultOAuthClientID
+}
+
+func userAgent(version string) string {
+	if version == "" {
+		version = "dev"
+	}
+	return fmt.Sprintf("revenuecat-cli/%s (%s/%s)", version, runtime.GOOS, runtime.GOARCH)
 }
 
 var ErrNotAuthenticated = errors.New("not authenticated: run `rc login` or pass --api-key / set RC_API_KEY")
