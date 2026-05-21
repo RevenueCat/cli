@@ -140,7 +140,7 @@ func newEntitlementsProductsCmd() *cobra.Command {
 			}
 			rows := make([][]string, 0, len(page.Items))
 			for _, p := range page.Items {
-				rows = append(rows, []string{p.ID, p.DisplayName, p.StoreIdentifier, p.Type})
+				rows = append(rows, []string{p.ID, derefStr(p.DisplayName), p.StoreIdentifier, string(p.Type)})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "DISPLAY NAME", "STORE ID", "TYPE"},
@@ -420,8 +420,7 @@ func entitlementPickerItems(ctx context.Context, client *api.Client, projectID s
 
 // ── browser helpers ──────────────────────────────────────────────────────────
 
-// entitlementToItem works for both catalog entitlements and active/contextual
-// entitlements (Source/Granted/Expires are shown when non-zero).
+// entitlementToItem builds a browser item for an entitlement.
 func entitlementToItem(ctx context.Context, client *api.Client, projectID string, e api.Entitlement) tui.BrowserItem {
 	label := e.LookupKey
 	if label == "" {
@@ -437,9 +436,7 @@ func entitlementToItem(ctx context.Context, client *api.Client, projectID string
 			{Key: "ID", Value: e.ID},
 			{Key: "Lookup key", Value: e.LookupKey},
 			{Key: "Display name", Value: e.DisplayName},
-			{Key: "Source", Value: e.Source},
-			{Key: "Granted", Value: formatMillis(e.GrantedAt)},
-			{Key: "Expires", Value: formatMillis(e.ExpiresAt)},
+			{Key: "State", Value: string(e.State)},
 			{Key: "Created", Value: formatMillis(e.CreatedAt)},
 		},
 		AutoLoad: func() ([]tui.BrowserSection, error) {
@@ -456,7 +453,7 @@ func entitlementToItem(ctx context.Context, client *api.Client, projectID string
 				p := p
 				item := productToItem(p)
 				sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
-					Cells: []string{p.DisplayName, p.StoreIdentifier, p.Type, p.State},
+					Cells: []string{derefStr(p.DisplayName), p.StoreIdentifier, string(p.Type), string(p.State)},
 					Item:  &item,
 				})
 			}

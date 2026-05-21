@@ -7,14 +7,7 @@ import (
 
 type PackagesService struct{ c *Client }
 
-type Package struct {
-	ID          string `json:"id"`
-	LookupKey   string `json:"lookup_key,omitempty"`
-	DisplayName string `json:"display_name,omitempty"`
-	Position    *int   `json:"position,omitempty"`
-	CreatedAt   Millis `json:"created_at,omitempty"`
-	Object      string `json:"object,omitempty"`
-}
+// Package type is generated in types_gen.go.
 
 func (s *PackagesService) List(ctx context.Context, projectID, offeringID string) (*Page[Package], error) {
 	var out Page[Package]

@@ -117,7 +117,7 @@ func ExitCodeFor(err error) int {
 	if errors.Is(err, output.ErrBadFormat) {
 		return 2
 	}
-	var apiErr *api.Error
+	var apiErr *api.APIError
 	if errors.As(err, &apiErr) {
 		switch apiErr.Type {
 		case "unauthorized", "authentication_error":

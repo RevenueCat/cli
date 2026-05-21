@@ -28,7 +28,7 @@ func newMetricsCmd() *cobra.Command {
 			}
 			rows := make([][]string, 0, len(overview.Metrics))
 			for _, m := range overview.Metrics {
-				rows = append(rows, []string{m.ID, m.Name, fmt.Sprintf("%v", m.Value), m.Unit, m.Period})
+				rows = append(rows, []string{m.ID, m.Name, fmt.Sprintf("%v", m.Value), m.Unit, string(m.Period)})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "NAME", "VALUE", "UNIT", "PERIOD"},

@@ -41,7 +41,7 @@ func TestWriteJSONError_PlainError(t *testing.T) {
 
 func TestWriteJSONError_APIErrorPreservesContext(t *testing.T) {
 	var buf bytes.Buffer
-	writeJSONError(&buf, &api.Error{
+	writeJSONError(&buf, &api.APIError{
 		Status:    404,
 		Type:      "resource_missing",
 		Message:   "entitlement entl_x not found",
@@ -76,7 +76,7 @@ func TestWriteJSONError_APIErrorPreservesContext(t *testing.T) {
 
 func TestWriteJSONError_HintSurfacesForUnauthorized(t *testing.T) {
 	var buf bytes.Buffer
-	writeJSONError(&buf, &api.Error{Status: 401, Type: "unauthorized", Message: "bad key"})
+	writeJSONError(&buf, &api.APIError{Status: 401, Type: "unauthorized", Message: "bad key"})
 	var got struct {
 		Error struct {
 			Hint string `json:"hint"`
@@ -95,7 +95,7 @@ func TestWriteJSONError_HintSurfacesForUnauthorized(t *testing.T) {
 
 func TestWriteJSONError_RetryAfterPropagates(t *testing.T) {
 	var buf bytes.Buffer
-	writeJSONError(&buf, &api.Error{
+	writeJSONError(&buf, &api.APIError{
 		Status:            429,
 		Type:              "rate_limit_exceeded",
 		Message:           "slow down",

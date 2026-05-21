@@ -61,7 +61,7 @@ func newWebhooksListCmd() *cobra.Command {
 
 			rows := make([][]string, 0, len(page.Items))
 			for _, w := range page.Items {
-				rows = append(rows, []string{w.ID, w.URL, w.Status, formatMillis(w.CreatedAt)})
+				rows = append(rows, []string{w.ID, w.URL, w.Status, formatMillis(int64(w.CreatedAt))})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "URL", "STATUS", "CREATED"},
@@ -85,7 +85,7 @@ func webhookToItem(projectID string, w api.Webhook) tui.BrowserItem {
 			{Key: "ID", Value: w.ID},
 			{Key: "URL", Value: w.URL},
 			{Key: "Status", Value: w.Status},
-			{Key: "Created", Value: formatMillis(w.CreatedAt)},
+			{Key: "Created", Value: formatMillis(int64(w.CreatedAt))},
 		},
 	}
 }

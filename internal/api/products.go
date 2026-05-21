@@ -8,35 +8,17 @@ import (
 
 type ProductsService struct{ c *Client }
 
-type ProductSubscription struct {
-	Duration            string `json:"duration,omitempty"` // ISO 8601 duration, e.g. "P1Y"
-	GracePeriodDuration string `json:"grace_period_duration,omitempty"`
-	TrialDuration       string `json:"trial_duration,omitempty"`
-}
-
-type Product struct {
-	ID              string               `json:"id"`
-	AppID           string               `json:"app_id,omitempty"`
-	DisplayName     string               `json:"display_name,omitempty"`
-	StoreIdentifier string               `json:"store_identifier,omitempty"`
-	Type            string               `json:"type,omitempty"` // "subscription" | "one_time"
-	State           string               `json:"state,omitempty"`
-	Subscription    *ProductSubscription `json:"subscription,omitempty"`
-	OneTime         any                  `json:"one_time,omitempty"`
-	CreatedAt       Millis               `json:"created_at,omitempty"`
-	Object          string               `json:"object,omitempty"`
-}
+// Product type is generated in types_gen.go.
 
 type ProductListOptions struct {
 	AppID string
 }
 
 type ProductCreate struct {
-	StoreIdentifier string               `json:"store_identifier"`
-	Type            string               `json:"type"` // "subscription" | "one_time"
-	AppID           string               `json:"app_id"`
-	DisplayName     string               `json:"display_name,omitempty"`
-	Subscription    *ProductSubscription `json:"subscription,omitempty"`
+	StoreIdentifier string `json:"store_identifier"`
+	Type            string `json:"type"` // "subscription" | "one_time"
+	AppID           string `json:"app_id"`
+	DisplayName     string `json:"display_name,omitempty"`
 }
 
 type ProductUpdate struct {
