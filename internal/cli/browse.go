@@ -22,6 +22,9 @@ Requires a TTY. Pass --json or --no-input to disable.`,
 		Example: `  rc browse`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+				return fmt.Errorf("rc browse requires an interactive terminal; use individual subcommands with --json or --no-input instead")
+			}
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
