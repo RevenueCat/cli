@@ -270,7 +270,9 @@ func newProductsCreateCmd() *cobra.Command {
 				AppID:           appID,
 				DisplayName:     displayName,
 			}
-			_ = duration // subscription duration passed separately; ProductCreate does not carry it in this codegen model
+			if duration != "" {
+				body.Subscription = &api.ProductSubscriptionInput{Duration: api.Duration(duration)}
+			}
 			p, err := client.Products.Create(cmd.Context(), projectID, body)
 			if err != nil {
 				return err
