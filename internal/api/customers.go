@@ -145,11 +145,17 @@ func (s *CustomersService) Attributes(ctx context.Context, projectID, customerID
 
 // POST /projects/{project_id}/customers/{customer_id}/attributes
 //
-// Body shape assumed to be {"attributes": {k:v}}; not yet verified against a
-// real customer (avoiding mutating writes on the throwaway project without
-// an explicit go-ahead).
+// The API expects {"attributes": [{name, value}, ...]} per the OpenAPI spec.
 func (s *CustomersService) SetAttributes(ctx context.Context, projectID, customerID string, attrs map[string]string) error {
-	body := map[string]any{"attributes": attrs}
+	type attrItem struct {
+		Name  string `json:"name"`
+		Value string `json:"value"`
+	}
+	items := make([]attrItem, 0, len(attrs))
+	for k, v := range attrs {
+		items = append(items, attrItem{Name: k, Value: v})
+	}
+	body := map[string]any{"attributes": items}
 	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "attributes"), body, nil)
 }
 
@@ -160,12 +166,16 @@ func (s *CustomersService) Transfer(ctx context.Context, projectID, sourceCustom
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
-// POST /projects/{project_id}/customers/{customer_id}/actions/offering_override
+// POST /projects/{project_id}/customers/{customer_id}/actions/assign_offering
 //
-// Pass empty offeringID to clear the override (assumed; verify before relying on it).
+// Pass empty offeringID to clear the override (sends null per spec).
 func (s *CustomersService) OverrideOffering(ctx context.Context, projectID, customerID, offeringID string) error {
-	body := map[string]any{"offering_id": offeringID}
-	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/offering_override"
+	var id *string
+	if offeringID != "" {
+		id = &offeringID
+	}
+	body := map[string]any{"offering_id": id}
+	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/assign_offering"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
