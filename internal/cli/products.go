@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/charmbracelet/huh"
@@ -34,7 +35,7 @@ func newProductsCmd() *cobra.Command {
 
 func newProductsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "archive <id>",
+		Use:   "archive [id]",
 		Short: "Archive a product",
 		Long: `Archives a product. Existing subscribers keep their access; new
 attaches are blocked.
@@ -43,7 +44,7 @@ Reversibility: use ` + "`rc products restore <id>`" + ` to undo.
 
 Confirmation: no prompt — soft, reversible state change.`,
 		Example: `  rc products archive prod_legacy`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -54,7 +55,13 @@ Confirmation: no prompt — soft, reversible state change.`,
 			if err != nil {
 				return err
 			}
-			p, err := client.Products.Archive(cmd.Context(), projectID, args[0])
+			productID, err := requireID(rt, argAt(args, 0), "product", func() ([]PickerItem, error) {
+				return productPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			p, err := client.Products.Archive(cmd.Context(), projectID, productID)
 			if err != nil {
 				return err
 			}
@@ -66,7 +73,7 @@ Confirmation: no prompt — soft, reversible state change.`,
 
 func newProductsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "restore <id>",
+		Use:   "restore [id]",
 		Short: "Restore an archived product",
 		Long: `Restores a previously-archived product. Inverse of
 ` + "`rc products archive`" + `.
@@ -75,7 +82,7 @@ Reversibility: re-archive with ` + "`rc products archive <id>`" + `.
 
 Confirmation: no prompt.`,
 		Example: `  rc products restore prod_legacy`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -86,7 +93,13 @@ Confirmation: no prompt.`,
 			if err != nil {
 				return err
 			}
-			p, err := client.Products.Restore(cmd.Context(), projectID, args[0])
+			productID, err := requireID(rt, argAt(args, 0), "product", func() ([]PickerItem, error) {
+				return productPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			p, err := client.Products.Restore(cmd.Context(), projectID, productID)
 			if err != nil {
 				return err
 			}
@@ -98,7 +111,7 @@ Confirmation: no prompt.`,
 
 func newProductsPushCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "push <id>",
+		Use:   "push [id]",
 		Short: "Push a product configuration to its underlying store",
 		Long: `Pushes a product's current configuration up to the underlying store
 (App Store, Play Store, Stripe, etc.). Required after editing pricing or
@@ -109,15 +122,25 @@ requires a follow-up push with the previous configuration.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc products push prod_abc --yes`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			productID, err := requireID(rt, argAt(args, 0), "product", func() ([]PickerItem, error) {
+				return productPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
 			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Push product %q to its store?", args[0]))
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Push product %q to its store?", productID))
 				if err != nil {
 					return err
 				}
@@ -125,15 +148,11 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-			client, err := rt.API()
-			if err != nil {
+			if err := client.Products.Push(cmd.Context(), projectID, productID); err != nil {
 				return err
 			}
-			if err := client.Products.Push(cmd.Context(), projectID, args[0]); err != nil {
-				return err
-			}
-			rt.Out.Success(fmt.Sprintf("Pushed %s", args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+			rt.Out.Success(fmt.Sprintf("Pushed %s", productID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": productID})
 		},
 	}
 }
@@ -199,9 +218,9 @@ func newProductsCreateCmd() *cobra.Command {
 		Short: "Create a product",
 		Long: `Create a new product in the project catalog.
 
---type must be "subscription" or "one_time".
---app-id is the RevenueCat app ID (rc apps list to find it).
---store-id is the product identifier on the platform store.
+--store-id is the product identifier on the platform store (required).
+--type must be "subscription" or "one_time" (required; picker shown in TTY).
+--app-id is the RevenueCat app ID (required; picker shown in TTY).
 --duration (optional, subscriptions only) is an ISO 8601 duration, e.g. P1M, P1Y.`,
 		Example: `  rc products create --store-id com.example.monthly --type subscription --app-id app_abc
   rc products create --store-id com.example.once --type one_time --app-id app_abc --display-name "Unlock Everything"`,
@@ -211,15 +230,37 @@ func newProductsCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := tui.Form(rt.Globals.NoInput).
-				Field(huh.NewInput().Title("Store identifier").Value(&storeID).Validate(tui.Required("store identifier"))).
-				Field(huh.NewSelect[string]().Title("Type").Options(
+			if storeID == "" {
+				return fmt.Errorf("--store-id is required")
+			}
+			if productType == "" {
+				if rt.Globals.NoInput || !tui.IsInteractive() {
+					return fmt.Errorf("--type is required (subscription or one_time)")
+				}
+				sel := huh.NewSelect[string]().Title("Type").Options(
 					huh.NewOption("Subscription", "subscription"),
 					huh.NewOption("One-time purchase", "one_time"),
-				).Value(&productType)).
-				Field(huh.NewInput().Title("App ID").Value(&appID).Validate(tui.Required("app ID"))).
-				Field(huh.NewInput().Title("Display name (optional)").Value(&displayName)).
-				Run(); err != nil {
+				).Value(&productType)
+				if err := tui.Form(false).Field(sel).Run(); err != nil {
+					return err
+				}
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			appID, err = requireID(rt, appID, "app", func() ([]PickerItem, error) {
+				page, err := client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(page.Items))
+				for i, a := range page.Items {
+					items[i] = PickerItem{ID: a.ID, Label: fmt.Sprintf("%s  (%s)", a.Name, string(a.Type))}
+				}
+				return items, nil
+			})
+			if err != nil {
 				return err
 			}
 			body := api.ProductCreate{
@@ -231,10 +272,6 @@ func newProductsCreateCmd() *cobra.Command {
 			if duration != "" {
 				body.Subscription = &api.ProductSubscription{Duration: duration}
 			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
 			p, err := client.Products.Create(cmd.Context(), projectID, body)
 			if err != nil {
 				return err
@@ -244,8 +281,8 @@ func newProductsCreateCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&storeID, "store-id", "", "store product identifier (required)")
-	cmd.Flags().StringVar(&productType, "type", "", "product type: subscription or one_time (required)")
-	cmd.Flags().StringVar(&appID, "app-id", "", "app ID to associate this product with (required)")
+	cmd.Flags().StringVar(&productType, "type", "", "product type: subscription or one_time (picker shown in TTY if omitted)")
+	cmd.Flags().StringVar(&appID, "app-id", "", "app ID to associate with (picker shown in TTY if omitted)")
 	cmd.Flags().StringVar(&displayName, "display-name", "", "human-readable display name")
 	cmd.Flags().StringVar(&duration, "duration", "", "subscription duration as ISO 8601 (e.g. P1M, P1Y)")
 	return cmd
@@ -253,9 +290,9 @@ func newProductsCreateCmd() *cobra.Command {
 
 func newProductsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
+		Use:   "show [id]",
 		Short: "Show a product",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -266,7 +303,13 @@ func newProductsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p, err := client.Products.Get(cmd.Context(), projectID, args[0])
+			productID, err := requireID(rt, argAt(args, 0), "product", func() ([]PickerItem, error) {
+				return productPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			p, err := client.Products.Get(cmd.Context(), projectID, productID)
 			if err != nil {
 				return err
 			}
@@ -281,7 +324,7 @@ func newProductsShowCmd() *cobra.Command {
 
 func newProductsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <id>",
+		Use:   "delete [id]",
 		Short: "Delete a product",
 		Long: `Permanently deletes a product from the project.
 
@@ -290,15 +333,25 @@ reversible removal.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc products delete prod_old --yes`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			productID, err := requireID(rt, argAt(args, 0), "product", func() ([]PickerItem, error) {
+				return productPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
 			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete product %q?", args[0]))
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete product %q?", productID))
 				if err != nil {
 					return err
 				}
@@ -306,17 +359,31 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-			client, err := rt.API()
-			if err != nil {
+			if err := client.Products.Delete(cmd.Context(), projectID, productID); err != nil {
 				return err
 			}
-			if err := client.Products.Delete(cmd.Context(), projectID, args[0]); err != nil {
-				return err
-			}
-			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+			rt.Out.Success(fmt.Sprintf("Deleted %s", productID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": productID})
 		},
 	}
+}
+
+// ── picker helpers ───────────────────────────────────────────────────────────
+
+func productPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
+	page, err := client.Products.List(ctx, projectID, nil)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PickerItem, len(page.Items))
+	for i, p := range page.Items {
+		displayName := p.DisplayName
+		if displayName == "" {
+			displayName = p.StoreIdentifier
+		}
+		items[i] = PickerItem{ID: p.ID, Label: fmt.Sprintf("%s  (%s)", displayName, p.Type)}
+	}
+	return items, nil
 }
 
 // ── browser helpers ──────────────────────────────────────────────────────────

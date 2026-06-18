@@ -1,9 +1,9 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -132,13 +132,13 @@ func runPackagesList(cmd *cobra.Command, _ []string) error {
 
 func newPackagesShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <offering-id> <package-id>",
+		Use:   "show [offering-id] [package-id]",
 		Short: "Show a package",
-		Long: `Show details for a specific package. Both the offering ID and package ID
-are required — run 'rc packages list' to discover them.`,
-		Example: `  rc packages list                   # discover offering-id and package-id
-  rc packages show ofrng_abc pkg_xyz  # show the package`,
-		Args: cobra.ExactArgs(2),
+		Long: `Show details for a specific package. Omit IDs under a TTY to pick
+interactively — offering first, then package within that offering.`,
+		Example: `  rc packages show                    # TTY: picks offering then package
+  rc packages show ofrng_abc pkg_xyz  # explicit`,
+		Args: cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -149,7 +149,19 @@ are required — run 'rc packages list' to discover them.`,
 			if err != nil {
 				return err
 			}
-			p, err := client.Packages.Get(cmd.Context(), projectID, args[0], args[1])
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			packageID, err := requireID(rt, argAt(args, 1), "package", func() ([]PickerItem, error) {
+				return packagePickerItems(cmd.Context(), client, projectID, offeringID)
+			})
+			if err != nil {
+				return err
+			}
+			p, err := client.Packages.Get(cmd.Context(), projectID, offeringID, packageID)
 			if err != nil {
 				return err
 			}
@@ -161,26 +173,29 @@ are required — run 'rc packages list' to discover them.`,
 func newPackagesCreateCmd() *cobra.Command {
 	var lookupKey, displayName string
 	cmd := &cobra.Command{
-		Use:   "create <offering-id>",
+		Use:   "create [offering-id]",
 		Short: "Create a package in an offering",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
-			if err := tui.Form(rt.Globals.NoInput).
-				Field(huh.NewInput().Title("Lookup key").Value(&lookupKey).Validate(tui.Required("lookup key"))).
-				Field(huh.NewInput().Title("Display name (optional)").Value(&displayName)).
-				Run(); err != nil {
-				return err
-			}
 			client, err := rt.API()
 			if err != nil {
 				return err
 			}
-			pkg, err := client.Packages.Create(cmd.Context(), projectID, args[0], api.PackageCreate{
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			if lookupKey == "" {
+				return fmt.Errorf("--lookup-key is required")
+			}
+			pkg, err := client.Packages.Create(cmd.Context(), projectID, offeringID, api.PackageCreate{
 				LookupKey: lookupKey, DisplayName: displayName,
 			})
 			if err != nil {
@@ -198,12 +213,28 @@ func newPackagesCreateCmd() *cobra.Command {
 func newPackagesUpdateCmd() *cobra.Command {
 	var displayName string
 	cmd := &cobra.Command{
-		Use:   "update <offering-id> <package-id>",
+		Use:   "update [offering-id] [package-id]",
 		Short: "Update a package",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			packageID, err := requireID(rt, argAt(args, 1), "package", func() ([]PickerItem, error) {
+				return packagePickerItems(cmd.Context(), client, projectID, offeringID)
+			})
 			if err != nil {
 				return err
 			}
@@ -211,11 +242,7 @@ func newPackagesUpdateCmd() *cobra.Command {
 			if cmd.Flags().Changed("display-name") {
 				body.DisplayName = &displayName
 			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
-			pkg, err := client.Packages.Update(cmd.Context(), projectID, args[0], args[1], body)
+			pkg, err := client.Packages.Update(cmd.Context(), projectID, offeringID, packageID, body)
 			if err != nil {
 				return err
 			}
@@ -229,7 +256,7 @@ func newPackagesUpdateCmd() *cobra.Command {
 
 func newPackagesDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <offering-id> <package-id>",
+		Use:   "delete [offering-id] [package-id]",
 		Short: "Delete a package",
 		Long: `Permanently deletes a package from its offering.
 
@@ -237,15 +264,31 @@ Reversibility: irreversible.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc packages delete ofrng_default pkg_legacy --yes`,
-		Args:    cobra.ExactArgs(2),
+		Args:    cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			packageID, err := requireID(rt, argAt(args, 1), "package", func() ([]PickerItem, error) {
+				return packagePickerItems(cmd.Context(), client, projectID, offeringID)
+			})
+			if err != nil {
+				return err
+			}
 			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete package %q?", args[1]))
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete package %q?", packageID))
 				if err != nil {
 					return err
 				}
@@ -253,24 +296,20 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-			client, err := rt.API()
-			if err != nil {
+			if err := client.Packages.Delete(cmd.Context(), projectID, offeringID, packageID); err != nil {
 				return err
 			}
-			if err := client.Packages.Delete(cmd.Context(), projectID, args[0], args[1]); err != nil {
-				return err
-			}
-			rt.Out.Success(fmt.Sprintf("Deleted %s", args[1]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[1]})
+			rt.Out.Success(fmt.Sprintf("Deleted %s", packageID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": packageID})
 		},
 	}
 }
 
 func newPackagesProductsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "products <offering-id> <package-id>",
+		Use:   "products [offering-id] [package-id]",
 		Short: "List products attached to a package",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -281,7 +320,19 @@ func newPackagesProductsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			page, err := client.Packages.ListProducts(cmd.Context(), projectID, args[0], args[1])
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			packageID, err := requireID(rt, argAt(args, 1), "package", func() ([]PickerItem, error) {
+				return packagePickerItems(cmd.Context(), client, projectID, offeringID)
+			})
+			if err != nil {
+				return err
+			}
+			page, err := client.Packages.ListProducts(cmd.Context(), projectID, offeringID, packageID)
 			if err != nil {
 				return err
 			}
@@ -296,6 +347,24 @@ func newPackagesProductsCmd() *cobra.Command {
 			})
 		},
 	}
+}
+
+// ── picker helpers ───────────────────────────────────────────────────────────
+
+func packagePickerItems(ctx context.Context, client *api.Client, projectID, offeringID string) ([]PickerItem, error) {
+	page, err := client.Packages.List(ctx, projectID, offeringID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PickerItem, len(page.Items))
+	for i, p := range page.Items {
+		label := p.LookupKey
+		if p.DisplayName != "" {
+			label = fmt.Sprintf("%s  (%s)", p.DisplayName, p.LookupKey)
+		}
+		items[i] = PickerItem{ID: p.ID, Label: label}
+	}
+	return items, nil
 }
 
 func newPackagesAttachCmd() *cobra.Command {
