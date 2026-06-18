@@ -39,7 +39,7 @@ func newEntitlementsCmd() *cobra.Command {
 
 func newEntitlementsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "archive <id>",
+		Use:   "archive [id]",
 		Short: "Archive an entitlement",
 		Long: `Archives an entitlement, removing it from new offerings while preserving
 historical access for existing subscribers.
@@ -48,7 +48,7 @@ Reversibility: use ` + "`rc entitlements restore <id>`" + ` to undo.
 
 Confirmation: no prompt — this is a soft, reversible state change.`,
 		Example: `  rc entitlements archive entl_legacy`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -59,7 +59,13 @@ Confirmation: no prompt — this is a soft, reversible state change.`,
 			if err != nil {
 				return err
 			}
-			e, err := client.Entitlements.Archive(cmd.Context(), projectID, args[0])
+			entID, err := requireID(rt, argAt(args, 0), "entitlement", func() ([]PickerItem, error) {
+				return entitlementPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			e, err := client.Entitlements.Archive(cmd.Context(), projectID, entID)
 			if err != nil {
 				return err
 			}
@@ -71,7 +77,7 @@ Confirmation: no prompt — this is a soft, reversible state change.`,
 
 func newEntitlementsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "restore <id>",
+		Use:   "restore [id]",
 		Short: "Restore an archived entitlement (= unarchive)",
 		Long: `Restores a previously-archived entitlement so it can be added to new
 offerings again. Inverse of ` + "`rc entitlements archive`" + `.
@@ -80,7 +86,7 @@ Reversibility: re-archive with ` + "`rc entitlements archive <id>`" + `.
 
 Confirmation: no prompt.`,
 		Example: `  rc entitlements restore entl_legacy`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -91,7 +97,13 @@ Confirmation: no prompt.`,
 			if err != nil {
 				return err
 			}
-			e, err := client.Entitlements.Restore(cmd.Context(), projectID, args[0])
+			entID, err := requireID(rt, argAt(args, 0), "entitlement", func() ([]PickerItem, error) {
+				return entitlementPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			e, err := client.Entitlements.Restore(cmd.Context(), projectID, entID)
 			if err != nil {
 				return err
 			}
@@ -103,9 +115,9 @@ Confirmation: no prompt.`,
 
 func newEntitlementsProductsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "products <id>",
+		Use:   "products [id]",
 		Short: "List products attached to an entitlement",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -116,7 +128,13 @@ func newEntitlementsProductsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			page, err := client.Entitlements.ListProducts(cmd.Context(), projectID, args[0])
+			entID, err := requireID(rt, argAt(args, 0), "entitlement", func() ([]PickerItem, error) {
+				return entitlementPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			page, err := client.Entitlements.ListProducts(cmd.Context(), projectID, entID)
 			if err != nil {
 				return err
 			}
@@ -228,9 +246,9 @@ func newEntitlementsListCmd() *cobra.Command {
 
 func newEntitlementsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
+		Use:   "show [id]",
 		Short: "Show an entitlement",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -241,7 +259,13 @@ func newEntitlementsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ent, err := client.Entitlements.Get(cmd.Context(), projectID, args[0])
+			entID, err := requireID(rt, argAt(args, 0), "entitlement", func() ([]PickerItem, error) {
+				return entitlementPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			ent, err := client.Entitlements.Get(cmd.Context(), projectID, entID)
 			if err != nil {
 				return err
 			}
@@ -294,12 +318,22 @@ func newEntitlementsCreateCmd() *cobra.Command {
 func newEntitlementsUpdateCmd() *cobra.Command {
 	var displayName string
 	cmd := &cobra.Command{
-		Use:   "update <id>",
+		Use:   "update [id]",
 		Short: "Update an entitlement",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			entID, err := requireID(rt, argAt(args, 0), "entitlement", func() ([]PickerItem, error) {
+				return entitlementPickerItems(cmd.Context(), client, projectID)
+			})
 			if err != nil {
 				return err
 			}
@@ -307,11 +341,7 @@ func newEntitlementsUpdateCmd() *cobra.Command {
 			if cmd.Flags().Changed("display-name") {
 				body.DisplayName = &displayName
 			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
-			ent, err := client.Entitlements.Update(cmd.Context(), projectID, args[0], body)
+			ent, err := client.Entitlements.Update(cmd.Context(), projectID, entID, body)
 			if err != nil {
 				return err
 			}
@@ -325,7 +355,7 @@ func newEntitlementsUpdateCmd() *cobra.Command {
 
 func newEntitlementsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <id>",
+		Use:   "delete [id]",
 		Short: "Delete an entitlement",
 		Long: `Permanently deletes an entitlement from the project catalog.
 
@@ -335,15 +365,25 @@ offerings, prefer ` + "`rc entitlements archive`" + ` which can be undone with
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc entitlements delete entl_old --yes`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			entID, err := requireID(rt, argAt(args, 0), "entitlement", func() ([]PickerItem, error) {
+				return entitlementPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
 			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete entitlement %q?", args[0]))
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete entitlement %q?", entID))
 				if err != nil {
 					return err
 				}
@@ -351,17 +391,31 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-			client, err := rt.API()
-			if err != nil {
+			if err := client.Entitlements.Delete(cmd.Context(), projectID, entID); err != nil {
 				return err
 			}
-			if err := client.Entitlements.Delete(cmd.Context(), projectID, args[0]); err != nil {
-				return err
-			}
-			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+			rt.Out.Success(fmt.Sprintf("Deleted %s", entID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": entID})
 		},
 	}
+}
+
+// ── picker helpers ───────────────────────────────────────────────────────────
+
+func entitlementPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
+	page, err := client.Entitlements.List(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PickerItem, len(page.Items))
+	for i, e := range page.Items {
+		label := e.LookupKey
+		if e.DisplayName != "" {
+			label = fmt.Sprintf("%s  (%s)", e.DisplayName, e.LookupKey)
+		}
+		items[i] = PickerItem{ID: e.ID, Label: label}
+	}
+	return items, nil
 }
 
 // ── browser helpers ──────────────────────────────────────────────────────────

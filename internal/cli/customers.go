@@ -462,25 +462,15 @@ func lastID(items []api.Customer) string {
 }
 
 func newCustomerShowCmd() *cobra.Command {
-	var id string
-	cmd := &cobra.Command{
-		Use:   "show [customer-id]",
+	return &cobra.Command{
+		Use:   "show <customer-id>",
 		Short: "Show a complete view of a customer",
 		Long: `Composes the customer record (which already embeds active entitlements),
 subscriptions, and purchases into one envelope. In TTY mode launches an
 interactive detail view with drill-down. Use --json for the raw merged document.`,
-		Args: cobra.MaximumNArgs(1),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			if len(args) == 1 {
-				id = args[0]
-			}
-			if err := tui.Form(rt.Globals.NoInput).
-				Field(huh.NewInput().Title("Customer ID").Value(&id).Validate(tui.Required("customer ID"))).
-				Run(); err != nil {
-				return err
-			}
-
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
@@ -489,20 +479,17 @@ interactive detail view with drill-down. Use --json for the raw merged document.
 			if err != nil {
 				return err
 			}
-
+			id := args[0]
 			customer, err := client.Customers.Get(cmd.Context(), projectID, id)
 			if err != nil {
 				return err
 			}
-
 			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
 				item := customerToItem(cmd.Context(), client, projectID, *customer)
 				return tui.RunBrowser("Customer", []tui.BrowserItem{item})
 			}
-
 			subs, subsErr := client.Customers.Subscriptions(cmd.Context(), projectID, id)
 			purs, pursErr := client.Customers.Purchases(cmd.Context(), projectID, id)
-
 			raw := map[string]any{
 				"customer":      customer,
 				"subscriptions": subs,
@@ -517,58 +504,75 @@ interactive detail view with drill-down. Use --json for the raw merged document.
 			return rt.Out.RenderCard(customerCard(customer, subs, purs, raw))
 		},
 	}
-	cmd.Flags().StringVar(&id, "id", "", "customer ID")
-	return cmd
+}
+
+var grantDurationOptions = []huh.Option[string]{
+	huh.NewOption("Daily", "daily"),
+	huh.NewOption("Three day", "three_day"),
+	huh.NewOption("Weekly", "weekly"),
+	huh.NewOption("Monthly", "monthly"),
+	huh.NewOption("Two month", "two_month"),
+	huh.NewOption("Three month", "three_month"),
+	huh.NewOption("Six month", "six_month"),
+	huh.NewOption("Yearly", "yearly"),
+	huh.NewOption("Lifetime", "lifetime"),
 }
 
 func newCustomerGrantCmd() *cobra.Command {
-	var customerID, entitlementID, duration string
+	var duration string
 	cmd := &cobra.Command{
-		Use:   "grant",
+		Use:   "grant <customer-id> [entitlement-id]",
 		Short: "Grant a promotional entitlement to a customer",
 		Long: `Grants a promotional entitlement to a customer for a fixed duration.
 
-Under a TTY, missing inputs are prompted. Under --no-input, missing required
-inputs return a usage error. Confirmation is skipped if --yes is set.
+customer-id is required. entitlement-id is optional under a TTY — omit it
+to pick from the project's entitlement catalog interactively.
 
 Duration must be one of: daily, three_day, weekly, monthly, two_month,
-three_month, six_month, yearly, lifetime.`,
-		Example: `  # Interactive (prompts for each field)
-  rc customer grant
-
-  # Non-interactive, scriptable
-  rc customer grant --customer-id cus_abc --entitlement-id pro --duration monthly --yes
-
-  # Agent-friendly
-  rc customer grant --customer-id cus_abc --entitlement-id pro --duration monthly --yes --json`,
-		RunE: func(cmd *cobra.Command, _ []string) error {
+three_month, six_month, yearly, lifetime. Omit --duration under a TTY to
+pick from the list interactively.`,
+		Example: `  rc customer grant cus_abc                          # TTY: picks entitlement + duration
+  rc customer grant cus_abc pro --duration monthly   # fully explicit
+  rc customer grant cus_abc pro --duration monthly --yes --json`,
+		Args: cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
-
-			if err := tui.Form(rt.Globals.NoInput).
-				Field(huh.NewInput().Title("Customer ID").Value(&customerID).Validate(tui.Required("customer ID"))).
-				Field(huh.NewInput().Title("Entitlement ID").Value(&entitlementID).Validate(tui.Required("entitlement ID"))).
-				Field(huh.NewSelect[string]().
-					Title("Duration").
-					Options(
-						huh.NewOption("Daily", "daily"),
-						huh.NewOption("Three day", "three_day"),
-						huh.NewOption("Weekly", "weekly"),
-						huh.NewOption("Monthly", "monthly"),
-						huh.NewOption("Two month", "two_month"),
-						huh.NewOption("Three month", "three_month"),
-						huh.NewOption("Six month", "six_month"),
-						huh.NewOption("Yearly", "yearly"),
-						huh.NewOption("Lifetime", "lifetime"),
-					).
-					Value(&duration)).
-				Run(); err != nil {
+			client, err := rt.API()
+			if err != nil {
 				return err
 			}
-
+			customerID := args[0]
+			entitlementID, err := requireID(rt, argAt(args, 1), "entitlement", func() ([]PickerItem, error) {
+				page, err := client.Entitlements.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(page.Items))
+				for i, e := range page.Items {
+					label := e.LookupKey
+					if e.DisplayName != "" {
+						label = fmt.Sprintf("%s  (%s)", e.DisplayName, e.LookupKey)
+					}
+					items[i] = PickerItem{ID: e.ID, Label: label}
+				}
+				return items, nil
+			})
+			if err != nil {
+				return err
+			}
+			if duration == "" {
+				if rt.Globals.NoInput || !tui.IsInteractive() {
+					return fmt.Errorf("--duration is required")
+				}
+				sel := huh.NewSelect[string]().Title("Duration").Options(grantDurationOptions...).Value(&duration)
+				if err := tui.Form(false).Field(sel).Run(); err != nil {
+					return err
+				}
+			}
 			if !rt.Globals.AssumeYes {
 				ok, err := tui.Confirm(rt.Globals.NoInput,
 					fmt.Sprintf("Grant %q to customer %q (%s)?", entitlementID, customerID, duration))
@@ -579,11 +583,6 @@ three_month, six_month, yearly, lifetime.`,
 					return fmt.Errorf("aborted")
 				}
 			}
-
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
 			result, err := client.Customers.GrantEntitlement(cmd.Context(), projectID, customerID, entitlementID, duration)
 			if err != nil {
 				return err
@@ -592,39 +591,56 @@ three_month, six_month, yearly, lifetime.`,
 			return rt.Out.Render(result)
 		},
 	}
-	cmd.Flags().StringVar(&customerID, "customer-id", "", "customer ID")
-	cmd.Flags().StringVar(&entitlementID, "entitlement-id", "", "entitlement ID")
 	cmd.Flags().StringVar(&duration, "duration", "", "duration: daily|three_day|weekly|monthly|two_month|three_month|six_month|yearly|lifetime")
 	return cmd
 }
 
 func newCustomerRevokeCmd() *cobra.Command {
-	var customerID, entitlementID string
 	cmd := &cobra.Command{
-		Use:   "revoke",
+		Use:   "revoke <customer-id> [entitlement-id]",
 		Short: "Revoke a promotional entitlement from a customer",
 		Long: `Revokes a previously-granted promotional entitlement. Only affects
 promotional grants made through ` + "`rc customer grant`" + ` — store
 purchases are not affected.
 
+customer-id is required. entitlement-id is optional under a TTY — omit it
+to pick from the project's entitlement catalog interactively.
+
 Reversibility: re-grant with ` + "`rc customer grant`" + ` if needed.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc customer revoke --customer-id cus_abc --entitlement-id pro --yes`,
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Example: `  rc customer revoke cus_abc              # TTY: picks entitlement
+  rc customer revoke cus_abc pro --yes   # fully explicit`,
+		Args: cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
-
-			if err := tui.Form(rt.Globals.NoInput).
-				Field(huh.NewInput().Title("Customer ID").Value(&customerID).Validate(tui.Required("customer ID"))).
-				Field(huh.NewInput().Title("Entitlement ID").Value(&entitlementID).Validate(tui.Required("entitlement ID"))).
-				Run(); err != nil {
+			client, err := rt.API()
+			if err != nil {
 				return err
 			}
-
+			customerID := args[0]
+			entitlementID, err := requireID(rt, argAt(args, 1), "entitlement", func() ([]PickerItem, error) {
+				page, err := client.Entitlements.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(page.Items))
+				for i, e := range page.Items {
+					label := e.LookupKey
+					if e.DisplayName != "" {
+						label = fmt.Sprintf("%s  (%s)", e.DisplayName, e.LookupKey)
+					}
+					items[i] = PickerItem{ID: e.ID, Label: label}
+				}
+				return items, nil
+			})
+			if err != nil {
+				return err
+			}
 			if !rt.Globals.AssumeYes {
 				ok, err := tui.Confirm(rt.Globals.NoInput,
 					fmt.Sprintf("Revoke %q from customer %q?", entitlementID, customerID))
@@ -635,11 +651,6 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
 			if err := client.Customers.RevokeEntitlement(cmd.Context(), projectID, customerID, entitlementID); err != nil {
 				return err
 			}
@@ -647,8 +658,6 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			return rt.Out.Render(map[string]any{"ok": true})
 		},
 	}
-	cmd.Flags().StringVar(&customerID, "customer-id", "", "customer ID")
-	cmd.Flags().StringVar(&entitlementID, "entitlement-id", "", "entitlement ID")
 	return cmd
 }
 

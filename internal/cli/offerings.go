@@ -33,7 +33,7 @@ func newOfferingsCmd() *cobra.Command {
 
 func newOfferingsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "archive <id>",
+		Use:   "archive [id]",
 		Short: "Archive an offering",
 		Long: `Archives an offering so it stops being served to new customers while
 existing subscribers keep their access.
@@ -42,7 +42,7 @@ Reversibility: use ` + "`rc offerings restore <id>`" + ` to undo.
 
 Confirmation: no prompt — soft, reversible state change.`,
 		Example: `  rc offerings archive ofrng_q1_promo`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -53,7 +53,13 @@ Confirmation: no prompt — soft, reversible state change.`,
 			if err != nil {
 				return err
 			}
-			o, err := client.Offerings.Archive(cmd.Context(), projectID, args[0])
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			o, err := client.Offerings.Archive(cmd.Context(), projectID, offeringID)
 			if err != nil {
 				return err
 			}
@@ -65,7 +71,7 @@ Confirmation: no prompt — soft, reversible state change.`,
 
 func newOfferingsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "restore <id>",
+		Use:   "restore [id]",
 		Short: "Restore an archived offering (= unarchive)",
 		Long: `Restores a previously-archived offering. Inverse of
 ` + "`rc offerings archive`" + `.
@@ -74,7 +80,7 @@ Reversibility: re-archive with ` + "`rc offerings archive <id>`" + `.
 
 Confirmation: no prompt.`,
 		Example: `  rc offerings restore ofrng_q1_promo`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -85,7 +91,13 @@ Confirmation: no prompt.`,
 			if err != nil {
 				return err
 			}
-			o, err := client.Offerings.Restore(cmd.Context(), projectID, args[0])
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			o, err := client.Offerings.Restore(cmd.Context(), projectID, offeringID)
 			if err != nil {
 				return err
 			}
@@ -142,9 +154,9 @@ func newOfferingsListCmd() *cobra.Command {
 
 func newOfferingsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
+		Use:   "show [id]",
 		Short: "Show an offering",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -155,7 +167,13 @@ func newOfferingsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			o, err := client.Offerings.Get(cmd.Context(), projectID, args[0])
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			o, err := client.Offerings.Get(cmd.Context(), projectID, offeringID)
 			if err != nil {
 				return err
 			}
@@ -207,12 +225,22 @@ func newOfferingsCreateCmd() *cobra.Command {
 func newOfferingsUpdateCmd() *cobra.Command {
 	var displayName string
 	cmd := &cobra.Command{
-		Use:   "update <id>",
+		Use:   "update [id]",
 		Short: "Update an offering",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
 			if err != nil {
 				return err
 			}
@@ -220,11 +248,7 @@ func newOfferingsUpdateCmd() *cobra.Command {
 			if cmd.Flags().Changed("display-name") {
 				body.DisplayName = &displayName
 			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
-			o, err := client.Offerings.Update(cmd.Context(), projectID, args[0], body)
+			o, err := client.Offerings.Update(cmd.Context(), projectID, offeringID, body)
 			if err != nil {
 				return err
 			}
@@ -238,7 +262,7 @@ func newOfferingsUpdateCmd() *cobra.Command {
 
 func newOfferingsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <id>",
+		Use:   "delete [id]",
 		Short: "Delete an offering",
 		Long: `Permanently deletes an offering from the project.
 
@@ -247,15 +271,25 @@ reversible removal.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc offerings delete ofrng_old --yes`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
 			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete offering %q?", args[0]))
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete offering %q?", offeringID))
 				if err != nil {
 					return err
 				}
@@ -263,15 +297,11 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-			client, err := rt.API()
-			if err != nil {
+			if err := client.Offerings.Delete(cmd.Context(), projectID, offeringID); err != nil {
 				return err
 			}
-			if err := client.Offerings.Delete(cmd.Context(), projectID, args[0]); err != nil {
-				return err
-			}
-			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+			rt.Out.Success(fmt.Sprintf("Deleted %s", offeringID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": offeringID})
 		},
 	}
 }
@@ -411,9 +441,9 @@ func paywallToItem(projectID string, pw api.Paywall) tui.BrowserItem {
 
 func newOfferingsPackagesCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "packages <offering-id>",
+		Use:   "packages [offering-id]",
 		Short: "List packages in an offering",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -424,7 +454,13 @@ func newOfferingsPackagesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			page, err := client.Packages.List(cmd.Context(), projectID, args[0])
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			page, err := client.Packages.List(cmd.Context(), projectID, offeringID)
 			if err != nil {
 				return err
 			}
@@ -439,4 +475,25 @@ func newOfferingsPackagesCmd() *cobra.Command {
 			})
 		},
 	}
+}
+
+// ── picker helpers ───────────────────────────────────────────────────────────
+
+func offeringPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
+	page, err := client.Offerings.List(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PickerItem, len(page.Items))
+	for i, o := range page.Items {
+		label := o.LookupKey
+		if o.DisplayName != "" {
+			label = fmt.Sprintf("%s  (%s)", o.DisplayName, o.LookupKey)
+		}
+		if o.IsCurrent {
+			label = "* " + label
+		}
+		items[i] = PickerItem{ID: o.ID, Label: label}
+	}
+	return items, nil
 }

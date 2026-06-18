@@ -82,9 +82,9 @@ func newAppsListCmd() *cobra.Command {
 
 func newAppsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
+		Use:   "show [id]",
 		Short: "Show an app",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -95,7 +95,21 @@ func newAppsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			a, err := client.Apps.Get(cmd.Context(), projectID, args[0])
+			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
+				page, err := client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(page.Items))
+				for i, a := range page.Items {
+					items[i] = PickerItem{ID: a.ID, Label: fmt.Sprintf("%s  (%s)", a.Name, string(a.Type))}
+				}
+				return items, nil
+			})
+			if err != nil {
+				return err
+			}
+			a, err := client.Apps.Get(cmd.Context(), projectID, appID)
 			if err != nil {
 				return err
 			}
@@ -145,12 +159,30 @@ func newAppsCreateCmd() *cobra.Command {
 func newAppsUpdateCmd() *cobra.Command {
 	var name string
 	cmd := &cobra.Command{
-		Use:   "update <id>",
+		Use:   "update [id]",
 		Short: "Update an app",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
+				page, err := client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(page.Items))
+				for i, a := range page.Items {
+					items[i] = PickerItem{ID: a.ID, Label: fmt.Sprintf("%s  (%s)", a.Name, string(a.Type))}
+				}
+				return items, nil
+			})
 			if err != nil {
 				return err
 			}
@@ -158,11 +190,7 @@ func newAppsUpdateCmd() *cobra.Command {
 			if cmd.Flags().Changed("name") {
 				body.Name = &name
 			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
-			a, err := client.Apps.Update(cmd.Context(), projectID, args[0], body)
+			a, err := client.Apps.Update(cmd.Context(), projectID, appID, body)
 			if err != nil {
 				return err
 			}
@@ -176,7 +204,7 @@ func newAppsUpdateCmd() *cobra.Command {
 
 func newAppsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <id>",
+		Use:   "delete [id]",
 		Short: "Delete an app",
 		Long: `Permanently deletes an app from the project. Disconnects RevenueCat
 from the underlying store integration; existing customer data is retained
@@ -186,15 +214,33 @@ Reversibility: irreversible.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc apps delete app_old --yes`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
+				page, err := client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(page.Items))
+				for i, a := range page.Items {
+					items[i] = PickerItem{ID: a.ID, Label: fmt.Sprintf("%s  (%s)", a.Name, string(a.Type))}
+				}
+				return items, nil
+			})
+			if err != nil {
+				return err
+			}
 			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete app %q?", args[0]))
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete app %q?", appID))
 				if err != nil {
 					return err
 				}
@@ -202,15 +248,11 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-			client, err := rt.API()
-			if err != nil {
+			if err := client.Apps.Delete(cmd.Context(), projectID, appID); err != nil {
 				return err
 			}
-			if err := client.Apps.Delete(cmd.Context(), projectID, args[0]); err != nil {
-				return err
-			}
-			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+			rt.Out.Success(fmt.Sprintf("Deleted %s", appID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": appID})
 		},
 	}
 }
@@ -235,9 +277,9 @@ func appToItem(projectID string, a api.App) tui.BrowserItem {
 
 func newAppsKeysCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "keys <app-id>",
+		Use:   "keys [app-id]",
 		Short: "List public API keys for an app",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -248,7 +290,21 @@ func newAppsKeysCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			keys, err := client.Apps.PublicAPIKeys(cmd.Context(), projectID, args[0])
+			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
+				page, err := client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(page.Items))
+				for i, a := range page.Items {
+					items[i] = PickerItem{ID: a.ID, Label: fmt.Sprintf("%s  (%s)", a.Name, string(a.Type))}
+				}
+				return items, nil
+			})
+			if err != nil {
+				return err
+			}
+			keys, err := client.Apps.PublicAPIKeys(cmd.Context(), projectID, appID)
 			if err != nil {
 				return err
 			}
