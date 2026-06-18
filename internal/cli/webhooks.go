@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/charmbracelet/huh"
@@ -91,9 +92,9 @@ func webhookToItem(projectID string, w api.Webhook) tui.BrowserItem {
 
 func newWebhooksShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
+		Use:   "show [id]",
 		Short: "Show a webhook",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -104,7 +105,13 @@ func newWebhooksShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			w, err := client.Webhooks.Get(cmd.Context(), projectID, args[0])
+			webhookID, err := requireID(rt, argAt(args, 0), "webhook", func() ([]PickerItem, error) {
+				return webhookPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			w, err := client.Webhooks.Get(cmd.Context(), projectID, webhookID)
 			if err != nil {
 				return err
 			}
@@ -152,12 +159,22 @@ func newWebhooksCreateCmd() *cobra.Command {
 func newWebhooksUpdateCmd() *cobra.Command {
 	var urlStr, status string
 	cmd := &cobra.Command{
-		Use:   "update <id>",
+		Use:   "update [id]",
 		Short: "Update a webhook",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			webhookID, err := requireID(rt, argAt(args, 0), "webhook", func() ([]PickerItem, error) {
+				return webhookPickerItems(cmd.Context(), client, projectID)
+			})
 			if err != nil {
 				return err
 			}
@@ -168,11 +185,7 @@ func newWebhooksUpdateCmd() *cobra.Command {
 			if cmd.Flags().Changed("status") {
 				body.Status = &status
 			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
-			w, err := client.Webhooks.Update(cmd.Context(), projectID, args[0], body)
+			w, err := client.Webhooks.Update(cmd.Context(), projectID, webhookID, body)
 			if err != nil {
 				return err
 			}
@@ -187,7 +200,7 @@ func newWebhooksUpdateCmd() *cobra.Command {
 
 func newWebhooksDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <id>",
+		Use:   "delete [id]",
 		Short: "Delete a webhook",
 		Long: `Permanently deletes a webhook integration. Future events stop being
 delivered to the configured URL.
@@ -197,15 +210,25 @@ deleting, prefer ` + "`rc webhooks update <id> --status paused`" + `.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc webhooks delete wh_old --yes`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			webhookID, err := requireID(rt, argAt(args, 0), "webhook", func() ([]PickerItem, error) {
+				return webhookPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
 			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete webhook %q?", args[0]))
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete webhook %q?", webhookID))
 				if err != nil {
 					return err
 				}
@@ -213,15 +236,25 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-			client, err := rt.API()
-			if err != nil {
+			if err := client.Webhooks.Delete(cmd.Context(), projectID, webhookID); err != nil {
 				return err
 			}
-			if err := client.Webhooks.Delete(cmd.Context(), projectID, args[0]); err != nil {
-				return err
-			}
-			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+			rt.Out.Success(fmt.Sprintf("Deleted %s", webhookID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": webhookID})
 		},
 	}
+}
+
+// ── picker helpers ───────────────────────────────────────────────────────────
+
+func webhookPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
+	page, err := client.Webhooks.List(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PickerItem, len(page.Items))
+	for i, w := range page.Items {
+		items[i] = PickerItem{ID: w.ID, Label: fmt.Sprintf("%s  (%s)", w.URL, w.Status)}
+	}
+	return items, nil
 }
