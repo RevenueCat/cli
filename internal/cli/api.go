@@ -72,7 +72,18 @@ Exit code reflects the HTTP status: non-2xx responses exit non-zero.`,
 				}
 			}
 			if status >= 400 {
-				return fmt.Errorf("HTTP %d", status)
+				var code int
+				switch {
+				case status == 401 || status == 403:
+					code = 4
+				case status == 404:
+					code = 5
+				case status == 429:
+					code = 6
+				default:
+					code = 1
+				}
+				return &SilentExitError{Code: code}
 			}
 			return nil
 		},
