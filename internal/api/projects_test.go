@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -73,8 +74,8 @@ func TestProjectsGetWorkaround(t *testing.T) {
 	if err == nil {
 		t.Fatal("want error for missing project")
 	}
-	apiErr, ok := err.(*api.Error)
-	if !ok || apiErr.Type != "resource_missing" {
+	var apiErr *api.Error
+	if !errors.As(err, &apiErr) || apiErr.Type != "resource_missing" {
 		t.Errorf("want resource_missing error, got %v", err)
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -167,5 +166,3 @@ func encodePath(parts ...string) string {
 	}
 	return out
 }
-
-var _ = fmt.Sprintf

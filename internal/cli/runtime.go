@@ -18,6 +18,7 @@ type Runtime struct {
 	Globals *Globals
 	Config  *config.Config
 	Out     *output.Renderer
+	Ctx     context.Context
 
 	client *api.Client
 }

@@ -31,6 +31,7 @@ type Renderer struct {
 	stderr  io.Writer
 	json    bool
 	noColor bool
+	quiet   bool
 	format  string // jsonpath-style projection (TODO: wire to a jq-lite eval)
 
 	success lipgloss.Style
@@ -39,13 +40,14 @@ type Renderer struct {
 	errSty  lipgloss.Style
 }
 
-func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor bool, format string) *Renderer {
+func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format string) *Renderer {
 	noColor = noColor || os.Getenv("NO_COLOR") != ""
 	r := &Renderer{
 		stdout:  stdout,
 		stderr:  stderr,
 		json:    jsonMode,
 		noColor: noColor,
+		quiet:   quiet,
 		format:  format,
 	}
 	if !noColor {
@@ -210,21 +212,21 @@ func spaces(n int) string {
 }
 
 func (r *Renderer) Success(msg string) {
-	if r.json {
+	if r.json || r.quiet {
 		return
 	}
 	fmt.Fprintln(r.stderr, r.style(r.success, "✓ ")+msg)
 }
 
 func (r *Renderer) Info(msg string) {
-	if r.json {
+	if r.json || r.quiet {
 		return
 	}
 	fmt.Fprintln(r.stderr, r.style(r.info, "• ")+msg)
 }
 
 func (r *Renderer) Warn(msg string) {
-	if r.json {
+	if r.json || r.quiet {
 		return
 	}
 	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)

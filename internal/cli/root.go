@@ -61,12 +61,13 @@ Agent-friendly entrypoints:
 			if g.APIKey != "" {
 				cfg.APIKey = g.APIKey
 			}
-			ctx := WithRuntime(cmd.Context(), &Runtime{
+			rt := &Runtime{
 				Globals: g,
 				Config:  cfg,
-				Out:     output.NewRenderer(cmd.OutOrStdout(), cmd.ErrOrStderr(), g.JSON, g.NoColor, g.Format),
-			})
-			cmd.SetContext(ctx)
+				Ctx:     cmd.Context(),
+				Out:     output.NewRenderer(cmd.OutOrStdout(), cmd.ErrOrStderr(), g.JSON, g.NoColor, g.Quiet, g.Format),
+			}
+			cmd.SetContext(WithRuntime(cmd.Context(), rt))
 			return nil
 		},
 	}
@@ -76,6 +77,7 @@ Agent-friendly entrypoints:
 	pf.BoolVar(&g.NoInput, "no-input", false, "disable interactive prompts; fail if input is required")
 	pf.BoolVarP(&g.Quiet, "quiet", "q", false, "suppress non-essential output")
 	pf.BoolVarP(&g.Verbose, "verbose", "v", false, "enable verbose logging")
+	_ = pf.MarkHidden("verbose")
 	pf.StringVar(&g.Profile, "profile", "", "configuration profile to use (default: active profile)")
 	pf.StringVar(&g.APIKey, "api-key", "", "RevenueCat API key (overrides profile; or set RC_API_KEY)")
 	pf.StringVar(&g.Format, "format", "", "jq expression applied to --json output (e.g. '.data.items[].id')")

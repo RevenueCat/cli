@@ -14,7 +14,7 @@ import (
 // stdout=data / stderr=chatter contract without touching real I/O.
 func newR(jsonMode bool) (*output.Renderer, *bytes.Buffer, *bytes.Buffer) {
 	var out, errb bytes.Buffer
-	r := output.NewRenderer(&out, &errb, jsonMode, true, "")
+	r := output.NewRenderer(&out, &errb, jsonMode, true, false, "")
 	return r, &out, &errb
 }
 
@@ -114,7 +114,7 @@ func TestRenderTable_JSONMode_EmitsRawNotTable(t *testing.T) {
 
 func TestRender_FormatExtractsScalar(t *testing.T) {
 	var out, errb bytes.Buffer
-	r := output.NewRenderer(&out, &errb, true, true, ".data.id")
+	r := output.NewRenderer(&out, &errb, true, true, false, ".data.id")
 	if err := r.Render(map[string]any{"id": "cus_abc"}); err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestRender_FormatExtractsScalar(t *testing.T) {
 
 func TestRender_FormatExtractsObject(t *testing.T) {
 	var out, errb bytes.Buffer
-	r := output.NewRenderer(&out, &errb, true, true, ".data.items[]")
+	r := output.NewRenderer(&out, &errb, true, true, false, ".data.items[]")
 	err := r.Render(map[string]any{"items": []any{
 		map[string]any{"id": "a"},
 		map[string]any{"id": "b"},
@@ -145,7 +145,7 @@ func TestRender_FormatExtractsObject(t *testing.T) {
 
 func TestRender_FormatBadExpression_ReturnsErrBadFormat(t *testing.T) {
 	var out, errb bytes.Buffer
-	r := output.NewRenderer(&out, &errb, true, true, "..invalid..")
+	r := output.NewRenderer(&out, &errb, true, true, false, "..invalid..")
 	err := r.Render(map[string]any{"id": "x"})
 	if err == nil {
 		t.Fatal("want error for invalid jq expression")
@@ -157,7 +157,7 @@ func TestRender_FormatBadExpression_ReturnsErrBadFormat(t *testing.T) {
 
 func TestRender_FormatWithoutJSON_WarnsAndFallsThrough(t *testing.T) {
 	var out, errb bytes.Buffer
-	r := output.NewRenderer(&out, &errb, false, true, ".id")
+	r := output.NewRenderer(&out, &errb, false, true, false, ".id")
 	if err := r.Render(map[string]any{"id": "x"}); err != nil {
 		t.Fatal(err)
 	}
