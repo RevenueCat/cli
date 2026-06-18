@@ -64,7 +64,7 @@ func (r *Runtime) API() (*api.Client, error) {
 // maps to exit 4 and prompts the user to re-login.
 func (r *Runtime) silentRefresh() {
 	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
-	tr, err := svc.Refresh(context.Background(), r.Config.RefreshToken)
+	tr, err := svc.Refresh(r.Ctx, r.Config.RefreshToken)
 	if err != nil {
 		return
 	}

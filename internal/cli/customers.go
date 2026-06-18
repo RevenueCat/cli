@@ -323,7 +323,7 @@ func requireProject(rt *Runtime) (string, error) {
 	if rt.Globals.NoInput {
 		return "", fmt.Errorf("no active project: run `rc projects use <id>` or pass --project-id")
 	}
-	return pickProjectInteractive(context.Background(), rt)
+	return pickProjectInteractive(rt.Ctx, rt)
 }
 
 func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
