@@ -91,10 +91,10 @@ func (s *CustomersService) GrantEntitlement(ctx context.Context, projectID, cust
 	return &out, nil
 }
 
-// POST /projects/{project_id}/customers/{customer_id}/actions/revoke_entitlement
+// POST /projects/{project_id}/customers/{customer_id}/actions/revoke_granted_entitlement
 func (s *CustomersService) RevokeEntitlement(ctx context.Context, projectID, customerID, entitlementID string) error {
 	body := map[string]any{"entitlement_id": entitlementID}
-	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/revoke_entitlement"
+	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/revoke_granted_entitlement"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
@@ -151,10 +151,10 @@ func (s *CustomersService) OverrideOffering(ctx context.Context, projectID, cust
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
-// POST /projects/{project_id}/customers/{customer_id}/actions/restore_google_play_purchase
+// POST /projects/{project_id}/customers/{customer_id}/actions/restore_purchase_by_order_id
 func (s *CustomersService) RestoreGooglePlay(ctx context.Context, projectID, customerID, token string) error {
-	body := map[string]any{"purchase_token": token}
-	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/restore_google_play_purchase"
+	body := map[string]any{"fetch_token": token}
+	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/restore_purchase_by_order_id"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
@@ -165,10 +165,10 @@ func (s *CustomersService) Wallet(ctx context.Context, projectID, customerID str
 	return &out, err
 }
 
-// POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/balance
+// POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/update_balance
 func (s *CustomersService) WalletAdjustBalance(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
 	body := map[string]any{"currency_code": currencyCode, "amount": amount}
-	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "virtual_currencies", "balance"), body, nil)
+	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "virtual_currencies", "update_balance"), body, nil)
 }
 
 // POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/transactions

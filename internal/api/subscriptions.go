@@ -18,7 +18,7 @@ type Transaction struct {
 	Object         string `json:"object,omitempty"`
 }
 
-// ManagementURL is returned by GET subscriptions/{id}/management_url. The
+// ManagementURL is returned by GET subscriptions/{id}/authenticated_management_url. The
 // endpoint emits a tiny object rather than a bare string.
 type ManagementURL struct {
 	URL    string `json:"url"`
@@ -46,10 +46,10 @@ func (s *SubscriptionsService) Entitlements(ctx context.Context, projectID, id s
 	return &out, err
 }
 
-// GET /projects/{project_id}/subscriptions/{id}/management_url
+// GET /projects/{project_id}/subscriptions/{id}/authenticated_management_url
 func (s *SubscriptionsService) ManagementURL(ctx context.Context, projectID, id string) (*ManagementURL, error) {
 	var out ManagementURL
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "subscriptions", id, "management_url"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "subscriptions", id, "authenticated_management_url"), nil, &out)
 	return &out, err
 }
 
