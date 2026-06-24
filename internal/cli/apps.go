@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -36,6 +38,7 @@ func newAppsCmd() *cobra.Command {
 		newAppsUpdateCmd(),
 		newAppsDeleteCmd(),
 		newAppsKeysCmd(),
+		newAppsStoreKitConfigCmd(),
 	)
 	return cmd
 }
@@ -311,4 +314,58 @@ func newAppsKeysCmd() *cobra.Command {
 			return rt.Out.Render(keys)
 		},
 	}
+}
+
+func newAppsStoreKitConfigCmd() *cobra.Command {
+	var outputPath string
+	cmd := &cobra.Command{
+		Use:     "storekit-config [app-id]",
+		Aliases: []string{"storekit"},
+		Short:   "Export the StoreKit configuration for an app",
+		Args:    cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
+				page, err := client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(page.Items))
+				for i, a := range page.Items {
+					items[i] = PickerItem{ID: a.ID, Label: fmt.Sprintf("%s  (%s)", a.Name, string(a.Type))}
+				}
+				return items, nil
+			})
+			if err != nil {
+				return err
+			}
+			cfg, err := client.Apps.StoreKitConfig(cmd.Context(), projectID, appID)
+			if err != nil {
+				return err
+			}
+			if outputPath != "" {
+				b, err := json.MarshalIndent(cfg.Contents, "", "  ")
+				if err != nil {
+					return err
+				}
+				b = append(b, '\n')
+				if err := os.WriteFile(outputPath, b, 0o600); err != nil {
+					return err
+				}
+				rt.Out.Success(fmt.Sprintf("Wrote %s", outputPath))
+				return rt.Out.Render(map[string]any{"ok": true, "app_id": appID, "path": outputPath})
+			}
+			return rt.Out.Render(cfg)
+		},
+	}
+	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "write StoreKit JSON contents to a file")
+	return cmd
 }

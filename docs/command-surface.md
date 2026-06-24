@@ -104,7 +104,7 @@ rc apps create
 rc apps update <id>
 rc apps delete <id>
 rc apps keys <app-id>                                    # public_api_keys (per-app — needs verification)
-rc apps storekit <app-id>                                # store_kit_config
+rc apps storekit-config <app-id>                         # store_kit_config; optionally writes .storekit JSON
 
 # Customers — busiest noun
 rc customer show [id]                                    # already embeds active_entitlements; we'll add subs + purchases
@@ -263,7 +263,7 @@ rc chat                                                  # internal agent chat
 4. **Support toolkit**: `subscriptions` ✅ (show/transactions/entitlements/management-url/cancel/extend/refund), `purchases` ✅, `invoices` ✅. `customer wallet` still TODO.
 5. **Long tail**: `webhooks` ✅ (under `/integrations/webhooks`), `paywalls` ✅. `currencies` catalog, `discounts`, `experiments` deferred — fixtures empty so write shapes unverified.
 6. **Cross-resource utilities**: `metrics` ✅, `charts list/show/options` ✅ (with client-side enum validation + shell completion), `benchmarks` ✅, `audit` ✅. `find` still TODO (search query format unconfirmed).
-7. **Apps** ✅ — list/show/create/update/delete/keys.
+7. **Apps** ✅ — list/show/create/update/delete/keys/storekit-config.
 4. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
 5. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
 6. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
