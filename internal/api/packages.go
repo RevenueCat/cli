@@ -22,14 +22,14 @@ func (s *PackagesService) List(ctx context.Context, projectID, offeringID string
 	return &out, err
 }
 
-func (s *PackagesService) Get(ctx context.Context, projectID, offeringID, id string) (*Package, error) {
+func (s *PackagesService) Get(ctx context.Context, projectID, id string) (*Package, error) {
 	var out Package
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "offerings", offeringID, "packages", id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "packages", id), nil, &out)
 	return &out, err
 }
 
-func (s *PackagesService) Delete(ctx context.Context, projectID, offeringID, id string) error {
-	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "offerings", offeringID, "packages", id), nil, nil)
+func (s *PackagesService) Delete(ctx context.Context, projectID, id string) error {
+	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "packages", id), nil, nil)
 }
 
 type PackageCreate struct {
@@ -49,26 +49,26 @@ func (s *PackagesService) Create(ctx context.Context, projectID, offeringID stri
 	return &out, err
 }
 
-func (s *PackagesService) Update(ctx context.Context, projectID, offeringID, id string, body PackageUpdate) (*Package, error) {
+func (s *PackagesService) Update(ctx context.Context, projectID, id string, body PackageUpdate) (*Package, error) {
 	var out Package
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "offerings", offeringID, "packages", id), body, &out)
+	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "packages", id), body, &out)
 	return &out, err
 }
 
-func (s *PackagesService) ListProducts(ctx context.Context, projectID, offeringID, id string) (*Page[Product], error) {
+func (s *PackagesService) ListProducts(ctx context.Context, projectID, id string) (*Page[Product], error) {
 	var out Page[Product]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "offerings", offeringID, "packages", id, "products"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "packages", id, "products"), nil, &out)
 	return &out, err
 }
 
-func (s *PackagesService) AttachProducts(ctx context.Context, projectID, offeringID, id string, productIDs []string) error {
+func (s *PackagesService) AttachProducts(ctx context.Context, projectID, id string, productIDs []string) error {
 	body := map[string]any{"product_ids": productIDs}
-	path := encodePath("projects", projectID, "offerings", offeringID, "packages", id, "products") + "/attach"
+	path := encodePath("projects", projectID, "packages", id, "actions") + "/attach_products"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
-func (s *PackagesService) DetachProducts(ctx context.Context, projectID, offeringID, id string, productIDs []string) error {
+func (s *PackagesService) DetachProducts(ctx context.Context, projectID, id string, productIDs []string) error {
 	body := map[string]any{"product_ids": productIDs}
-	path := encodePath("projects", projectID, "offerings", offeringID, "packages", id, "products") + "/detach"
+	path := encodePath("projects", projectID, "packages", id, "actions") + "/detach_products"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }

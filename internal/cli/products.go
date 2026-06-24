@@ -25,6 +25,7 @@ func newProductsCmd() *cobra.Command {
 		newProductsListCmd(),
 		newProductsShowCmd(),
 		newProductsCreateCmd(),
+		newProductsUpdateCmd(),
 		newProductsDeleteCmd(),
 		newProductsArchiveCmd(),
 		newProductsRestoreCmd(),
@@ -320,6 +321,44 @@ func newProductsShowCmd() *cobra.Command {
 			return rt.Out.Render(p)
 		},
 	}
+}
+
+func newProductsUpdateCmd() *cobra.Command {
+	var displayName string
+	cmd := &cobra.Command{
+		Use:   "update [id]",
+		Short: "Update a product",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			productID, err := requireID(rt, argAt(args, 0), "product", func() ([]PickerItem, error) {
+				return productPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			body := api.ProductUpdate{}
+			if cmd.Flags().Changed("display-name") {
+				body.DisplayName = &displayName
+			}
+			p, err := client.Products.Update(cmd.Context(), projectID, productID, body)
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Updated %s", p.ID))
+			return rt.Out.Render(p)
+		},
+	}
+	cmd.Flags().StringVar(&displayName, "display-name", "", "new display name")
+	return cmd
 }
 
 func newProductsDeleteCmd() *cobra.Command {

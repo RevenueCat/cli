@@ -83,16 +83,16 @@ func (s *EntitlementsService) ListProducts(ctx context.Context, projectID, id st
 	return &out, err
 }
 
-// POST /projects/{project_id}/entitlements/{id}/products/attach
+// POST /projects/{project_id}/entitlements/{id}/actions/attach_products
 func (s *EntitlementsService) AttachProducts(ctx context.Context, projectID, id string, productIDs []string) error {
 	body := map[string]any{"product_ids": productIDs}
-	path := encodePath("projects", projectID, "entitlements", id, "products") + "/attach"
+	path := encodePath("projects", projectID, "entitlements", id, "actions") + "/attach_products"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
-// POST /projects/{project_id}/entitlements/{id}/products/detach
+// POST /projects/{project_id}/entitlements/{id}/actions/detach_products
 func (s *EntitlementsService) DetachProducts(ctx context.Context, projectID, id string, productIDs []string) error {
 	body := map[string]any{"product_ids": productIDs}
-	path := encodePath("projects", projectID, "entitlements", id, "products") + "/detach"
+	path := encodePath("projects", projectID, "entitlements", id, "actions") + "/detach_products"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }

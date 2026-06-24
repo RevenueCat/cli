@@ -11,9 +11,8 @@ import (
 	"github.com/revenuecat/cli/internal/tui"
 )
 
-// Packages live inside offerings: every command takes <offering-id> as the
-// first arg. `rc offerings packages <id>` covers list-by-offering; this group
-// covers the per-package CRUD + product attachment.
+// Package creation is scoped to an offering. Existing package operations use
+// package IDs directly, matching the public v2 package endpoints.
 
 func newPackagesCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -132,13 +131,13 @@ func runPackagesList(cmd *cobra.Command, _ []string) error {
 
 func newPackagesShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show [offering-id] [package-id]",
+		Use:   "show [package-id]",
 		Short: "Show a package",
-		Long: `Show details for a specific package. Omit IDs under a TTY to pick
-interactively — offering first, then package within that offering.`,
-		Example: `  rc packages show                    # TTY: picks offering then package
-  rc packages show ofrng_abc pkg_xyz  # explicit`,
-		Args: cobra.MaximumNArgs(2),
+		Long: `Show details for a specific package. Omit the ID under a TTY to pick
+interactively.`,
+		Example: `  rc packages show          # TTY: pick a package
+  rc packages show pkg_xyz  # explicit`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -149,19 +148,13 @@ interactively — offering first, then package within that offering.`,
 			if err != nil {
 				return err
 			}
-			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
-				return offeringPickerItems(cmd.Context(), client, projectID)
+			packageID, err := requireID(rt, argAt(args, 0), "package", func() ([]PickerItem, error) {
+				return allPackagePickerItems(cmd.Context(), client, projectID)
 			})
 			if err != nil {
 				return err
 			}
-			packageID, err := requireID(rt, argAt(args, 1), "package", func() ([]PickerItem, error) {
-				return packagePickerItems(cmd.Context(), client, projectID, offeringID)
-			})
-			if err != nil {
-				return err
-			}
-			p, err := client.Packages.Get(cmd.Context(), projectID, offeringID, packageID)
+			p, err := client.Packages.Get(cmd.Context(), projectID, packageID)
 			if err != nil {
 				return err
 			}
@@ -213,9 +206,9 @@ func newPackagesCreateCmd() *cobra.Command {
 func newPackagesUpdateCmd() *cobra.Command {
 	var displayName string
 	cmd := &cobra.Command{
-		Use:   "update [offering-id] [package-id]",
+		Use:   "update [package-id]",
 		Short: "Update a package",
-		Args:  cobra.MaximumNArgs(2),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -226,14 +219,8 @@ func newPackagesUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
-				return offeringPickerItems(cmd.Context(), client, projectID)
-			})
-			if err != nil {
-				return err
-			}
-			packageID, err := requireID(rt, argAt(args, 1), "package", func() ([]PickerItem, error) {
-				return packagePickerItems(cmd.Context(), client, projectID, offeringID)
+			packageID, err := requireID(rt, argAt(args, 0), "package", func() ([]PickerItem, error) {
+				return allPackagePickerItems(cmd.Context(), client, projectID)
 			})
 			if err != nil {
 				return err
@@ -242,7 +229,7 @@ func newPackagesUpdateCmd() *cobra.Command {
 			if cmd.Flags().Changed("display-name") {
 				body.DisplayName = &displayName
 			}
-			pkg, err := client.Packages.Update(cmd.Context(), projectID, offeringID, packageID, body)
+			pkg, err := client.Packages.Update(cmd.Context(), projectID, packageID, body)
 			if err != nil {
 				return err
 			}
@@ -256,15 +243,15 @@ func newPackagesUpdateCmd() *cobra.Command {
 
 func newPackagesDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete [offering-id] [package-id]",
+		Use:   "delete [package-id]",
 		Short: "Delete a package",
 		Long: `Permanently deletes a package from its offering.
 
 Reversibility: irreversible.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc packages delete ofrng_default pkg_legacy --yes`,
-		Args:    cobra.MaximumNArgs(2),
+		Example: `  rc packages delete pkg_legacy --yes`,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -275,14 +262,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
-				return offeringPickerItems(cmd.Context(), client, projectID)
-			})
-			if err != nil {
-				return err
-			}
-			packageID, err := requireID(rt, argAt(args, 1), "package", func() ([]PickerItem, error) {
-				return packagePickerItems(cmd.Context(), client, projectID, offeringID)
+			packageID, err := requireID(rt, argAt(args, 0), "package", func() ([]PickerItem, error) {
+				return allPackagePickerItems(cmd.Context(), client, projectID)
 			})
 			if err != nil {
 				return err
@@ -296,7 +277,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 					return fmt.Errorf("aborted")
 				}
 			}
-			if err := client.Packages.Delete(cmd.Context(), projectID, offeringID, packageID); err != nil {
+			if err := client.Packages.Delete(cmd.Context(), projectID, packageID); err != nil {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Deleted %s", packageID))
@@ -307,9 +288,9 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 
 func newPackagesProductsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "products [offering-id] [package-id]",
+		Use:   "products [package-id]",
 		Short: "List products attached to a package",
-		Args:  cobra.MaximumNArgs(2),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -320,19 +301,13 @@ func newPackagesProductsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
-				return offeringPickerItems(cmd.Context(), client, projectID)
+			packageID, err := requireID(rt, argAt(args, 0), "package", func() ([]PickerItem, error) {
+				return allPackagePickerItems(cmd.Context(), client, projectID)
 			})
 			if err != nil {
 				return err
 			}
-			packageID, err := requireID(rt, argAt(args, 1), "package", func() ([]PickerItem, error) {
-				return packagePickerItems(cmd.Context(), client, projectID, offeringID)
-			})
-			if err != nil {
-				return err
-			}
-			page, err := client.Packages.ListProducts(cmd.Context(), projectID, offeringID, packageID)
+			page, err := client.Packages.ListProducts(cmd.Context(), projectID, packageID)
 			if err != nil {
 				return err
 			}
@@ -367,11 +342,37 @@ func packagePickerItems(ctx context.Context, client *api.Client, projectID, offe
 	return items, nil
 }
 
+func allPackagePickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
+	offerings, err := client.Offerings.List(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	var items []PickerItem
+	for _, o := range offerings.Items {
+		pkgs, err := client.Packages.List(ctx, projectID, o.ID)
+		if err != nil {
+			return nil, fmt.Errorf("listing packages for offering %s: %w", o.ID, err)
+		}
+		offeringLabel := o.LookupKey
+		if offeringLabel == "" {
+			offeringLabel = o.ID
+		}
+		for _, p := range pkgs.Items {
+			label := p.LookupKey
+			if p.DisplayName != "" {
+				label = fmt.Sprintf("%s  (%s)", p.DisplayName, p.LookupKey)
+			}
+			items = append(items, PickerItem{ID: p.ID, Label: fmt.Sprintf("%s  ·  %s", label, offeringLabel)})
+		}
+	}
+	return items, nil
+}
+
 func newPackagesAttachCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "attach <offering-id> <package-id> <product-id> [product-id...]",
+		Use:   "attach <package-id> <product-id> [product-id...]",
 		Short: "Attach products to a package",
-		Args:  cobra.MinimumNArgs(3),
+		Args:  cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -382,20 +383,20 @@ func newPackagesAttachCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := client.Packages.AttachProducts(cmd.Context(), projectID, args[0], args[1], args[2:]); err != nil {
+			if err := client.Packages.AttachProducts(cmd.Context(), projectID, args[0], args[1:]); err != nil {
 				return err
 			}
-			rt.Out.Success(fmt.Sprintf("Attached %d product(s)", len(args)-2))
-			return rt.Out.Render(map[string]any{"ok": true, "package_id": args[1], "product_ids": args[2:]})
+			rt.Out.Success(fmt.Sprintf("Attached %d product(s)", len(args)-1))
+			return rt.Out.Render(map[string]any{"ok": true, "package_id": args[0], "product_ids": args[1:]})
 		},
 	}
 }
 
 func newPackagesDetachCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "detach <offering-id> <package-id> <product-id> [product-id...]",
+		Use:   "detach <package-id> <product-id> [product-id...]",
 		Short: "Detach products from a package",
-		Args:  cobra.MinimumNArgs(3),
+		Args:  cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -406,11 +407,11 @@ func newPackagesDetachCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := client.Packages.DetachProducts(cmd.Context(), projectID, args[0], args[1], args[2:]); err != nil {
+			if err := client.Packages.DetachProducts(cmd.Context(), projectID, args[0], args[1:]); err != nil {
 				return err
 			}
-			rt.Out.Success(fmt.Sprintf("Detached %d product(s)", len(args)-2))
-			return rt.Out.Render(map[string]any{"ok": true, "package_id": args[1], "product_ids": args[2:]})
+			rt.Out.Success(fmt.Sprintf("Detached %d product(s)", len(args)-1))
+			return rt.Out.Render(map[string]any{"ok": true, "package_id": args[0], "product_ids": args[1:]})
 		},
 	}
 }

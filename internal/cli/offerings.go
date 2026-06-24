@@ -396,7 +396,7 @@ func packageToItem(ctx context.Context, client *api.Client, projectID, offeringI
 			{Key: "Created", Value: formatMillis(p.CreatedAt)},
 		},
 		AutoLoad: func() ([]tui.BrowserSection, error) {
-			prods, err := client.Packages.ListProducts(ctx, projectID, offeringID, p.ID)
+			prods, err := client.Packages.ListProducts(ctx, projectID, p.ID)
 			if err != nil {
 				return nil, err
 			}
