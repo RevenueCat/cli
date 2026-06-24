@@ -93,6 +93,7 @@ rc completion <shell>
 rc projects                                              # alias: list
 rc projects list
 rc projects show [id]
+rc projects create                                      # create a project; --use saves it as active
 rc projects use <id>                                     # switch profile default (interactive picker if no arg)
 rc projects collaborators                                # list-only in API
 
@@ -256,7 +257,7 @@ rc chat                                                  # internal agent chat
 
 ## Build order
 
-1. **`projects`** (list, show, use) — ✅ shipped.
+1. **`projects`** (list, show, use, create) — create is required for zero-to-project bootstrap.
 2. **`customers`** ✅ — list, composite show, grant, revoke, aliases, attributes (+ set-attribute), transfer, override-offering, clear-override, restore-google, wallet.
 3. **Catalog CRUD** ✅ — entitlements (+ archive/restore/products/attach/detach), offerings (+ archive/restore), products (+ update/archive/restore/push), packages (show/create/update/delete/products/attach/detach). No `crud` helper extracted — readable enough inline.
 4. **Support toolkit**: `subscriptions` ✅ (show/transactions/entitlements/management-url/cancel/extend/refund), `purchases` ✅, `invoices` ✅. `customer wallet` still TODO.

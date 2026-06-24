@@ -18,6 +18,15 @@ func (s *ProjectsService) List(ctx context.Context) (*Page[Project], error) {
 	return &out, nil
 }
 
+// POST /projects
+func (s *ProjectsService) Create(ctx context.Context, body ProjectCreate) (*Project, error) {
+	var out Project
+	if err := s.c.do(ctx, http.MethodPost, "/projects", body, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Get resolves a single project by ID. The v2 API doesn't expose a per-project
 // GET endpoint yet, so this lists and filters. Callers don't need to know.
 // Replace with a direct GET when it ships.
