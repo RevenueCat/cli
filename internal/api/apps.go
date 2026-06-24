@@ -11,12 +11,68 @@ type AppsService struct{ c *Client }
 // The App, AppType etc. response types are generated in types_gen.go.
 
 type AppCreate struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name        string              `json:"name"`
+	Type        string              `json:"type"`
+	Amazon      *AmazonAppConfig    `json:"amazon,omitempty"`
+	AppStore    *AppStoreAppConfig  `json:"app_store,omitempty"`
+	MacAppStore *MacAppStoreConfig  `json:"mac_app_store,omitempty"`
+	Paddle      *PaddleAppConfig    `json:"paddle,omitempty"`
+	PlayStore   *PlayStoreAppConfig `json:"play_store,omitempty"`
+	RCBilling   *RCBillingConfig    `json:"rc_billing,omitempty"`
+	Roku        *RokuAppConfig      `json:"roku,omitempty"`
+	Stripe      *StripeAppConfig    `json:"stripe,omitempty"`
 }
 
 type AppUpdate struct {
 	Name *string `json:"name,omitempty"`
+}
+
+type AmazonAppConfig struct {
+	PackageName  string  `json:"package_name"`
+	SharedSecret *string `json:"shared_secret,omitempty"`
+}
+
+type AppStoreAppConfig struct {
+	BundleID                    string  `json:"bundle_id"`
+	SharedSecret                *string `json:"shared_secret,omitempty"`
+	SubscriptionPrivateKey      *string `json:"subscription_private_key,omitempty"`
+	SubscriptionKeyID           *string `json:"subscription_key_id,omitempty"`
+	SubscriptionKeyIssuer       *string `json:"subscription_key_issuer,omitempty"`
+	AppStoreConnectAPIKey       *string `json:"app_store_connect_api_key,omitempty"`
+	AppStoreConnectAPIKeyID     *string `json:"app_store_connect_api_key_id,omitempty"`
+	AppStoreConnectAPIKeyIssuer *string `json:"app_store_connect_api_key_issuer,omitempty"`
+	AppStoreConnectVendorNumber *string `json:"app_store_connect_vendor_number,omitempty"`
+}
+
+type MacAppStoreConfig struct {
+	BundleID     string  `json:"bundle_id"`
+	SharedSecret *string `json:"shared_secret,omitempty"`
+}
+
+type PaddleAppConfig struct {
+	PaddleAPIKey    *string `json:"paddle_api_key,omitempty"`
+	PaddleIsSandbox *bool   `json:"paddle_is_sandbox,omitempty"`
+}
+
+type PlayStoreAppConfig struct {
+	PackageName string `json:"package_name"`
+}
+
+type RCBillingConfig struct {
+	AppName         string  `json:"app_name"`
+	DefaultCurrency *string `json:"default_currency,omitempty"`
+	StripeAccountID *string `json:"stripe_account_id,omitempty"`
+	SupportEmail    *string `json:"support_email,omitempty"`
+}
+
+type RokuAppConfig struct {
+	RokuAPIKey      *string `json:"roku_api_key,omitempty"`
+	RokuChannelID   *string `json:"roku_channel_id,omitempty"`
+	RokuChannelName *string `json:"roku_channel_name,omitempty"`
+}
+
+type StripeAppConfig struct {
+	StripeAccountID *string `json:"stripe_account_id,omitempty"`
 }
 
 func (s *AppsService) List(ctx context.Context, projectID string) (*Page[App], error) {

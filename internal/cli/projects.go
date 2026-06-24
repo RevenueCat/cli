@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
+	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
@@ -23,6 +24,7 @@ func newProjectsCmd() *cobra.Command {
 	cmd.AddCommand(
 		newProjectsListCmd(),
 		newProjectsShowCmd(),
+		newProjectsCreateCmd(),
 		newProjectsUseCmd(),
 	)
 	return cmd
@@ -118,6 +120,57 @@ func newProjectsShowCmd() *cobra.Command {
 			return rt.Out.Render(p)
 		},
 	}
+}
+
+func newProjectsCreateCmd() *cobra.Command {
+	var name string
+	var use bool
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a project",
+		Long: `Creates a new RevenueCat project.
+
+Use --use to save the newly-created project as the active project for the
+current profile.`,
+		Example: `  rc projects create --name "Acme App" --use
+  rc projects create --name "Acme App" --json`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			if err := tui.Form(rt.Globals.NoInput).
+				Field(huh.NewInput().Title("Project name").Value(&name).Validate(tui.Required("name"))).
+				Run(); err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			p, err := client.Projects.Create(cmd.Context(), api.ProjectCreate{Name: name})
+			if err != nil {
+				return err
+			}
+			if use {
+				rt.Config.ProjectID = p.ID
+				if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+					return err
+				}
+			}
+			rt.Out.Success(fmt.Sprintf("Created project %s", p.ID))
+			if use {
+				rt.Out.Success(fmt.Sprintf("Active project: %s (%s)", p.Name, p.ID))
+			}
+			return rt.Out.Render(map[string]any{
+				"project": p,
+				"profile": map[string]any{
+					"name":       config.ProfileName(rt.Globals.Profile),
+					"project_id": rt.Config.ProjectID,
+				},
+			})
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", "project name (required)")
+	cmd.Flags().BoolVar(&use, "use", false, "set the new project as active for this profile")
+	return cmd
 }
 
 func newProjectsUseCmd() *cobra.Command {

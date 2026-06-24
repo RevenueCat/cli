@@ -23,6 +23,7 @@ var appTypes = []huh.Option[string]{
 	huh.NewOption("Roku", "roku"),
 	huh.NewOption("Stripe", "stripe"),
 	huh.NewOption("Web Billing (RC Billing)", "rc_billing"),
+	huh.NewOption("Paddle", "paddle"),
 }
 
 func newAppsCmd() *cobra.Command {
@@ -127,6 +128,13 @@ func newAppsShowCmd() *cobra.Command {
 
 func newAppsCreateCmd() *cobra.Command {
 	var name, appType string
+	var bundleID, packageName, sharedSecret string
+	var subscriptionPrivateKey, subscriptionKeyID, subscriptionKeyIssuer string
+	var appStoreConnectAPIKey, appStoreConnectAPIKeyID, appStoreConnectAPIKeyIssuer, appStoreConnectVendorNumber string
+	var stripeAccountID, appName, defaultCurrency, supportEmail string
+	var rokuAPIKey, rokuChannelID, rokuChannelName string
+	var paddleAPIKey string
+	var paddleSandbox bool
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create an app",
@@ -142,11 +150,58 @@ func newAppsCreateCmd() *cobra.Command {
 				Run(); err != nil {
 				return err
 			}
+			if !validAppType(appType) {
+				return fmt.Errorf("--type is required: app_store|play_store|amazon|mac_app_store|roku|stripe|rc_billing|paddle")
+			}
+			if err := promptForAppPlatformFields(rt, appType, &bundleID, &packageName, &appName); err != nil {
+				return err
+			}
 			client, err := rt.API()
 			if err != nil {
 				return err
 			}
-			a, err := client.Apps.Create(cmd.Context(), projectID, api.AppCreate{Name: name, Type: appType})
+			body := api.AppCreate{Name: name, Type: appType}
+			switch appType {
+			case "amazon":
+				body.Amazon = &api.AmazonAppConfig{PackageName: packageName, SharedSecret: ptrIfSet(sharedSecret)}
+			case "app_store":
+				body.AppStore = &api.AppStoreAppConfig{
+					BundleID:                    bundleID,
+					SharedSecret:                ptrIfSet(sharedSecret),
+					SubscriptionPrivateKey:      ptrIfSet(subscriptionPrivateKey),
+					SubscriptionKeyID:           ptrIfSet(subscriptionKeyID),
+					SubscriptionKeyIssuer:       ptrIfSet(subscriptionKeyIssuer),
+					AppStoreConnectAPIKey:       ptrIfSet(appStoreConnectAPIKey),
+					AppStoreConnectAPIKeyID:     ptrIfSet(appStoreConnectAPIKeyID),
+					AppStoreConnectAPIKeyIssuer: ptrIfSet(appStoreConnectAPIKeyIssuer),
+					AppStoreConnectVendorNumber: ptrIfSet(appStoreConnectVendorNumber),
+				}
+			case "mac_app_store":
+				body.MacAppStore = &api.MacAppStoreConfig{BundleID: bundleID, SharedSecret: ptrIfSet(sharedSecret)}
+			case "paddle":
+				body.Paddle = &api.PaddleAppConfig{
+					PaddleAPIKey:    ptrIfSet(paddleAPIKey),
+					PaddleIsSandbox: ptrBoolIfChanged(cmd, "paddle-sandbox", paddleSandbox),
+				}
+			case "play_store":
+				body.PlayStore = &api.PlayStoreAppConfig{PackageName: packageName}
+			case "rc_billing":
+				body.RCBilling = &api.RCBillingConfig{
+					AppName:         appName,
+					DefaultCurrency: ptrIfSet(defaultCurrency),
+					StripeAccountID: ptrIfSet(stripeAccountID),
+					SupportEmail:    ptrIfSet(supportEmail),
+				}
+			case "roku":
+				body.Roku = &api.RokuAppConfig{
+					RokuAPIKey:      ptrIfSet(rokuAPIKey),
+					RokuChannelID:   ptrIfSet(rokuChannelID),
+					RokuChannelName: ptrIfSet(rokuChannelName),
+				}
+			case "stripe":
+				body.Stripe = &api.StripeAppConfig{StripeAccountID: ptrIfSet(stripeAccountID)}
+			}
+			a, err := client.Apps.Create(cmd.Context(), projectID, body)
 			if err != nil {
 				return err
 			}
@@ -155,8 +210,53 @@ func newAppsCreateCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "app name (required)")
-	cmd.Flags().StringVar(&appType, "type", "", "app type: app_store|play_store|amazon|mac_app_store|roku|stripe|rc_billing")
+	cmd.Flags().StringVar(&appType, "type", "", "app type: app_store|play_store|amazon|mac_app_store|roku|stripe|rc_billing|paddle")
+	cmd.Flags().StringVar(&bundleID, "bundle-id", "", "Apple bundle identifier for app_store or mac_app_store")
+	cmd.Flags().StringVar(&packageName, "package-name", "", "store package name for play_store or amazon")
+	cmd.Flags().StringVar(&sharedSecret, "shared-secret", "", "Apple or Amazon shared secret")
+	cmd.Flags().StringVar(&subscriptionPrivateKey, "subscription-private-key", "", "App Store subscription private key PEM")
+	cmd.Flags().StringVar(&subscriptionKeyID, "subscription-key-id", "", "App Store subscription key ID")
+	cmd.Flags().StringVar(&subscriptionKeyIssuer, "subscription-key-issuer", "", "App Store subscription key issuer ID")
+	cmd.Flags().StringVar(&appStoreConnectAPIKey, "app-store-connect-api-key", "", "App Store Connect API key PEM")
+	cmd.Flags().StringVar(&appStoreConnectAPIKeyID, "app-store-connect-api-key-id", "", "App Store Connect API key ID")
+	cmd.Flags().StringVar(&appStoreConnectAPIKeyIssuer, "app-store-connect-api-key-issuer", "", "App Store Connect API key issuer ID")
+	cmd.Flags().StringVar(&appStoreConnectVendorNumber, "app-store-connect-vendor-number", "", "App Store Connect vendor number")
+	cmd.Flags().StringVar(&stripeAccountID, "stripe-account-id", "", "connected Stripe account ID for stripe or rc_billing")
+	cmd.Flags().StringVar(&appName, "app-name", "", "checkout app name for rc_billing")
+	cmd.Flags().StringVar(&defaultCurrency, "default-currency", "", "ISO 4217 currency code for rc_billing")
+	cmd.Flags().StringVar(&supportEmail, "support-email", "", "support email for rc_billing")
+	cmd.Flags().StringVar(&rokuAPIKey, "roku-api-key", "", "Roku Pay API key")
+	cmd.Flags().StringVar(&rokuChannelID, "roku-channel-id", "", "Roku channel ID")
+	cmd.Flags().StringVar(&rokuChannelName, "roku-channel-name", "", "Roku channel name")
+	cmd.Flags().StringVar(&paddleAPIKey, "paddle-api-key", "", "Paddle server-side API key")
+	cmd.Flags().BoolVar(&paddleSandbox, "paddle-sandbox", false, "mark Paddle app as sandbox")
 	return cmd
+}
+
+func promptForAppPlatformFields(rt *Runtime, appType string, bundleID, packageName, appName *string) error {
+	form := tui.Form(rt.Globals.NoInput)
+	switch appType {
+	case "amazon":
+		form.Field(huh.NewInput().Title("Package name").Value(packageName).Validate(tui.Required("package name")))
+	case "app_store", "mac_app_store":
+		form.Field(huh.NewInput().Title("Bundle ID").Value(bundleID).Validate(tui.Required("bundle ID")))
+	case "play_store":
+		form.Field(huh.NewInput().Title("Package name").Value(packageName).Validate(tui.Required("package name")))
+	case "rc_billing":
+		form.Field(huh.NewInput().Title("App name").Value(appName).Validate(tui.Required("app name")))
+	default:
+		return nil
+	}
+	return form.Run()
+}
+
+func validAppType(appType string) bool {
+	switch appType {
+	case "amazon", "app_store", "mac_app_store", "paddle", "play_store", "rc_billing", "roku", "stripe":
+		return true
+	default:
+		return false
+	}
 }
 
 func newAppsUpdateCmd() *cobra.Command {
@@ -368,4 +468,18 @@ func newAppsStoreKitConfigCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "write StoreKit JSON contents to a file")
 	return cmd
+}
+
+func ptrIfSet(v string) *string {
+	if v == "" {
+		return nil
+	}
+	return &v
+}
+
+func ptrBoolIfChanged(cmd *cobra.Command, name string, v bool) *bool {
+	if !cmd.Flags().Changed(name) {
+		return nil
+	}
+	return &v
 }
