@@ -125,7 +125,7 @@ rc customer purchases <id>
 rc customer entitlements <id>                            # active
 rc customer invoices <id>
 rc customer wallet <id>                                  # virtual_currencies per-customer
-rc customer wallet-grant <id> <currency> --amount N      # /virtual_currencies/balance
+rc customer wallet-grant <id> <currency> --amount N      # /virtual_currencies/update_balance
 rc customer wallet-tx <id> <currency> --amount N         # /virtual_currencies/transactions
 
 # Entitlements (project catalog)
