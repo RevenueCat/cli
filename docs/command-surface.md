@@ -165,6 +165,9 @@ rc products delete <id>
 rc products archive <id>
 rc products restore <id>
 rc products push <id>                                    # push to store
+rc products prices list <id>                            # list configured product prices
+rc products prices add <id> --store test-store --price USD:9.99 # add prices; conflicts if currency exists
+rc products prices update <id> --store test-store --price USD:12.99 # update an existing price
 
 # Paywalls
 rc paywalls list

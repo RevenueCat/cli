@@ -26,6 +26,19 @@ type ProductUpdate struct {
 	DisplayName *string `json:"display_name,omitempty"`
 }
 
+type ProductPrice struct {
+	AmountMicros int64  `json:"amount_micros"`
+	Currency     string `json:"currency"`
+}
+
+type ProductPricesCreate struct {
+	Prices []ProductPrice `json:"prices"`
+}
+
+type ProductPriceUpdate struct {
+	AmountMicros int64 `json:"amount_micros"`
+}
+
 func (s *ProductsService) List(ctx context.Context, projectID string, opts *ProductListOptions) (*Page[Product], error) {
 	path := encodePath("projects", projectID, "products")
 	if opts != nil && opts.AppID != "" {
@@ -78,4 +91,24 @@ func (s *ProductsService) Restore(ctx context.Context, projectID, id string) (*P
 func (s *ProductsService) Push(ctx context.Context, projectID, id string) error {
 	path := encodePath("projects", projectID, "products", id) + "/create_in_store"
 	return s.c.do(ctx, http.MethodPost, path, nil, nil)
+}
+
+func (s *ProductsService) ListPrices(ctx context.Context, projectID, id string) ([]ProductPrice, error) {
+	var out []ProductPrice
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "products", id, "prices"), nil, &out)
+	return out, err
+}
+
+func (s *ProductsService) AddTestStorePrices(ctx context.Context, projectID, id string, prices []ProductPrice) ([]ProductPrice, error) {
+	var out []ProductPrice
+	path := encodePath("projects", projectID, "products", id) + "/test_store_prices"
+	err := s.c.do(ctx, http.MethodPost, path, ProductPricesCreate{Prices: prices}, &out)
+	return out, err
+}
+
+func (s *ProductsService) UpdatePrice(ctx context.Context, projectID, id string, price ProductPrice) (*ProductPrice, error) {
+	var out ProductPrice
+	path := encodePath("projects", projectID, "products", id, "prices", price.Currency)
+	err := s.c.do(ctx, http.MethodPatch, path, ProductPriceUpdate{AmountMicros: price.AmountMicros}, &out)
+	return &out, err
 }

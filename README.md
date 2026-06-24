@@ -61,7 +61,7 @@ rc charts show mrr
 | **Entitlements** | `list` · `show` · `create` · `update` · `attach` · `detach` |
 | **Offerings** | `list` · `show` · `create` · `update` · `archive` |
 | **Packages** | `list` (across all offerings) · `show` · `create` · `update` · `delete` · `attach` · `detach` |
-| **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` |
+| **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `prices` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
 | **Apps** | `list` · `show` · `create` · `update` · `delete` |
 | **Audit log** | `rc audit` with `--limit` and `--since` |

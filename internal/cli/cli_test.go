@@ -365,9 +365,35 @@ func TestCommandTree_IncludesNewCommands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("execute: %v", err)
 	}
-	for _, want := range []string{`"skills"`, `"api"`, `"packages"`} {
+	for _, want := range []string{`"skills"`, `"api"`, `"packages"`, `"prices"`} {
 		if !strings.Contains(out, want) {
 			t.Errorf("want %s in command tree", want)
+		}
+	}
+}
+
+func TestSchema_ProductPricesCommands(t *testing.T) {
+	out, _, err := runCmd(t, "schema", "products", "prices", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	var got struct {
+		Data struct {
+			Subcommands []struct {
+				Name string `json:"name"`
+			} `json:"subcommands"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	names := make([]string, 0, len(got.Data.Subcommands))
+	for _, sub := range got.Data.Subcommands {
+		names = append(names, sub.Name)
+	}
+	for _, want := range []string{"list", "add", "update"} {
+		if !contains(names, want) {
+			t.Errorf("want products prices subcommand %q, got %v", want, names)
 		}
 	}
 }
