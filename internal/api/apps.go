@@ -57,3 +57,10 @@ func (s *AppsService) PublicAPIKeys(ctx context.Context, projectID, appID string
 	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps", appID, "public_api_keys"), nil, &out)
 	return out, err
 }
+
+// GET /projects/{project_id}/apps/{app_id}/store_kit_config
+func (s *AppsService) StoreKitConfig(ctx context.Context, projectID, appID string) (*StoreKitConfigFile, error) {
+	var out StoreKitConfigFile
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps", appID, "store_kit_config"), nil, &out)
+	return &out, err
+}
