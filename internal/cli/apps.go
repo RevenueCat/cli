@@ -150,6 +150,9 @@ func newAppsCreateCmd() *cobra.Command {
 				Run(); err != nil {
 				return err
 			}
+			if name == "" {
+				return fmt.Errorf("--name is required")
+			}
 			if !validAppType(appType) {
 				return fmt.Errorf("--type is required: app_store|play_store|amazon|mac_app_store|roku|stripe|rc_billing|paddle")
 			}

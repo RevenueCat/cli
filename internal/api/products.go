@@ -27,6 +27,7 @@ type ProductUpdate struct {
 }
 
 type ProductPrice struct {
+	ID           string `json:"id,omitempty"`
 	AmountMicros int64  `json:"amount_micros"`
 	Currency     string `json:"currency"`
 }

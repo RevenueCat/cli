@@ -231,7 +231,7 @@ func TestProductsUpdatePrice_Body(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Currency != "USD" || out.AmountMicros != 12_990_000 {
+	if out.ID != "price" || out.Currency != "USD" || out.AmountMicros != 12_990_000 {
 		t.Fatalf("unexpected response: %+v", out)
 	}
 }

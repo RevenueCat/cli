@@ -18,9 +18,9 @@ func newProductsPricesCmd() *cobra.Command {
 		Short: "Manage product prices",
 		Long: `Manage product prices.
 
-Currently, add and update support Test Store products. Adding a currency that
-already exists returns a conflict; updating requires that the currency already
-has a configured price.`,
+Currently, add and update support Test Store products only. Adding a currency
+that already exists returns a conflict; updating requires the currency already
+has a configured price. Prices cannot be deleted once created.`,
 	}
 	cmd.AddCommand(
 		newProductsPricesListCmd(),
@@ -70,10 +70,15 @@ func newProductsPricesAddCmd() *cobra.Command {
 		Short: "Add Test Store product prices",
 		Long: `Adds one or more prices for a Test Store product.
 
-Each --price value is CURRENCY:AMOUNT, for example USD:9.99. This creates
-prices for currencies that do not exist yet. The API returns a conflict if a
-currency already has a price; use list to inspect existing prices.`,
-		Example: `  rc products prices add prod_abc --store test-store --price USD:9.99
+Each --price value is CURRENCY:AMOUNT, for example USD:9.99. Creates prices
+for currencies that do not exist yet. The API returns a conflict if a currency
+already has a price; use "rc products prices list" to inspect existing prices.
+
+Prices cannot be deleted once created — use "rc products prices update" to
+change an existing price amount.
+
+Only Test Store products are currently supported via --store test-store.`,
+		Example: `  rc products prices add prod_abc --price USD:9.99
   rc products prices add prod_abc --price USD:9.99 --price EUR:8.99`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -86,7 +91,7 @@ currency already has a price; use list to inspect existing prices.`,
 				return fmt.Errorf("--price is required")
 			}
 			if normalizeStoreFlag(store) != "test-store" {
-				return fmt.Errorf("--store currently only supports test-store")
+				return fmt.Errorf("--store %q is not supported; only test-store products have manageable prices right now", store)
 			}
 			prices, err := parseProductPriceFlags(priceFlags)
 			if err != nil {
@@ -117,15 +122,17 @@ currency already has a price; use list to inspect existing prices.`,
 
 func newProductsPricesUpdateCmd() *cobra.Command {
 	var priceFlag string
-	var store string
 	cmd := &cobra.Command{
 		Use:   "update [id]",
-		Short: "Update an existing Test Store product price",
-		Long: `Updates an existing price for one Test Store product currency.
+		Short: "Update an existing product price",
+		Long: `Updates an existing price for one product currency.
 
 The --price value is CURRENCY:AMOUNT, for example USD:12.99. The currency must
-already exist for the product; use add to create a missing currency price.`,
-		Example: `  rc products prices update prod_abc --store test-store --price USD:12.99`,
+already exist for the product; use "rc products prices add" to create it first.
+
+Only Test Store products are currently supported. The API returns an error for
+other store types.`,
+		Example: `  rc products prices update prod_abc --price USD:12.99`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -135,9 +142,6 @@ already exist for the product; use add to create a missing currency price.`,
 			}
 			if priceFlag == "" {
 				return fmt.Errorf("--price is required")
-			}
-			if normalizeStoreFlag(store) != "test-store" {
-				return fmt.Errorf("--store currently only supports test-store")
 			}
 			price, err := parseProductPrice(priceFlag)
 			if err != nil {
@@ -162,7 +166,6 @@ already exist for the product; use add to create a missing currency price.`,
 		},
 	}
 	cmd.Flags().StringVar(&priceFlag, "price", "", "price as CURRENCY:AMOUNT, e.g. USD:12.99")
-	cmd.Flags().StringVar(&store, "store", "test-store", "store to update prices for; currently only test-store")
 	return cmd
 }
 
