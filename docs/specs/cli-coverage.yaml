@@ -11,6 +11,8 @@ endpoints:
   # Projects
   - method: GET
     path: /projects
+  - method: POST
+    path: /projects
   - method: GET
     path: /projects/{project_id}
 
@@ -27,6 +29,8 @@ endpoints:
     path: /projects/{project_id}/apps/{app_id}
   - method: GET
     path: /projects/{project_id}/apps/{app_id}/public_api_keys
+  - method: GET
+    path: /projects/{project_id}/apps/{app_id}/store_kit_config
 
   # Customers
   - method: GET
@@ -41,6 +45,16 @@ endpoints:
     path: /projects/{project_id}/customers/{customer_id}/attributes
   - method: POST
     path: /projects/{project_id}/customers/{customer_id}/attributes
+  - method: POST
+    path: /projects/{project_id}/customers/{customer_id}/actions/assign_offering
+  - method: POST
+    path: /projects/{project_id}/customers/{customer_id}/actions/grant_entitlement
+  - method: POST
+    path: /projects/{project_id}/customers/{customer_id}/actions/restore_purchase_by_order_id
+  - method: POST
+    path: /projects/{project_id}/customers/{customer_id}/actions/revoke_granted_entitlement
+  - method: POST
+    path: /projects/{project_id}/customers/{customer_id}/actions/transfer
   - method: GET
     path: /projects/{project_id}/customers/{customer_id}/invoices
   - method: GET
@@ -50,7 +64,7 @@ endpoints:
   - method: GET
     path: /projects/{project_id}/customers/{customer_id}/virtual_currencies
   - method: POST
-    path: /projects/{project_id}/customers/{customer_id}/virtual_currencies/balance
+    path: /projects/{project_id}/customers/{customer_id}/virtual_currencies/update_balance
   - method: POST
     path: /projects/{project_id}/customers/{customer_id}/virtual_currencies/transactions
 
@@ -65,12 +79,16 @@ endpoints:
     path: /projects/{project_id}/entitlements/{entitlement_id}
   - method: DELETE
     path: /projects/{project_id}/entitlements/{entitlement_id}
+  - method: POST
+    path: /projects/{project_id}/entitlements/{entitlement_id}/actions/archive
+  - method: POST
+    path: /projects/{project_id}/entitlements/{entitlement_id}/actions/unarchive
   - method: GET
     path: /projects/{project_id}/entitlements/{entitlement_id}/products
   - method: POST
-    path: /projects/{project_id}/entitlements/{entitlement_id}/products/actions/attach
+    path: /projects/{project_id}/entitlements/{entitlement_id}/actions/attach_products
   - method: POST
-    path: /projects/{project_id}/entitlements/{entitlement_id}/products/actions/detach
+    path: /projects/{project_id}/entitlements/{entitlement_id}/actions/detach_products
 
   # Offerings
   - method: GET
@@ -83,32 +101,46 @@ endpoints:
     path: /projects/{project_id}/offerings/{offering_id}
   - method: DELETE
     path: /projects/{project_id}/offerings/{offering_id}
+  - method: POST
+    path: /projects/{project_id}/offerings/{offering_id}/actions/archive
+  - method: POST
+    path: /projects/{project_id}/offerings/{offering_id}/actions/unarchive
 
-  # Packages
+  # Packages — list/create are offering-scoped; all other ops are package-scoped
   - method: GET
     path: /projects/{project_id}/offerings/{offering_id}/packages
   - method: POST
     path: /projects/{project_id}/offerings/{offering_id}/packages
   - method: GET
-    path: /projects/{project_id}/offerings/{offering_id}/packages/{package_id}
+    path: /projects/{project_id}/packages/{package_id}
   - method: POST
-    path: /projects/{project_id}/offerings/{offering_id}/packages/{package_id}
+    path: /projects/{project_id}/packages/{package_id}
   - method: DELETE
-    path: /projects/{project_id}/offerings/{offering_id}/packages/{package_id}
+    path: /projects/{project_id}/packages/{package_id}
   - method: GET
-    path: /projects/{project_id}/offerings/{offering_id}/packages/{package_id}/products
+    path: /projects/{project_id}/packages/{package_id}/products
   - method: POST
-    path: /projects/{project_id}/offerings/{offering_id}/packages/actions/attach
+    path: /projects/{project_id}/packages/{package_id}/actions/attach_products
   - method: POST
-    path: /projects/{project_id}/offerings/{offering_id}/packages/actions/detach
+    path: /projects/{project_id}/packages/{package_id}/actions/detach_products
 
   # Products
   - method: GET
     path: /projects/{project_id}/products
+  - method: POST
+    path: /projects/{project_id}/products
   - method: GET
+    path: /projects/{project_id}/products/{product_id}
+  - method: POST
     path: /projects/{project_id}/products/{product_id}
   - method: DELETE
     path: /projects/{project_id}/products/{product_id}
+  - method: POST
+    path: /projects/{project_id}/products/{product_id}/actions/archive
+  - method: POST
+    path: /projects/{project_id}/products/{product_id}/actions/unarchive
+  - method: POST
+    path: /projects/{project_id}/products/{product_id}/create_in_store
 
   # Paywalls
   - method: GET
@@ -133,16 +165,24 @@ endpoints:
   # Subscriptions
   - method: GET
     path: /projects/{project_id}/subscriptions/{subscription_id}
+  - method: POST
+    path: /projects/{project_id}/subscriptions/{subscription_id}/actions/cancel
+  - method: POST
+    path: /projects/{project_id}/subscriptions/{subscription_id}/actions/extend
+  - method: POST
+    path: /projects/{project_id}/subscriptions/{subscription_id}/actions/refund
+  - method: GET
+    path: /projects/{project_id}/subscriptions/{subscription_id}/authenticated_management_url
   - method: GET
     path: /projects/{project_id}/subscriptions/{subscription_id}/entitlements
-  - method: GET
-    path: /projects/{project_id}/subscriptions/{subscription_id}/management_url
   - method: GET
     path: /projects/{project_id}/subscriptions/{subscription_id}/transactions
 
   # Purchases
   - method: GET
     path: /projects/{project_id}/purchases/{purchase_id}
+  - method: POST
+    path: /projects/{project_id}/purchases/{purchase_id}/actions/refund
   - method: GET
     path: /projects/{project_id}/purchases/{purchase_id}/entitlements
 
