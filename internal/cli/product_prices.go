@@ -230,9 +230,7 @@ func parseDecimalMicros(value string) (int64, error) {
 	if value == "" {
 		return 0, fmt.Errorf("empty amount")
 	}
-	if strings.HasPrefix(value, "+") {
-		value = strings.TrimPrefix(value, "+")
-	}
+	value = strings.TrimPrefix(value, "+")
 	if strings.HasPrefix(value, "-") {
 		return 0, fmt.Errorf("negative amount")
 	}
