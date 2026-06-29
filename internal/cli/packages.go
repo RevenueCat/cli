@@ -326,22 +326,6 @@ func newPackagesProductsCmd() *cobra.Command {
 
 // ── picker helpers ───────────────────────────────────────────────────────────
 
-func packagePickerItems(ctx context.Context, client *api.Client, projectID, offeringID string) ([]PickerItem, error) {
-	page, err := client.Packages.List(ctx, projectID, offeringID)
-	if err != nil {
-		return nil, err
-	}
-	items := make([]PickerItem, len(page.Items))
-	for i, p := range page.Items {
-		label := p.LookupKey
-		if p.DisplayName != "" {
-			label = fmt.Sprintf("%s  (%s)", p.DisplayName, p.LookupKey)
-		}
-		items[i] = PickerItem{ID: p.ID, Label: label}
-	}
-	return items, nil
-}
-
 func allPackagePickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
 	offerings, err := client.Offerings.List(ctx, projectID)
 	if err != nil {
