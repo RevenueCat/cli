@@ -12,6 +12,7 @@ import (
 const (
 	officialToolkitSource = "RevenueCat/ai-toolkit"
 	officialToolkitDocs   = "https://www.revenuecat.com/docs/tools/overview"
+	projectSkillTrigger   = "Use the create-revenuecat-project skill to create my RevenueCat account and configure my project."
 )
 
 type skillsInstaller interface {
@@ -46,13 +47,19 @@ project setup, SDK integration, catalog management, and project health checks.
 
 rc delegates to the standard Skills CLI instead of embedding a stale copy of
 those workflows. Marketplace installation options for Codex, Claude Code,
-Cursor, VS Code, and Gemini are documented on the RevenueCat website.`,
+Cursor, VS Code, and Gemini are documented on the RevenueCat website.
+
+After installation, start a new agent session or reload the agent. Skills run
+when a request matches their description; they do not run during installation.
+Name a skill explicitly when you want predictable selection.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			return rt.Out.Render(map[string]any{
 				"source":          officialToolkitSource,
 				"install_command": "npx skills add " + officialToolkitSource + " --global",
 				"docs_url":        officialToolkitDocs,
+				"after_install":   "Start a new agent session or reload the agent.",
+				"trigger_example": projectSkillTrigger,
 			})
 		},
 	}
@@ -73,7 +80,11 @@ func newSkillsInstallCmd(installer skillsInstaller) *cobra.Command {
 The standard Skills CLI detects supported agents and owns installation paths,
 lock files, security review, and updates. This command does not vendor or cache
 a separate copy of the toolkit inside rc. Pass --project to install into the
-current repository instead. Under --no-input, pass --yes.`,
+current repository instead. Under --no-input, pass --yes.
+
+After installing or updating, start a new agent session or reload the agent so
+it discovers the latest skills. Then ask naturally for RevenueCat setup or name
+the create-revenuecat-project skill explicitly.`,
 		Example: `  rc skills install
   rc skills install --project
   rc skills install --agent codex --yes --no-input
@@ -110,14 +121,18 @@ current repository instead. Under --no-input, pass --yes.`,
 				scope = "project"
 			}
 			rt.Out.Success("Installed the RevenueCat AI Toolkit")
+			rt.Out.Info("Start a new agent session or reload the agent to discover the installed skills.")
+			rt.Out.Info("Example: " + projectSkillTrigger)
 			return rt.Out.Render(map[string]any{
-				"installed": true,
-				"source":    officialToolkitSource,
-				"scope":     scope,
-				"agents":    agents,
-				"skills":    skills,
-				"command":   "npx " + strings.Join(args[1:], " "),
-				"docs_url":  officialToolkitDocs,
+				"installed":       true,
+				"source":          officialToolkitSource,
+				"scope":           scope,
+				"agents":          agents,
+				"skills":          skills,
+				"command":         "npx " + strings.Join(args[1:], " "),
+				"docs_url":        officialToolkitDocs,
+				"next_step":       "Start a new agent session or reload the agent.",
+				"trigger_example": projectSkillTrigger,
 			})
 		},
 	}

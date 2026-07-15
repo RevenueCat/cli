@@ -45,6 +45,11 @@ func TestSkillsInstallDelegatesToOfficialToolkit(t *testing.T) {
 	if installer.calls != 1 {
 		t.Fatalf("installer calls = %d, want 1", installer.calls)
 	}
+	for _, want := range []string{"Start a new agent session", "create-revenuecat-project skill"} {
+		if !bytes.Contains(stdout.Bytes(), []byte(want)) {
+			t.Errorf("install JSON missing %q: %s", want, stdout.String())
+		}
+	}
 }
 
 func TestSkillsInstallProjectScope(t *testing.T) {
