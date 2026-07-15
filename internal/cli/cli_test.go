@@ -226,6 +226,7 @@ func TestAuthSignupHelpExplainsCredentialHandling(t *testing.T) {
 		"never printed",
 		"Renewable OAuth tokens are saved",
 		"personal/display name",
+		"--generate-password --save-password",
 		"--accept-terms",
 	} {
 		if !strings.Contains(out, want) {
