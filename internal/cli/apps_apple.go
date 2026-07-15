@@ -19,13 +19,12 @@ type appleConfigurationResult struct {
 	AppID                    string   `json:"app_id"`
 	ProviderID               int64    `json:"provider_id"`
 	ProviderName             string   `json:"provider_name"`
-	DryRun                   bool     `json:"dry_run,omitempty"`
+	Mode                     string   `json:"mode"`
 	WouldCreate              []string `json:"would_create,omitempty"`
 	InAppPurchaseKeyAccess   bool     `json:"in_app_purchase_key_access,omitempty"`
 	AppStoreConnectKeyAccess bool     `json:"app_store_connect_key_access,omitempty"`
 	InAppPurchaseKeyID       string   `json:"in_app_purchase_key_id,omitempty"`
 	AppStoreConnectAPIKeyID  string   `json:"app_store_connect_api_key_id,omitempty"`
-	WouldConfigureVendor     bool     `json:"would_configure_vendor_number,omitempty"`
 	VendorNumberConfigured   bool     `json:"vendor_number_configured"`
 }
 
@@ -45,7 +44,13 @@ const applePrivacyNotice = `Privacy:
   • Newly created private keys are uploaded directly to RevenueCat. They are
     never saved locally or printed.`
 
-const appleDryRunInstructions = `Dry run will:
+const appleCheckPrivacyNotice = `Privacy:
+  • Your Apple Account credentials are sent directly to Apple. They are never
+    sent to RevenueCat or stored by rc.
+  • The Apple session exists only in memory for the duration of this command.
+  • This check creates no Apple keys and makes no changes in RevenueCat.`
+
+const appleCheckInstructions = `This check will:
   1. Sign in directly to Apple and complete two-factor authentication.
   2. Select the App Store Connect team when the account has more than one.
   3. Make read-only requests to both Apple key-management endpoints.
@@ -53,15 +58,41 @@ const appleDryRunInstructions = `Dry run will:
 
 No Apple keys will be created and no RevenueCat app will be changed.`
 
-func newAppsConfigureAppleCmd() *cobra.Command {
+func newAppsAppleCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "apple",
+		Short: "Configure Apple credentials for an App Store app",
+	}
+	cmd.AddCommand(
+		newAppsAppleCheckCmd(),
+		newAppsAppleSetupCmd(),
+	)
+	return cmd
+}
+
+func newAppsAppleCheckCmd() *cobra.Command {
+	return newAppsAppleWorkflowCmd(true)
+}
+
+func newAppsAppleSetupCmd() *cobra.Command {
+	return newAppsAppleWorkflowCmd(false)
+}
+
+func newAppsAppleWorkflowCmd(checkOnly bool) *cobra.Command {
 	var appleID, password, verificationCode, phoneNumber, teamID string
 	var inAppKeyName, apiKeyName, vendorNumber string
-	var sms, skipInAppKey, skipAPIKey, force, dryRun bool
+	var sms, skipInAppKey, skipAPIKey, force bool
+	use, short, long := "setup [app-id]", "Create Apple keys and configure an App Store app", appleSetupInstructions
+	privacy := applePrivacyNotice
+	if checkOnly {
+		use, short, long = "check [app-id]", "Check Apple authentication and key access", appleCheckInstructions
+		privacy = appleCheckPrivacyNotice
+	}
 
 	cmd := &cobra.Command{
-		Use:   "configure-apple [app-id]",
-		Short: "Create Apple keys and configure an App Store app",
-		Long:  "Create Apple keys and configure an App Store app.\n\n" + appleSetupInstructions + "\n\n" + applePrivacyNotice + "\n\nUse --dry-run to authenticate and check Apple access without creating keys or changing RevenueCat.",
+		Use:   use,
+		Short: short,
+		Long:  short + ".\n\n" + long + "\n\n" + privacy,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appleID = valueOrEnv(appleID, "RC_APPLE_ID")
@@ -69,7 +100,9 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 			verificationCode = valueOrEnv(verificationCode, "RC_APPLE_2FA_CODE")
 			phoneNumber = valueOrEnv(phoneNumber, "RC_APPLE_PHONE_NUMBER")
 			teamID = valueOrEnv(teamID, "RC_APPLE_TEAM_ID")
-			vendorNumber = valueOrEnv(vendorNumber, "RC_APPLE_VENDOR_NUMBER")
+			if !checkOnly {
+				vendorNumber = valueOrEnv(vendorNumber, "RC_APPLE_VENDOR_NUMBER")
+			}
 
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -106,7 +139,7 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 
 			createInAppKey := !skipInAppKey && (force || !app.AppStore.SubscriptionKeyConfigured)
 			createAPIKey := !skipAPIKey && (force || !app.AppStore.AppStoreConnectAPIKeyConfigured)
-			needsApple := dryRun || createInAppKey || createAPIKey
+			needsApple := checkOnly || createInAppKey || createAPIKey
 			if !needsApple && vendorNumber == "" {
 				return rt.Out.Render(appleConfigurationResult{
 					AppID: appID,
@@ -115,14 +148,14 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 
 			if needsApple {
 				if !rt.Globals.NoInput && tui.IsInteractive() {
-					if dryRun {
-						rt.Out.Info(appleDryRunInstructions)
+					if checkOnly {
+						rt.Out.Info(appleCheckInstructions)
 					} else {
 						rt.Out.Info(appleSetupInstructions)
 					}
-					rt.Out.Info(applePrivacyNotice)
+					rt.Out.Info(privacy)
 				}
-				if !rt.Globals.AssumeYes {
+				if !checkOnly && !rt.Globals.AssumeYes {
 					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Continue and sign in to Apple?")
 					if err != nil {
 						return err
@@ -138,15 +171,17 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 					return err
 				}
 				if appleID == "" || password == "" {
-					return errors.New("--apple-id and --apple-password are required when creating Apple keys")
+					return errors.New("--apple-id and --apple-password are required for Apple authentication")
 				}
 			}
 
 			update := api.AppUpdate{AppStore: &api.AppStoreAppConfig{}}
 			result := appleConfigurationResult{
-				AppID:                appID,
-				DryRun:               dryRun,
-				WouldConfigureVendor: dryRun && vendorNumber != "",
+				AppID: appID,
+				Mode:  "setup",
+			}
+			if checkOnly {
+				result.Mode = "check"
 			}
 			createdIDs := make([]string, 0, 2)
 			if needsApple {
@@ -209,26 +244,22 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 				}
 				result.ProviderID = session.Provider.ID
 				result.ProviderName = session.Provider.Name
-				if dryRun {
-					if !skipInAppKey {
-						if err := apple.CheckKeyAccess(cmd.Context(), session, appleconnect.InAppPurchaseKey); err != nil {
-							return err
-						}
-						result.InAppPurchaseKeyAccess = true
+				if checkOnly {
+					if err := apple.CheckKeyAccess(cmd.Context(), session, appleconnect.InAppPurchaseKey); err != nil {
+						return err
 					}
-					if !skipAPIKey {
-						if err := apple.CheckKeyAccess(cmd.Context(), session, appleconnect.AppStoreConnectKey); err != nil {
-							return err
-						}
-						result.AppStoreConnectKeyAccess = true
+					result.InAppPurchaseKeyAccess = true
+					if err := apple.CheckKeyAccess(cmd.Context(), session, appleconnect.AppStoreConnectKey); err != nil {
+						return err
 					}
+					result.AppStoreConnectKeyAccess = true
 					if createInAppKey {
 						result.WouldCreate = append(result.WouldCreate, string(appleconnect.InAppPurchaseKey))
 					}
 					if createAPIKey {
 						result.WouldCreate = append(result.WouldCreate, string(appleconnect.AppStoreConnectKey))
 					}
-					rt.Out.Success("Apple dry run succeeded; no keys were created and RevenueCat was not changed")
+					rt.Out.Success("Apple check succeeded; no keys were created and RevenueCat was not changed")
 					return rt.Out.Render(result)
 				}
 
@@ -272,13 +303,14 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&sms, "sms", false, "send the verification code by SMS instead of a trusted device")
 	cmd.Flags().StringVar(&phoneNumber, "phone-number", "", "trusted phone number for SMS (env: RC_APPLE_PHONE_NUMBER)")
 	cmd.Flags().StringVar(&teamID, "team-id", "", "App Store Connect provider ID (env: RC_APPLE_TEAM_ID)")
-	cmd.Flags().StringVar(&inAppKeyName, "in-app-key-name", "RevenueCat CLI", "name for the new in-app purchase key")
-	cmd.Flags().StringVar(&apiKeyName, "api-key-name", "RevenueCat CLI", "name for the new App Store Connect API key")
-	cmd.Flags().StringVar(&vendorNumber, "vendor-number", "", "App Store Connect vendor number (env: RC_APPLE_VENDOR_NUMBER)")
-	cmd.Flags().BoolVar(&skipInAppKey, "skip-in-app-purchase-key", false, "do not create an in-app purchase key")
-	cmd.Flags().BoolVar(&skipAPIKey, "skip-app-store-connect-key", false, "do not create an App Store Connect API key")
-	cmd.Flags().BoolVar(&force, "force", false, "create new keys even when RevenueCat already has them configured")
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "authenticate and check Apple key access without creating keys or changing RevenueCat")
+	if !checkOnly {
+		cmd.Flags().StringVar(&inAppKeyName, "in-app-key-name", "RevenueCat CLI", "name for the new in-app purchase key")
+		cmd.Flags().StringVar(&apiKeyName, "api-key-name", "RevenueCat CLI", "name for the new App Store Connect API key")
+		cmd.Flags().StringVar(&vendorNumber, "vendor-number", "", "App Store Connect vendor number (env: RC_APPLE_VENDOR_NUMBER)")
+		cmd.Flags().BoolVar(&skipInAppKey, "skip-in-app-purchase-key", false, "do not create an in-app purchase key")
+		cmd.Flags().BoolVar(&skipAPIKey, "skip-app-store-connect-key", false, "do not create an App Store Connect API key")
+		cmd.Flags().BoolVar(&force, "force", false, "create new keys even when RevenueCat already has them configured")
+	}
 	return cmd
 }
 
