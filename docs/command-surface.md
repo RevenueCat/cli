@@ -170,6 +170,7 @@ rc products push <id>                                    # push to store
 rc products prices list <id>                            # list configured product prices
 rc products prices add <id> --price USD:9.99            # add prices (test-store only); conflicts if currency exists
 rc products prices update <id> --price USD:12.99        # update an existing price (no delete supported)
+rc products store sync [app-id] --file <catalog.csv>     # plan/review/apply canonical store-state CSV; --plan-only stops before apply
 
 # Paywalls
 rc paywalls list
@@ -276,10 +277,16 @@ rc chat                                                  # internal agent chat
    endpoint. Vendor number remains an optional setup flag because Apple exposes
    no supported discovery endpoint. Small Business Program dates remain out of
    scope because the public RevenueCat v2 app update schema does not expose them.
-4. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
-5. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
-6. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
-7. **Streaming**: `events tail`, then `chat` — both blocked on backend.
+9. **Product store-state CSV sync POC** — `products store sync` reads Khepri's
+   canonical CSV format locally, creates a product store-state plan, waits for
+   its preview, displays per-product diffs and warnings, and only applies after
+   confirmation. `--plan-only` leaves the reviewed plan unapplied. This surface
+   uses development-only v2 endpoints and requires the
+   `PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag until they ship.
+10. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
+11. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
+12. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
+13. **Streaming**: `events tail`, then `chat` — both blocked on backend.
 
 ## Open questions (need RevenueCat-internal answers)
 

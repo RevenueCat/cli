@@ -42,22 +42,23 @@ type Client struct {
 	userAgent string
 	cache     sync.Map // url string → cacheEntry; GET-only, session-scoped
 
-	Projects      *ProjectsService
-	Customers     *CustomersService
-	Entitlements  *EntitlementsService
-	Offerings     *OfferingsService
-	Packages      *PackagesService
-	Products      *ProductsService
-	Subscriptions *SubscriptionsService
-	Purchases     *PurchasesService
-	Invoices      *InvoicesService
-	Webhooks      *WebhooksService
-	Paywalls      *PaywallsService
-	Charts        *ChartsService
-	Metrics       *MetricsService
-	Audit         *AuditService
-	Benchmarks    *BenchmarksService
-	Apps          *AppsService
+	Projects        *ProjectsService
+	Customers       *CustomersService
+	Entitlements    *EntitlementsService
+	Offerings       *OfferingsService
+	Packages        *PackagesService
+	Products        *ProductsService
+	Subscriptions   *SubscriptionsService
+	Purchases       *PurchasesService
+	Invoices        *InvoicesService
+	Webhooks        *WebhooksService
+	Paywalls        *PaywallsService
+	Charts          *ChartsService
+	Metrics         *MetricsService
+	Audit           *AuditService
+	Benchmarks      *BenchmarksService
+	Apps            *AppsService
+	StoreStatePlans *StoreStatePlansService
 	// add as we go: Discounts, Experiments, VirtualCurrencies catalog
 }
 
@@ -92,6 +93,7 @@ func NewClient(opts Options) *Client {
 	c.Audit = &AuditService{c: c}
 	c.Benchmarks = &BenchmarksService{c: c}
 	c.Apps = &AppsService{c: c}
+	c.StoreStatePlans = &StoreStatePlansService{c: c}
 	return c
 }
 
