@@ -165,6 +165,7 @@ rc products delete <id>
 rc products archive <id>
 rc products restore <id>
 rc products push <id>                                    # push to store
+rc products store sync [app-id] --file <catalog.csv>     # plan/review/apply canonical store-state CSV; --plan-only stops before apply
 
 # Paywalls
 rc paywalls list
@@ -264,10 +265,16 @@ rc chat                                                  # internal agent chat
 5. **Long tail**: `webhooks` ✅ (under `/integrations/webhooks`), `paywalls` ✅. `currencies` catalog, `discounts`, `experiments` deferred — fixtures empty so write shapes unverified.
 6. **Cross-resource utilities**: `metrics` ✅, `charts list/show/options` ✅ (with client-side enum validation + shell completion), `benchmarks` ✅, `audit` ✅. `find` still TODO (search query format unconfirmed).
 7. **Apps** ✅ — list/show/create/update/delete/keys/storekit-config.
-4. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
-5. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
-6. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
-7. **Streaming**: `events tail`, then `chat` — both blocked on backend.
+8. **Product store-state CSV sync POC** — `products store sync` reads Khepri's
+   canonical CSV format locally, creates a product store-state plan, waits for
+   its preview, displays per-product diffs and warnings, and only applies after
+   confirmation. `--plan-only` leaves the reviewed plan unapplied. This surface
+   uses development-only v2 endpoints and requires the
+   `PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag until they ship.
+9. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
+10. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
+11. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
+12. **Streaming**: `events tail`, then `chat` — both blocked on backend.
 
 ## Open questions (need RevenueCat-internal answers)
 

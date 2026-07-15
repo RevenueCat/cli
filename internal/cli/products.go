@@ -30,6 +30,7 @@ func newProductsCmd() *cobra.Command {
 		newProductsArchiveCmd(),
 		newProductsRestoreCmd(),
 		newProductsPushCmd(),
+		newProductsStoreCmd(),
 	)
 	return cmd
 }
