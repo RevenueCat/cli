@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -26,6 +27,22 @@ type appleConfigurationResult struct {
 	InAppPurchaseKeyID       string   `json:"in_app_purchase_key_id,omitempty"`
 	AppStoreConnectAPIKeyID  string   `json:"app_store_connect_api_key_id,omitempty"`
 	VendorNumberConfigured   bool     `json:"vendor_number_configured"`
+}
+
+type appleConnectClient interface {
+	Login(context.Context, string, string) (*appleconnect.Session, error)
+	PrepareTwoFactor(context.Context, *appleconnect.Session, bool, string) (*appleconnect.Challenge, error)
+	CompleteTwoFactor(context.Context, *appleconnect.Session, string) error
+	SelectProvider(context.Context, *appleconnect.Session, int64) error
+	CheckKeyAccess(context.Context, *appleconnect.Session, appleconnect.KeyKind) error
+	CreateInAppPurchaseKey(context.Context, *appleconnect.Session, string) (*appleconnect.Key, error)
+	CreateAppStoreConnectKey(context.Context, *appleconnect.Session, string) (*appleconnect.Key, error)
+}
+
+type appleConnectFactory func() (appleConnectClient, error)
+
+func newAppleConnectClient() (appleConnectClient, error) {
+	return appleconnect.New(appleconnect.Options{})
 }
 
 const appleSetupInstructions = `This setup will:
@@ -59,26 +76,22 @@ const appleCheckInstructions = `This check will:
 No Apple keys will be created and no RevenueCat app will be changed.`
 
 func newAppsAppleCmd() *cobra.Command {
+	return newAppsAppleCmdWithFactory(newAppleConnectClient)
+}
+
+func newAppsAppleCmdWithFactory(factory appleConnectFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apple",
 		Short: "Configure Apple credentials for an App Store app",
 	}
 	cmd.AddCommand(
-		newAppsAppleCheckCmd(),
-		newAppsAppleSetupCmd(),
+		newAppsAppleWorkflowCmd(true, factory),
+		newAppsAppleWorkflowCmd(false, factory),
 	)
 	return cmd
 }
 
-func newAppsAppleCheckCmd() *cobra.Command {
-	return newAppsAppleWorkflowCmd(true)
-}
-
-func newAppsAppleSetupCmd() *cobra.Command {
-	return newAppsAppleWorkflowCmd(false)
-}
-
-func newAppsAppleWorkflowCmd(checkOnly bool) *cobra.Command {
+func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra.Command {
 	var appleID, password, verificationCode, phoneNumber, teamID string
 	var inAppKeyName, apiKeyName, vendorNumber string
 	var sms, skipInAppKey, skipAPIKey, force bool
@@ -185,7 +198,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool) *cobra.Command {
 			}
 			createdIDs := make([]string, 0, 2)
 			if needsApple {
-				apple, err := appleconnect.New(appleconnect.Options{})
+				apple, err := factory()
 				if err != nil {
 					return err
 				}
