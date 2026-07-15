@@ -81,7 +81,7 @@ func (c *Client) createKey(ctx context.Context, session *Session, kind KeyKind, 
 		return nil, errors.New("authenticated Apple session is required")
 	}
 	if strings.TrimSpace(session.Provider.PublicID) == "" {
-		return nil, errors.New("App Store Connect session did not expose an issuer ID")
+		return nil, errors.New("the App Store Connect session did not expose an issuer ID")
 	}
 	headers := http.Header{
 		"Accept":       []string{"application/vnd.api+json, application/json"},
@@ -102,10 +102,10 @@ func (c *Client) createKey(ctx context.Context, session *Session, kind KeyKind, 
 		return nil, fmt.Errorf("create Apple %s key: %w", kind, err)
 	}
 	if created.Data.ID == "" {
-		return nil, fmt.Errorf("Apple %s key response did not include an ID", kind)
+		return nil, fmt.Errorf("the Apple %s key response did not include an ID", kind)
 	}
 	if !created.Data.Attributes.CanDownload {
-		return nil, fmt.Errorf("Apple created %s key %s but did not permit its one-time download", kind, created.Data.ID)
+		return nil, fmt.Errorf("the Apple service created the %s key %s but did not permit its one-time download", kind, created.Data.ID)
 	}
 	query := url.Values{"fields[" + resourceType + "]": []string{"privateKey"}}
 	var downloaded struct {

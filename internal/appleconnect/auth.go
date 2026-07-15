@@ -144,10 +144,10 @@ func New(opts Options) (*Client, error) {
 
 func (c *Client) Login(ctx context.Context, email, password string) (*Session, error) {
 	if strings.TrimSpace(email) == "" {
-		return nil, errors.New("Apple Account email is required")
+		return nil, errors.New("an Apple Account email is required")
 	}
 	if password == "" {
-		return nil, errors.New("Apple Account password is required")
+		return nil, errors.New("an Apple Account password is required")
 	}
 	serviceKey, err := c.authServiceKey(ctx)
 	if err != nil {
@@ -186,7 +186,7 @@ func (c *Client) PrepareTwoFactor(ctx context.Context, session *Session, useSMS 
 		return &Challenge{Method: "trusted_device", CodeLength: length}, nil
 	}
 	if len(options.TrustedPhoneNumbers) == 0 {
-		return nil, errors.New("Apple Account has no trusted phone numbers")
+		return nil, errors.New("the Apple Account has no trusted phone numbers")
 	}
 	phone, err := selectPhone(options, phoneNumber)
 	if err != nil {
@@ -215,7 +215,7 @@ func (c *Client) CompleteTwoFactor(ctx context.Context, session *Session, code s
 	}
 	code = strings.TrimSpace(code)
 	if code == "" {
-		return errors.New("Apple verification code is required")
+		return errors.New("an Apple verification code is required")
 	}
 	var path string
 	var body any
@@ -231,7 +231,7 @@ func (c *Client) CompleteTwoFactor(ctx context.Context, session *Session, code s
 			"mode":         session.phoneMode,
 		}
 	default:
-		return errors.New("Apple verification method has not been prepared")
+		return errors.New("the Apple verification method has not been prepared")
 	}
 	if err := c.authRequest(ctx, session, http.MethodPost, path, body, nil); err != nil {
 		return err
@@ -254,7 +254,7 @@ func (c *Client) SelectProvider(ctx context.Context, session *Session, providerI
 		}
 	}
 	if !found {
-		return fmt.Errorf("Apple provider %d is not available for this account", providerID)
+		return fmt.Errorf("the Apple provider %d is not available for this account", providerID)
 	}
 	body := map[string]any{"provider": map[string]int64{"providerId": providerID}}
 	if err := c.doJSON(ctx, http.MethodPost, c.ascBaseURL+"/olympus/v1/session", body, nil, http.Header{"X-Requested-With": []string{"olympus-ui"}}); err != nil {
@@ -264,17 +264,17 @@ func (c *Client) SelectProvider(ctx context.Context, session *Session, providerI
 		return err
 	}
 	if session.Provider.ID != providerID {
-		return fmt.Errorf("Apple provider selection did not take effect: selected %d but session reports %d", providerID, session.Provider.ID)
+		return fmt.Errorf("the Apple provider selection did not take effect: selected %d but session reports %d", providerID, session.Provider.ID)
 	}
 	return nil
 }
 
 func validateContinuation(session *Session) error {
 	if session == nil || session.client == nil {
-		return errors.New("Apple session is required")
+		return errors.New("an Apple session is required")
 	}
 	if session.ServiceKey == "" || session.AppleIDSessionID == "" || session.SCNT == "" {
-		return errors.New("Apple session is missing two-factor continuation state")
+		return errors.New("the Apple session is missing two-factor continuation state")
 	}
 	return nil
 }
@@ -329,7 +329,7 @@ func (c *Client) authServiceKey(ctx context.Context) (string, error) {
 		key = strings.TrimSpace(payload.ServiceKey)
 	}
 	if key == "" {
-		return "", errors.New("Apple auth service key is empty")
+		return "", errors.New("the Apple auth service key is empty")
 	}
 	return key, nil
 }
@@ -440,7 +440,7 @@ func (c *Client) performSRPLogin(ctx context.Context, email, password, serviceKe
 	case http.StatusPreconditionFailed:
 		return ErrAccountAction
 	default:
-		return fmt.Errorf("Apple sign-in failed with status %d: %s", resp.StatusCode, appleErrorMessage(responseBody))
+		return fmt.Errorf("the Apple sign-in failed with status %d: %s", resp.StatusCode, appleErrorMessage(responseBody))
 	}
 }
 
@@ -469,7 +469,7 @@ func (c *Client) authJSON(ctx context.Context, method, path, serviceKey, session
 	defer resp.Body.Close()
 	responseBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Apple authentication request failed with status %d: %s", resp.StatusCode, appleErrorMessage(responseBody))
+		return fmt.Errorf("the Apple authentication request failed with status %d: %s", resp.StatusCode, appleErrorMessage(responseBody))
 	}
 	if out == nil || len(responseBody) == 0 {
 		return nil
@@ -542,7 +542,7 @@ func (c *Client) doJSON(ctx context.Context, method, endpoint string, body, out 
 	defer resp.Body.Close()
 	responseBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Apple request failed with status %d: %s", resp.StatusCode, appleErrorMessage(responseBody))
+		return fmt.Errorf("the Apple request failed with status %d: %s", resp.StatusCode, appleErrorMessage(responseBody))
 	}
 	if out == nil || len(responseBody) == 0 {
 		return nil
@@ -686,7 +686,7 @@ func paddedHash(n *big.Int, values ...string) (*big.Int, error) {
 	var input strings.Builder
 	for _, value := range values {
 		if len(value) > nLen {
-			return nil, errors.New("Apple SRP value exceeds group width")
+			return nil, errors.New("the Apple SRP value exceeds group width")
 		}
 		input.WriteString(strings.Repeat("0", nLen-len(value)))
 		input.WriteString(strings.ToLower(value))
