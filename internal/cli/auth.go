@@ -107,7 +107,7 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 					form.Field(huh.NewInput().Title("Email").Value(&email).Validate(tui.Required("Email")))
 				}
 				if name == "" {
-					form.Field(huh.NewInput().Title("Your name").Description("Your personal/display name; project and company setup comes later").Value(&name).Validate(tui.Required("Name")))
+					form.Field(huh.NewInput().Title("Your name").Description("Your personal/display name; project naming happens after signup").Value(&name).Validate(tui.Required("Name")))
 				}
 				if !marketingEmails {
 					form.Field(huh.NewConfirm().Title("Receive RevenueCat product updates?").Value(&marketingEmails))
@@ -142,13 +142,15 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 					}
 				}
 				if runtime.GOOS == "darwin" && !savePassword {
-					confirmed, err := tui.Confirm(false, "Save this RevenueCat website password in macOS Keychain?")
+					confirmed, err := tui.ConfirmDefault(false, "Save this RevenueCat website password in macOS Keychain?", generatePassword)
 					if err != nil {
 						return err
 					}
 					savePassword = confirmed
 				}
 				if !acceptTerms {
+					rt.Out.Info("Review the Terms of Service: https://www.revenuecat.com/terms")
+					rt.Out.Info("Review the Privacy Policy: https://www.revenuecat.com/privacy")
 					confirmed, err := tui.Confirm(false, "Accept the RevenueCat Terms of Service and Privacy Policy?")
 					if err != nil {
 						return err
@@ -532,12 +534,25 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 		"email_verification_required": true,
 		"method":                      "oauth",
 		"password_saved_to_keychain":  passwordSaved,
+		"password_mode":               "user_provided",
 		"profile":                     profile,
 		"next_steps": map[string]any{
 			"agent":                  "Use the RevenueCat AI Toolkit to create and configure the project, apps, products, entitlements, and offerings.",
 			"install_skills_command": "rc skills install",
 			"manual_start_command":   "rc projects create --name \"My App\" --use",
 		},
+	}
+	if generatedPassword {
+		result["password_mode"] = "generated"
+		if passwordSaved {
+			result["dashboard_password_action"] = "saved_to_macos_keychain"
+		} else {
+			result["dashboard_password_action"] = "use_password_reset_if_needed"
+		}
+	} else if passwordSaved {
+		result["dashboard_password_action"] = "saved_to_macos_keychain"
+	} else {
+		result["dashboard_password_action"] = "store_the_user_provided_password_safely"
 	}
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(result)

@@ -56,10 +56,14 @@ func (b *FormBuilder) Run() error {
 }
 
 func Confirm(noInput bool, msg string) (bool, error) {
+	return ConfirmDefault(noInput, msg, false)
+}
+
+func ConfirmDefault(noInput bool, msg string, defaultValue bool) (bool, error) {
 	if noInput || !isInteractive() {
 		return false, fmt.Errorf("%s (pass --yes to confirm non-interactively)", msg)
 	}
-	var ok bool
+	ok := defaultValue
 	err := huh.NewConfirm().Title(msg).Value(&ok).Run()
 	return ok, err
 }

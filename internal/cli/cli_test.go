@@ -164,7 +164,14 @@ func TestAuthSignup_AgentFlowStoresDurableOAuthWithoutLeakingTemporaryCredential
 	if strings.Join(requests, "\n") != strings.Join(wantRequests, "\n") {
 		t.Fatalf("requests = %v, want %v", requests, wantRequests)
 	}
-	for _, want := range []string{`"account_created": true`, `"authenticated": true`, `"method": "oauth"`} {
+	for _, want := range []string{
+		`"account_created": true`,
+		`"authenticated": true`,
+		`"method": "oauth"`,
+		`"password_mode": "generated"`,
+		`"dashboard_password_action": "use_password_reset_if_needed"`,
+		`"agent": "Use the RevenueCat AI Toolkit to create and configure the project, apps, products, entitlements, and offerings."`,
+	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("signup JSON missing %s:\n%s", want, out)
 		}
