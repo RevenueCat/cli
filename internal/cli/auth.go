@@ -142,7 +142,7 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 					}
 				}
 				if runtime.GOOS == "darwin" && !savePassword {
-					confirmed, err := tui.ConfirmDefault(false, "Save this RevenueCat website password in macOS Keychain?", generatePassword)
+					confirmed, err := tui.ConfirmDefault(false, "Save this RevenueCat website password in macOS Keychain?", true)
 					if err != nil {
 						return err
 					}
