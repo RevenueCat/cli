@@ -532,7 +532,7 @@ func TestSkills_JSONPointsToOfficialToolkit(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &got); err != nil {
 		t.Fatalf("not JSON: %v\n%s", err, out)
 	}
-	if got.Data.Source != "RevenueCat/ai-toolkit" || !strings.Contains(got.Data.InstallCommand, "npx skills add") || got.Data.DocsURL == "" {
+	if got.Data.Source != "RevenueCat/ai-toolkit" || got.Data.InstallCommand != "rc skills install" || got.Data.DocsURL == "" {
 		t.Fatalf("unexpected toolkit guidance: %+v", got.Data)
 	}
 }

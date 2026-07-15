@@ -79,7 +79,7 @@ func newSkillsCmdWithInstaller(installer skillsInstaller) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "skills",
 		Aliases: []string{"skill"},
-		Short:   "Install the official RevenueCat AI Toolkit",
+		Short:   "Manage the official RevenueCat AI Toolkit",
 		Long: `RevenueCat's official AI Toolkit provides maintained agent workflows for
 project setup, SDK integration, catalog management, and project health checks.
 
@@ -93,22 +93,43 @@ Name a skill explicitly when you want predictable selection.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if !rt.Out.IsJSON() {
-				rt.Out.Info("Install or update globally with `rc skills install`.")
+				return cmd.Help()
+			}
+			return rt.Out.Render(map[string]any{
+				"source":                     officialToolkitSource,
+				"install_command":            "rc skills install",
+				"underlying_install_command": "npx skills add " + officialToolkitSource + " --global",
+				"prompts_command":            "rc skills prompts",
+				"docs_url":                   officialToolkitDocs,
+			})
+		},
+	}
+	cmd.AddCommand(newSkillsInstallCmd(installer), newSkillsPromptsCmd())
+	return cmd
+}
+
+func newSkillsPromptsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "prompts",
+		Short: "Show copy-ready prompts for common RevenueCat workflows",
+		Long: `Shows starter prompts that explicitly trigger the maintained RevenueCat
+skills. Copy one into a new agent session after installing or updating the
+toolkit with rc skills install. Use --json to render selectable prompts in an
+agent UI.`,
+		Example: `  rc skills prompts
+  rc skills prompts --json`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			if !rt.Out.IsJSON() {
 				showStarterPrompts(rt)
 				return nil
 			}
 			return rt.Out.Render(map[string]any{
-				"source":          officialToolkitSource,
-				"install_command": "npx skills add " + officialToolkitSource + " --global",
-				"docs_url":        officialToolkitDocs,
-				"after_install":   "Start a new agent session or reload the agent.",
-				"trigger_example": projectSkillTrigger,
 				"starter_prompts": revenueCatStarterPrompts(),
 			})
 		},
 	}
-	cmd.AddCommand(newSkillsInstallCmd(installer))
-	return cmd
 }
 
 func newSkillsInstallCmd(installer skillsInstaller) *cobra.Command {
@@ -166,7 +187,7 @@ the create-revenuecat-project skill explicitly.`,
 			}
 			rt.Out.Success("Installed the RevenueCat AI Toolkit")
 			rt.Out.Info("Start a new agent session or reload the agent to discover the installed skills.")
-			showStarterPrompts(rt)
+			rt.Out.Info("Run `rc skills prompts` for copy-ready ways to get started.")
 			result := map[string]any{
 				"installed":       true,
 				"source":          officialToolkitSource,
@@ -177,7 +198,7 @@ the create-revenuecat-project skill explicitly.`,
 				"docs_url":        officialToolkitDocs,
 				"next_step":       "Start a new agent session or reload the agent.",
 				"trigger_example": projectSkillTrigger,
-				"starter_prompts": revenueCatStarterPrompts(),
+				"prompts_command": "rc skills prompts",
 			}
 			if rt.Out.IsJSON() {
 				return rt.Out.Render(result)

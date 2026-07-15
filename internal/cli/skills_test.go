@@ -21,6 +21,7 @@ func TestSkillsShowsCopyReadyPromptsWithoutJSONDump(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&stderr)
+	cmd.SetArgs([]string{"prompts"})
 	cmd.SetContext(WithRuntime(context.Background(), &Runtime{
 		Globals: &Globals{},
 		Out:     output.NewRenderer(&stdout, &stderr, false, true, false, ""),
@@ -67,7 +68,7 @@ func TestSkillsInstallDelegatesToOfficialToolkit(t *testing.T) {
 	if installer.calls != 1 {
 		t.Fatalf("installer calls = %d, want 1", installer.calls)
 	}
-	for _, want := range []string{"Start a new agent session", "create-revenuecat-project skill", "integrate-revenuecat skill", "revenuecat-store-state skill", "revenuecat-status skill"} {
+	for _, want := range []string{"Start a new agent session", "rc skills prompts"} {
 		if !bytes.Contains(stdout.Bytes(), []byte(want)) {
 			t.Errorf("install JSON missing %q: %s", want, stdout.String())
 		}

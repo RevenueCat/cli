@@ -253,7 +253,9 @@ Agents may also select that skill automatically for requests such as “Set up
 RevenueCat for my new iOS app.” Explicit naming is useful when testing or when a
 client does not reliably auto-select skills.
 
-Run `rc skills` at any time to display copy-ready starter prompts. Examples:
+Run `rc skills prompts` at any time to display copy-ready starter prompts.
+Bare `rc skills` only shows help; it never installs or changes anything.
+Examples:
 
 ```text
 Use the create-revenuecat-project skill to create my RevenueCat account if
