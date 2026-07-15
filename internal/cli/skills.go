@@ -19,6 +19,44 @@ type skillsInstaller interface {
 	Run(*cobra.Command, []string) error
 }
 
+type starterPrompt struct {
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Prompt string `json:"prompt"`
+}
+
+func revenueCatStarterPrompts() []starterPrompt {
+	return []starterPrompt{
+		{
+			ID:     "create-project",
+			Title:  "Create my RevenueCat account and project",
+			Prompt: "Use the create-revenuecat-project skill to create my RevenueCat account if needed and configure my project, apps, products, entitlements, offerings, and packages. Ask before accepting legal terms or applying store changes.",
+		},
+		{
+			ID:     "integrate-sdk",
+			Title:  "Integrate RevenueCat into this app",
+			Prompt: "Use the integrate-revenuecat skill to inspect this app, connect it to the correct RevenueCat project, install and configure the Purchases SDK, and verify the integration.",
+		},
+		{
+			ID:     "plan-store-catalog",
+			Title:  "Plan my store products and pricing",
+			Prompt: "Use the revenuecat-store-state skill to design and plan my store products, pricing, availability, and localizations. Show me the persisted plan and wait for my approval before applying it.",
+		},
+		{
+			ID:     "check-project",
+			Title:  "Check my RevenueCat setup",
+			Prompt: "Use the revenuecat-status skill to audit my RevenueCat project, identify missing or inconsistent configuration, and give me exact recovery steps without changing anything first.",
+		},
+	}
+}
+
+func showStarterPrompts(rt *Runtime) {
+	rt.Out.Info("Copy one of these starter prompts into a new agent session:")
+	for _, item := range revenueCatStarterPrompts() {
+		rt.Out.Info(fmt.Sprintf("%s\n  %s", item.Title, item.Prompt))
+	}
+}
+
 type npxSkillsInstaller struct{}
 
 func (npxSkillsInstaller) Run(cmd *cobra.Command, args []string) error {
@@ -54,12 +92,18 @@ when a request matches their description; they do not run during installation.
 Name a skill explicitly when you want predictable selection.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if !rt.Out.IsJSON() {
+				rt.Out.Info("Install or update globally with `rc skills install`.")
+				showStarterPrompts(rt)
+				return nil
+			}
 			return rt.Out.Render(map[string]any{
 				"source":          officialToolkitSource,
 				"install_command": "npx skills add " + officialToolkitSource + " --global",
 				"docs_url":        officialToolkitDocs,
 				"after_install":   "Start a new agent session or reload the agent.",
 				"trigger_example": projectSkillTrigger,
+				"starter_prompts": revenueCatStarterPrompts(),
 			})
 		},
 	}
@@ -122,8 +166,8 @@ the create-revenuecat-project skill explicitly.`,
 			}
 			rt.Out.Success("Installed the RevenueCat AI Toolkit")
 			rt.Out.Info("Start a new agent session or reload the agent to discover the installed skills.")
-			rt.Out.Info("Example: " + projectSkillTrigger)
-			return rt.Out.Render(map[string]any{
+			showStarterPrompts(rt)
+			result := map[string]any{
 				"installed":       true,
 				"source":          officialToolkitSource,
 				"scope":           scope,
@@ -133,7 +177,12 @@ the create-revenuecat-project skill explicitly.`,
 				"docs_url":        officialToolkitDocs,
 				"next_step":       "Start a new agent session or reload the agent.",
 				"trigger_example": projectSkillTrigger,
-			})
+				"starter_prompts": revenueCatStarterPrompts(),
+			}
+			if rt.Out.IsJSON() {
+				return rt.Out.Render(result)
+			}
+			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&global, "global", false, "install globally (the default; retained for explicit scripts)")

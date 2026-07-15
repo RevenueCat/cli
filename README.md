@@ -253,6 +253,22 @@ Agents may also select that skill automatically for requests such as “Set up
 RevenueCat for my new iOS app.” Explicit naming is useful when testing or when a
 client does not reliably auto-select skills.
 
+Run `rc skills` at any time to display copy-ready starter prompts. Examples:
+
+```text
+Use the create-revenuecat-project skill to create my RevenueCat account if
+needed and configure my project, apps, products, entitlements, offerings, and
+packages. Ask before accepting legal terms or applying store changes.
+
+Use the integrate-revenuecat skill to inspect this app, connect it to the
+correct RevenueCat project, install and configure the Purchases SDK, and verify
+the integration.
+
+Use the revenuecat-status skill to audit my RevenueCat project, identify
+missing or inconsistent configuration, and give me exact recovery steps
+without changing anything first.
+```
+
 The toolkit can discover every CLI contract with `rc commands --json` and
 `rc schema <command> --json`. Project-setup primitives include
 `rc offerings set-current <id> --yes` and `rc apps keys <app-id> --json`, so an

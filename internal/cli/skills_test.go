@@ -16,6 +16,28 @@ type recordingSkillsInstaller struct {
 	calls int
 }
 
+func TestSkillsShowsCopyReadyPromptsWithoutJSONDump(t *testing.T) {
+	cmd := newSkillsCmdWithInstaller(&recordingSkillsInstaller{})
+	var stdout, stderr bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+	cmd.SetContext(WithRuntime(context.Background(), &Runtime{
+		Globals: &Globals{},
+		Out:     output.NewRenderer(&stdout, &stderr, false, true, false, ""),
+	}))
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("human skills output dumped JSON: %s", stdout.String())
+	}
+	for _, want := range []string{"Copy one of these starter prompts", "create-revenuecat-project skill", "integrate-revenuecat skill", "revenuecat-store-state skill", "revenuecat-status skill"} {
+		if !bytes.Contains(stderr.Bytes(), []byte(want)) {
+			t.Errorf("starter prompts missing %q: %s", want, stderr.String())
+		}
+	}
+}
+
 func (r *recordingSkillsInstaller) Run(_ *cobra.Command, args []string) error {
 	r.calls++
 	r.args = append([]string(nil), args...)
@@ -45,7 +67,7 @@ func TestSkillsInstallDelegatesToOfficialToolkit(t *testing.T) {
 	if installer.calls != 1 {
 		t.Fatalf("installer calls = %d, want 1", installer.calls)
 	}
-	for _, want := range []string{"Start a new agent session", "create-revenuecat-project skill"} {
+	for _, want := range []string{"Start a new agent session", "create-revenuecat-project skill", "integrate-revenuecat skill", "revenuecat-store-state skill", "revenuecat-status skill"} {
 		if !bytes.Contains(stdout.Bytes(), []byte(want)) {
 			t.Errorf("install JSON missing %q: %s", want, stdout.String())
 		}

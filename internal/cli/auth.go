@@ -525,7 +525,8 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 		rt.Out.Warn("The generated password was not saved. Use password reset if you need dashboard access later.")
 	}
 	rt.Out.Info("Check your email to verify the account.")
-	rt.Out.Info("Next: ask your agent to create and configure your RevenueCat project using the RevenueCat AI Toolkit.")
+	rt.Out.Info("Next, copy this into a new agent session:")
+	rt.Out.Info(projectSkillTrigger)
 	rt.Out.Info("Install the toolkit with `rc skills install` if needed, or start manually with `rc projects create --name \"My App\" --use`.")
 	result := map[string]any{
 		"account_created":             true,
