@@ -24,6 +24,22 @@ type appleConfigurationResult struct {
 	VendorNumberConfigured  bool   `json:"vendor_number_configured"`
 }
 
+const appleSetupInstructions = `This setup will:
+  1. Sign in directly to Apple with your Apple Account.
+  2. Ask for trusted-device or SMS verification when Apple requires it.
+  3. Create only the Apple keys missing from this RevenueCat app.
+  4. Download each private key once and upload it directly to RevenueCat.
+
+Before continuing, have a trusted Apple device or phone available and use an
+Apple Account with permission to manage App Store Connect integration keys.`
+
+const applePrivacyNotice = `Privacy:
+  • Your Apple Account credentials are sent directly to Apple. They are never
+    sent to RevenueCat or stored by rc.
+  • The Apple session exists only in memory for the duration of this command.
+  • Newly created private keys are uploaded directly to RevenueCat. They are
+    never saved locally or printed.`
+
 func newAppsConfigureAppleCmd() *cobra.Command {
 	var appleID, password, verificationCode, phoneNumber, teamID string
 	var inAppKeyName, apiKeyName, vendorNumber string
@@ -32,6 +48,7 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "configure-apple [app-id]",
 		Short: "Create Apple keys and configure an App Store app",
+		Long:  "Create Apple keys and configure an App Store app.\n\n" + appleSetupInstructions + "\n\n" + applePrivacyNotice,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appleID = valueOrEnv(appleID, "RC_APPLE_ID")
@@ -83,6 +100,19 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 			}
 
 			if createInAppKey || createAPIKey {
+				if !rt.Globals.NoInput && tui.IsInteractive() {
+					rt.Out.Info(appleSetupInstructions)
+					rt.Out.Info(applePrivacyNotice)
+				}
+				if !rt.Globals.AssumeYes {
+					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Continue and sign in to Apple?")
+					if err != nil {
+						return err
+					}
+					if !confirmed {
+						return errors.New("cancelled")
+					}
+				}
 				if err := tui.Form(rt.Globals.NoInput).
 					Field(huh.NewInput().Title("Apple Account email").Value(&appleID).Validate(tui.Required("Apple Account email"))).
 					Field(huh.NewInput().Title("Apple Account password").EchoMode(huh.EchoModePassword).Value(&password).Validate(tui.Required("Apple Account password"))).
@@ -91,15 +121,6 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 				}
 				if appleID == "" || password == "" {
 					return errors.New("--apple-id and --apple-password are required when creating Apple keys")
-				}
-				if !rt.Globals.AssumeYes {
-					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Create new Apple keys and upload their private keys to RevenueCat?")
-					if err != nil {
-						return err
-					}
-					if !confirmed {
-						return errors.New("cancelled")
-					}
 				}
 			}
 
@@ -204,7 +225,7 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&appleID, "apple-id", "", "Apple Account email (env: RC_APPLE_ID)")
-	cmd.Flags().StringVar(&password, "apple-password", "", "Apple Account password (env: RC_APPLE_PASSWORD)")
+	cmd.Flags().StringVar(&password, "apple-password", "", "Apple Account password; prefer the masked prompt or RC_APPLE_PASSWORD to avoid shell history and process-list exposure")
 	cmd.Flags().StringVar(&verificationCode, "verification-code", "", "Apple verification code (env: RC_APPLE_2FA_CODE)")
 	cmd.Flags().BoolVar(&sms, "sms", false, "send the verification code by SMS instead of a trusted device")
 	cmd.Flags().StringVar(&phoneNumber, "phone-number", "", "trusted phone number for SMS (env: RC_APPLE_PHONE_NUMBER)")

@@ -140,6 +140,24 @@ func TestConfigureAppleSchema_ExposesNonInteractiveInputs(t *testing.T) {
 	}
 }
 
+func TestConfigureAppleHelp_ExplainsCredentialFlow(t *testing.T) {
+	out, _, err := runCmd(t, "apps", "configure-apple", "--help")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	for _, want := range []string{
+		"sent directly to Apple",
+		"sent to RevenueCat or stored by rc",
+		"only in memory for the duration of this command",
+		"uploaded directly to RevenueCat",
+		"never saved locally or printed",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("help missing %q:\n%s", want, out)
+		}
+	}
+}
+
 func TestWhoami_JSON_StableShape(t *testing.T) {
 	out, errb, err := runCmd(t, "whoami", "--json")
 	if err != nil {
