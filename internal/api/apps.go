@@ -24,7 +24,8 @@ type AppCreate struct {
 }
 
 type AppUpdate struct {
-	Name *string `json:"name,omitempty"`
+	Name     *string            `json:"name,omitempty"`
+	AppStore *AppStoreAppConfig `json:"app_store,omitempty"`
 }
 
 type AmazonAppConfig struct {
@@ -33,7 +34,7 @@ type AmazonAppConfig struct {
 }
 
 type AppStoreAppConfig struct {
-	BundleID                    string  `json:"bundle_id"`
+	BundleID                    string  `json:"bundle_id,omitempty"`
 	SharedSecret                *string `json:"shared_secret,omitempty"`
 	SubscriptionPrivateKey      *string `json:"subscription_private_key,omitempty"`
 	SubscriptionKeyID           *string `json:"subscription_key_id,omitempty"`
