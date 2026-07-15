@@ -104,9 +104,9 @@ func TestSchemaCommand_ReturnsFlagSchema(t *testing.T) {
 	}
 }
 
-func TestConfigureAppleSchema_ExposesNonInteractiveInputs(t *testing.T) {
+func TestAppsAppleSetupSchema_ExposesNonInteractiveInputs(t *testing.T) {
 	t.Setenv("RC_APPLE_PASSWORD", "must-not-appear-in-schema")
-	out, _, err := runCmd(t, "schema", "apps", "configure-apple", "--json")
+	out, _, err := runCmd(t, "schema", "apps", "apple", "setup", "--json")
 	if err != nil {
 		t.Fatalf("execute: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestConfigureAppleSchema_ExposesNonInteractiveInputs(t *testing.T) {
 	want := map[string]bool{
 		"apple-id": false, "apple-password": false, "verification-code": false,
 		"sms": false, "phone-number": false, "team-id": false,
-		"vendor-number": false, "dry-run": false, "yes": false, "no-input": false,
+		"vendor-number": false, "force": false, "yes": false, "no-input": false,
 	}
 	for _, flag := range got.Data.Flags {
 		if _, ok := want[flag.Name]; ok {
@@ -135,13 +135,13 @@ func TestConfigureAppleSchema_ExposesNonInteractiveInputs(t *testing.T) {
 	}
 	for name, seen := range want {
 		if !seen {
-			t.Errorf("schema for `apps configure-apple` missing flag --%s", name)
+			t.Errorf("schema for `apps apple setup` missing flag --%s", name)
 		}
 	}
 }
 
-func TestConfigureAppleHelp_ExplainsCredentialFlow(t *testing.T) {
-	out, _, err := runCmd(t, "apps", "configure-apple", "--help")
+func TestAppsAppleSetupHelp_ExplainsCredentialFlow(t *testing.T) {
+	out, _, err := runCmd(t, "apps", "apple", "setup", "--help")
 	if err != nil {
 		t.Fatalf("execute: %v", err)
 	}
@@ -154,6 +154,28 @@ func TestConfigureAppleHelp_ExplainsCredentialFlow(t *testing.T) {
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("help missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestAppsAppleCheckHelp_IsExplicitlyReadOnly(t *testing.T) {
+	out, _, err := runCmd(t, "apps", "apple", "check", "--help")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	for _, want := range []string{
+		"read-only requests",
+		"No Apple keys will be created",
+		"no RevenueCat app will be changed",
+		"creates no Apple keys and makes no changes in RevenueCat",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("help missing %q:\n%s", want, out)
+		}
+	}
+	for _, unwanted := range []string{"--force", "--vendor-number", "--dry-run"} {
+		if strings.Contains(out, unwanted) {
+			t.Errorf("check help unexpectedly includes %s:\n%s", unwanted, out)
 		}
 	}
 }

@@ -105,7 +105,8 @@ rc apps update <id>
 rc apps delete <id>
 rc apps keys <app-id>                                    # public_api_keys (per-app — needs verification)
 rc apps storekit-config <app-id>                         # store_kit_config; optionally writes .storekit JSON
-rc apps configure-apple <app-id>                         # POC: Apple ID login + create/upload IAP and ASC keys
+rc apps apple check [app-id]                             # POC: validate Apple login, 2FA, team, and key access
+rc apps apple setup [app-id]                             # POC: create/upload missing IAP and ASC keys
 
 # Customers — busiest noun
 rc customer show [id]                                    # already embeds active_entitlements; we'll add subs + purchases
@@ -268,14 +269,13 @@ rc chat                                                  # internal agent chat
 5. **Long tail**: `webhooks` ✅ (under `/integrations/webhooks`), `paywalls` ✅. `currencies` catalog, `discounts`, `experiments` deferred — fixtures empty so write shapes unverified.
 6. **Cross-resource utilities**: `metrics` ✅, `charts list/show/options` ✅ (with client-side enum validation + shell completion), `benchmarks` ✅, `audit` ✅. `find` still TODO (search query format unconfirmed).
 7. **Apps** ✅ — list/show/create/update/delete/keys/storekit-config.
-8. **Apple credential setup POC** — `apps configure-apple` signs in to App
-   Store Connect locally (SRP + trusted-device/SMS 2FA), creates one-time
-   downloadable In-App Purchase and App Store Connect API keys, and uploads
-   them through the public v2 app update endpoint. Vendor number remains an
-   optional flag because Apple exposes no supported discovery endpoint. Small
-   Business Program dates remain out of scope because the public RevenueCat v2
-   app update schema does not expose them. `--dry-run` authenticates and makes
-   read-only key-management checks without creating keys or changing the app.
+8. **Apple credential setup POC** — `apps apple check` validates App Store
+   Connect login, trusted-device/SMS 2FA, team selection, and read-only key
+   access. `apps apple setup` creates one-time downloadable In-App Purchase and
+   App Store Connect API keys and uploads them through the public v2 app update
+   endpoint. Vendor number remains an optional setup flag because Apple exposes
+   no supported discovery endpoint. Small Business Program dates remain out of
+   scope because the public RevenueCat v2 app update schema does not expose them.
 4. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
 5. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
 6. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.

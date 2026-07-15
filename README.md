@@ -63,7 +63,7 @@ rc charts show mrr
 | **Packages** | `list` (across all offerings) · `show` · `create` · `update` · `delete` · `attach` · `detach` |
 | **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `prices` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
-| **Apps** | `list` · `show` · `create` · `update` · `delete` · `configure-apple` |
+| **Apps** | `list` · `show` · `create` · `update` · `delete` · `apple check` · `apple setup` |
 | **Audit log** | `rc audit` with `--limit` and `--since` |
 | **Webhooks** | `list` · `show` · `create` · `update` · `delete` |
 
@@ -79,14 +79,14 @@ Apple account, download each private key once, and upload it directly to an
 existing RevenueCat App Store app:
 
 ```bash
-rc apps configure-apple app_abc
+rc apps apple setup app_abc
 ```
 
 Test Apple sign-in, two-factor authentication, team selection, and read-only
 key-management access without creating keys or changing RevenueCat:
 
 ```bash
-rc apps configure-apple app_abc --dry-run
+rc apps apple check app_abc
 ```
 
 The command supports trusted-device and SMS verification. Your Apple Account
