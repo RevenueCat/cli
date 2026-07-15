@@ -168,17 +168,26 @@ opening a browser:
 rc auth signup \
   --email dev@example.com \
   --name "Example Developer" \
+  --generate-password \
+  --save-password \
   --accept-terms \
   --no-input --json
 ```
 
-`--accept-terms` is deliberately explicit. Add `--marketing-emails` only when
-the user opts in. By default, agent mode generates a one-time password in memory
-and never prints or saves it. A user can instead provide `RC_PASSWORD`; on
-macOS, explicit `--save-password` stores it as the app.revenuecat.com internet
-password in Keychain. The temporary login session is discarded after it is
-exchanged for renewable OAuth tokens, which are saved in the active mode-0600
-profile just like `rc auth login`.
+`--name` is the user's personal/display name, not a project or company name.
+An agent may pass `--accept-terms` only after the user explicitly authorizes
+accepting the RevenueCat Terms of Service and Privacy Policy. Add
+`--marketing-emails` only when the user separately opts in.
+
+The macOS recipe above generates a one-time password in memory and saves it as
+the app.revenuecat.com internet password in Keychain without printing it or
+placing it in process arguments. The agent must verify that the response has
+`account_created`, `authenticated`, and `password_saved_to_keychain` set to
+`true`. A locked Keychain may require local user approval. A user can instead
+provide `RC_PASSWORD`; avoid `--password` because command arguments can appear
+in shell history and process listings. The temporary login session is discarded
+after it is exchanged for renewable OAuth tokens, which are saved in the active
+mode-0600 profile just like `rc auth login`.
 
 The returned JSON tells the agent to verify the email and use the RevenueCat AI
 Toolkit to configure the project, apps, products, entitlements, and offerings.
