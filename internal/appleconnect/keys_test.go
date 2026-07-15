@@ -66,6 +66,36 @@ func TestCreateKeysUsesAppleIrisShapesAndDownloadsOnce(t *testing.T) {
 	}
 }
 
+func TestCheckKeyAccessUsesReadOnlyListEndpoints(t *testing.T) {
+	seen := map[string]bool{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		key := r.Method + " " + r.URL.Path
+		seen[key] = true
+		if r.Method != http.MethodGet || r.URL.Query().Get("limit") != "1" {
+			t.Errorf("unexpected access check: %s %s", r.Method, r.URL.String())
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"data":[]}`)
+	}))
+	t.Cleanup(server.Close)
+
+	client, err := New(Options{HTTPClient: server.Client(), ASCBaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := &Session{client: client, Provider: Provider{PublicID: "issuer-id"}}
+	for _, kind := range []KeyKind{InAppPurchaseKey, AppStoreConnectKey} {
+		if err := client.CheckKeyAccess(context.Background(), session, kind); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, request := range []string{"GET /iris/v1/apiKeys", "GET /iris/v1/subscriptionKeys"} {
+		if !seen[request] {
+			t.Errorf("missing %s", request)
+		}
+	}
+}
+
 func assertKeyCreateBody(t *testing.T, r *http.Request, resourceType, name string, expectRole bool) {
 	t.Helper()
 	var body struct {
