@@ -381,8 +381,12 @@ func appToItem(projectID string, a api.App) tui.BrowserItem {
 func newAppsKeysCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "keys [app-id]",
-		Short: "List public API keys for an app",
-		Args:  cobra.MaximumNArgs(1),
+		Short: "List public SDK API keys for an app",
+		Long: `Lists the typed public API keys used to configure RevenueCat SDKs.
+These are client-side public keys, not secret RevenueCat API keys.`,
+		Example: `  rc apps keys app_abc
+  rc apps keys app_abc --json --no-input`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -411,7 +415,15 @@ func newAppsKeysCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return rt.Out.Render(keys)
+			rows := make([][]string, len(keys.Items))
+			for i, key := range keys.Items {
+				rows[i] = []string{key.ID, string(key.Environment), key.Key, formatMillis(key.CreatedAt)}
+			}
+			return rt.Out.RenderTable(output.Table{
+				Columns: []string{"ID", "ENVIRONMENT", "PUBLIC SDK KEY", "CREATED"},
+				Rows:    rows,
+				Raw:     keys,
+			})
 		},
 	}
 }

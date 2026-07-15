@@ -23,12 +23,62 @@ func newOfferingsCmd() *cobra.Command {
 		newOfferingsShowCmd(),
 		newOfferingsCreateCmd(),
 		newOfferingsUpdateCmd(),
+		newOfferingsSetCurrentCmd(),
 		newOfferingsDeleteCmd(),
 		newOfferingsArchiveCmd(),
 		newOfferingsRestoreCmd(),
 		newOfferingsPackagesCmd(),
 	)
 	return cmd
+}
+
+func newOfferingsSetCurrentCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-current [id]",
+		Short: "Make an offering the current SDK offering",
+		Long: `Makes this offering the project's current offering. Apps that request the
+current offering from a RevenueCat SDK will receive this offering.
+
+Confirmation is required because this changes the catalog served to customers.
+Pass --yes for agents and non-interactive use. The change can be reversed by
+setting a different offering as current.`,
+		Example: `  rc offerings set-current ofrng_default
+  rc offerings set-current ofrng_default --yes --json --no-input`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			if !rt.Globals.AssumeYes {
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Make offering %q current?", offeringID))
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return fmt.Errorf("aborted")
+				}
+			}
+			current := true
+			offering, err := client.Offerings.Update(cmd.Context(), projectID, offeringID, api.OfferingUpdate{IsCurrent: &current})
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Current offering: %s", offering.ID))
+			return rt.Out.Render(offering)
+		},
+	}
 }
 
 func newOfferingsArchiveCmd() *cobra.Command {

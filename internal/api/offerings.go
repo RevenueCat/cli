@@ -18,6 +18,7 @@ type OfferingCreate struct {
 type OfferingUpdate struct {
 	DisplayName *string `json:"display_name,omitempty"`
 	Metadata    any     `json:"metadata,omitempty"`
+	IsCurrent   *bool   `json:"is_current,omitempty"`
 }
 
 func (s *OfferingsService) List(ctx context.Context, projectID string) (*Page[Offering], error) {

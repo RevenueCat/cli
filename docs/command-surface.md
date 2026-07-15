@@ -104,7 +104,7 @@ rc apps show <id>
 rc apps create
 rc apps update <id>
 rc apps delete <id>
-rc apps keys <app-id>                                    # public_api_keys (per-app — needs verification)
+rc apps keys <app-id>                                    # typed public SDK keys for app integration
 rc apps storekit-config <app-id>                         # store_kit_config; optionally writes .storekit JSON
 
 # Customers — busiest noun
@@ -146,6 +146,7 @@ rc offerings list
 rc offerings show <id>
 rc offerings create
 rc offerings update <id>
+rc offerings set-current <id>                            # make this the SDK's current offering; confirmation/--yes
 rc offerings delete <id>
 rc offerings archive <id>
 rc offerings restore <id>

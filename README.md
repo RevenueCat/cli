@@ -59,7 +59,7 @@ rc charts show mrr
 | **Customers** | `show` · `list` · `grant` · `revoke` · `transfer` · `aliases` · `attributes` |
 | **Subscriptions** | `show` · `cancel` · `extend` · `refund` · `transactions` |
 | **Entitlements** | `list` · `show` · `create` · `update` · `attach` · `detach` |
-| **Offerings** | `list` · `show` · `create` · `update` · `archive` |
+| **Offerings** | `list` · `show` · `create` · `update` · `set-current` · `archive` |
 | **Packages** | `list` (across all offerings) · `show` · `create` · `update` · `delete` · `attach` · `detach` |
 | **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
@@ -130,7 +130,10 @@ Cursor, VS Code, and Gemini are documented at
 https://www.revenuecat.com/docs/tools/overview.
 
 The toolkit can discover every CLI contract with `rc commands --json` and
-`rc schema <command> --json`.
+`rc schema <command> --json`. Bootstrap primitives include
+`rc offerings set-current <id> --yes` and `rc apps keys <app-id> --json`, so an
+agent can finish catalog setup and return the public SDK key without raw API
+calls.
 
 ## Global flags
 

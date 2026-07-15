@@ -84,3 +84,30 @@ func TestAppsCreate_IncludesPlatformConfig(t *testing.T) {
 		t.Fatalf("unexpected body: %s", string(body))
 	}
 }
+
+func TestOfferingsUpdate_SetsCurrent(t *testing.T) {
+	var body struct {
+		IsCurrent *bool `json:"is_current"`
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/offerings/ofrng" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"ofrng","lookup_key":"default","display_name":"Default","is_current":true,"state":"active","object":"offering","created_at":1,"metadata":null}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+	current := true
+	offering, err := c.Offerings.Update(context.Background(), "proj", "ofrng", api.OfferingUpdate{IsCurrent: &current})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body.IsCurrent == nil || !*body.IsCurrent || !offering.IsCurrent {
+		t.Fatalf("current offering not preserved: body=%v response=%+v", body.IsCurrent, offering)
+	}
+}

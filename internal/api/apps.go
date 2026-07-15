@@ -103,15 +103,10 @@ func (s *AppsService) Delete(ctx context.Context, projectID, id string) error {
 	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "apps", id), nil, nil)
 }
 
-// GET /projects/{project_id}/apps/{app_id}/public_api_keys
-//
-// Shape unverified — fixture not captured (key would expose the project's
-// public client API keys; not appropriate for a public fixture). Returns the
-// raw response for callers to inspect.
-func (s *AppsService) PublicAPIKeys(ctx context.Context, projectID, appID string) (any, error) {
-	var out any
+func (s *AppsService) PublicAPIKeys(ctx context.Context, projectID, appID string) (*ListPublicAPIKeys, error) {
+	var out ListPublicAPIKeys
 	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps", appID, "public_api_keys"), nil, &out)
-	return out, err
+	return &out, err
 }
 
 // GET /projects/{project_id}/apps/{app_id}/store_kit_config
