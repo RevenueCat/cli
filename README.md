@@ -61,7 +61,7 @@ rc charts show mrr
 | **Entitlements** | `list` · `show` · `create` · `update` · `attach` · `detach` |
 | **Offerings** | `list` · `show` · `create` · `update` · `set-current` · `archive` |
 | **Packages** | `list` (across all offerings) · `show` · `create` · `update` · `delete` · `attach` · `detach` |
-| **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` |
+| **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `store sync` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
 | **Apps** | `list` · `show` · `create` · `update` · `delete` |
 | **Audit log** | `rc audit` with `--limit` and `--since` |
@@ -71,6 +71,37 @@ rc charts show mrr
 rc --help          # see everything
 rc customer --help # see subcommands for any noun
 ```
+
+### Store-state CSV sync (experimental)
+
+Preview a canonical Khepri product store-state CSV without changing Apple or
+RevenueCat products:
+
+```bash
+rc products store sync app_abc --file catalog.csv --plan-only
+```
+
+The command parses the file locally, creates a RevenueCat store-state plan,
+waits for Khepri to compare it with the live store, and returns every diff and
+warning. Remove `--plan-only` to review the same preview and confirm before it
+is applied:
+
+```bash
+rc products store sync app_abc --file catalog.csv
+```
+
+For CI, use `--yes --no-input --json`. `RC_STORE_STATE_FILE` can replace
+`--file`. A full CSV exported by Khepri is accepted; this is a minimal App Store
+example:
+
+```csv
+row_type,store,store_identifier,product_type,display_name,title,duration,territory,amount,currency,start_date,available,available_in_new_territories,locale,localized_name,localized_description
+price,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium Monthly,P1M,US,9.99,USD,,true,true,,,
+localization,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium Monthly,P1M,,,,,,,en-US,Premium Monthly,Monthly premium access
+```
+
+These v2 endpoints are still development-only and require Khepri's
+`PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag.
 
 ## Profiles
 
