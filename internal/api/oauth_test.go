@@ -16,6 +16,9 @@ func TestOAuthSignupEndpoints(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls = append(calls, r.Method+" "+r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
+		if r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
+			t.Errorf("%s missing required X-Requested-With header", r.URL.Path)
+		}
 		switch r.URL.Path {
 		case "/v1/developers/provision-account":
 			var account ProvisionAccountRequest
