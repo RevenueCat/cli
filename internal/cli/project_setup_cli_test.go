@@ -32,7 +32,7 @@ func TestOfferingsSetCurrent_RequiresConfirmationAndUpdatesOffering(t *testing.T
 	}))
 	t.Cleanup(server.Close)
 
-	out, _, err := runBootstrapCommand(t, server.URL,
+	out, _, err := runProjectSetupCommand(t, server.URL,
 		"offerings", "set-current", "ofrng", "--yes", "--json", "--no-input")
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +48,7 @@ func TestOfferingsSetCurrent_NoInputRequiresYes(t *testing.T) {
 	}))
 	t.Cleanup(server.Close)
 
-	_, _, err := runBootstrapCommand(t, server.URL,
+	_, _, err := runProjectSetupCommand(t, server.URL,
 		"offerings", "set-current", "ofrng", "--json", "--no-input")
 	if err == nil || !strings.Contains(err.Error(), "pass --yes") {
 		t.Fatalf("error = %v, want --yes guidance", err)
@@ -66,7 +66,7 @@ func TestAppsKeys_ReturnsTypedPublicSDKKeys(t *testing.T) {
 	}))
 	t.Cleanup(server.Close)
 
-	out, _, err := runBootstrapCommand(t, server.URL,
+	out, _, err := runProjectSetupCommand(t, server.URL,
 		"apps", "keys", "app", "--json", "--no-input")
 	if err != nil {
 		t.Fatal(err)
@@ -76,7 +76,7 @@ func TestAppsKeys_ReturnsTypedPublicSDKKeys(t *testing.T) {
 	}
 }
 
-func runBootstrapCommand(t *testing.T, baseURL string, args ...string) (string, string, error) {
+func runProjectSetupCommand(t *testing.T, baseURL string, args ...string) (string, string, error) {
 	t.Helper()
 	t.Setenv("RC_CONFIG_DIR", t.TempDir())
 	t.Setenv("RC_BASE_URL", baseURL)

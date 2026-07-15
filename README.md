@@ -239,8 +239,22 @@ files and lock file instead. Marketplace installations for Codex, Claude Code,
 Cursor, VS Code, and Gemini are documented at
 https://www.revenuecat.com/docs/tools/overview.
 
+Run `rc skills install` again to update an existing installation, then start a
+new agent session or reload the agent so it discovers the new skill metadata.
+Skills do not run when installed. The agent selects one when the user's request
+matches its description. For predictable project creation, say:
+
+```text
+Use the create-revenuecat-project skill to create my RevenueCat account and
+configure my project, apps, products, entitlements, and offerings.
+```
+
+Agents may also select that skill automatically for requests such as “Set up
+RevenueCat for my new iOS app.” Explicit naming is useful when testing or when a
+client does not reliably auto-select skills.
+
 The toolkit can discover every CLI contract with `rc commands --json` and
-`rc schema <command> --json`. Bootstrap primitives include
+`rc schema <command> --json`. Project-setup primitives include
 `rc offerings set-current <id> --yes` and `rc apps keys <app-id> --json`, so an
 agent can finish catalog setup and return the public SDK key without raw API
 calls.
