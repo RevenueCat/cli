@@ -129,6 +129,13 @@ existing RevenueCat App Store app:
 rc apps configure-apple app_abc
 ```
 
+Test Apple sign-in, two-factor authentication, team selection, and read-only
+key-management access without creating keys or changing RevenueCat:
+
+```bash
+rc apps configure-apple app_abc --dry-run
+```
+
 The command supports trusted-device and SMS verification. Your Apple Account
 credentials are sent directly to Apple; they are never sent to RevenueCat or
 stored by `rc`. Newly created private keys are uploaded directly to RevenueCat

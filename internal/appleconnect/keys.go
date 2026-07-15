@@ -50,6 +50,32 @@ func (c *Client) CreateInAppPurchaseKey(ctx context.Context, session *Session, n
 	return c.createKey(ctx, session, InAppPurchaseKey, "/iris/v1/subscriptionKeys", "subscriptionKeys", body)
 }
 
+func (c *Client) CheckKeyAccess(ctx context.Context, session *Session, kind KeyKind) error {
+	if session == nil || session.client != c {
+		return errors.New("authenticated Apple session is required")
+	}
+	var path string
+	switch kind {
+	case AppStoreConnectKey:
+		path = "/iris/v1/apiKeys"
+	case InAppPurchaseKey:
+		path = "/iris/v1/subscriptionKeys"
+	default:
+		return fmt.Errorf("unsupported Apple key kind %q", kind)
+	}
+	headers := http.Header{
+		"Accept":     []string{"application/vnd.api+json, application/json"},
+		"Origin":     []string{c.ascBaseURL},
+		"Referer":    []string{c.ascBaseURL + "/access/integrations/api"},
+		"X-CSRF-ITC": []string{"[asc-ui]"},
+	}
+	endpoint := c.ascBaseURL + path + "?" + url.Values{"limit": []string{"1"}}.Encode()
+	if err := c.doJSON(ctx, http.MethodGet, endpoint, nil, nil, headers); err != nil {
+		return fmt.Errorf("check Apple %s key access: %w", kind, err)
+	}
+	return nil
+}
+
 func (c *Client) createKey(ctx context.Context, session *Session, kind KeyKind, path, resourceType string, requestBody any) (*Key, error) {
 	if session == nil || session.client != c {
 		return nil, errors.New("authenticated Apple session is required")

@@ -288,7 +288,8 @@ rc chat                                                  # internal agent chat
    them through the public v2 app update endpoint. Vendor number remains an
    optional flag because Apple exposes no supported discovery endpoint. Small
    Business Program dates remain out of scope because the public RevenueCat v2
-   app update schema does not expose them.
+   app update schema does not expose them. `--dry-run` authenticates and makes
+   read-only key-management checks without creating keys or changing the app.
 10. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
 11. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
 12. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.

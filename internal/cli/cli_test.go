@@ -137,7 +137,7 @@ func TestConfigureAppleSchema_ExposesNonInteractiveInputs(t *testing.T) {
 	want := map[string]bool{
 		"apple-id": false, "apple-password": false, "verification-code": false,
 		"sms": false, "phone-number": false, "team-id": false,
-		"vendor-number": false, "yes": false, "no-input": false,
+		"vendor-number": false, "dry-run": false, "yes": false, "no-input": false,
 	}
 	for _, flag := range got.Data.Flags {
 		if _, ok := want[flag.Name]; ok {
