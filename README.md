@@ -126,15 +126,16 @@ Apple account, download each private key once, and upload it directly to an
 existing RevenueCat App Store app:
 
 ```bash
-RC_APPLE_ID=dev@example.com \
-RC_APPLE_PASSWORD='account-password' \
 rc apps configure-apple app_abc
 ```
 
-The command supports trusted-device and SMS verification. It never writes the
-Apple password or private keys to disk. Pass `--vendor-number` if RevenueCat
-should also receive it; Small Business Program dates are not exposed by the
-public RevenueCat v2 API.
+The command supports trusted-device and SMS verification. Your Apple Account
+credentials are sent directly to Apple; they are never sent to RevenueCat or
+stored by `rc`. Newly created private keys are uploaded directly to RevenueCat
+and are never saved locally or printed. Interactive password entry is masked.
+For scripts, prefer `RC_APPLE_PASSWORD` over `--apple-password` to avoid shell
+history and process-list exposure. Pass `--vendor-number` if RevenueCat should
+also receive it. Small Business Program dates are intentionally deferred.
 
 ## Profiles
 
