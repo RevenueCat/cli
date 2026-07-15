@@ -51,7 +51,7 @@ Cursor, VS Code, and Gemini are documented on the RevenueCat website.`,
 			rt := RuntimeFrom(cmd.Context())
 			return rt.Out.Render(map[string]any{
 				"source":          officialToolkitSource,
-				"install_command": "npx skills add " + officialToolkitSource,
+				"install_command": "npx skills add " + officialToolkitSource + " --global",
 				"docs_url":        officialToolkitDocs,
 			})
 		},
@@ -61,20 +61,21 @@ Cursor, VS Code, and Gemini are documented on the RevenueCat website.`,
 }
 
 func newSkillsInstallCmd(installer skillsInstaller) *cobra.Command {
-	var global, copyFiles bool
+	var global, project, copyFiles bool
 	var agents, skills []string
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Pull and install skills from RevenueCat/ai-toolkit",
-		Long: `Pulls the current official RevenueCat skills by delegating to:
+		Long: `Pulls the current official RevenueCat skills globally by delegating to:
 
-  npx skills add RevenueCat/ai-toolkit
+  npx skills add RevenueCat/ai-toolkit --global
 
 The standard Skills CLI detects supported agents and owns installation paths,
 lock files, security review, and updates. This command does not vendor or cache
-a separate copy of the toolkit inside rc. Under --no-input, pass --yes.`,
+a separate copy of the toolkit inside rc. Pass --project to install into the
+current repository instead. Under --no-input, pass --yes.`,
 		Example: `  rc skills install
-  rc skills install --global
+  rc skills install --project
   rc skills install --agent codex --yes --no-input
   rc skills install --skill create-revenuecat-project --yes --no-input`,
 		Args: cobra.NoArgs,
@@ -84,7 +85,7 @@ a separate copy of the toolkit inside rc. Under --no-input, pass --yes.`,
 				return errors.New("installing skills under --no-input requires --yes")
 			}
 			args := []string{"--yes", "skills", "add", officialToolkitSource}
-			if global {
+			if !project {
 				args = append(args, "--global")
 			}
 			if len(agents) > 0 {
@@ -104,9 +105,9 @@ a separate copy of the toolkit inside rc. Under --no-input, pass --yes.`,
 			if err := installer.Run(cmd, args); err != nil {
 				return fmt.Errorf("install RevenueCat AI Toolkit: %w", err)
 			}
-			scope := "project"
-			if global {
-				scope = "global"
+			scope := "global"
+			if project {
+				scope = "project"
 			}
 			rt.Out.Success("Installed the RevenueCat AI Toolkit")
 			return rt.Out.Render(map[string]any{
@@ -120,7 +121,9 @@ a separate copy of the toolkit inside rc. Under --no-input, pass --yes.`,
 			})
 		},
 	}
-	cmd.Flags().BoolVar(&global, "global", false, "install globally instead of in the current project")
+	cmd.Flags().BoolVar(&global, "global", false, "install globally (the default; retained for explicit scripts)")
+	cmd.Flags().BoolVar(&project, "project", false, "install in the current project instead of globally")
+	cmd.MarkFlagsMutuallyExclusive("global", "project")
 	cmd.Flags().StringSliceVar(&agents, "agent", nil, "agents to install for (passed to the standard Skills CLI)")
 	cmd.Flags().StringSliceVar(&skills, "skill", nil, "specific toolkit skills to install")
 	cmd.Flags().BoolVar(&copyFiles, "copy", false, "copy skill files instead of symlinking them")

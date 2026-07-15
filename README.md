@@ -116,15 +116,18 @@ current skills through the standard Skills CLI:
 
 ```bash
 rc skills install
-# equivalent to: npx skills add RevenueCat/ai-toolkit
+# equivalent to: npx skills add RevenueCat/ai-toolkit --global
 
-rc skills install --global
+rc skills install --project # opt into repository-local installation
 ```
 
 `rc` delegates installation to the standard Skills CLI, which also owns future
 updates, instead of shipping a second, potentially stale copy of RevenueCat
-workflows. Marketplace installations for Codex, Claude Code, Cursor, VS Code,
-and Gemini are documented at https://www.revenuecat.com/docs/tools/overview.
+workflows. Global installation is the default so RevenueCat workflows are
+available in every project; `--project` creates the standard project-local skill
+files and lock file instead. Marketplace installations for Codex, Claude Code,
+Cursor, VS Code, and Gemini are documented at
+https://www.revenuecat.com/docs/tools/overview.
 
 The toolkit can discover every CLI contract with `rc commands --json` and
 `rc schema <command> --json`.

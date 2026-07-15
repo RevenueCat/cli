@@ -29,7 +29,7 @@ func TestSkillsInstallDelegatesToOfficialToolkit(t *testing.T) {
 	globals := &Globals{JSON: true, NoInput: true, AssumeYes: true}
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&stderr)
-	cmd.SetArgs([]string{"install", "--global", "--agent", "codex", "--skill", "create-revenuecat-project"})
+	cmd.SetArgs([]string{"install", "--agent", "codex", "--skill", "create-revenuecat-project"})
 	cmd.SetContext(WithRuntime(context.Background(), &Runtime{
 		Globals: globals,
 		Out:     output.NewRenderer(&stdout, &stderr, true, true, false, ""),
@@ -44,6 +44,26 @@ func TestSkillsInstallDelegatesToOfficialToolkit(t *testing.T) {
 	}
 	if installer.calls != 1 {
 		t.Fatalf("installer calls = %d, want 1", installer.calls)
+	}
+}
+
+func TestSkillsInstallProjectScope(t *testing.T) {
+	installer := &recordingSkillsInstaller{}
+	cmd := newSkillsCmdWithInstaller(installer)
+	var stdout, stderr bytes.Buffer
+	globals := &Globals{JSON: true, NoInput: true, AssumeYes: true}
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+	cmd.SetArgs([]string{"install", "--project"})
+	cmd.SetContext(WithRuntime(context.Background(), &Runtime{
+		Globals: globals,
+		Out:     output.NewRenderer(&stdout, &stderr, true, true, false, ""),
+	}))
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if slices.Contains(installer.args, "--global") {
+		t.Fatalf("project install args unexpectedly contain --global: %v", installer.args)
 	}
 }
 
