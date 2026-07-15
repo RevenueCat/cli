@@ -64,6 +64,8 @@ func runStoreSync(t *testing.T, planOnly bool) (requests []string, stdout, stder
 		requests = append(requests, r.Method+" "+r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
+		case "/projects/proj/apps/app":
+			_, _ = io.WriteString(w, `{"id":"app","name":"iOS","type":"app_store","created_at":1,"app_store":{"bundle_id":"com.example.app"}}`)
 		case "/projects/proj/store_state/plans":
 			w.WriteHeader(http.StatusCreated)
 			_, _ = io.WriteString(w, `{"id":"plan_123","object":"product_store_state_plan","status":"draft"}`)

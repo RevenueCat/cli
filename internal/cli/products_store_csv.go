@@ -34,8 +34,11 @@ func readStoreStateCSV(path, appID string) ([]api.StoreStatePlanDesiredState, er
 		return nil, fmt.Errorf("open store-state CSV: %w", err)
 	}
 	defer f.Close()
+	return readStoreStateCSVReader(f, appID)
+}
 
-	r := csv.NewReader(f)
+func readStoreStateCSVReader(input io.Reader, appID string) ([]api.StoreStatePlanDesiredState, error) {
+	r := csv.NewReader(input)
 	r.TrimLeadingSpace = true
 	header, err := r.Read()
 	if err != nil {
@@ -163,7 +166,10 @@ func mergeStoreCSVRow(p *storeCSVProduct, value func(string) string, line int) e
 		if err != nil {
 			return fmt.Errorf("store-state CSV line %d: available: %w", line, err)
 		}
-		childMap(childMap(p.common, "availability"), "territories")[territory] = parsed
+		territories := childMap(childMap(p.common, "availability"), "territories")
+		if err := mergeCSVMapValue(territories, territory, parsed, "availability", line); err != nil {
+			return err
+		}
 	}
 	if raw := value("available_in_new_territories"); raw != "" {
 		parsed, err := parseCSVBool(raw)
@@ -301,12 +307,17 @@ func mergePlayStoreCSVRow(p *storeCSVProduct, value func(string) string, line in
 
 func mergePlayOtherRegions(basePlan map[string]any, value func(string) string, line int) error {
 	other := map[string]any{}
+	if existing, ok := basePlan["other_regions_config"].(map[string]any); ok {
+		other = existing
+	}
 	if raw := value("play_store_other_regions_available_in_new_territories"); raw != "" {
 		parsed, err := parseCSVBool(raw)
 		if err != nil {
 			return fmt.Errorf("store-state CSV line %d: other regions availability: %w", line, err)
 		}
-		other["new_subscriber_availability"] = parsed
+		if err := mergeCSVMapValue(other, "new_subscriber_availability", parsed, "other regions availability", line); err != nil {
+			return err
+		}
 	}
 	for _, currency := range []string{"usd", "eur"} {
 		amount := value("play_store_other_regions_" + currency + "_amount")
@@ -321,7 +332,9 @@ func mergePlayOtherRegions(basePlan map[string]any, value func(string) string, l
 		if err != nil {
 			return fmt.Errorf("store-state CSV line %d: other-regions %s amount: %w", line, currency, err)
 		}
-		other[currency+"_price"] = map[string]any{"amount_micros": micros, "currency": code}
+		if err := mergeCSVMapValue(other, currency+"_price", map[string]any{"amount_micros": micros, "currency": code}, "other regions price", line); err != nil {
+			return err
+		}
 	}
 	if len(other) > 0 {
 		basePlan["other_regions_config"] = other

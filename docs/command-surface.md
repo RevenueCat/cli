@@ -167,7 +167,11 @@ rc products delete <id>
 rc products archive <id>
 rc products restore <id>
 rc products push <id>                                    # push to store
-rc products store sync [app-id] --file <catalog.csv>     # plan/review/apply canonical store-state CSV; --plan-only stops before apply
+rc products store sync [app-id]                          # human flow: input → plan → review → confirm → apply
+rc products store plan [app-id]                          # persist desired state + diff in Khepri; accepts --file <path|->
+rc products store show <plan-id>                         # inspect the exact persisted plan from any process
+rc products store apply <plan-id>                        # apply that same reviewed plan; requires confirmation/--yes
+rc products store discard <plan-id>                      # discard without applying; requires confirmation/--yes
 
 # Paywalls
 rc paywalls list
@@ -267,11 +271,15 @@ rc chat                                                  # internal agent chat
 5. **Long tail**: `webhooks` ✅ (under `/integrations/webhooks`), `paywalls` ✅. `currencies` catalog, `discounts`, `experiments` deferred — fixtures empty so write shapes unverified.
 6. **Cross-resource utilities**: `metrics` ✅, `charts list/show/options` ✅ (with client-side enum validation + shell completion), `benchmarks` ✅, `audit` ✅. `find` still TODO (search query format unconfirmed).
 7. **Apps** ✅ — list/show/create/update/delete/keys/storekit-config.
-8. **Product store-state CSV sync POC** — `products store sync` reads Khepri's
-   canonical CSV format locally, creates a product store-state plan, waits for
-   its preview, displays per-product diffs and warnings, and only applies after
-   confirmation. `--plan-only` leaves the reviewed plan unapplied. This surface
-   uses development-only v2 endpoints and requires the
+8. **Product store-state sync POC** — `products store sync` is the one-process
+   human flow: gather desired state in memory (interactive input, a file, or
+   stdin), create a server-side plan, review its diffs and warnings, then apply
+   only after confirmation. Agents use the explicit `plan` → `show` → `apply`
+   lifecycle so a later CLI process applies the exact Khepri-persisted plan ID
+   it reviewed; `discard` abandons it. `--file - --input-format csv|json` avoids
+   any filesystem requirement. A future `.revenuecat` workspace may provide
+   optional defaults, but is never a prerequisite and desired state is never
+   stored globally. These development-only v2 endpoints require the
    `PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag until they ship.
 9. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
 10. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.

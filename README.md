@@ -72,27 +72,43 @@ rc --help          # see everything
 rc customer --help # see subcommands for any noun
 ```
 
-### Store-state CSV sync (experimental)
+### Product store-state plans (experimental)
 
-Preview a canonical Khepri product store-state CSV without changing Apple or
-RevenueCat products:
+Files and repositories are optional. For a one-time human workflow, run:
 
 ```bash
-rc products store sync app_abc --file catalog.csv --plan-only
+rc products store sync app_abc
 ```
 
-The command parses the file locally, creates a RevenueCat store-state plan,
-waits for Khepri to compare it with the live store, and returns every diff and
-warning. Remove `--plan-only` to review the same preview and confirm before it
-is applied:
+The CLI keeps interactive answers only in process memory, persists the complete
+desired state and computed diff as a RevenueCat plan, displays that plan, and
+asks before applying it. CSV and JSON are optional input adapters:
 
 ```bash
 rc products store sync app_abc --file catalog.csv
+cat desired-states.json | rc products store sync app_abc --file - --input-format json
 ```
 
-For CI, use `--yes --no-input --json`. `RC_STORE_STATE_FILE` can replace
-`--file`. A full CSV exported by Khepri is accepted; this is a minimal App Store
-example:
+Agents and CI should separate review from mutation. `plan` returns a persisted
+plan ID; later CLI processes use that exact ID, so no local file or process
+memory must survive between commands:
+
+```bash
+plan_id=$(cat desired-states.json |
+  rc products store plan app_abc \
+    --file - --input-format json --json --no-input \
+    --format '.data.id')
+
+rc products store show "$plan_id" --json --no-input
+rc products store apply "$plan_id" --yes --json --no-input
+# Or: rc products store discard "$plan_id" --yes --json --no-input
+```
+
+Do not rerun `plan` after reviewing it; apply the returned ID. Khepri, rather
+than the local filesystem, is the durable handoff. A future `.revenuecat`
+workspace may provide optional defaults, but it is never required and desired
+state is never silently stored globally. `RC_STORE_STATE_FILE` can replace
+`--file`. A full canonical CSV exported by Khepri is accepted:
 
 ```csv
 row_type,store,store_identifier,product_type,display_name,title,duration,territory,amount,currency,start_date,available,available_in_new_territories,locale,localized_name,localized_description

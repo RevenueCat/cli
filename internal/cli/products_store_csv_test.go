@@ -56,6 +56,26 @@ app_store,com.example.pro,subscription,Pro,Other
 	}
 }
 
+func TestReadStoreStateCSV_PlayStoreBasePlan(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "catalog.csv")
+	content := `store,store_identifier,product_type,display_name,title,duration,territory,amount,currency,locale,localized_name,localized_description,play_store_base_plan_type,play_store_auto_renewing_grace_period_duration
+play_store,premium:monthly,subscription,Premium,Premium Monthly,P1M,US,9.99,USD,en-US,Premium,Monthly access,auto_renewing,P3D
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	states, err := readStoreStateCSV(path, "app_android")
+	if err != nil {
+		t.Fatal(err)
+	}
+	basePlans := states[0].StoreState["base_plans"].(map[string]any)
+	monthly := basePlans["monthly"].(map[string]any)
+	auto := monthly["auto_renewing_base_plan_type"].(map[string]any)
+	if auto["billing_period_duration"] != "P1M" || auto["grace_period_duration"] != "P3D" {
+		t.Fatalf("unexpected base plan: %+v", auto)
+	}
+}
+
 func TestDecimalToMicros(t *testing.T) {
 	for input, want := range map[string]int64{"3.99": 3_990_000, "0": 0, "-5": -5_000_000, "1.000001": 1_000_001} {
 		got, err := decimalToMicros(input)

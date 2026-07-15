@@ -103,6 +103,30 @@ func TestSchemaCommand_ReturnsFlagSchema(t *testing.T) {
 	}
 }
 
+func TestStorePlanSchema_ExplainsAgentHandoffAndStdin(t *testing.T) {
+	out, _, err := runCmd(t, "schema", "products", "store", "plan", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`"name": "file"`, `"name": "input-format"`, "returned plan ID", "--file -"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("store plan schema missing %q\n%s", want, out)
+		}
+	}
+}
+
+func TestManageStoreProductsSkill_UsesExactReviewedPlan(t *testing.T) {
+	out, _, err := runCmd(t, "skills", "show", "manage-store-products")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"server-side `plan_id`", "rerun `plan` between", "store apply plan_123", "--file -"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("store product skill missing %q", want)
+		}
+	}
+}
+
 func TestWhoami_JSON_StableShape(t *testing.T) {
 	out, errb, err := runCmd(t, "whoami", "--json")
 	if err != nil {
