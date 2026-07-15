@@ -16,13 +16,12 @@ import (
 )
 
 type appleConfigurationResult struct {
-	AppID                     string `json:"app_id"`
-	ProviderID                int64  `json:"provider_id"`
-	ProviderName              string `json:"provider_name"`
-	InAppPurchaseKeyID        string `json:"in_app_purchase_key_id,omitempty"`
-	AppStoreConnectAPIKeyID   string `json:"app_store_connect_api_key_id,omitempty"`
-	VendorNumberConfigured    bool   `json:"vendor_number_configured"`
-	SmallBusinessProgramDates string `json:"small_business_program_dates"`
+	AppID                   string `json:"app_id"`
+	ProviderID              int64  `json:"provider_id"`
+	ProviderName            string `json:"provider_name"`
+	InAppPurchaseKeyID      string `json:"in_app_purchase_key_id,omitempty"`
+	AppStoreConnectAPIKeyID string `json:"app_store_connect_api_key_id,omitempty"`
+	VendorNumberConfigured  bool   `json:"vendor_number_configured"`
 }
 
 func newAppsConfigureAppleCmd() *cobra.Command {
@@ -79,8 +78,7 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 			createAPIKey := !skipAPIKey && (force || !app.AppStore.AppStoreConnectAPIKeyConfigured)
 			if !createInAppKey && !createAPIKey && vendorNumber == "" {
 				return rt.Out.Render(appleConfigurationResult{
-					AppID:                     appID,
-					SmallBusinessProgramDates: "unsupported_by_public_api",
+					AppID: appID,
 				})
 			}
 
@@ -107,9 +105,8 @@ func newAppsConfigureAppleCmd() *cobra.Command {
 
 			update := api.AppUpdate{AppStore: &api.AppStoreAppConfig{}}
 			result := appleConfigurationResult{
-				AppID:                     appID,
-				VendorNumberConfigured:    vendorNumber != "",
-				SmallBusinessProgramDates: "unsupported_by_public_api",
+				AppID:                  appID,
+				VendorNumberConfigured: vendorNumber != "",
 			}
 			createdIDs := make([]string, 0, 2)
 			if createInAppKey || createAPIKey {
