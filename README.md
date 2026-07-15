@@ -108,20 +108,26 @@ rc api GET /projects/proj_abc/customers
 rc api POST /projects/proj_abc/offerings --body '{"lookup_key":"sale"}'
 ```
 
-## Skills
+## AI Toolkit
 
-Skills are step-by-step workflow guides for common multi-step tasks. Read
-them directly or install them as Claude Code slash commands:
+RevenueCat's official AI Toolkit owns agent workflows such as project setup,
+SDK integration, catalog management, and project health checks. Install its
+current skills through the standard Skills CLI:
 
 ```bash
-rc skills list                    # see available skills
-rc skills show setup-offering     # read a skill
-rc skills install                 # write all to .claude/commands/ in current repo
-rc skills install --global        # write to ~/.claude/commands/ for all projects
+rc skills install
+# equivalent to: npx skills add RevenueCat/ai-toolkit
+
+rc skills install --global
 ```
 
-Once installed, skills are available as `/project:rc-<name>` slash commands
-in Claude Code. Commit `.claude/commands/` to share them with your whole team.
+`rc` delegates installation to the standard Skills CLI, which also owns future
+updates, instead of shipping a second, potentially stale copy of RevenueCat
+workflows. Marketplace installations for Codex, Claude Code, Cursor, VS Code,
+and Gemini are documented at https://www.revenuecat.com/docs/tools/overview.
+
+The toolkit can discover every CLI contract with `rc commands --json` and
+`rc schema <command> --json`.
 
 ## Global flags
 

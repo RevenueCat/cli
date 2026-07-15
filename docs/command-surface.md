@@ -85,6 +85,7 @@ rc auth status                                           # show auth state (meth
 rc config                                                # show resolved config
 rc commands                                              # agent discovery (tree)
 rc schema <cmd>                                          # agent discovery (flags)
+rc skills install                                        # install official RevenueCat/ai-toolkit via the standard Skills CLI
 rc version
 rc update                                                # self-update from GitHub Releases; --check exits 1 if stale (not supported on Windows)
 rc completion <shell>

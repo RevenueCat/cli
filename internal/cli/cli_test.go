@@ -14,7 +14,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"os"
 	"strings"
 	"testing"
 
@@ -235,108 +234,35 @@ func TestVersion_JSONShape(t *testing.T) {
 	}
 }
 
-func TestSkills_List_JSON(t *testing.T) {
-	out, _, err := runCmd(t, "skills", "list", "--json")
+func TestSkills_JSONPointsToOfficialToolkit(t *testing.T) {
+	out, _, err := runCmd(t, "skills", "--json")
 	if err != nil {
 		t.Fatalf("execute: %v", err)
 	}
 	var got struct {
 		Data struct {
-			Items []struct {
-				Name        string `json:"name"`
-				Description string `json:"description"`
-			} `json:"items"`
+			Source         string `json:"source"`
+			InstallCommand string `json:"install_command"`
+			DocsURL        string `json:"docs_url"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal([]byte(out), &got); err != nil {
 		t.Fatalf("not JSON: %v\n%s", err, out)
 	}
-	if len(got.Data.Items) == 0 {
-		t.Fatal("want at least one skill, got none")
-	}
-	// Every item must have a name and description.
-	for _, s := range got.Data.Items {
-		if s.Name == "" {
-			t.Errorf("skill missing name: %+v", s)
-		}
-		if s.Description == "" {
-			t.Errorf("skill %q missing description", s.Name)
-		}
-	}
-	// Check a known skill is always present.
-	names := make([]string, len(got.Data.Items))
-	for i, s := range got.Data.Items {
-		names[i] = s.Name
-	}
-	for _, want := range []string{"setup-offering", "debug-customer"} {
-		if !contains(names, want) {
-			t.Errorf("want skill %q in list, got %v", want, names)
-		}
+	if got.Data.Source != "RevenueCat/ai-toolkit" || !strings.Contains(got.Data.InstallCommand, "npx skills add") || got.Data.DocsURL == "" {
+		t.Fatalf("unexpected toolkit guidance: %+v", got.Data)
 	}
 }
 
-func TestSkills_Show(t *testing.T) {
-	out, _, err := runCmd(t, "skills", "show", "setup-offering")
+func TestSkillsInstallSchemaExposesStandardInstallerOptions(t *testing.T) {
+	out, _, err := runCmd(t, "schema", "skills", "install", "--json")
 	if err != nil {
 		t.Fatalf("execute: %v", err)
 	}
-	if !strings.Contains(out, "rc offerings create") {
-		t.Errorf("setup-offering skill should mention 'rc offerings create'; got:\n%s", out)
-	}
-}
-
-func TestSkills_Show_UnknownName(t *testing.T) {
-	_, _, err := runCmd(t, "skills", "show", "definitely-not-a-skill")
-	if err == nil {
-		t.Fatal("want error for unknown skill name")
-	}
-}
-
-func TestSkills_Install(t *testing.T) {
-	dir := t.TempDir()
-	out, _, err := runCmd(t, "skills", "install", "--dir", dir, "--json")
-	if err != nil {
-		t.Fatalf("execute: %v", err)
-	}
-	var got struct {
-		Data struct {
-			Installed []string `json:"installed"`
-			Directory string   `json:"directory"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal([]byte(out), &got); err != nil {
-		t.Fatalf("not JSON: %v\n%s", err, out)
-	}
-	if len(got.Data.Installed) == 0 {
-		t.Fatal("want at least one installed file")
-	}
-	// Every reported file must actually exist on disk.
-	for _, f := range got.Data.Installed {
-		path := got.Data.Directory + "/" + f
-		if _, err := os.Stat(path); err != nil {
-			t.Errorf("installed file missing on disk: %s", path)
+	for _, want := range []string{`"name": "agent"`, `"name": "skill"`, `"name": "global"`, `"name": "copy"`, "RevenueCat/ai-toolkit"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("skills install schema missing %q", want)
 		}
-	}
-	// Files must be prefixed rc-.
-	for _, f := range got.Data.Installed {
-		if !strings.HasPrefix(f, "rc-") {
-			t.Errorf("installed filename should start with rc-, got %q", f)
-		}
-	}
-}
-
-func TestSkills_Install_SingleSkill(t *testing.T) {
-	dir := t.TempDir()
-	_, _, err := runCmd(t, "skills", "install", "setup-offering", "--dir", dir)
-	if err != nil {
-		t.Fatalf("execute: %v", err)
-	}
-	entries, _ := os.ReadDir(dir)
-	if len(entries) != 1 {
-		t.Fatalf("want exactly 1 file, got %d", len(entries))
-	}
-	if entries[0].Name() != "rc-setup-offering.md" {
-		t.Errorf("want rc-setup-offering.md, got %q", entries[0].Name())
 	}
 }
 
