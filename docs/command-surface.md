@@ -106,6 +106,7 @@ rc apps update <id>
 rc apps delete <id>
 rc apps keys <app-id>                                    # typed public SDK keys for app integration
 rc apps storekit-config <app-id>                         # store_kit_config; optionally writes .storekit JSON
+rc apps configure-apple <app-id>                         # POC: Apple ID login + create/upload IAP and ASC keys
 
 # Customers — busiest noun
 rc customer show [id]                                    # already embeds active_entitlements; we'll add subs + purchases
@@ -281,10 +282,17 @@ rc chat                                                  # internal agent chat
    optional defaults, but is never a prerequisite and desired state is never
    stored globally. These development-only v2 endpoints require the
    `PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag until they ship.
-9. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
-10. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
-11. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
-12. **Streaming**: `events tail`, then `chat` — both blocked on backend.
+9. **Apple credential setup POC** — `apps configure-apple` signs in to App
+   Store Connect locally (SRP + trusted-device/SMS 2FA), creates one-time
+   downloadable In-App Purchase and App Store Connect API keys, and uploads
+   them through the public v2 app update endpoint. Vendor number remains an
+   optional flag because Apple exposes no supported discovery endpoint. Small
+   Business Program dates remain out of scope because the public RevenueCat v2
+   app update schema does not expose them.
+10. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
+11. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
+12. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
+13. **Streaming**: `events tail`, then `chat` — both blocked on backend.
 
 ## Open questions (need RevenueCat-internal answers)
 

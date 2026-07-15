@@ -63,7 +63,7 @@ rc charts show mrr
 | **Packages** | `list` (across all offerings) · `show` · `create` · `update` · `delete` · `attach` · `detach` |
 | **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `store sync` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
-| **Apps** | `list` · `show` · `create` · `update` · `delete` |
+| **Apps** | `list` · `show` · `create` · `update` · `delete` · `configure-apple` |
 | **Audit log** | `rc audit` with `--limit` and `--since` |
 | **Webhooks** | `list` · `show` · `create` · `update` · `delete` |
 
@@ -118,6 +118,23 @@ localization,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium 
 
 These v2 endpoints are still development-only and require Khepri's
 `PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag.
+
+### Apple credential setup (experimental)
+
+Create the missing In-App Purchase and App Store Connect API keys in your
+Apple account, download each private key once, and upload it directly to an
+existing RevenueCat App Store app:
+
+```bash
+RC_APPLE_ID=dev@example.com \
+RC_APPLE_PASSWORD='account-password' \
+rc apps configure-apple app_abc
+```
+
+The command supports trusted-device and SMS verification. It never writes the
+Apple password or private keys to disk. Pass `--vendor-number` if RevenueCat
+should also receive it; Small Business Program dates are not exposed by the
+public RevenueCat v2 API.
 
 ## Profiles
 

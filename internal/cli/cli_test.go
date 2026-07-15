@@ -115,6 +115,42 @@ func TestStorePlanSchema_ExplainsAgentHandoffAndStdin(t *testing.T) {
 	}
 }
 
+func TestConfigureAppleSchema_ExposesNonInteractiveInputs(t *testing.T) {
+	t.Setenv("RC_APPLE_PASSWORD", "must-not-appear-in-schema")
+	out, _, err := runCmd(t, "schema", "apps", "configure-apple", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	var got struct {
+		Data struct {
+			Flags []struct {
+				Name string `json:"name"`
+			} `json:"flags"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	if strings.Contains(out, "must-not-appear-in-schema") {
+		t.Fatal("schema leaked RC_APPLE_PASSWORD")
+	}
+	want := map[string]bool{
+		"apple-id": false, "apple-password": false, "verification-code": false,
+		"sms": false, "phone-number": false, "team-id": false,
+		"vendor-number": false, "yes": false, "no-input": false,
+	}
+	for _, flag := range got.Data.Flags {
+		if _, ok := want[flag.Name]; ok {
+			want[flag.Name] = true
+		}
+	}
+	for name, seen := range want {
+		if !seen {
+			t.Errorf("schema for `apps configure-apple` missing flag --%s", name)
+		}
+	}
+}
+
 func TestWhoami_JSON_StableShape(t *testing.T) {
 	out, errb, err := runCmd(t, "whoami", "--json")
 	if err != nil {
