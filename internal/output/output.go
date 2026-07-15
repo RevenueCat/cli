@@ -59,6 +59,8 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 	return r
 }
 
+func (r *Renderer) IsJSON() bool { return r.json }
+
 // style returns either the styled rendering of s, or s unmodified when colors
 // are disabled. This is the single place we make that choice — every styled
 // write goes through here.

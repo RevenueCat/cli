@@ -173,13 +173,17 @@ rc auth signup \
 ```
 
 `--accept-terms` is deliberately explicit. Add `--marketing-emails` only when
-the user opts in. The CLI generates a one-time password in memory, sends it to
-RevenueCat over HTTPS, and never prints or saves it. It also discards the
-temporary login session after exchanging it for renewable OAuth tokens. Those
-tokens are saved in the active mode-0600 profile, just like `rc auth login`.
-The returned JSON tells the agent to verify the email; use RevenueCat's password
-reset flow if dashboard password access is needed later. Then continue with
-`rc bootstrap` to create and configure the first project.
+the user opts in. By default, agent mode generates a one-time password in memory
+and never prints or saves it. A user can instead provide `RC_PASSWORD`; on
+macOS, explicit `--save-password` stores it as the app.revenuecat.com internet
+password in Keychain. The temporary login session is discarded after it is
+exchanged for renewable OAuth tokens, which are saved in the active mode-0600
+profile just like `rc auth login`.
+
+The returned JSON tells the agent to verify the email and use the RevenueCat AI
+Toolkit to configure the project, apps, products, entitlements, and offerings.
+Install those maintained workflows with `rc skills install` if needed. For a
+manual start, run `rc projects create --name "My App" --use`.
 
 ## Scripting and agents
 

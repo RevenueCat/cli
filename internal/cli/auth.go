@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -23,6 +24,8 @@ import (
 const (
 	loginMethodOAuth  = "oauth"
 	loginMethodAPIKey = "api_key"
+	passwordCreate    = "create"
+	passwordGenerate  = "generate"
 )
 
 func newAuthCmd() *cobra.Command {
@@ -44,6 +47,9 @@ func newAuthSignupCmd() *cobra.Command {
 	var name string
 	var acceptTerms bool
 	var marketingEmails bool
+	var password string
+	var generatePassword bool
+	var savePassword bool
 
 	cmd := &cobra.Command{
 		Use:   "signup",
@@ -52,10 +58,11 @@ func newAuthSignupCmd() *cobra.Command {
 temporary signup session into the same renewable OAuth credentials used by
 browser login.
 
-rc generates a strong one-time password in memory and sends it only to
-RevenueCat over HTTPS. The password and temporary login token are never printed
-or saved. Renewable OAuth tokens are saved in the active local profile
-(~/.config/revenuecat/<profile>.json, mode 0600).
+Interactive signup lets you create a password or generate a strong random one.
+On macOS, rc can save it as an app.revenuecat.com internet password in Keychain
+with your explicit approval. Passwords are sent only to RevenueCat over HTTPS
+and are never printed. Renewable OAuth tokens are saved in the active local
+profile (~/.config/revenuecat/<profile>.json, mode 0600).
 
 You must accept the RevenueCat Terms of Service and Privacy Policy:
   https://www.revenuecat.com/terms
@@ -70,6 +77,15 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 			rt := RuntimeFrom(cmd.Context())
 			email = strings.TrimSpace(email)
 			name = strings.TrimSpace(name)
+			if password == "" {
+				password = os.Getenv("RC_PASSWORD")
+			}
+			if password != "" && generatePassword {
+				return fmt.Errorf("pass either --password or --generate-password, not both")
+			}
+			if savePassword && runtime.GOOS != "darwin" {
+				return fmt.Errorf("--save-password is currently supported only on macOS")
+			}
 
 			if rt.Globals.NoInput {
 				var missing []string
@@ -91,13 +107,46 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 					form.Field(huh.NewInput().Title("Email").Value(&email).Validate(tui.Required("Email")))
 				}
 				if name == "" {
-					form.Field(huh.NewInput().Title("Name").Value(&name).Validate(tui.Required("Name")))
+					form.Field(huh.NewInput().Title("Your name").Description("Your personal/display name; project and company setup comes later").Value(&name).Validate(tui.Required("Name")))
 				}
 				if !marketingEmails {
 					form.Field(huh.NewConfirm().Title("Receive RevenueCat product updates?").Value(&marketingEmails))
 				}
 				if err := form.Run(); err != nil {
 					return err
+				}
+				if password == "" && !generatePassword {
+					var passwordMode string
+					if err := tui.Form(false).Field(huh.NewSelect[string]().
+						Title("Account password").
+						Options(
+							huh.NewOption("Create my own password", passwordCreate),
+							huh.NewOption("Generate a strong random password", passwordGenerate),
+						).
+						Value(&passwordMode)).Run(); err != nil {
+						return err
+					}
+					generatePassword = passwordMode == passwordGenerate
+				}
+				if password == "" && !generatePassword {
+					var confirmation string
+					if err := tui.Form(false).
+						Field(huh.NewInput().Title("Create password").EchoMode(huh.EchoModePassword).Value(&password).Validate(validateSignupPassword)).
+						Field(huh.NewInput().Title("Confirm password").EchoMode(huh.EchoModePassword).Value(&confirmation).Validate(func(value string) error {
+							if value != password {
+								return fmt.Errorf("passwords do not match")
+							}
+							return nil
+						})).Run(); err != nil {
+						return err
+					}
+				}
+				if runtime.GOOS == "darwin" && !savePassword {
+					confirmed, err := tui.Confirm(false, "Save this RevenueCat website password in macOS Keychain?")
+					if err != nil {
+						return err
+					}
+					savePassword = confirmed
 				}
 				if !acceptTerms {
 					confirmed, err := tui.Confirm(false, "Accept the RevenueCat Terms of Service and Privacy Policy?")
@@ -110,12 +159,26 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 				}
 			}
 
-			return signupWithOAuth(cmd.Context(), rt, email, name, marketingEmails)
+			if password == "" {
+				passwordBytes := make([]byte, 32)
+				if _, err := rand.Read(passwordBytes); err != nil {
+					return fmt.Errorf("generating signup credential: %w", err)
+				}
+				password = base64.RawURLEncoding.EncodeToString(passwordBytes)
+				generatePassword = true
+			}
+			if err := validateSignupPassword(password); err != nil {
+				return err
+			}
+			return signupWithOAuth(cmd.Context(), rt, email, name, password, marketingEmails, savePassword, generatePassword)
 		},
 	}
 
 	cmd.Flags().StringVar(&email, "email", "", "email address for the new RevenueCat account")
-	cmd.Flags().StringVar(&name, "name", "", "name for the new RevenueCat account")
+	cmd.Flags().StringVar(&name, "name", "", "your personal/display name (not the project or company name)")
+	cmd.Flags().StringVar(&password, "password", "", "account password (prefer RC_PASSWORD to avoid shell history)")
+	cmd.Flags().BoolVar(&generatePassword, "generate-password", false, "generate a strong random account password")
+	cmd.Flags().BoolVar(&savePassword, "save-password", false, "save the account password in macOS Keychain")
 	cmd.Flags().BoolVar(&acceptTerms, "accept-terms", false, "accept the RevenueCat Terms of Service and Privacy Policy")
 	cmd.Flags().BoolVar(&marketingEmails, "marketing-emails", false, "receive RevenueCat product and marketing emails")
 	return cmd
@@ -389,13 +452,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	return finishLogin(ctx, rt, client)
 }
 
-func signupWithOAuth(ctx context.Context, rt *Runtime, email, name string, marketingEmails bool) error {
-	passwordBytes := make([]byte, 32)
-	if _, err := rand.Read(passwordBytes); err != nil {
-		return fmt.Errorf("generating signup credential: %w", err)
-	}
-	password := base64.RawURLEncoding.EncodeToString(passwordBytes)
-
+func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password string, marketingEmails, savePassword, generatedPassword bool) error {
 	verifier, challenge, err := api.GeneratePKCE()
 	if err != nil {
 		return fmt.Errorf("generating PKCE: %w", err)
@@ -413,6 +470,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name string, marke
 	redirectURI := fmt.Sprintf("http://localhost:%d/callback", port)
 
 	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
+	rt.Out.Info("Creating your RevenueCat account…")
 	if err := svc.ProvisionAccount(ctx, api.ProvisionAccountRequest{
 		Email:                 email,
 		Name:                  name,
@@ -421,15 +479,27 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name string, marke
 	}); err != nil {
 		return fmt.Errorf("creating RevenueCat account: %w", err)
 	}
+	passwordSaved := false
+	if savePassword {
+		rt.Out.Info("Saving the website password in macOS Keychain…")
+		if err := saveRevenueCatPasswordToKeychain(ctx, email, password, "security"); err != nil {
+			rt.Out.Warn(fmt.Sprintf("Account created, but the password could not be saved to Keychain: %v", err))
+		} else {
+			passwordSaved = true
+		}
+	}
 
+	rt.Out.Info("Starting a temporary secure login…")
 	login, err := svc.Login(ctx, email, password)
 	if err != nil {
 		return signupAuthenticationError(err)
 	}
+	rt.Out.Info("Authorizing renewable CLI access…")
 	code, err := svc.AuthorizeWithLoginToken(ctx, login.AuthenticationToken, redirectURI, challenge, state)
 	if err != nil {
 		return signupAuthenticationError(err)
 	}
+	rt.Out.Info("Exchanging the temporary session for OAuth tokens…")
 	tokens, err := svc.ExchangeCode(ctx, code, redirectURI, verifier)
 	if err != nil {
 		return signupAuthenticationError(err)
@@ -443,21 +513,63 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name string, marke
 	rt.Config.APIKey = ""
 	rt.client = nil
 
+	rt.Out.Info("Saving OAuth credentials in the active CLI profile…")
 	if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 		return err
 	}
 	profile := config.ProfileName(rt.Globals.Profile)
 	rt.Out.Success(fmt.Sprintf("Account created and logged in (profile: %s)", profile))
-	rt.Out.Info("Check your email to verify the account. Use password reset if you later need dashboard password access.")
-	rt.Out.Info("Run `rc bootstrap` to create and configure your first project.")
-	return rt.Out.Render(map[string]any{
+	if generatedPassword && !passwordSaved {
+		rt.Out.Warn("The generated password was not saved. Use password reset if you need dashboard access later.")
+	}
+	rt.Out.Info("Check your email to verify the account.")
+	rt.Out.Info("Next: ask your agent to create and configure your RevenueCat project using the RevenueCat AI Toolkit.")
+	rt.Out.Info("Install the toolkit with `rc skills install` if needed, or start manually with `rc projects create --name \"My App\" --use`.")
+	result := map[string]any{
 		"account_created":             true,
 		"authenticated":               true,
 		"email":                       email,
 		"email_verification_required": true,
 		"method":                      "oauth",
+		"password_saved_to_keychain":  passwordSaved,
 		"profile":                     profile,
-	})
+		"next_steps": map[string]any{
+			"agent":                  "Use the RevenueCat AI Toolkit to create and configure the project, apps, products, entitlements, and offerings.",
+			"install_skills_command": "rc skills install",
+			"manual_start_command":   "rc projects create --name \"My App\" --use",
+		},
+	}
+	if rt.Out.IsJSON() {
+		return rt.Out.Render(result)
+	}
+	return nil
+}
+
+func validateSignupPassword(password string) error {
+	if len(password) < 8 {
+		return fmt.Errorf("password must be at least 8 characters")
+	}
+	if len(password) > 72 {
+		return fmt.Errorf("password must be at most 72 characters")
+	}
+	return nil
+}
+
+func saveRevenueCatPasswordToKeychain(ctx context.Context, email, password, securityExecutable string) error {
+	cmd := exec.CommandContext(ctx, securityExecutable,
+		"add-internet-password",
+		"-a", email,
+		"-s", "app.revenuecat.com",
+		"-l", "RevenueCat",
+		"-r", "htps",
+		"-U",
+		"-w",
+	)
+	cmd.Stdin = strings.NewReader(password + "\n")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("security command failed: %s", strings.TrimSpace(string(output)))
+	}
+	return nil
 }
 
 func signupAuthenticationError(err error) error {

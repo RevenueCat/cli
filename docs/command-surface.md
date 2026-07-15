@@ -80,7 +80,7 @@ names; there's no list endpoint.
 ```
 # Auth / meta
 rc auth login                                            # browser OAuth or API key; rc login is a hidden alias
-rc auth signup                                           # browserless account creation; explicit terms acceptance; generated password never persisted
+rc auth signup                                           # browserless signup; create/generate password; optional macOS Keychain save; returns agent next steps
 rc auth logout                                           # clears credentials from profile
 rc auth status                                           # show auth state (method, expiry, project); rc whoami is a hidden alias
 rc config                                                # show resolved config
@@ -267,7 +267,7 @@ rc chat                                                  # internal agent chat
 
 ## Build order
 
-1. **`projects`** (list, show, use, create) — create is required for zero-to-project bootstrap.
+1. **`projects`** (list, show, use, create) — create is required for zero-to-project setup.
 2. **`customers`** ✅ — list, composite show, grant, revoke, aliases, attributes (+ set-attribute), transfer, override-offering, clear-override, restore-google, wallet.
 3. **Catalog CRUD** ✅ — entitlements (+ archive/restore/products/attach/detach), offerings (+ archive/restore), products (+ update/archive/restore/push), packages (show/create/update/delete/products/attach/detach). No `crud` helper extracted — readable enough inline.
 4. **Support toolkit**: `subscriptions` ✅ (show/transactions/entitlements/management-url/cancel/extend/refund), `purchases` ✅, `invoices` ✅. `customer wallet` still TODO.

@@ -42,6 +42,7 @@ func runCmdInConfigDir(t *testing.T, configDir string, args ...string) (stdout, 
 	t.Setenv("RC_PROJECT_ID", "")
 	t.Setenv("RC_BASE_URL", "")
 	t.Setenv("RC_PROFILE", "")
+	t.Setenv("RC_PASSWORD", "")
 
 	var out, errb bytes.Buffer
 	root := cli.NewRootCmd("test")
@@ -168,6 +169,31 @@ func TestAuthSignup_AgentFlowStoresDurableOAuthWithoutLeakingTemporaryCredential
 			t.Errorf("signup JSON missing %s:\n%s", want, out)
 		}
 	}
+
+	requests = nil
+	generatedPassword = ""
+	out, errb, err = runCmd(t, "auth", "signup",
+		"--email", "dev@example.com",
+		"--name", "Example Developer",
+		"--password", "user-chosen-password",
+		"--accept-terms", "--marketing-emails", "--no-input")
+	if err != nil {
+		t.Fatalf("pretty execute: %v\nstderr: %s", err, errb)
+	}
+	if strings.TrimSpace(out) != "" {
+		t.Fatalf("pretty signup dumped structured output:\n%s", out)
+	}
+	for _, want := range []string{
+		"Creating your RevenueCat account",
+		"Starting a temporary secure login",
+		"Authorizing renewable CLI access",
+		"Exchanging the temporary session for OAuth tokens",
+		"Account created and logged in",
+	} {
+		if !strings.Contains(errb, want) {
+			t.Errorf("pretty signup progress missing %q:\n%s", want, errb)
+		}
+	}
 }
 
 func TestAuthSignup_NoInputListsEveryRequiredFlag(t *testing.T) {
@@ -188,10 +214,11 @@ func TestAuthSignupHelpExplainsCredentialHandling(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		"one-time password in memory",
+		"create a password or generate a strong random one",
+		"app.revenuecat.com internet password in Keychain",
 		"never printed",
-		"or saved",
 		"Renewable OAuth tokens are saved",
+		"personal/display name",
 		"--accept-terms",
 	} {
 		if !strings.Contains(out, want) {
