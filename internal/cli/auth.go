@@ -2,11 +2,14 @@ package cli
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"net/http"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/huh"
@@ -29,9 +32,92 @@ func newAuthCmd() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newAuthLoginCmd(),
+		newAuthSignupCmd(),
 		newAuthLogoutCmd(),
 		newAuthStatusCmd(),
 	)
+	return cmd
+}
+
+func newAuthSignupCmd() *cobra.Command {
+	var email string
+	var name string
+	var acceptTerms bool
+	var marketingEmails bool
+
+	cmd := &cobra.Command{
+		Use:   "signup",
+		Short: "Create a RevenueCat account and log in",
+		Long: `Creates a RevenueCat account without opening a browser, then converts the
+temporary signup session into the same renewable OAuth credentials used by
+browser login.
+
+rc generates a strong one-time password in memory and sends it only to
+RevenueCat over HTTPS. The password and temporary login token are never printed
+or saved. Renewable OAuth tokens are saved in the active local profile
+(~/.config/revenuecat/<profile>.json, mode 0600).
+
+You must accept the RevenueCat Terms of Service and Privacy Policy:
+  https://www.revenuecat.com/terms
+  https://www.revenuecat.com/privacy`,
+		Example: `  # Interactive signup
+  rc auth signup
+
+  # Agent or script
+  rc auth signup --email dev@example.com --name "Example Developer" \
+    --accept-terms --no-input --json`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			email = strings.TrimSpace(email)
+			name = strings.TrimSpace(name)
+
+			if rt.Globals.NoInput {
+				var missing []string
+				if email == "" {
+					missing = append(missing, "--email")
+				}
+				if name == "" {
+					missing = append(missing, "--name")
+				}
+				if !acceptTerms {
+					missing = append(missing, "--accept-terms")
+				}
+				if len(missing) > 0 {
+					return fmt.Errorf("missing required flags for non-interactive signup: %s", strings.Join(missing, ", "))
+				}
+			} else {
+				form := tui.Form(false)
+				if email == "" {
+					form.Field(huh.NewInput().Title("Email").Value(&email).Validate(tui.Required("Email")))
+				}
+				if name == "" {
+					form.Field(huh.NewInput().Title("Name").Value(&name).Validate(tui.Required("Name")))
+				}
+				if !marketingEmails {
+					form.Field(huh.NewConfirm().Title("Receive RevenueCat product updates?").Value(&marketingEmails))
+				}
+				if err := form.Run(); err != nil {
+					return err
+				}
+				if !acceptTerms {
+					confirmed, err := tui.Confirm(false, "Accept the RevenueCat Terms of Service and Privacy Policy?")
+					if err != nil {
+						return err
+					}
+					if !confirmed {
+						return fmt.Errorf("signup requires accepting the Terms of Service and Privacy Policy")
+					}
+				}
+			}
+
+			return signupWithOAuth(cmd.Context(), rt, email, name, marketingEmails)
+		},
+	}
+
+	cmd.Flags().StringVar(&email, "email", "", "email address for the new RevenueCat account")
+	cmd.Flags().StringVar(&name, "name", "", "name for the new RevenueCat account")
+	cmd.Flags().BoolVar(&acceptTerms, "accept-terms", false, "accept the RevenueCat Terms of Service and Privacy Policy")
+	cmd.Flags().BoolVar(&marketingEmails, "marketing-emails", false, "receive RevenueCat product and marketing emails")
 	return cmd
 }
 
@@ -301,6 +387,81 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 		return err
 	}
 	return finishLogin(ctx, rt, client)
+}
+
+func signupWithOAuth(ctx context.Context, rt *Runtime, email, name string, marketingEmails bool) error {
+	passwordBytes := make([]byte, 32)
+	if _, err := rand.Read(passwordBytes); err != nil {
+		return fmt.Errorf("generating signup credential: %w", err)
+	}
+	password := base64.RawURLEncoding.EncodeToString(passwordBytes)
+
+	verifier, challenge, err := api.GeneratePKCE()
+	if err != nil {
+		return fmt.Errorf("generating PKCE: %w", err)
+	}
+	state, err := api.GenerateState()
+	if err != nil {
+		return fmt.Errorf("generating OAuth state: %w", err)
+	}
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		return fmt.Errorf("reserving local OAuth callback: %w", err)
+	}
+	defer listener.Close()
+	port := listener.Addr().(*net.TCPAddr).Port
+	redirectURI := fmt.Sprintf("http://localhost:%d/callback", port)
+
+	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
+	if err := svc.ProvisionAccount(ctx, api.ProvisionAccountRequest{
+		Email:                 email,
+		Name:                  name,
+		Password:              password,
+		MarketingEmailEnabled: marketingEmails,
+	}); err != nil {
+		return fmt.Errorf("creating RevenueCat account: %w", err)
+	}
+
+	login, err := svc.Login(ctx, email, password)
+	if err != nil {
+		return signupAuthenticationError(err)
+	}
+	code, err := svc.AuthorizeWithLoginToken(ctx, login.AuthenticationToken, redirectURI, challenge, state)
+	if err != nil {
+		return signupAuthenticationError(err)
+	}
+	tokens, err := svc.ExchangeCode(ctx, code, redirectURI, verifier)
+	if err != nil {
+		return signupAuthenticationError(err)
+	}
+	_ = svc.LogoutLoginToken(ctx, login.AuthenticationToken)
+
+	rt.Config.TokenType = "oauth"
+	rt.Config.AccessToken = tokens.AccessToken
+	rt.Config.RefreshToken = tokens.RefreshToken
+	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
+	rt.Config.APIKey = ""
+	rt.client = nil
+
+	if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+		return err
+	}
+	profile := config.ProfileName(rt.Globals.Profile)
+	rt.Out.Success(fmt.Sprintf("Account created and logged in (profile: %s)", profile))
+	rt.Out.Info("Check your email to verify the account. Use password reset if you later need dashboard password access.")
+	rt.Out.Info("Run `rc bootstrap` to create and configure your first project.")
+	return rt.Out.Render(map[string]any{
+		"account_created":             true,
+		"authenticated":               true,
+		"email":                       email,
+		"email_verification_required": true,
+		"method":                      "oauth",
+		"profile":                     profile,
+	})
+}
+
+func signupAuthenticationError(err error) error {
+	return fmt.Errorf("account was created, but OAuth setup failed: %w; use password reset at https://app.revenuecat.com if you need to recover the account", err)
 }
 
 func finishLogin(ctx context.Context, rt *Runtime, _ *api.Client) error {

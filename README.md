@@ -42,6 +42,9 @@ rc update --check  # exit 1 if an update is available (useful in CI)
 # 1. Log in (browser OAuth or paste an API key)
 rc auth login
 
+# Or create a new account and log in without a browser
+rc auth signup
+
 # 2. Set a default project — or choose "Ask me every time" for multi-project workflows
 rc projects use
 
@@ -155,6 +158,28 @@ rc auth login --profile prod
 rc --profile staging customer list
 rc --profile prod   customer list
 ```
+
+## Agentic signup
+
+An agent can create an account and receive renewable OAuth credentials without
+opening a browser:
+
+```bash
+rc auth signup \
+  --email dev@example.com \
+  --name "Example Developer" \
+  --accept-terms \
+  --no-input --json
+```
+
+`--accept-terms` is deliberately explicit. Add `--marketing-emails` only when
+the user opts in. The CLI generates a one-time password in memory, sends it to
+RevenueCat over HTTPS, and never prints or saves it. It also discards the
+temporary login session after exchanging it for renewable OAuth tokens. Those
+tokens are saved in the active mode-0600 profile, just like `rc auth login`.
+The returned JSON tells the agent to verify the email; use RevenueCat's password
+reset flow if dashboard password access is needed later. Then continue with
+`rc bootstrap` to create and configure the first project.
 
 ## Scripting and agents
 

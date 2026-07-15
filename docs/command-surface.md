@@ -80,6 +80,7 @@ names; there's no list endpoint.
 ```
 # Auth / meta
 rc auth login                                            # browser OAuth or API key; rc login is a hidden alias
+rc auth signup                                           # browserless account creation; explicit terms acceptance; generated password never persisted
 rc auth logout                                           # clears credentials from profile
 rc auth status                                           # show auth state (method, expiry, project); rc whoami is a hidden alias
 rc config                                                # show resolved config

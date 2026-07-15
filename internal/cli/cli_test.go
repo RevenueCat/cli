@@ -14,18 +14,30 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/revenuecat/cli/internal/cli"
+	"github.com/revenuecat/cli/internal/config"
 )
 
 // runCmd executes the root cobra tree with explicit args + a fresh background
 // context, returning captured stdout, stderr, and any error.
 func runCmd(t *testing.T, args ...string) (stdout, stderr string, err error) {
 	t.Helper()
+	return runCmdInConfigDir(t, t.TempDir(), args...)
+}
+
+func runCmdInConfigDir(t *testing.T, configDir string, args ...string) (stdout, stderr string, err error) {
+	t.Helper()
 	// Route config to a tempdir so tests don't read/write real profiles.
-	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	t.Setenv("RC_CONFIG_DIR", configDir)
 	t.Setenv("RC_API_KEY", "")
 	t.Setenv("RC_PROJECT_ID", "")
 	t.Setenv("RC_BASE_URL", "")
@@ -38,6 +50,151 @@ func runCmd(t *testing.T, args ...string) (stdout, stderr string, err error) {
 	root.SetArgs(args)
 	err = root.ExecuteContext(context.Background())
 	return out.String(), errb.String(), err
+}
+
+func TestAuthSignup_AgentFlowStoresDurableOAuthWithoutLeakingTemporaryCredentials(t *testing.T) {
+	const temporaryToken = "temporary-login-token-must-not-leak"
+	var generatedPassword string
+	var requests []string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/developers/provision-account":
+			var body struct {
+				Email                 string `json:"email"`
+				Name                  string `json:"name"`
+				Password              string `json:"password"`
+				MarketingEmailEnabled bool   `json:"marketing_email_enabled"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			if body.Email != "dev@example.com" || body.Name != "Example Developer" || !body.MarketingEmailEnabled {
+				t.Fatalf("unexpected provision body: %+v", body)
+			}
+			generatedPassword = body.Password
+			w.WriteHeader(http.StatusCreated)
+			_, _ = io.WriteString(w, `{}`)
+		case "/v1/developers/login":
+			var body map[string]string
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			if body["password"] == "" || body["password"] != generatedPassword {
+				t.Fatal("login did not reuse the generated password")
+			}
+			_, _ = fmt.Fprintf(w, `{"authentication_token":%q}`, temporaryToken)
+		case "/v1/developers/me/oauth-authorize":
+			if r.Header.Get("Authorization") != "Bearer "+temporaryToken {
+				t.Fatalf("unexpected authorization header: %q", r.Header.Get("Authorization"))
+			}
+			redirectURI := r.URL.Query().Get("redirect_uri")
+			redirect, err := url.Parse(redirectURI)
+			if err != nil {
+				t.Fatal(err)
+			}
+			query := redirect.Query()
+			query.Set("code", "oauth-code")
+			query.Set("state", r.URL.Query().Get("state"))
+			redirect.RawQuery = query.Encode()
+			_, _ = fmt.Fprintf(w, `{"redirect_uri":%q}`, redirect.String())
+		case "/oauth2/token":
+			if err := r.ParseForm(); err != nil {
+				t.Fatal(err)
+			}
+			if r.Form.Get("grant_type") != "authorization_code" || r.Form.Get("code_verifier") == "" {
+				t.Fatalf("unexpected token form: %v", r.Form)
+			}
+			_, _ = io.WriteString(w, `{"access_token":"durable-access","refresh_token":"durable-refresh","expires_in":3600,"token_type":"Bearer"}`)
+		case "/v1/developers/logout":
+			w.WriteHeader(http.StatusOK)
+			_, _ = io.WriteString(w, `{}`)
+		default:
+			http.Error(w, "unexpected request", http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(server.Close)
+	t.Setenv("RC_OAUTH_BASE_URL", server.URL)
+	t.Setenv("RC_OAUTH_CLIENT_ID", "cli-test")
+
+	configDir := t.TempDir()
+	out, errb, err := runCmdInConfigDir(t, configDir, "auth", "signup",
+		"--email", "dev@example.com",
+		"--name", "Example Developer",
+		"--accept-terms", "--marketing-emails", "--no-input", "--json")
+	if err != nil {
+		t.Fatalf("execute: %v\nstderr: %s", err, errb)
+	}
+	if generatedPassword == "" {
+		t.Fatal("signup did not generate a password")
+	}
+	profile, err := config.Load("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if profile.AccessToken != "durable-access" || profile.RefreshToken != "durable-refresh" || profile.TokenType != "oauth" {
+		t.Fatalf("durable OAuth credentials were not saved: %+v", profile)
+	}
+	profileInfo, err := os.Stat(configDir + "/default.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if profileInfo.Mode().Perm() != 0o600 {
+		t.Fatalf("profile permissions = %o, want 600", profileInfo.Mode().Perm())
+	}
+	combinedOutput := out + errb
+	for _, secret := range []string{generatedPassword, temporaryToken, "durable-access", "durable-refresh"} {
+		if strings.Contains(combinedOutput, secret) {
+			t.Fatalf("signup output leaked credential %q", secret)
+		}
+	}
+	wantRequests := []string{
+		"POST /v1/developers/provision-account",
+		"POST /v1/developers/login",
+		"POST /v1/developers/me/oauth-authorize",
+		"POST /oauth2/token",
+		"POST /v1/developers/logout",
+	}
+	if strings.Join(requests, "\n") != strings.Join(wantRequests, "\n") {
+		t.Fatalf("requests = %v, want %v", requests, wantRequests)
+	}
+	for _, want := range []string{`"account_created": true`, `"authenticated": true`, `"method": "oauth"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("signup JSON missing %s:\n%s", want, out)
+		}
+	}
+}
+
+func TestAuthSignup_NoInputListsEveryRequiredFlag(t *testing.T) {
+	_, _, err := runCmd(t, "auth", "signup", "--no-input", "--json")
+	if err == nil {
+		t.Fatal("expected missing input error")
+	}
+	for _, flag := range []string{"--email", "--name", "--accept-terms"} {
+		if !strings.Contains(err.Error(), flag) {
+			t.Errorf("error missing %s: %v", flag, err)
+		}
+	}
+}
+
+func TestAuthSignupHelpExplainsCredentialHandling(t *testing.T) {
+	out, _, err := runCmd(t, "auth", "signup", "--help")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"one-time password in memory",
+		"never printed",
+		"or saved",
+		"Renewable OAuth tokens are saved",
+		"--accept-terms",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("signup help missing %q:\n%s", want, out)
+		}
+	}
 }
 
 func TestCommandsJSON_AgentDiscovery(t *testing.T) {

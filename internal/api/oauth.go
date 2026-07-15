@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -40,6 +41,21 @@ type TokenResponse struct {
 	TokenType    string `json:"token_type"`
 }
 
+type ProvisionAccountRequest struct {
+	Email                 string `json:"email"`
+	Name                  string `json:"name"`
+	Password              string `json:"password"`
+	MarketingEmailEnabled bool   `json:"marketing_email_enabled"`
+}
+
+type LoginResponse struct {
+	AuthenticationToken string `json:"authentication_token"`
+}
+
+type authorizationResponse struct {
+	RedirectURI string `json:"redirect_uri"`
+}
+
 // AuthorizeURL builds the /auth/authorize URL the user's browser should visit.
 // state is a caller-generated random value that the server echoes back; callers
 // must verify it in the callback to prevent CSRF.
@@ -74,6 +90,63 @@ func (s *OAuthService) ExchangeCode(ctx context.Context, code, redirectURI, veri
 		"client_id":     {s.clientID},
 		"code_verifier": {verifier},
 	})
+}
+
+func (s *OAuthService) ProvisionAccount(ctx context.Context, account ProvisionAccountRequest) error {
+	return s.postJSON(ctx, "/v1/developers/provision-account", "", account, nil)
+}
+
+func (s *OAuthService) Login(ctx context.Context, email, password string) (*LoginResponse, error) {
+	var response LoginResponse
+	err := s.postJSON(ctx, "/v1/developers/login", "", map[string]string{
+		"email": email, "password": password,
+	}, &response)
+	if err != nil {
+		return nil, err
+	}
+	if response.AuthenticationToken == "" {
+		return nil, fmt.Errorf("login response did not include an authentication token")
+	}
+	return &response, nil
+}
+
+func (s *OAuthService) AuthorizeWithLoginToken(ctx context.Context, loginToken, redirectURI, challenge, state string) (string, error) {
+	query := url.Values{
+		"response_type":         {"code"},
+		"client_id":             {s.clientID},
+		"redirect_uri":          {redirectURI},
+		"code_challenge":        {challenge},
+		"code_challenge_method": {"S256"},
+		"state":                 {state},
+	}
+	var response authorizationResponse
+	if err := s.postJSON(ctx, "/v1/developers/me/oauth-authorize?"+query.Encode(), loginToken, map[string]bool{"confirm": true}, &response); err != nil {
+		return "", err
+	}
+
+	redirect, err := url.Parse(response.RedirectURI)
+	if err != nil {
+		return "", fmt.Errorf("invalid authorization redirect: %w", err)
+	}
+	expected, err := url.Parse(redirectURI)
+	if err != nil {
+		return "", fmt.Errorf("invalid callback URL: %w", err)
+	}
+	if redirect.Scheme != expected.Scheme || redirect.Host != expected.Host || redirect.Path != expected.Path {
+		return "", fmt.Errorf("authorization redirect did not match the local callback")
+	}
+	if redirect.Query().Get("state") != state {
+		return "", fmt.Errorf("authorization state mismatch")
+	}
+	code := redirect.Query().Get("code")
+	if code == "" {
+		return "", fmt.Errorf("authorization redirect did not include a code")
+	}
+	return code, nil
+}
+
+func (s *OAuthService) LogoutLoginToken(ctx context.Context, loginToken string) error {
+	return s.postJSON(ctx, "/v1/developers/logout", loginToken, struct{}{}, nil)
 }
 
 // Refresh exchanges a refresh token for a new token pair.
@@ -118,6 +191,49 @@ func (s *OAuthService) postToken(ctx context.Context, body url.Values) (*TokenRe
 		return nil, fmt.Errorf("decoding token response: %w", err)
 	}
 	return &tr, nil
+}
+
+func (s *OAuthService) postJSON(ctx context.Context, path, bearerToken string, body, destination any) error {
+	encoded, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+path, bytes.NewReader(encoded))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+bearerToken)
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		var response struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&response)
+		if response.Message != "" {
+			return fmt.Errorf("request failed: %s", response.Message)
+		}
+		if response.Code != "" {
+			return fmt.Errorf("request failed: %s", response.Code)
+		}
+		return fmt.Errorf("request failed (HTTP %d)", resp.StatusCode)
+	}
+	if destination == nil || resp.StatusCode == http.StatusNoContent {
+		return nil
+	}
+	if err := json.NewDecoder(resp.Body).Decode(destination); err != nil {
+		return fmt.Errorf("decoding response: %w", err)
+	}
+	return nil
 }
 
 // GeneratePKCE returns a (verifier, challenge) pair for the S256 method.
