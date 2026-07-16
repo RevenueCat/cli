@@ -90,7 +90,7 @@ func commandSchema(c *cobra.Command) map[string]any {
 		})
 	}
 
-	return map[string]any{
+	schema := map[string]any{
 		"name":         c.Name(),
 		"path":         commandPath(c),
 		"aliases":      c.Aliases,
@@ -103,6 +103,21 @@ func commandSchema(c *cobra.Command) map[string]any {
 		"subcommands":  subs,
 		"runnable":     c.Runnable(),
 		"capabilities": inferCapabilities(c),
+	}
+	addHumanRequirement(schema, c)
+	return schema
+}
+
+// addHumanRequirement surfaces the requires_human annotation so agents
+// reading `rc commands --json` / `rc schema` know a command must be handed
+// to the user (e.g. Apple sign-in with 2FA) rather than run directly.
+func addHumanRequirement(schema map[string]any, c *cobra.Command) {
+	if c.Annotations["requires_human"] != "true" {
+		return
+	}
+	schema["requires_human"] = true
+	if reason := c.Annotations["requires_human_reason"]; reason != "" {
+		schema["requires_human_reason"] = reason
 	}
 }
 
@@ -187,7 +202,7 @@ func commandTree(c *cobra.Command) map[string]any {
 		}
 		subs = append(subs, commandTree(sc))
 	}
-	return map[string]any{
+	tree := map[string]any{
 		"name":         c.Name(),
 		"path":         commandPath(c),
 		"short":        c.Short,
@@ -196,4 +211,6 @@ func commandTree(c *cobra.Command) map[string]any {
 		"capabilities": inferCapabilities(c),
 		"commands":     subs,
 	}
+	addHumanRequirement(tree, c)
+	return tree
 }

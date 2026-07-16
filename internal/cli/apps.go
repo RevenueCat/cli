@@ -208,6 +208,10 @@ func newAppsCreateCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Created app %s", a.ID))
+			if appType == "app_store" && subscriptionPrivateKey == "" {
+				rt.Out.Warn("Apple credentials are still required before App Store purchases can be validated.")
+				rt.Out.Info(fmt.Sprintf("Run `rc apps apple setup %s` in a local terminal — it signs in to Apple with 2FA, so a human must run it (agents: hand this command to the user).", a.ID))
+			}
 			return rt.Out.Render(a)
 		},
 	}

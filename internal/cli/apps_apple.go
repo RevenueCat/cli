@@ -136,6 +136,10 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 		Short: short,
 		Long:  short + ".\n\n" + long + "\n\n" + privacy,
 		Args:  cobra.MaximumNArgs(1),
+		Annotations: map[string]string{
+			"requires_human":        "true",
+			"requires_human_reason": "Signs in to Apple with an Apple ID, password, and two-factor code; the user must run it in a local interactive terminal. Never collect Apple credentials in chat.",
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appleID = valueOrEnv(appleID, "RC_APPLE_ID")
 			password = valueOrEnv(password, "RC_APPLE_PASSWORD")
@@ -251,7 +255,9 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					return err
 				}
 				if appleID == "" || password == "" {
-					return errors.New("--apple-id and --apple-password are required for Apple authentication")
+					return errors.New("Apple sign-in needs a human at an interactive terminal (Apple ID, password, and 2FA). " +
+						"Ask the user to run `rc apps apple " + map[bool]string{true: "check", false: "setup"}[checkOnly] + " " + appID + "` locally — " +
+						"never collect Apple credentials in chat or pass them via flags")
 				}
 			}
 
