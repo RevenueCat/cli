@@ -99,6 +99,7 @@ type chatModel struct {
 	entries   []ChatEntry
 	streaming bool
 	pending   string // assistant text accumulating during a stream
+	activity  string // current tool name, "" while text is flowing
 	approval  *chatApprovalMsg
 	width     int
 	height    int
@@ -166,11 +167,13 @@ func (m *chatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case chatDeltaMsg:
 		m.pending += string(msg)
+		m.activity = ""
 		m.refresh(true)
 		return m, nil
 
 	case chatToolMsg:
 		m.flushPending()
+		m.activity = string(msg)
 		m.entries = append(m.entries, ChatEntry{Role: ChatTool, Text: string(msg)})
 		m.refresh(true)
 		return m, nil
@@ -183,6 +186,7 @@ func (m *chatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case chatDoneMsg:
 		m.flushPending()
+		m.activity = ""
 		if msg.err != nil {
 			m.entries = append(m.entries, ChatEntry{Role: ChatNotice, Text: msg.err.Error()})
 		}
@@ -347,11 +351,20 @@ func (m *chatModel) renderTranscript() string {
 	for _, entry := range m.entries {
 		b.WriteString(m.renderEntry(entry))
 	}
-	if m.streaming && m.pending != "" {
-		// Render in-flight text through the same markdown pipeline as finished
-		// messages so formatting appears as it streams instead of snapping in
-		// at the end of the turn.
-		b.WriteString(m.renderEntry(ChatEntry{Role: ChatAssistant, Text: m.pending}))
+	if m.streaming {
+		if m.pending != "" {
+			// Render in-flight text through the same markdown pipeline as
+			// finished messages so formatting appears as it streams instead of
+			// snapping in at the end of the turn.
+			b.WriteString(m.renderEntry(ChatEntry{Role: ChatAssistant, Text: m.pending}))
+		}
+		// Always show a live activity line so long tool executions and quiet
+		// stretches of the stream never look frozen.
+		label := "thinking…"
+		if m.activity != "" {
+			label = "running " + m.activity + "…"
+		}
+		b.WriteString("\n  " + m.spin.View() + " " + chatDimStyle.Render(label) + "\n")
 	}
 	return b.String()
 }

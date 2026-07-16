@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/config"
@@ -93,9 +95,7 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 				return err
 			}
 			if opts.resume && opts.conversationID == "" {
-				opts.conversationID, err = requireID(rt, "", "conversation", func() ([]PickerItem, error) {
-					return ricoConversationPickerItems(cmd.Context(), rt, client)
-				})
+				opts.conversationID, err = pickRicoConversation(cmd.Context(), rt, client)
 				if err != nil {
 					return err
 				}
@@ -192,6 +192,38 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 	}
 	s.rt.Out.Info("Resume this conversation with: rc rico chat -r")
 	return nil
+}
+
+// pickRicoConversation shows the --resume picker in the alternate screen (so
+// nothing lingers on the primary screen once the chat window exits).
+func pickRicoConversation(ctx context.Context, rt *Runtime, client *rico.Client) (string, error) {
+	if rt.Globals.NoInput || !tui.IsInteractive() {
+		return "", fmt.Errorf("conversation ID is required; --resume needs a terminal (use --conversation <id>)")
+	}
+	items, err := ricoConversationPickerItems(ctx, rt, client)
+	if err != nil {
+		return "", err
+	}
+	if len(items) == 0 {
+		return "", fmt.Errorf("no conversations found — start one with rc rico chat")
+	}
+	options := make([]huh.Option[string], len(items))
+	for i, item := range items {
+		options[i] = huh.NewOption(item.Label, item.ID)
+	}
+	var chosen string
+	selectField := huh.NewSelect[string]().
+		Title("Resume a conversation").
+		Description("Type to filter  ·  Enter to open").
+		Options(options...).
+		Filtering(true).
+		Value(&chosen)
+	form := huh.NewForm(huh.NewGroup(selectField)).
+		WithProgramOptions(tea.WithAltScreen())
+	if err := form.Run(); err != nil {
+		return "", err
+	}
+	return chosen, nil
 }
 
 // ricoConversationPickerItems feeds the --resume picker: the conversation
