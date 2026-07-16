@@ -345,8 +345,20 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					fetched, err := apple.FetchVendorNumber(cmd.Context(), session)
 					switch {
 					case err == nil:
-						vendorNumber = fetched
-						rt.Out.Success("Found vendor number " + vendorNumber)
+						rt.Out.Success("Found vendor number " + fetched)
+						use := true
+						if !rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive() {
+							use, err = tui.ConfirmDefault(rt.Globals.NoInput,
+								"Set vendor number "+fetched+" on the RevenueCat app? (replaces any previously saved value)", true)
+							if err != nil {
+								return err
+							}
+						}
+						if use {
+							vendorNumber = fetched
+						} else {
+							rt.Out.Info("Keeping the RevenueCat app's current vendor number setting.")
+						}
 					case !rt.Globals.NoInput && tui.IsInteractive():
 						rt.Out.Warn("Could not fetch it automatically: " + err.Error())
 						rt.Out.Info("Find it in App Store Connect → Payments and Financial Reports, next to your legal entity name.")
