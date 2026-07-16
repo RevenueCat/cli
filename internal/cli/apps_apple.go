@@ -42,6 +42,32 @@ type appleConnectClient interface {
 
 type appleConnectFactory func() (appleConnectClient, error)
 
+func appleConfiguredLabel(configured bool) string {
+	if configured {
+		return "configured"
+	}
+	return "not configured"
+}
+
+// decideAppleKey resolves whether to create a key, preferring an explicit
+// answer over a silent guess: interactive setups are asked per key (create
+// missing ones, or replace existing ones); non-interactive runs create what
+// is missing and only replace with --force. --skip-* always wins.
+func decideAppleKey(rt *Runtime, name string, configured, skip, force, mayPrompt bool) (bool, error) {
+	switch {
+	case skip:
+		return false, nil
+	case force:
+		return true, nil
+	case !mayPrompt || rt.Globals.NoInput || rt.Globals.AssumeYes || !tui.IsInteractive():
+		return !configured, nil
+	case configured:
+		return tui.ConfirmDefault(false, "Replace the existing "+name+"? (a new key is created in App Store Connect and uploaded)", false)
+	default:
+		return tui.ConfirmDefault(false, "Create and upload a new "+name+"?", true)
+	}
+}
+
 func newAppleConnectClient() (appleConnectClient, error) {
 	return appleconnect.New(appleconnect.Options{})
 }
@@ -49,7 +75,7 @@ func newAppleConnectClient() (appleConnectClient, error) {
 const appleSetupInstructions = `This setup will:
   1. Sign in directly to Apple with your Apple Account.
   2. Ask for trusted-device or SMS verification when Apple requires it.
-  3. Create only the Apple keys missing from this RevenueCat app.
+  3. Create the Apple keys you confirmed above.
   4. Download each private key once and upload it directly to RevenueCat.
 
 Before continuing, have a trusted Apple device or phone available and use an
@@ -151,12 +177,22 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				return fmt.Errorf("app %s is not an App Store app", appID)
 			}
 
-			createInAppKey := !skipInAppKey && (force || !app.AppStore.SubscriptionKeyConfigured)
-			createAPIKey := !skipAPIKey && (force || !app.AppStore.AppStoreConnectAPIKeyConfigured)
+			if !checkOnly {
+				rt.Out.Info(fmt.Sprintf("Current Apple configuration for %s (%s):", app.Name, appID))
+				rt.Out.Info("  In-app purchase key:        " + appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
+				rt.Out.Info("  App Store Connect API key:  " + appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
+			}
+			createInAppKey, err := decideAppleKey(rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, !checkOnly)
+			if err != nil {
+				return err
+			}
+			createAPIKey, err := decideAppleKey(rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, !checkOnly)
+			if err != nil {
+				return err
+			}
 			needsApple := checkOnly || createInAppKey || createAPIKey
 			if !needsApple && vendorNumber == "" {
-				rt.Out.Success(fmt.Sprintf("App %s already has all Apple keys configured — nothing to create.", appID))
-				rt.Out.Info("Pass --force to create fresh keys anyway (e.g. after revoking the old ones in App Store Connect).")
+				rt.Out.Success("Nothing to create — existing keys were kept.")
 				return rt.Out.Render(appleConfigurationResult{
 					AppID:             appID,
 					Mode:              "noop",
