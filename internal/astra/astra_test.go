@@ -19,8 +19,8 @@ func TestStreamDecodesEvents(t *testing.T) {
 		if got := r.Header.Get("Authorization"); got != "Bearer tok_123" {
 			t.Errorf("Authorization = %q", got)
 		}
-		if cookie, err := r.Cookie("rc_auth_token"); err != nil || cookie.Value != "tok_123" {
-			t.Errorf("rc_auth_token cookie = %v, err %v", cookie, err)
+		if _, err := r.Cookie("rc_auth_token"); err == nil {
+			t.Error("rc_auth_token cookie must not be sent")
 		}
 		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
 			t.Errorf("decode body: %v", err)

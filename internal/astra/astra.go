@@ -152,10 +152,7 @@ func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	// The dashboard authenticates with the rc_auth_token cookie; send the
-	// bearer header too for token-based auth support.
 	req.Header.Set("Authorization", "Bearer "+c.token)
-	req.AddCookie(&http.Cookie{Name: "rc_auth_token", Value: c.token})
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 	if c.userAgent != "" {
