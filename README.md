@@ -244,6 +244,14 @@ new agent session or reload the agent so it discovers the new skill metadata.
 Skills do not run when installed. The agent selects one when the user's request
 matches its description. For predictable project creation, say:
 
+To test skills from an unreleased AI Toolkit branch, set the branch for that
+installation. The explicit flag overrides the environment variable:
+
+```bash
+RC_SKILLS_BRANCH=rc-cli-project-setup-workflows rc skills install
+rc skills install --branch rc-cli-project-setup-workflows
+```
+
 ```text
 Use the create-revenuecat-project skill to make the app in this directory
 RevenueCat Test Store-ready end to end, then report every production-store

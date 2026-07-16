@@ -139,6 +139,7 @@ agent UI.`,
 
 func newSkillsInstallCmd(installer skillsInstaller) *cobra.Command {
 	var global, project, copyFiles bool
+	var branch string
 	var agents, skills []string
 	cmd := &cobra.Command{
 		Use:   "install",
@@ -154,9 +155,14 @@ current repository instead. Under --no-input, pass --yes.
 
 After installing or updating, start a new agent session or reload the agent so
 it discovers the latest skills. Then ask naturally for RevenueCat setup or name
-the create-revenuecat-project skill explicitly.`,
+the create-revenuecat-project skill explicitly.
+
+Set RC_SKILLS_BRANCH to install an unreleased branch for testing. --branch
+overrides the environment variable.`,
 		Example: `  rc skills install
   rc skills install --project
+  RC_SKILLS_BRANCH=rc-cli-project-setup-workflows rc skills install
+  rc skills install --branch rc-cli-project-setup-workflows
   rc skills install --agent codex --yes --no-input
   rc skills install --skill create-revenuecat-project --yes --no-input`,
 		Args: cobra.NoArgs,
@@ -165,7 +171,12 @@ the create-revenuecat-project skill explicitly.`,
 			if rt.Globals.NoInput && !rt.Globals.AssumeYes {
 				return errors.New("installing skills under --no-input requires --yes")
 			}
-			args := []string{"--yes", "skills", "add", officialToolkitSource}
+			branch = valueOrEnv(branch, "RC_SKILLS_BRANCH")
+			source := officialToolkitSource
+			if branch != "" {
+				source = "https://github.com/RevenueCat/ai-toolkit/tree/" + branch
+			}
+			args := []string{"--yes", "skills", "add", source}
 			if !project {
 				args = append(args, "--global")
 			}
@@ -195,7 +206,8 @@ the create-revenuecat-project skill explicitly.`,
 			rt.Out.Info("Run `rc skills prompts` for copy-ready ways to get started.")
 			result := map[string]any{
 				"installed":       true,
-				"source":          officialToolkitSource,
+				"source":          source,
+				"branch":          branch,
 				"scope":           scope,
 				"agents":          agents,
 				"skills":          skills,
@@ -213,6 +225,7 @@ the create-revenuecat-project skill explicitly.`,
 	}
 	cmd.Flags().BoolVar(&global, "global", false, "install globally (the default; retained for explicit scripts)")
 	cmd.Flags().BoolVar(&project, "project", false, "install in the current project instead of globally")
+	cmd.Flags().StringVar(&branch, "branch", "", "ai-toolkit branch to install (env: RC_SKILLS_BRANCH)")
 	cmd.MarkFlagsMutuallyExclusive("global", "project")
 	cmd.Flags().StringSliceVar(&agents, "agent", nil, "agents to install for (passed to the standard Skills CLI)")
 	cmd.Flags().StringSliceVar(&skills, "skill", nil, "specific toolkit skills to install")

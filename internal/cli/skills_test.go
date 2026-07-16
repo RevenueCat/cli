@@ -95,6 +95,49 @@ func TestSkillsInstallProjectScope(t *testing.T) {
 	}
 }
 
+func TestSkillsInstallUsesBranchFromEnvironment(t *testing.T) {
+	t.Setenv("RC_SKILLS_BRANCH", "rc-cli-project-setup-workflows")
+	installer := &recordingSkillsInstaller{}
+	cmd := newSkillsCmdWithInstaller(installer)
+	var stdout, stderr bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+	cmd.SetArgs([]string{"install"})
+	cmd.SetContext(WithRuntime(context.Background(), &Runtime{
+		Globals: &Globals{JSON: true},
+		Out:     output.NewRenderer(&stdout, &stderr, true, true, false, ""),
+	}))
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	wantSource := "https://github.com/RevenueCat/ai-toolkit/tree/rc-cli-project-setup-workflows"
+	if !slices.Contains(installer.args, wantSource) {
+		t.Fatalf("installer args = %v, want %q", installer.args, wantSource)
+	}
+	for _, want := range []string{`"branch": "rc-cli-project-setup-workflows"`, `"source": "` + wantSource + `"`} {
+		if !bytes.Contains(stdout.Bytes(), []byte(want)) {
+			t.Errorf("install JSON missing %q: %s", want, stdout.String())
+		}
+	}
+}
+
+func TestSkillsInstallBranchFlagOverridesEnvironment(t *testing.T) {
+	t.Setenv("RC_SKILLS_BRANCH", "from-env")
+	installer := &recordingSkillsInstaller{}
+	cmd := newSkillsCmdWithInstaller(installer)
+	cmd.SetArgs([]string{"install", "--branch", "from-flag"})
+	cmd.SetContext(WithRuntime(context.Background(), &Runtime{
+		Globals: &Globals{},
+		Out:     output.NewRenderer(cmd.OutOrStdout(), cmd.ErrOrStderr(), false, true, false, ""),
+	}))
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(installer.args, "https://github.com/RevenueCat/ai-toolkit/tree/from-flag") {
+		t.Fatalf("installer args = %v", installer.args)
+	}
+}
+
 func TestSkillsInstallNoInputRequiresYes(t *testing.T) {
 	installer := &recordingSkillsInstaller{}
 	cmd := newSkillsCmdWithInstaller(installer)
