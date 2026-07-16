@@ -222,3 +222,46 @@ func Save(profile string, cfg *Config) error {
 	}
 	return os.WriteFile(path, b, 0o600)
 }
+
+// statePath returns the path of a named auxiliary state file stored beside
+// the profile files (e.g. the last Rico conversation per profile).
+func statePath(profile, name string) (string, error) {
+	dir, err := configDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, ProfileName(profile)+"."+name+".json"), nil
+}
+
+// LoadState reads a named state file into out. A missing file is not an
+// error; out is left untouched.
+func LoadState(profile, name string, out any) error {
+	path, err := statePath(profile, name)
+	if err != nil {
+		return err
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	return json.Unmarshal(b, out)
+}
+
+// SaveState writes a named state file beside the profile files.
+func SaveState(profile, name string, v any) error {
+	path, err := statePath(profile, name)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, b, 0o600)
+}

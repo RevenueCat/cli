@@ -124,6 +124,41 @@ func TestRicoChat_JSONRejectsDestructiveToolWithoutYes(t *testing.T) {
 	}
 }
 
+func TestRicoChat_ContinueResumesLastConversation(t *testing.T) {
+	server, inputs := ricoServer(t)
+	t.Setenv("RC_RICO_BASE_URL", server.URL)
+
+	configDir := t.TempDir()
+	// First turn establishes the conversation and records it.
+	_, _, err := runCmdInConfigDir(t, configDir,
+		"rico", "chat", "delete the test offering",
+		"--conversation", "conv1",
+		"--approve-tools", "--yes", "--no-input", "--json", "--api-key", "sk_test",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// --continue picks the same conversation back up without an explicit id.
+	_, _, err = runCmdInConfigDir(t, configDir,
+		"rico", "chat", "and the sandbox one too", "--continue",
+		"--approve-tools", "--yes", "--no-input", "--json", "--api-key", "sk_test",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	last := (*inputs)[len(*inputs)-1]
+	if last["threadId"] != "conv1" {
+		t.Fatalf("continued threadId = %v", last["threadId"])
+	}
+}
+
+func TestRicoChat_ContinueWithoutHistoryFails(t *testing.T) {
+	_, _, err := runCmd(t, "rico", "chat", "hi", "--continue", "--no-input", "--api-key", "sk_test")
+	if err == nil || !strings.Contains(err.Error(), "no previous conversation") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestRicoChat_RequiresPromptNonInteractive(t *testing.T) {
 	_, _, err := runCmd(t, "rico", "chat", "--no-input", "--api-key", "sk_test")
 	if err == nil || !strings.Contains(err.Error(), "message is required") {

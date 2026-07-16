@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/rico"
 	"github.com/revenuecat/cli/internal/tui"
@@ -42,10 +43,17 @@ Conversations are stored server-side; continue one with --conversation.`,
 type ricoChatOptions struct {
 	prompt         string
 	conversationID string
+	continueLast   bool
 	approveTools   bool
 	plain          bool
 	timeout        time.Duration
 	baseURL        string
+}
+
+// ricoState is the per-profile memory of the last CLI conversation, enabling
+// `rc rico chat --continue`.
+type ricoState struct {
+	LastConversationID string `json:"last_conversation_id"`
 }
 
 func newRicoChatCmd() *cobra.Command {
@@ -69,6 +77,7 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 		Example: `  rc rico chat
   rc rico chat "why did trial conversions drop this week?"
   rc rico chat "delete the test offering" --approve-tools --yes --json --no-input
+  rc rico chat --continue
   rc rico chat --conversation NQ7bGmww8rLcPT9d`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -78,6 +87,14 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 					return fmt.Errorf("message was provided both positionally and with --prompt")
 				}
 				opts.prompt = argAt(args, 0)
+			}
+			if opts.continueLast && opts.conversationID == "" {
+				var state ricoState
+				_ = config.LoadState(rt.Globals.Profile, "rico", &state)
+				if state.LastConversationID == "" {
+					return fmt.Errorf("no previous conversation to continue; start one with rc rico chat")
+				}
+				opts.conversationID = state.LastConversationID
 			}
 			client, err := ricoClient(rt, opts.baseURL)
 			if err != nil {
@@ -110,6 +127,7 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 	}
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "message to send (or RC_RICO_PROMPT)")
 	cmd.Flags().StringVarP(&opts.conversationID, "conversation", "c", opts.conversationID, "conversation to continue (or RC_RICO_CONVERSATION_ID)")
+	cmd.Flags().BoolVarP(&opts.continueLast, "continue", "C", false, "continue the most recent CLI conversation")
 	cmd.Flags().BoolVar(&opts.approveTools, "approve-tools", false, "approve tool calls without prompting (destructive ones still need --yes)")
 	cmd.Flags().BoolVar(&opts.plain, "plain", false, "line-based prompt loop instead of the chat window")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait for a reply")
@@ -163,10 +181,22 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 			turnCtx, cancel := context.WithTimeout(turnCtx, s.opts.timeout)
 			defer cancel()
 			_, err := s.run(turnCtx, message, &ricoChatUISink{emit: emit})
+			if err == nil {
+				s.rememberConversation()
+			}
 			emit.Done(err)
 		},
 	}
-	return chat.RunChat()
+	if err := chat.RunChat(); err != nil {
+		return err
+	}
+	s.rt.Out.Info("Continue this conversation with: rc rico chat --continue")
+	return nil
+}
+
+// rememberConversation records the conversation for `rc rico chat --continue`.
+func (s *ricoSession) rememberConversation() {
+	_ = config.SaveState(s.rt.Globals.Profile, "rico", ricoState{LastConversationID: s.conversationID})
 }
 
 // loadTranscript hydrates prior messages when continuing a conversation.
@@ -239,6 +269,7 @@ func (s *ricoSession) turn(ctx context.Context, message string) error {
 	if err != nil {
 		return err
 	}
+	s.rememberConversation()
 	if s.rt.Out.IsJSON() {
 		return s.rt.Out.Render(result)
 	}

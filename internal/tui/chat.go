@@ -115,14 +115,22 @@ var (
 	chatNoticeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 	chatApproveStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
 	chatDestructStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true)
+	chatInputBoxStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color("8")).
+				Padding(0, 1)
+	chatInputActive = lipgloss.Color("6")
 )
 
 func newChatModel(cfg Chat) *chatModel {
 	input := textarea.New()
 	input.Placeholder = cfg.Placeholder
 	input.CharLimit = 0
-	input.SetHeight(3)
+	input.SetHeight(1)
 	input.ShowLineNumbers = false
+	input.Prompt = ""
+	input.FocusedStyle.CursorLine = lipgloss.NewStyle()
+	input.BlurredStyle.CursorLine = lipgloss.NewStyle()
 	input.Focus()
 
 	spin := spinner.New()
@@ -248,8 +256,13 @@ func (m *chatModel) updateChildren(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	if !m.streaming && m.approval == nil {
+		before := m.input.Height()
 		m.input, cmd = m.input.Update(msg)
 		cmds = append(cmds, cmd)
+		if m.sizeInput(); m.input.Height() != before {
+			m.layout()
+			m.refresh(false)
+		}
 	}
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
@@ -297,7 +310,8 @@ func (m *chatModel) flushPending() {
 }
 
 func (m *chatModel) layout() {
-	inputHeight := m.input.Height() + 1 // + footer
+	m.sizeInput()
+	inputHeight := m.input.Height() + 2 + 1 // border + footer
 	headerHeight := 2
 	viewportHeight := max(m.height-inputHeight-headerHeight-1, 1)
 	if !m.ready {
@@ -307,7 +321,7 @@ func (m *chatModel) layout() {
 		m.viewport.Width = m.width
 		m.viewport.Height = viewportHeight
 	}
-	m.input.SetWidth(m.width - 2)
+	m.input.SetWidth(max(m.width-6, 10)) // border + padding
 	renderer, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
 		glamour.WithWordWrap(max(m.width-4, 20)),
@@ -387,9 +401,21 @@ func (m *chatModel) View() string {
 		footer = m.spin.View() + chatDimStyle.Render(" thinking… · esc to stop")
 	}
 
+	inputBox := chatInputBoxStyle
+	if !m.streaming && m.approval == nil {
+		inputBox = inputBox.BorderForeground(chatInputActive)
+	}
 	return header + "\n" +
 		chatDimStyle.Render(strings.Repeat("─", max(m.width, 1))) + "\n" +
 		m.viewport.View() + "\n" +
-		m.input.View() + "\n" +
+		inputBox.Width(max(m.width-2, 12)).Render(m.input.View()) + "\n" +
 		footer
+}
+
+// sizeInput grows the textarea with its content, up to 5 lines.
+func (m *chatModel) sizeInput() {
+	desired := min(max(m.input.LineCount(), 1), 5)
+	if m.input.Height() != desired {
+		m.input.SetHeight(desired)
+	}
 }
