@@ -188,9 +188,18 @@ rc products store discard <plan-id>                      # discard without apply
 rc paywalls list
 rc paywalls show <id>
 rc paywalls create                                       # create an offering-attached draft
+rc paywalls generate [offering-id] --prompt "..."        # AI-design a new draft via Astra; writes a --session file
+rc paywalls edit --session <file> --prompt "..."         # continue an editor session with another AI edit
+rc paywalls rewind --session <file>                      # undo the last editor action
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes
 rc paywalls delete <id>
+
+# Rico (AI assistant)
+rc rico chat [message]                                   # streaming chat; interactive REPL in a TTY
+rc rico chat "..." --approve-tools --yes --no-input      # agent mode: auto-approve tool calls (destructive need --yes)
+rc rico conversations list|show <id>|delete <id>
+rc rico feedback <run-id> <good|bad>
 
 # Subscriptions
 rc subscriptions show <id>
