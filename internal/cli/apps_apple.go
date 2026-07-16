@@ -190,6 +190,16 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			if err != nil {
 				return err
 			}
+			if !checkOnly && vendorNumber == "" &&
+				!rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive() {
+				rt.Out.Info("The vendor number links App Store sales reports to RevenueCat. Find it in")
+				rt.Out.Info("App Store Connect → Payments and Financial Reports, next to your legal entity name.")
+				if err := tui.Form(rt.Globals.NoInput).
+					Field(huh.NewInput().Title("Vendor number (blank keeps the current setting)").Value(&vendorNumber)).
+					Run(); err != nil {
+					return err
+				}
+			}
 			needsApple := checkOnly || createInAppKey || createAPIKey
 			if !needsApple && vendorNumber == "" {
 				rt.Out.Success("Nothing to create — existing keys were kept.")
@@ -208,6 +218,25 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						rt.Out.Info(appleSetupInstructions)
 					}
 					rt.Out.Info(privacy)
+				}
+				if !checkOnly && !rt.Out.IsJSON() {
+					rt.Out.Info("Plan:")
+					step := 1
+					planStep := func(text string) {
+						rt.Out.Info(fmt.Sprintf("  %d. %s", step, text))
+						step++
+					}
+					planStep("Sign in to Apple (trusted-device or SMS verification)")
+					if createInAppKey {
+						planStep(fmt.Sprintf("Create in-app purchase key %q in App Store Connect", inAppKeyName))
+					}
+					if createAPIKey {
+						planStep(fmt.Sprintf("Create App Store Connect API key %q", apiKeyName))
+					}
+					if vendorNumber != "" {
+						planStep("Set vendor number " + vendorNumber)
+					}
+					planStep("Upload the results to RevenueCat app " + appID + " (keys are never stored locally)")
 				}
 				if !checkOnly && !rt.Globals.AssumeYes {
 					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Continue and sign in to Apple?")
@@ -243,6 +272,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				if err != nil {
 					return err
 				}
+				rt.Out.Info("Signing in to Apple as " + appleID + "…")
 				session, err := apple.Login(cmd.Context(), appleID, password)
 				if err != nil {
 					var twoFactor *appleconnect.TwoFactorRequiredError
@@ -318,6 +348,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				}
 
 				if createInAppKey {
+					rt.Out.Info("Creating in-app purchase key in App Store Connect…")
 					key, err := apple.CreateInAppPurchaseKey(cmd.Context(), session, inAppKeyName)
 					if err != nil {
 						return appleConfigurationError(err, createdIDs)
@@ -330,6 +361,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					update.AppStore.SubscriptionKeyIssuer = &key.IssuerID
 				}
 				if createAPIKey {
+					rt.Out.Info("Creating App Store Connect API key…")
 					key, err := apple.CreateAppStoreConnectKey(cmd.Context(), session, apiKeyName)
 					if err != nil {
 						return appleConfigurationError(err, createdIDs)
@@ -344,7 +376,9 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			}
 			if vendorNumber != "" {
 				update.AppStore.AppStoreConnectVendorNumber = &vendorNumber
+				rt.Out.Info("Setting vendor number " + vendorNumber + "…")
 			}
+			rt.Out.Info("Uploading configuration to RevenueCat…")
 			if _, err := rc.Apps.Update(cmd.Context(), projectID, appID, update); err != nil {
 				return appleConfigurationError(fmt.Errorf("upload Apple configuration to RevenueCat: %w", err), createdIDs)
 			}
