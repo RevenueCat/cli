@@ -142,7 +142,7 @@ func TestAuthSignup_AgentFlowStoresDurableOAuthWithoutLeakingTemporaryCredential
 	if err != nil {
 		t.Fatal(err)
 	}
-	if profile.AccessToken != "durable-access" || profile.RefreshToken != "durable-refresh" || profile.TokenType != "oauth" {
+	if profile.AccessToken != "durable-access" || profile.RefreshToken != "durable-refresh" || profile.TokenType != "oauth" || profile.AccountEmail != "dev@example.com" || profile.AccountName != "Example Developer" {
 		t.Fatalf("durable OAuth credentials were not saved: %+v", profile)
 	}
 	profileInfo, err := os.Stat(configDir + "/default.json")
@@ -226,9 +226,11 @@ func TestAuthSignupHelpExplainsCredentialHandling(t *testing.T) {
 	}
 	for _, want := range []string{
 		"create a password or generate a strong random one",
-		"app.revenuecat.com internet password in Keychain",
+		"app.revenuecat.com internet password in the local",
+		"cannot add credentials",
 		"never printed",
-		"Renewable OAuth tokens are saved",
+		"Renewable OAuth tokens",
+		"saved in the active local profile",
 		"personal/display name",
 		"--generate-password --save-password",
 		"--accept-terms",
@@ -242,7 +244,7 @@ func TestAuthSignupHelpExplainsCredentialHandling(t *testing.T) {
 func TestAuthStatusAndLogoutOnlyRenderStructuredDataWithJSON(t *testing.T) {
 	configDir := t.TempDir()
 	t.Setenv("RC_CONFIG_DIR", configDir)
-	if err := config.Save("", &config.Config{APIKey: "sk_test", ProjectID: "proj_test"}); err != nil {
+	if err := config.Save("", &config.Config{TokenType: "oauth", AccessToken: "access", AccountEmail: "dev@example.com", AccountName: "Example Developer", ProjectID: "proj_test"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -253,8 +255,16 @@ func TestAuthStatusAndLogoutOnlyRenderStructuredDataWithJSON(t *testing.T) {
 	if strings.TrimSpace(out) != "" {
 		t.Fatalf("human status dumped structured output:\n%s", out)
 	}
-	if !strings.Contains(errb, "Logged in (profile: default)") {
+	if !strings.Contains(errb, "Logged in as Example Developer <dev@example.com> (profile: default)") {
 		t.Fatalf("human status missing summary: %s", errb)
+	}
+
+	out, errb, err = runCmdInConfigDir(t, configDir, "auth", "whoami")
+	if err != nil {
+		t.Fatalf("auth whoami: %v", err)
+	}
+	if strings.TrimSpace(out) != "" || !strings.Contains(errb, "dev@example.com") {
+		t.Fatalf("auth whoami did not use status output: stdout=%s stderr=%s", out, errb)
 	}
 
 	out, errb, err = runCmdInConfigDir(t, configDir, "auth", "status", "--json")
@@ -264,7 +274,7 @@ func TestAuthStatusAndLogoutOnlyRenderStructuredDataWithJSON(t *testing.T) {
 	if errb != "" {
 		t.Fatalf("JSON status wrote stderr: %s", errb)
 	}
-	for _, want := range []string{`"authenticated": true`, `"method": "api_key"`, `"project_id": "proj_test"`} {
+	for _, want := range []string{`"authenticated": true`, `"method": "oauth"`, `"account_email": "dev@example.com"`, `"account_name": "Example Developer"`, `"project_id": "proj_test"`} {
 		if !strings.Contains(out, want) {
 			t.Errorf("JSON status missing %s:\n%s", want, out)
 		}
@@ -279,6 +289,13 @@ func TestAuthStatusAndLogoutOnlyRenderStructuredDataWithJSON(t *testing.T) {
 	}
 	if !strings.Contains(errb, "Logged out (profile: default)") {
 		t.Fatalf("human logout missing summary: %s", errb)
+	}
+	profile, err := config.Load("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if profile.AccountEmail != "" || profile.AccountName != "" {
+		t.Fatalf("logout retained cached identity: %+v", profile)
 	}
 }
 

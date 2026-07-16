@@ -17,6 +17,8 @@ type Config struct {
 	RefreshToken   string    `json:"refresh_token,omitempty"`
 	TokenExpiresAt time.Time `json:"token_expires_at,omitempty"`
 	TokenType      string    `json:"token_type,omitempty"` // "oauth" | "" (api_key)
+	AccountEmail   string    `json:"account_email,omitempty"`
+	AccountName    string    `json:"account_name,omitempty"`
 
 	ProjectID string `json:"project_id,omitempty"`
 	BaseURL   string `json:"base_url,omitempty"`

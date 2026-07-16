@@ -82,7 +82,7 @@ names; there's no list endpoint.
 rc auth login                                            # browser OAuth or API key; rc login is a hidden alias
 rc auth signup                                           # browserless signup; create/generate password; optional macOS Keychain save; returns agent next steps
 rc auth logout                                           # clears credentials from profile
-rc auth status                                           # show auth state (method, expiry, project); rc whoami is a hidden alias
+rc auth status                                           # show auth state plus cached account identity; auth whoami and root rc whoami are aliases
 rc config                                                # show resolved config
 rc commands                                              # agent discovery (tree)
 rc schema <cmd>                                          # agent discovery (flags)

@@ -180,8 +180,10 @@ accepting the RevenueCat Terms of Service and Privacy Policy. Add
 `--marketing-emails` only when the user separately opts in.
 
 The macOS recipe above generates a one-time password in memory and saves it as
-the app.revenuecat.com internet password in Keychain without printing it or
-placing it in process arguments. The agent must verify that the response has
+the app.revenuecat.com internet password in the local login Keychain without
+printing it or placing it in process arguments. It does not appear in Apple
+Passwords or synchronize through iCloud Keychain because those stores require
+app entitlements unavailable to a standalone CLI. The agent must verify that the response has
 `account_created`, `authenticated`, and `password_saved_to_keychain` set to
 `true`. A locked Keychain may require local user approval. A user can instead
 provide `RC_PASSWORD`; avoid `--password` because command arguments can appear

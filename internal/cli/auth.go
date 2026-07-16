@@ -59,10 +59,11 @@ temporary signup session into the same renewable OAuth credentials used by
 browser login.
 
 Interactive signup lets you create a password or generate a strong random one.
-On macOS, rc can save it as an app.revenuecat.com internet password in Keychain
-with your explicit approval. Passwords are sent only to RevenueCat over HTTPS
-and are never printed. Renewable OAuth tokens are saved in the active local
-profile (~/.config/revenuecat/<profile>.json, mode 0600).
+On macOS, rc can save it as an app.revenuecat.com internet password in the local
+login Keychain with your explicit approval. Standalone CLIs cannot add credentials
+to the entitlement-protected Apple Passwords/iCloud Keychain. Passwords are sent
+only to RevenueCat over HTTPS and are never printed. Renewable OAuth tokens are
+saved in the active local profile (~/.config/revenuecat/<profile>.json, mode 0600).
 
 You must accept the RevenueCat Terms of Service and Privacy Policy:
   https://www.revenuecat.com/terms
@@ -142,7 +143,7 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 					}
 				}
 				if runtime.GOOS == "darwin" && !savePassword {
-					confirmed, err := tui.ConfirmDefault(false, "Save this RevenueCat website password in macOS Keychain?", true)
+					confirmed, err := tui.ConfirmDefault(false, "Save this RevenueCat website password in the local macOS login Keychain (does not sync to Apple Passwords/iCloud)?", true)
 					if err != nil {
 						return err
 					}
@@ -180,7 +181,7 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 	cmd.Flags().StringVar(&name, "name", "", "your personal/display name (not the project or company name)")
 	cmd.Flags().StringVar(&password, "password", "", "account password (prefer RC_PASSWORD to avoid shell history)")
 	cmd.Flags().BoolVar(&generatePassword, "generate-password", false, "generate a strong random account password")
-	cmd.Flags().BoolVar(&savePassword, "save-password", false, "save the account password in macOS Keychain")
+	cmd.Flags().BoolVar(&savePassword, "save-password", false, "save the website password in the local macOS login Keychain; does not sync to Apple Passwords/iCloud")
 	cmd.Flags().BoolVar(&acceptTerms, "accept-terms", false, "accept the RevenueCat Terms of Service and Privacy Policy")
 	cmd.Flags().BoolVar(&marketingEmails, "marketing-emails", false, "receive RevenueCat product and marketing emails")
 	return cmd
@@ -274,6 +275,8 @@ To remove the profile entirely, use: rc profiles delete <name>`,
 			rt.Config.RefreshToken = ""
 			rt.Config.TokenExpiresAt = time.Time{}
 			rt.Config.TokenType = ""
+			rt.Config.AccountEmail = ""
+			rt.Config.AccountName = ""
 
 			if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 				return err
@@ -293,9 +296,10 @@ To remove the profile entirely, use: rc profiles delete <name>`,
 
 func newAuthStatusCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "status",
-		Short: "Show the current authentication state",
-		Long:  `Displays the active profile, auth method, and project context. Does not make any API calls.`,
+		Use:     "status",
+		Aliases: []string{"whoami"},
+		Short:   "Show the current authentication state",
+		Long:    `Displays the active profile, cached account identity when known, auth method, and project context. Does not make any API calls.`,
 		Example: `  rc auth status
   rc auth status --json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -320,10 +324,20 @@ func newAuthStatusCmd() *cobra.Command {
 				method = "none"
 			}
 
+			identity := rt.Config.AccountEmail
+			if rt.Config.AccountName != "" && identity != "" {
+				identity = fmt.Sprintf("%s <%s>", rt.Config.AccountName, identity)
+			} else if rt.Config.AccountName != "" {
+				identity = rt.Config.AccountName
+			}
+
 			if !authenticated {
 				rt.Out.Info(fmt.Sprintf("Not logged in (profile: %s) — run `rc auth login`", profileName))
+			} else if identity != "" {
+				rt.Out.Success(fmt.Sprintf("Logged in as %s (profile: %s)", identity, profileName))
 			} else {
 				rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", profileName))
+				rt.Out.Info("Account identity is not cached for this login")
 			}
 
 			if !rt.Out.IsJSON() {
@@ -332,6 +346,8 @@ func newAuthStatusCmd() *cobra.Command {
 			return rt.Out.Render(map[string]any{
 				"profile":       profileName,
 				"authenticated": authenticated,
+				"account_email": rt.Config.AccountEmail,
+				"account_name":  rt.Config.AccountName,
 				"method":        method,
 				"project_id":    rt.Config.ProjectID,
 				"base_url":      rt.Config.BaseURL,
@@ -361,6 +377,8 @@ func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 	rt.Config.AccessToken = ""
 	rt.Config.RefreshToken = ""
 	rt.Config.TokenExpiresAt = time.Time{}
+	rt.Config.AccountEmail = ""
+	rt.Config.AccountName = ""
 
 	client, err := rt.API()
 	if err != nil {
@@ -519,6 +537,8 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	rt.Config.RefreshToken = tokens.RefreshToken
 	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
 	rt.Config.APIKey = ""
+	rt.Config.AccountEmail = email
+	rt.Config.AccountName = name
 	rt.client = nil
 
 	rt.Out.Info("Saving OAuth credentials in the active CLI profile…")
