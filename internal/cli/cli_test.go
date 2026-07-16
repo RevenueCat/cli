@@ -235,6 +235,49 @@ func TestAuthSignupHelpExplainsCredentialHandling(t *testing.T) {
 	}
 }
 
+func TestAuthStatusAndLogoutOnlyRenderStructuredDataWithJSON(t *testing.T) {
+	configDir := t.TempDir()
+	t.Setenv("RC_CONFIG_DIR", configDir)
+	if err := config.Save("", &config.Config{APIKey: "sk_test", ProjectID: "proj_test"}); err != nil {
+		t.Fatal(err)
+	}
+
+	out, errb, err := runCmdInConfigDir(t, configDir, "auth", "status")
+	if err != nil {
+		t.Fatalf("status: %v", err)
+	}
+	if strings.TrimSpace(out) != "" {
+		t.Fatalf("human status dumped structured output:\n%s", out)
+	}
+	if !strings.Contains(errb, "Logged in (profile: default)") {
+		t.Fatalf("human status missing summary: %s", errb)
+	}
+
+	out, errb, err = runCmdInConfigDir(t, configDir, "auth", "status", "--json")
+	if err != nil {
+		t.Fatalf("JSON status: %v", err)
+	}
+	if errb != "" {
+		t.Fatalf("JSON status wrote stderr: %s", errb)
+	}
+	for _, want := range []string{`"authenticated": true`, `"method": "api_key"`, `"project_id": "proj_test"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("JSON status missing %s:\n%s", want, out)
+		}
+	}
+
+	out, errb, err = runCmdInConfigDir(t, configDir, "auth", "logout")
+	if err != nil {
+		t.Fatalf("logout: %v", err)
+	}
+	if strings.TrimSpace(out) != "" {
+		t.Fatalf("human logout dumped structured output:\n%s", out)
+	}
+	if !strings.Contains(errb, "Logged out (profile: default)") {
+		t.Fatalf("human logout missing summary: %s", errb)
+	}
+}
+
 func TestCommandsJSON_AgentDiscovery(t *testing.T) {
 	out, errb, err := runCmd(t, "commands", "--json")
 	if err != nil {

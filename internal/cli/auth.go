@@ -281,6 +281,9 @@ To remove the profile entirely, use: rc profiles delete <name>`,
 
 			profileName := config.ProfileName(rt.Globals.Profile)
 			rt.Out.Success(fmt.Sprintf("Logged out (profile: %s)", profileName))
+			if !rt.Out.IsJSON() {
+				return nil
+			}
 			return rt.Out.Render(map[string]any{
 				"profile": profileName,
 			})
@@ -323,6 +326,9 @@ func newAuthStatusCmd() *cobra.Command {
 				rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", profileName))
 			}
 
+			if !rt.Out.IsJSON() {
+				return nil
+			}
 			return rt.Out.Render(map[string]any{
 				"profile":       profileName,
 				"authenticated": authenticated,
