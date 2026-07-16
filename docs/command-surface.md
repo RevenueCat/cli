@@ -86,7 +86,7 @@ rc auth status                                           # show auth state (meth
 rc config                                                # show resolved config
 rc commands                                              # agent discovery (tree)
 rc schema <cmd>                                          # agent discovery (flags)
-rc skills install                                        # install four core setup skills globally without a picker; --all installs everything
+rc skills install                                        # install four core setup skills globally for Codex without a picker; --agent overrides
                                                          # RC_SKILLS_BRANCH / --branch installs an unreleased toolkit branch
 rc skills prompts                                        # show copy-ready starter prompts; --json returns prompts for agent UIs
 rc version

@@ -23,6 +23,8 @@ var defaultToolkitSkills = []string{
 	"revenuecat-store-state",
 }
 
+var defaultToolkitAgents = []string{"codex"}
+
 type skillsInstaller interface {
 	Run(*cobra.Command, []string) error
 }
@@ -177,8 +179,9 @@ The standard Skills CLI detects supported agents and owns installation paths,
 lock files, security review, and updates. This command does not vendor or cache
 a separate copy of the toolkit inside rc. Pass --project to install into the
 current repository instead. The default installs the four skills needed for
-complete project setup without opening the underlying skill picker. Pass --all
-to install every RevenueCat skill. Under --no-input, pass --yes.
+complete project setup for Codex without opening the underlying agent or skill
+pickers. Pass --agent to target another client or --all to install every
+RevenueCat skill. Under --no-input, pass --yes.
 
 After installing or updating, start a new agent session or reload the agent so
 it discovers the latest skills. Then ask naturally for RevenueCat setup or name
@@ -208,14 +211,16 @@ overrides the environment variable.`,
 			if len(selectedSkills) == 0 && !all {
 				selectedSkills = append(selectedSkills, defaultToolkitSkills...)
 			}
+			selectedAgents := append([]string(nil), agents...)
+			if len(selectedAgents) == 0 {
+				selectedAgents = append(selectedAgents, defaultToolkitAgents...)
+			}
 			args := []string{"--yes", "skills", "add", source}
 			if !project {
 				args = append(args, "--global")
 			}
-			if len(agents) > 0 {
-				args = append(args, "--agent")
-				args = append(args, agents...)
-			}
+			args = append(args, "--agent")
+			args = append(args, selectedAgents...)
 			if len(selectedSkills) > 0 {
 				args = append(args, "--skill")
 				args = append(args, selectedSkills...)
@@ -239,7 +244,7 @@ overrides the environment variable.`,
 				"source":          source,
 				"branch":          branch,
 				"scope":           scope,
-				"agents":          agents,
+				"agents":          selectedAgents,
 				"skills":          selectedSkills,
 				"all":             all,
 				"command":         "npx " + strings.Join(args[1:], " "),
@@ -258,7 +263,7 @@ overrides the environment variable.`,
 	cmd.Flags().BoolVar(&project, "project", false, "install in the current project instead of globally")
 	cmd.Flags().StringVar(&branch, "branch", "", "ai-toolkit branch to install (env: RC_SKILLS_BRANCH)")
 	cmd.MarkFlagsMutuallyExclusive("global", "project")
-	cmd.Flags().StringSliceVar(&agents, "agent", nil, "agents to install for (passed to the standard Skills CLI)")
+	cmd.Flags().StringSliceVar(&agents, "agent", nil, "agents to install for (default: codex)")
 	cmd.Flags().StringSliceVar(&skills, "skill", nil, "specific toolkit skills to install instead of the core setup bundle")
 	cmd.Flags().BoolVar(&all, "all", false, "install all RevenueCat skills instead of the core setup bundle")
 	cmd.MarkFlagsMutuallyExclusive("skill", "all")

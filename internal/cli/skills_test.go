@@ -73,6 +73,11 @@ func TestSkillsInstallDefaultsToCoreBundleWithoutPicker(t *testing.T) {
 			t.Errorf("installer args missing core skill %q: %v", skill, installer.args)
 		}
 	}
+	for _, agent := range defaultToolkitAgents {
+		if !slices.Contains(installer.args, agent) {
+			t.Errorf("installer args missing default agent %q: %v", agent, installer.args)
+		}
+	}
 	if installer.args[len(installer.args)-1] != "--yes" {
 		t.Fatalf("installer args do not suppress selection UI: %v", installer.args)
 	}
