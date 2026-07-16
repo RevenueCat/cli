@@ -47,6 +47,13 @@ func (s *PaywallsService) Publish(ctx context.Context, projectID, id string) (*P
 	return &out, err
 }
 
+func (s *PaywallsService) Unpublish(ctx context.Context, projectID, id string) (*Paywall, error) {
+	var out Paywall
+	path := encodePath("projects", projectID, "paywalls", id, "actions") + "/unpublish"
+	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
+	return &out, err
+}
+
 func (s *PaywallsService) Delete(ctx context.Context, projectID, id string) error {
 	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "paywalls", id), nil, nil)
 }

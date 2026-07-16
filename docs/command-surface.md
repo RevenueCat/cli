@@ -189,6 +189,7 @@ rc paywalls list
 rc paywalls show <id>
 rc paywalls create                                       # create an offering-attached draft
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
+rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes
 rc paywalls delete <id>
 
 # Subscriptions

@@ -110,20 +110,21 @@ func commandSchema(c *cobra.Command) map[string]any {
 // This lets agents know what operations are available without reading every subcommand.
 func inferCapabilities(c *cobra.Command) []string {
 	known := map[string]string{
-		"list":    "list",
-		"show":    "show",
-		"get":     "show",
-		"create":  "create",
-		"update":  "update",
-		"delete":  "delete",
-		"archive": "archive",
-		"restore": "restore",
-		"push":    "push",
-		"attach":  "attach",
-		"detach":  "detach",
-		"publish": "publish",
-		"verify":  "verify",
-		"preview": "preview",
+		"list":      "list",
+		"show":      "show",
+		"get":       "show",
+		"create":    "create",
+		"update":    "update",
+		"delete":    "delete",
+		"archive":   "archive",
+		"restore":   "restore",
+		"push":      "push",
+		"attach":    "attach",
+		"detach":    "detach",
+		"publish":   "publish",
+		"unpublish": "unpublish",
+		"verify":    "verify",
+		"preview":   "preview",
 	}
 	seen := map[string]bool{}
 	var caps []string

@@ -240,6 +240,33 @@ func TestPaywallsPublishRequiresConfirmationAndReturnsState(t *testing.T) {
 	}
 }
 
+func TestPaywallsUnpublishRequiresConfirmationAndReturnsState(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/paywalls/pw_test/actions/unpublish" {
+			http.Error(w, "unexpected request", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"pw_test","name":"Default Paywall","offering_id":"ofrng_default","created_at":1,"published_at":null,"object":"paywall"}`)
+	}))
+	t.Cleanup(server.Close)
+
+	_, _, err := runProjectSetupCommand(t, server.URL,
+		"paywalls", "unpublish", "pw_test", "--json", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "pass --yes") {
+		t.Fatalf("error = %v, want --yes guidance", err)
+	}
+
+	out, _, err := runProjectSetupCommand(t, server.URL,
+		"paywalls", "unpublish", "pw_test", "--yes", "--json", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, `"published_at": null`) {
+		t.Fatalf("unexpected output: %s", out)
+	}
+}
+
 func runProjectSetupCommand(t *testing.T, baseURL string, args ...string) (string, string, error) {
 	t.Helper()
 	t.Setenv("RC_CONFIG_DIR", t.TempDir())

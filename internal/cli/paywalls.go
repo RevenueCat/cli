@@ -22,6 +22,7 @@ func newPaywallsCmd() *cobra.Command {
 		newPaywallsShowCmd(),
 		newPaywallsCreateCmd(),
 		newPaywallsPublishCmd(),
+		newPaywallsUnpublishCmd(),
 		newPaywallsDeleteCmd(),
 	)
 	return cmd
@@ -151,6 +152,53 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Published %s", paywall.ID))
+			return rt.Out.Render(paywall)
+		},
+	}
+}
+
+func newPaywallsUnpublishCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "unpublish [id]",
+		Short: "Unpublish a paywall",
+		Long: `Removes the published paywall so RevenueCat SDKs stop serving it to customers.
+
+Unpublishing can be blocked when the paywall's offering is used by an active experiment.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc paywalls unpublish pw_abc
+  rc paywalls unpublish pw_abc --yes --no-input --json`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			paywallID, err := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+				return paywallPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			if !rt.Globals.AssumeYes {
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Unpublish paywall %q?", paywallID))
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return fmt.Errorf("aborted")
+				}
+			}
+			paywall, err := client.Paywalls.Unpublish(cmd.Context(), projectID, paywallID)
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Unpublished %s", paywall.ID))
 			return rt.Out.Render(paywall)
 		},
 	}
