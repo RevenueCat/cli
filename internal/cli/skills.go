@@ -23,7 +23,13 @@ var defaultToolkitSkills = []string{
 	"revenuecat-store-state",
 }
 
-var defaultToolkitAgents = []string{"codex"}
+var defaultToolkitAgents = []string{
+	"claude-code",
+	"codex",
+	"cursor",
+	"gemini-cli",
+	"github-copilot",
+}
 
 type skillsInstaller interface {
 	Run(*cobra.Command, []string) error
@@ -179,9 +185,10 @@ The standard Skills CLI detects supported agents and owns installation paths,
 lock files, security review, and updates. This command does not vendor or cache
 a separate copy of the toolkit inside rc. Pass --project to install into the
 current repository instead. The default installs the four skills needed for
-complete project setup for Codex without opening the underlying agent or skill
-pickers. Pass --agent to target another client or --all to install every
-RevenueCat skill. Under --no-input, pass --yes.
+complete project setup for RevenueCat's supported agent clients—Claude Code,
+Codex, Cursor, Gemini CLI, and GitHub Copilot/VS Code—without opening the
+underlying agent or skill pickers. Pass --agent to override the targets or
+--all to install every RevenueCat skill. Under --no-input, pass --yes.
 
 After installing or updating, start a new agent session or reload the agent so
 it discovers the latest skills. Then ask naturally for RevenueCat setup or name
@@ -245,6 +252,7 @@ overrides the environment variable.`,
 				"branch":          branch,
 				"scope":           scope,
 				"agents":          selectedAgents,
+				"agent_selection": map[bool]string{true: "explicit", false: "revenuecat_defaults"}[len(agents) > 0],
 				"skills":          selectedSkills,
 				"all":             all,
 				"command":         "npx " + strings.Join(args[1:], " "),
@@ -263,7 +271,7 @@ overrides the environment variable.`,
 	cmd.Flags().BoolVar(&project, "project", false, "install in the current project instead of globally")
 	cmd.Flags().StringVar(&branch, "branch", "", "ai-toolkit branch to install (env: RC_SKILLS_BRANCH)")
 	cmd.MarkFlagsMutuallyExclusive("global", "project")
-	cmd.Flags().StringSliceVar(&agents, "agent", nil, "agents to install for (default: codex)")
+	cmd.Flags().StringSliceVar(&agents, "agent", nil, "override target agents (default: RevenueCat-supported clients)")
 	cmd.Flags().StringSliceVar(&skills, "skill", nil, "specific toolkit skills to install instead of the core setup bundle")
 	cmd.Flags().BoolVar(&all, "all", false, "install all RevenueCat skills instead of the core setup bundle")
 	cmd.MarkFlagsMutuallyExclusive("skill", "all")
