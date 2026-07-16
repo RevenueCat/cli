@@ -32,6 +32,9 @@ func TestOAuthSignupEndpoints(t *testing.T) {
 		case "/v1/developers/login":
 			_, _ = fmt.Fprintf(w, `{"authentication_token":%q}`, loginToken)
 		case "/v1/developers/me/oauth-authorize":
+			if got := r.URL.Query().Get("scope"); got != DefaultOAuthScope {
+				t.Errorf("scope = %q, want %q", got, DefaultOAuthScope)
+			}
 			if r.Header.Get("Authorization") != "Bearer "+loginToken {
 				t.Errorf("unexpected authorization header: %q", r.Header.Get("Authorization"))
 			}

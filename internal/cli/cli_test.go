@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/cli"
 	"github.com/revenuecat/cli/internal/config"
 )
@@ -91,6 +92,9 @@ func TestAuthSignup_AgentFlowStoresDurableOAuthWithoutLeakingTemporaryCredential
 			}
 			_, _ = fmt.Fprintf(w, `{"authentication_token":%q}`, temporaryToken)
 		case "/v1/developers/me/oauth-authorize":
+			if got := r.URL.Query().Get("scope"); got != api.DefaultOAuthScope {
+				t.Errorf("scope = %q, want %q", got, api.DefaultOAuthScope)
+			}
 			if r.Header.Get("Authorization") != "Bearer "+temporaryToken {
 				t.Fatalf("unexpected authorization header: %q", r.Header.Get("Authorization"))
 			}

@@ -16,6 +16,7 @@ import (
 
 const DefaultOAuthBaseURL = "https://api.revenuecat.com"
 const DefaultOAuthClientID = "cmV2ZW51ZWNhdC1jbGk="
+const DefaultOAuthScope = "*:*:read_write"
 
 // OAuthService handles the token endpoint only — the browser redirect and
 // callback server live in the CLI layer since they have user-facing side effects.
@@ -66,6 +67,7 @@ func (s *OAuthService) AuthorizeURL(redirectURI, challenge, state string) string
 		"redirect_uri":          {redirectURI},
 		"code_challenge":        {challenge},
 		"code_challenge_method": {"S256"},
+		"scope":                 {DefaultOAuthScope},
 		"state":                 {state},
 	}
 	return s.baseURL + "/oauth2/authorize?" + q.Encode()
@@ -117,6 +119,7 @@ func (s *OAuthService) AuthorizeWithLoginToken(ctx context.Context, loginToken, 
 		"redirect_uri":          {redirectURI},
 		"code_challenge":        {challenge},
 		"code_challenge_method": {"S256"},
+		"scope":                 {DefaultOAuthScope},
 		"state":                 {state},
 	}
 	var response authorizationResponse
