@@ -277,6 +277,7 @@ To remove the profile entirely, use: rc profiles delete <name>`,
 			rt.Config.TokenType = ""
 			rt.Config.AccountEmail = ""
 			rt.Config.AccountName = ""
+			rt.Config.ProjectID = ""
 
 			if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 				return err
@@ -396,6 +397,7 @@ func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 	rt.Config.TokenExpiresAt = time.Time{}
 	rt.Config.AccountEmail = ""
 	rt.Config.AccountName = ""
+	clearProjectBinding(rt)
 
 	client, err := rt.API()
 	if err != nil {
@@ -486,6 +488,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	rt.Config.RefreshToken = tr.RefreshToken
 	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
 	rt.Config.APIKey = ""
+	clearProjectBinding(rt)
 
 	rt.client = nil
 	client, err := rt.API()
@@ -556,6 +559,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	rt.Config.APIKey = ""
 	rt.Config.AccountEmail = email
 	rt.Config.AccountName = name
+	clearProjectBinding(rt)
 	rt.client = nil
 
 	rt.Out.Info("Saving OAuth credentials in the active CLI profile…")
@@ -616,6 +620,20 @@ func validateSignupPassword(password string) error {
 
 func signupAuthenticationError(err error) error {
 	return fmt.Errorf("account was created, but OAuth setup failed: %w; use password reset at https://app.revenuecat.com if you need to recover the account", err)
+}
+
+// clearProjectBinding drops the profile's saved project when credentials
+// change: the new account may not own it, and a stale binding surfaces as
+// confusing authorization errors on every project-scoped command. An explicit
+// --project-id / RC_PROJECT_ID passed alongside the login is kept.
+func clearProjectBinding(rt *Runtime) {
+	if rt.Globals.ProjectID != "" {
+		return
+	}
+	if rt.Config.ProjectID != "" {
+		rt.Out.Info("Cleared saved project " + rt.Config.ProjectID + " — run `rc projects use` to pick one for this account.")
+	}
+	rt.Config.ProjectID = ""
 }
 
 func finishLogin(ctx context.Context, rt *Runtime, _ *api.Client) error {
