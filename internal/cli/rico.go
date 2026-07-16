@@ -228,9 +228,10 @@ func pickRicoConversation(ctx context.Context, rt *Runtime, client *rico.Client)
 
 // ricoConversationPickerItems feeds the --resume picker: the conversation
 // from the CLI's last chat floats to the top, the rest keep the server's
-// most-recent-first order.
+// most-recent-first order. Unfiltered by project — conversations span
+// projects, and a stale active-project setting must not hide them.
 func ricoConversationPickerItems(ctx context.Context, rt *Runtime, client *rico.Client) ([]PickerItem, error) {
-	conversations, err := client.ListConversations(ctx, rt.Config.ProjectID)
+	conversations, err := client.ListConversations(ctx, "")
 	if err != nil {
 		return nil, ricoFriendlyError(err)
 	}
@@ -498,16 +499,19 @@ func newRicoConversationsCmd() *cobra.Command {
 		Short:   "List, inspect, and delete Rico conversations",
 	}
 
+	var listProjectID string
 	list := &cobra.Command{
 		Use:   "list",
 		Short: "List conversations",
+		Long: `Lists all conversations for the authenticated account. Pass --project to
+scope to a single project.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			client, err := ricoClient(rt, baseURL)
 			if err != nil {
 				return err
 			}
-			conversations, err := client.ListConversations(cmd.Context(), rt.Config.ProjectID)
+			conversations, err := client.ListConversations(cmd.Context(), listProjectID)
 			if err != nil {
 				return ricoFriendlyError(err)
 			}
@@ -591,6 +595,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 		},
 	}
 
+	list.Flags().StringVar(&listProjectID, "project", "", "only conversations touching this project")
 	cmd.AddCommand(list, show, del)
 	cmd.PersistentFlags().StringVar(&baseURL, "base-url", baseURL, "Rico endpoint (or RC_RICO_BASE_URL)")
 	return cmd
