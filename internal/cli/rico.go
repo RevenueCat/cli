@@ -43,6 +43,7 @@ type ricoChatOptions struct {
 	prompt         string
 	conversationID string
 	approveTools   bool
+	plain          bool
 	timeout        time.Duration
 	baseURL        string
 }
@@ -58,8 +59,9 @@ func newRicoChatCmd() *cobra.Command {
 		Use:   "chat [message]",
 		Short: "Send a message to Rico",
 		Long: `Sends a message and streams Rico's reply. In a terminal with no message
-given, opens an interactive chat; with a message (or --prompt) it answers once
-and exits.
+given, opens a full-screen chat window; with a message (or --prompt) it
+answers once and exits. Pass --plain for a line-based prompt loop instead of
+the chat window.
 
 Tool calls that modify data pause the run for approval. Interactive terminals
 prompt; non-interactive runs reject them unless --approve-tools is passed
@@ -67,7 +69,7 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 		Example: `  rc rico chat
   rc rico chat "why did trial conversions drop this week?"
   rc rico chat "delete the test offering" --approve-tools --yes --json --no-input
-  rc rico chat "continue" --conversation NQ7bGmww8rLcPT9d`,
+  rc rico chat --conversation NQ7bGmww8rLcPT9d`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -100,12 +102,16 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 				}
 				return session.turn(cmd.Context(), opts.prompt)
 			}
-			return session.repl(cmd.Context())
+			if opts.plain {
+				return session.repl(cmd.Context())
+			}
+			return session.chatWindow(cmd.Context())
 		},
 	}
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "message to send (or RC_RICO_PROMPT)")
 	cmd.Flags().StringVarP(&opts.conversationID, "conversation", "c", opts.conversationID, "conversation to continue (or RC_RICO_CONVERSATION_ID)")
 	cmd.Flags().BoolVar(&opts.approveTools, "approve-tools", false, "approve tool calls without prompting (destructive ones still need --yes)")
+	cmd.Flags().BoolVar(&opts.plain, "plain", false, "line-based prompt loop instead of the chat window")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait for a reply")
 	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Rico endpoint (or RC_RICO_BASE_URL)")
 	return cmd
@@ -118,6 +124,14 @@ type ricoSession struct {
 	opts           ricoChatOptions
 	conversationID string
 	context        rico.DashboardContext
+}
+
+// ricoSink receives turn progress. The plain/JSON modes print (or stay
+// silent); the chat window forwards into the Bubble Tea program.
+type ricoSink interface {
+	Delta(text string)
+	Tool(name string)
+	Approve(interrupt rico.Interrupt, label string) (bool, error)
 }
 
 // ricoTurnResult is the JSON payload for one completed chat turn.
@@ -135,6 +149,63 @@ type ricoToolCallInfo struct {
 	Name        string `json:"name,omitempty"`
 	Reason      string `json:"reason,omitempty"`
 	Destructive bool   `json:"destructive,omitempty"`
+}
+
+// chatWindow opens the full-screen Bubble Tea chat UI.
+func (s *ricoSession) chatWindow(ctx context.Context) error {
+	transcript := s.loadTranscript(ctx)
+	chat := tui.Chat{
+		Title:       "Rico",
+		Subtitle:    "conversation " + s.conversationID,
+		Placeholder: "Ask Rico anything about your RevenueCat projects…",
+		Transcript:  transcript,
+		Send: func(turnCtx context.Context, message string, emit *tui.ChatEmitter) {
+			turnCtx, cancel := context.WithTimeout(turnCtx, s.opts.timeout)
+			defer cancel()
+			_, err := s.run(turnCtx, message, &ricoChatUISink{emit: emit})
+			emit.Done(err)
+		},
+	}
+	return chat.RunChat()
+}
+
+// loadTranscript hydrates prior messages when continuing a conversation.
+// Best-effort: a brand-new conversation has no history to fetch.
+func (s *ricoSession) loadTranscript(ctx context.Context) []tui.ChatEntry {
+	if s.opts.conversationID == "" {
+		return nil
+	}
+	snapshot, err := s.client.GetMessages(ctx, s.conversationID)
+	if err != nil {
+		return nil
+	}
+	var entries []tui.ChatEntry
+	for _, message := range snapshot.Messages {
+		for _, call := range message.ToolCalls {
+			entries = append(entries, tui.ChatEntry{Role: tui.ChatTool, Text: call.Function.Name})
+		}
+		text := message.Text()
+		if text == "" {
+			continue
+		}
+		switch message.Role {
+		case "user":
+			entries = append(entries, tui.ChatEntry{Role: tui.ChatUser, Text: text})
+		case "assistant":
+			entries = append(entries, tui.ChatEntry{Role: tui.ChatAssistant, Text: text})
+		}
+	}
+	return entries
+}
+
+type ricoChatUISink struct {
+	emit *tui.ChatEmitter
+}
+
+func (s *ricoChatUISink) Delta(text string) { s.emit.Delta(text) }
+func (s *ricoChatUISink) Tool(name string)  { s.emit.ToolCall(name) }
+func (s *ricoChatUISink) Approve(interrupt rico.Interrupt, label string) (bool, error) {
+	return s.emit.Approve(label, interrupt.IsDestructive()), nil
 }
 
 func (s *ricoSession) repl(ctx context.Context) error {
@@ -157,33 +228,16 @@ func (s *ricoSession) repl(ctx context.Context) error {
 	}
 }
 
-// turn sends one user message and streams until the run completes, handling
-// interrupt/approval rounds along the way.
+// turn runs one message in plain or JSON mode and renders the result.
 func (s *ricoSession) turn(ctx context.Context, message string) error {
 	ctx, cancel := context.WithTimeout(ctx, s.opts.timeout)
 	defer cancel()
 
-	runID := rico.NewRunID()
-	result := &ricoTurnResult{ConversationID: s.conversationID, RunID: runID}
-	input := rico.ChatInput(s.conversationID, runID, message, s.context, nil)
-	for round := 0; ; round++ {
-		interrupts, err := s.streamRun(ctx, input, result)
-		if err != nil {
-			return err
-		}
-		if len(interrupts) == 0 {
-			break
-		}
-		if round >= ricoResumeRounds {
-			return fmt.Errorf("giving up after %d tool-approval rounds in one turn", ricoResumeRounds)
-		}
-		resume, err := s.resolveInterrupts(interrupts, result)
-		if err != nil {
-			return err
-		}
-		runID = rico.NewRunID()
-		result.RunID = runID
-		input = rico.ResumeInput(s.conversationID, runID, s.context, resume)
+	sink := &ricoPlainSink{session: s, silent: s.rt.Out.IsJSON()}
+	result, err := s.run(ctx, message, sink)
+	sink.endLine()
+	if err != nil {
+		return err
 	}
 	if s.rt.Out.IsJSON() {
 		return s.rt.Out.Render(result)
@@ -192,23 +246,45 @@ func (s *ricoSession) turn(ctx context.Context, message string) error {
 	return nil
 }
 
+// run executes one user turn end-to-end, looping through interrupt/approval
+// rounds until the run finishes.
+func (s *ricoSession) run(ctx context.Context, message string, sink ricoSink) (*ricoTurnResult, error) {
+	runID := rico.NewRunID()
+	result := &ricoTurnResult{ConversationID: s.conversationID, RunID: runID}
+	input := rico.ChatInput(s.conversationID, runID, message, s.context, nil)
+	for round := 0; ; round++ {
+		interrupts, err := s.streamRun(ctx, input, result, sink)
+		if err != nil {
+			return nil, err
+		}
+		if len(interrupts) == 0 {
+			return result, nil
+		}
+		if round >= ricoResumeRounds {
+			return nil, fmt.Errorf("giving up after %d tool-approval rounds in one turn", ricoResumeRounds)
+		}
+		resume, err := s.resolveInterrupts(interrupts, result, sink)
+		if err != nil {
+			return nil, err
+		}
+		runID = rico.NewRunID()
+		result.RunID = runID
+		input = rico.ResumeInput(s.conversationID, runID, s.context, resume)
+	}
+}
+
 // streamRun executes one POST /v1/agent stream and returns any interrupts
 // that paused the run.
-func (s *ricoSession) streamRun(ctx context.Context, input rico.RunAgentInput, result *ricoTurnResult) ([]rico.Interrupt, error) {
+func (s *ricoSession) streamRun(ctx context.Context, input rico.RunAgentInput, result *ricoTurnResult, sink ricoSink) ([]rico.Interrupt, error) {
 	stream, err := s.client.Stream(ctx, input)
 	if err != nil {
 		return nil, ricoFriendlyError(err)
 	}
 	defer stream.Close()
 
-	jsonMode := s.rt.Out.IsJSON()
-	printedText := false
 	for {
 		event, err := stream.Next()
 		if err == io.EOF {
-			if printedText {
-				fmt.Println()
-			}
 			return nil, nil
 		}
 		if err != nil {
@@ -217,29 +293,14 @@ func (s *ricoSession) streamRun(ctx context.Context, input rico.RunAgentInput, r
 		switch event.Type {
 		case rico.EventTextMessageContent:
 			result.Reply += event.Delta
-			if !jsonMode {
-				fmt.Print(event.Delta)
-				printedText = true
-			}
+			sink.Delta(event.Delta)
 		case rico.EventToolCallStart:
 			result.ToolCalls = append(result.ToolCalls, ricoToolCallInfo{ID: event.ToolCallID, Name: event.ToolCallName})
-			if !jsonMode {
-				if printedText {
-					fmt.Println()
-					printedText = false
-				}
-				s.rt.Out.Info("⚙ " + event.ToolCallName)
-			}
+			sink.Tool(event.ToolCallName)
 		case rico.EventRunError:
-			if printedText {
-				fmt.Println()
-			}
 			result.Status = "error"
 			return nil, fmt.Errorf("Rico run failed: %s", event.Message)
 		case rico.EventRunFinished:
-			if printedText {
-				fmt.Println()
-			}
 			if event.Outcome != nil && event.Outcome.Type == "interrupt" {
 				result.Status = "interrupted"
 				return event.Outcome.Interrupts, nil
@@ -250,19 +311,16 @@ func (s *ricoSession) streamRun(ctx context.Context, input rico.RunAgentInput, r
 	}
 }
 
-// resolveInterrupts turns pending interrupts into resume entries, prompting
-// the user (TTY) or applying the --approve-tools / --yes policy.
-func (s *ricoSession) resolveInterrupts(interrupts []rico.Interrupt, result *ricoTurnResult) ([]rico.ResumeEntry, error) {
+// resolveInterrupts turns pending interrupts into resume entries via the
+// sink's approval flow.
+func (s *ricoSession) resolveInterrupts(interrupts []rico.Interrupt, result *ricoTurnResult, sink ricoSink) ([]rico.ResumeEntry, error) {
 	entries := make([]rico.ResumeEntry, 0, len(interrupts))
 	for _, interrupt := range interrupts {
 		label := interrupt.Message
 		if label == "" {
 			label = interrupt.Reason
 		}
-		if interrupt.IsDestructive() {
-			label += " (destructive)"
-		}
-		approved, err := s.approves(interrupt, label)
+		approved, err := sink.Approve(interrupt, label)
 		if err != nil {
 			return nil, err
 		}
@@ -276,22 +334,55 @@ func (s *ricoSession) resolveInterrupts(interrupts []rico.Interrupt, result *ric
 			Reason:      interrupt.Reason,
 			Destructive: interrupt.IsDestructive(),
 		})
-		s.rt.Out.Warn("Rejected tool call: " + label)
 	}
 	return entries, nil
 }
 
-func (s *ricoSession) approves(interrupt rico.Interrupt, label string) (bool, error) {
-	if s.rt.Globals.NoInput || !tui.IsInteractive() {
-		if !s.opts.approveTools {
-			return false, nil
-		}
-		if interrupt.IsDestructive() && !s.rt.Globals.AssumeYes {
-			return false, nil
-		}
-		return true, nil
+// ricoPlainSink prints streaming output to stdout (unless silent, for --json)
+// and applies the prompt/--approve-tools approval policy.
+type ricoPlainSink struct {
+	session *ricoSession
+	silent  bool
+	midLine bool
+}
+
+func (s *ricoPlainSink) Delta(text string) {
+	if s.silent {
+		return
 	}
-	return tui.ConfirmDefault(s.rt.Globals.NoInput, "Allow Rico to run: "+label+"?", !interrupt.IsDestructive())
+	fmt.Print(text)
+	s.midLine = true
+}
+
+func (s *ricoPlainSink) endLine() {
+	if s.midLine {
+		fmt.Println()
+		s.midLine = false
+	}
+}
+
+func (s *ricoPlainSink) Tool(name string) {
+	if s.silent {
+		return
+	}
+	s.endLine()
+	s.session.rt.Out.Info("⚙ " + name)
+}
+
+func (s *ricoPlainSink) Approve(interrupt rico.Interrupt, label string) (bool, error) {
+	s.endLine()
+	rt := s.session.rt
+	if interrupt.IsDestructive() {
+		label += " (destructive)"
+	}
+	if rt.Globals.NoInput || !tui.IsInteractive() {
+		approved := s.session.opts.approveTools && (!interrupt.IsDestructive() || rt.Globals.AssumeYes)
+		if !approved && !s.silent {
+			rt.Out.Warn("Rejected tool call: " + label)
+		}
+		return approved, nil
+	}
+	return tui.ConfirmDefault(rt.Globals.NoInput, "Allow Rico to run: "+label+"?", !interrupt.IsDestructive())
 }
 
 func newRicoConversationsCmd() *cobra.Command {
