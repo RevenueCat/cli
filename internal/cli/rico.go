@@ -44,6 +44,7 @@ type ricoChatOptions struct {
 	prompt         string
 	conversationID string
 	continueLast   bool
+	resume         bool
 	approveTools   bool
 	plain          bool
 	timeout        time.Duration
@@ -78,6 +79,7 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
   rc rico chat "why did trial conversions drop this week?"
   rc rico chat "delete the test offering" --approve-tools --yes --json --no-input
   rc rico chat --continue
+  rc rico chat --resume
   rc rico chat --conversation NQ7bGmww8rLcPT9d`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -99,6 +101,14 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 			client, err := ricoClient(rt, opts.baseURL)
 			if err != nil {
 				return err
+			}
+			if opts.resume && opts.conversationID == "" {
+				opts.conversationID, err = requireID(rt, "", "conversation", func() ([]PickerItem, error) {
+					return ricoConversationPickerItems(cmd.Context(), client, rt.Config.ProjectID)
+				})
+				if err != nil {
+					return err
+				}
 			}
 			session := &ricoSession{
 				rt:             rt,
@@ -128,6 +138,7 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "message to send (or RC_RICO_PROMPT)")
 	cmd.Flags().StringVarP(&opts.conversationID, "conversation", "c", opts.conversationID, "conversation to continue (or RC_RICO_CONVERSATION_ID)")
 	cmd.Flags().BoolVarP(&opts.continueLast, "continue", "C", false, "continue the most recent CLI conversation")
+	cmd.Flags().BoolVarP(&opts.resume, "resume", "r", false, "pick a past conversation to resume")
 	cmd.Flags().BoolVar(&opts.approveTools, "approve-tools", false, "approve tool calls without prompting (destructive ones still need --yes)")
 	cmd.Flags().BoolVar(&opts.plain, "plain", false, "line-based prompt loop instead of the chat window")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait for a reply")
@@ -192,6 +203,31 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 	}
 	s.rt.Out.Info("Continue this conversation with: rc rico chat --continue")
 	return nil
+}
+
+// ricoConversationPickerItems feeds the --resume picker: newest first, with
+// the summary (when the backend has generated one) and last-activity date.
+func ricoConversationPickerItems(ctx context.Context, client *rico.Client, projectID string) ([]PickerItem, error) {
+	conversations, err := client.ListConversations(ctx, projectID)
+	if err != nil {
+		return nil, ricoFriendlyError(err)
+	}
+	items := make([]PickerItem, len(conversations))
+	for i, conversation := range conversations {
+		summary := conversation.Summary
+		if summary == "" {
+			summary = "(no summary)"
+		}
+		updated := conversation.UpdatedAt
+		if len(updated) >= 10 {
+			updated = updated[:10]
+		}
+		items[i] = PickerItem{
+			ID:    conversation.ID,
+			Label: fmt.Sprintf("%s — %s (%s)", summary, updated, conversation.ID),
+		}
+	}
+	return items, nil
 }
 
 // rememberConversation records the conversation for `rc rico chat --continue`.
