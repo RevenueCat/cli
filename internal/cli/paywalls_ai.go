@@ -377,7 +377,7 @@ func astraClient(rt *Runtime, baseURL string) (*astra.Client, error) {
 	}
 	return astra.NewClient(astra.Options{
 		BaseURL:   baseURL,
-		Token:     rt.Config.BearerToken(),
+		Token:     agentAuthToken(rt),
 		UserAgent: userAgent(rt.Globals.Version),
 	}), nil
 }
