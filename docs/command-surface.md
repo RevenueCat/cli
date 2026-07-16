@@ -197,8 +197,7 @@ rc paywalls delete <id>
 
 # Rico (AI assistant)
 rc rico chat [message]                                   # streaming chat window in a TTY (--plain for a line loop)
-rc rico chat --continue                                  # continue the most recent CLI conversation
-rc rico chat --resume                                    # pick a past conversation to resume
+rc rico chat -r                                          # pick a past conversation to resume (last one on top)
 rc rico chat "..." --approve-tools --yes --no-input      # agent mode: auto-approve tool calls (destructive need --yes)
 rc rico conversations list|show <id>|delete <id>
 rc rico feedback <run-id> <good|bad>

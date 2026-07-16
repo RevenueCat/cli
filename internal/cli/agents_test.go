@@ -126,12 +126,11 @@ func TestRicoChat_JSONRejectsDestructiveToolWithoutYes(t *testing.T) {
 	}
 }
 
-func TestRicoChat_ContinueResumesLastConversation(t *testing.T) {
-	server, inputs := ricoServer(t)
+func TestRicoChat_RemembersLastConversationForResume(t *testing.T) {
+	server, _ := ricoServer(t)
 	t.Setenv("RC_RICO_BASE_URL", server.URL)
 
 	configDir := t.TempDir()
-	// First turn establishes the conversation and records it.
 	_, _, err := runCmdInConfigDir(t, configDir,
 		"rico", "chat", "delete the test offering",
 		"--conversation", "conv1",
@@ -140,23 +139,24 @@ func TestRicoChat_ContinueResumesLastConversation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// --continue picks the same conversation back up without an explicit id.
-	_, _, err = runCmdInConfigDir(t, configDir,
-		"rico", "chat", "and the sandbox one too", "--continue",
-		"--approve-tools", "--yes", "--no-input", "--json", "--api-key", "sk_test",
-	)
+	payload, err := os.ReadFile(filepath.Join(configDir, "default.rico.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	last := (*inputs)[len(*inputs)-1]
-	if last["threadId"] != "conv1" {
-		t.Fatalf("continued threadId = %v", last["threadId"])
+	var state struct {
+		LastConversationID string `json:"last_conversation_id"`
+	}
+	if err := json.Unmarshal(payload, &state); err != nil {
+		t.Fatal(err)
+	}
+	if state.LastConversationID != "conv1" {
+		t.Fatalf("state = %+v", state)
 	}
 }
 
-func TestRicoChat_ContinueWithoutHistoryFails(t *testing.T) {
-	_, _, err := runCmd(t, "rico", "chat", "hi", "--continue", "--no-input", "--api-key", "sk_test")
-	if err == nil || !strings.Contains(err.Error(), "no previous conversation") {
+func TestRicoChat_ResumeRequiresInteractivePicker(t *testing.T) {
+	_, _, err := runCmd(t, "rico", "chat", "hi", "--resume", "--no-input", "--api-key", "sk_test")
+	if err == nil || !strings.Contains(err.Error(), "conversation ID is required") {
 		t.Fatalf("err = %v", err)
 	}
 }

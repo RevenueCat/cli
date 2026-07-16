@@ -43,7 +43,6 @@ Conversations are stored server-side; continue one with --conversation.`,
 type ricoChatOptions struct {
 	prompt         string
 	conversationID string
-	continueLast   bool
 	resume         bool
 	approveTools   bool
 	plain          bool
@@ -51,8 +50,8 @@ type ricoChatOptions struct {
 	baseURL        string
 }
 
-// ricoState is the per-profile memory of the last CLI conversation, enabling
-// `rc rico chat --continue`.
+// ricoState is the per-profile memory of the last CLI conversation; the
+// --resume picker floats it to the top.
 type ricoState struct {
 	LastConversationID string `json:"last_conversation_id"`
 }
@@ -78,7 +77,6 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 		Example: `  rc rico chat
   rc rico chat "why did trial conversions drop this week?"
   rc rico chat "delete the test offering" --approve-tools --yes --json --no-input
-  rc rico chat --continue
   rc rico chat --resume
   rc rico chat --conversation NQ7bGmww8rLcPT9d`,
 		Args: cobra.MaximumNArgs(1),
@@ -90,21 +88,13 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 				}
 				opts.prompt = argAt(args, 0)
 			}
-			if opts.continueLast && opts.conversationID == "" {
-				var state ricoState
-				_ = config.LoadState(rt.Globals.Profile, "rico", &state)
-				if state.LastConversationID == "" {
-					return fmt.Errorf("no previous conversation to continue; start one with rc rico chat")
-				}
-				opts.conversationID = state.LastConversationID
-			}
 			client, err := ricoClient(rt, opts.baseURL)
 			if err != nil {
 				return err
 			}
 			if opts.resume && opts.conversationID == "" {
 				opts.conversationID, err = requireID(rt, "", "conversation", func() ([]PickerItem, error) {
-					return ricoConversationPickerItems(cmd.Context(), client, rt.Config.ProjectID)
+					return ricoConversationPickerItems(cmd.Context(), rt, client)
 				})
 				if err != nil {
 					return err
@@ -137,8 +127,7 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 	}
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "message to send (or RC_RICO_PROMPT)")
 	cmd.Flags().StringVarP(&opts.conversationID, "conversation", "c", opts.conversationID, "conversation to continue (or RC_RICO_CONVERSATION_ID)")
-	cmd.Flags().BoolVarP(&opts.continueLast, "continue", "C", false, "continue the most recent CLI conversation")
-	cmd.Flags().BoolVarP(&opts.resume, "resume", "r", false, "pick a past conversation to resume")
+	cmd.Flags().BoolVarP(&opts.resume, "resume", "r", false, "pick a past conversation to resume (most recent first)")
 	cmd.Flags().BoolVar(&opts.approveTools, "approve-tools", false, "approve tool calls without prompting (destructive ones still need --yes)")
 	cmd.Flags().BoolVar(&opts.plain, "plain", false, "line-based prompt loop instead of the chat window")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait for a reply")
@@ -201,19 +190,23 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 	if err := chat.RunChat(); err != nil {
 		return err
 	}
-	s.rt.Out.Info("Continue this conversation with: rc rico chat --continue")
+	s.rt.Out.Info("Resume this conversation with: rc rico chat -r")
 	return nil
 }
 
-// ricoConversationPickerItems feeds the --resume picker: newest first, with
-// the summary (when the backend has generated one) and last-activity date.
-func ricoConversationPickerItems(ctx context.Context, client *rico.Client, projectID string) ([]PickerItem, error) {
-	conversations, err := client.ListConversations(ctx, projectID)
+// ricoConversationPickerItems feeds the --resume picker: the conversation
+// from the CLI's last chat floats to the top, the rest keep the server's
+// most-recent-first order.
+func ricoConversationPickerItems(ctx context.Context, rt *Runtime, client *rico.Client) ([]PickerItem, error) {
+	conversations, err := client.ListConversations(ctx, rt.Config.ProjectID)
 	if err != nil {
 		return nil, ricoFriendlyError(err)
 	}
-	items := make([]PickerItem, len(conversations))
-	for i, conversation := range conversations {
+	var state ricoState
+	_ = config.LoadState(rt.Globals.Profile, "rico", &state)
+
+	items := make([]PickerItem, 0, len(conversations))
+	for _, conversation := range conversations {
 		summary := conversation.Summary
 		if summary == "" {
 			summary = "(no summary)"
@@ -222,15 +215,21 @@ func ricoConversationPickerItems(ctx context.Context, client *rico.Client, proje
 		if len(updated) >= 10 {
 			updated = updated[:10]
 		}
-		items[i] = PickerItem{
+		item := PickerItem{
 			ID:    conversation.ID,
 			Label: fmt.Sprintf("%s — %s (%s)", summary, updated, conversation.ID),
 		}
+		if conversation.ID == state.LastConversationID {
+			item.Label = "↩ " + item.Label
+			items = append([]PickerItem{item}, items...)
+			continue
+		}
+		items = append(items, item)
 	}
 	return items, nil
 }
 
-// rememberConversation records the conversation for `rc rico chat --continue`.
+// rememberConversation records the conversation so --resume lists it first.
 func (s *ricoSession) rememberConversation() {
 	_ = config.SaveState(s.rt.Globals.Profile, "rico", ricoState{LastConversationID: s.conversationID})
 }
