@@ -244,13 +244,9 @@ func ricoConversationPickerItems(ctx context.Context, rt *Runtime, client *rico.
 		if summary == "" {
 			summary = "(no summary)"
 		}
-		updated := conversation.UpdatedAt
-		if len(updated) >= 10 {
-			updated = updated[:10]
-		}
 		item := PickerItem{
 			ID:    conversation.ID,
-			Label: fmt.Sprintf("%s — %s (%s)", summary, updated, conversation.ID),
+			Label: fmt.Sprintf("%s — %s (%s)", summary, lastActivity(conversation.UpdatedAt), conversation.ID),
 		}
 		if conversation.ID == state.LastConversationID {
 			item.Label = "↩ " + item.Label
@@ -260,6 +256,30 @@ func ricoConversationPickerItems(ctx context.Context, rt *Runtime, client *rico.
 		items = append(items, item)
 	}
 	return items, nil
+}
+
+// lastActivity renders an ISO timestamp as a compact relative age ("3h ago");
+// older than a week falls back to the date, unparseable input passes through.
+func lastActivity(iso string) string {
+	t, err := time.Parse(time.RFC3339Nano, iso)
+	if err != nil {
+		if t, err = time.Parse(time.RFC3339, iso); err != nil {
+			return iso
+		}
+	}
+	age := time.Since(t)
+	switch {
+	case age < time.Minute:
+		return "just now"
+	case age < time.Hour:
+		return fmt.Sprintf("%dm ago", int(age.Minutes()))
+	case age < 24*time.Hour:
+		return fmt.Sprintf("%dh ago", int(age.Hours()))
+	case age < 7*24*time.Hour:
+		return fmt.Sprintf("%dd ago", int(age.Hours()/24))
+	default:
+		return t.Local().Format("2006-01-02")
+	}
 }
 
 // rememberConversation records the conversation so --resume lists it first.
@@ -521,7 +541,7 @@ scope to a single project.`,
 				if summary == "" {
 					summary = "—"
 				}
-				rows = append(rows, []string{c.ID, summary, c.UpdatedAt})
+				rows = append(rows, []string{c.ID, summary, lastActivity(c.UpdatedAt)})
 			}
 			return rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "SUMMARY", "UPDATED"},
