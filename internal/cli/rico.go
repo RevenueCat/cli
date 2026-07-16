@@ -445,6 +445,7 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 		BaseURL:   baseURL,
 		Token:     agentAuthToken(rt),
 		UserAgent: userAgent(rt.Globals.Version),
+		Canary:    canaryName(),
 	}), nil
 }
 

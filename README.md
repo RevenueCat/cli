@@ -333,6 +333,9 @@ without raw API calls.
 | `--no-color` | Disable ANSI color (also respects `$NO_COLOR`) |
 | `--format <expr>` | jq expression applied to `--json` output |
 
+Env-only: `RC_CANARY=<name>` sends an `X-RC-Canary` header on all RevenueCat
+requests, routing them to a canary deployment.
+
 ## Exit codes
 
 | Code | Meaning |

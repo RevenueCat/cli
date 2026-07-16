@@ -379,6 +379,7 @@ func astraClient(rt *Runtime, baseURL string) (*astra.Client, error) {
 		BaseURL:   baseURL,
 		Token:     agentAuthToken(rt),
 		UserAgent: userAgent(rt.Globals.Version),
+		Canary:    canaryName(),
 	}), nil
 }
 

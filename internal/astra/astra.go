@@ -96,6 +96,7 @@ type Client struct {
 	baseURL   string
 	token     string
 	userAgent string
+	canary    string
 	rest      *http.Client
 	stream    *http.Client
 }
@@ -104,6 +105,8 @@ type Options struct {
 	BaseURL   string
 	Token     string
 	UserAgent string
+	// Canary is sent as X-RC-Canary to route requests to a canary deployment.
+	Canary string
 	// HTTPClient overrides both REST and streaming transports (tests).
 	HTTPClient *http.Client
 }
@@ -125,6 +128,7 @@ func NewClient(opts Options) *Client {
 		baseURL:   baseURL,
 		token:     opts.Token,
 		userAgent: opts.UserAgent,
+		canary:    opts.Canary,
 		rest:      rest,
 		stream:    stream,
 	}
@@ -156,6 +160,9 @@ func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.R
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 	if c.userAgent != "" {
 		req.Header.Set("User-Agent", c.userAgent)
+	}
+	if c.canary != "" {
+		req.Header.Set("X-RC-Canary", c.canary)
 	}
 	return req, nil
 }
