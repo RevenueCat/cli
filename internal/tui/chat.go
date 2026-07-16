@@ -348,7 +348,10 @@ func (m *chatModel) renderTranscript() string {
 		b.WriteString(m.renderEntry(entry))
 	}
 	if m.streaming && m.pending != "" {
-		b.WriteString(wordwrapPlain(m.pending, m.width-2) + "\n")
+		// Render in-flight text through the same markdown pipeline as finished
+		// messages so formatting appears as it streams instead of snapping in
+		// at the end of the turn.
+		b.WriteString(m.renderEntry(ChatEntry{Role: ChatAssistant, Text: m.pending}))
 	}
 	return b.String()
 }
@@ -369,14 +372,6 @@ func (m *chatModel) renderEntry(entry ChatEntry) string {
 		}
 		return entry.Text + "\n"
 	}
-}
-
-// wordwrapPlain soft-wraps streaming text before it is markdown-rendered.
-func wordwrapPlain(text string, width int) string {
-	if width < 10 {
-		return text
-	}
-	return lipgloss.NewStyle().Width(width).Render(text)
 }
 
 func (m *chatModel) View() string {

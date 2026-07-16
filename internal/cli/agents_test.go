@@ -32,10 +32,12 @@ func ricoServer(t *testing.T) (*httptest.Server, *[]map[string]any) {
 		inputs = append(inputs, input)
 		w.Header().Set("Content-Type", "text/event-stream")
 		if _, isResume := input["resume"]; isResume {
+			io.WriteString(w, "data: {\"type\":\"TEXT_MESSAGE_START\",\"messageId\":\"m2\",\"role\":\"assistant\"}\n\n")
 			io.WriteString(w, "data: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"m2\",\"delta\":\"Deleted it.\"}\n\n")
 			io.WriteString(w, "data: {\"type\":\"RUN_FINISHED\",\"threadId\":\"conv1\",\"runId\":\"r2\",\"outcome\":{\"type\":\"success\"}}\n\n")
 			return
 		}
+		io.WriteString(w, "data: {\"type\":\"TEXT_MESSAGE_START\",\"messageId\":\"m1\",\"role\":\"assistant\"}\n\n")
 		io.WriteString(w, "data: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"m1\",\"delta\":\"Sure — removing the offering.\"}\n\n")
 		io.WriteString(w, "data: {\"type\":\"TOOL_CALL_START\",\"toolCallId\":\"tc1\",\"toolCallName\":\"delete_offering\"}\n\n")
 		io.WriteString(w, "data: {\"type\":\"RUN_FINISHED\",\"threadId\":\"conv1\",\"runId\":\"r1\",\"outcome\":{\"type\":\"interrupt\",\"interrupts\":[{\"id\":\"int1\",\"reason\":\"tool_approval\",\"toolCallId\":\"tc1\",\"message\":\"Delete offering ofrng_test?\",\"metadata\":{\"is_destructive\":true}}]}}\n\n")
@@ -73,7 +75,7 @@ func TestRicoChat_JSONApprovesDestructiveToolWithYes(t *testing.T) {
 	if envelope.Data.ConversationID != "conv1" || envelope.Data.Status != "success" {
 		t.Fatalf("data = %+v", envelope.Data)
 	}
-	if envelope.Data.Reply != "Sure — removing the offering.Deleted it." {
+	if envelope.Data.Reply != "Sure — removing the offering.\n\nDeleted it." {
 		t.Fatalf("reply = %q", envelope.Data.Reply)
 	}
 	if len(envelope.Data.ToolCalls) != 1 || envelope.Data.ToolCalls[0].Name != "delete_offering" {

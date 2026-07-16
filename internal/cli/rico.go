@@ -322,6 +322,13 @@ func (s *ricoSession) streamRun(ctx context.Context, input rico.RunAgentInput, r
 			return nil, err
 		}
 		switch event.Type {
+		case rico.EventTextMessageStart:
+			// Separate consecutive assistant messages; the stream carries no
+			// whitespace between them.
+			if result.Reply != "" && !strings.HasSuffix(result.Reply, "\n") {
+				result.Reply += "\n\n"
+				sink.Delta("\n\n")
+			}
 		case rico.EventTextMessageContent:
 			result.Reply += event.Delta
 			sink.Delta(event.Delta)
