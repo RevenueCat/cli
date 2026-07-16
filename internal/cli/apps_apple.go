@@ -21,6 +21,7 @@ type appleConfigurationResult struct {
 	ProviderID               int64    `json:"provider_id"`
 	ProviderName             string   `json:"provider_name"`
 	Mode                     string   `json:"mode"`
+	AlreadyConfigured        bool     `json:"already_configured,omitempty"`
 	WouldCreate              []string `json:"would_create,omitempty"`
 	InAppPurchaseKeyAccess   bool     `json:"in_app_purchase_key_access,omitempty"`
 	AppStoreConnectKeyAccess bool     `json:"app_store_connect_key_access,omitempty"`
@@ -154,8 +155,12 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			createAPIKey := !skipAPIKey && (force || !app.AppStore.AppStoreConnectAPIKeyConfigured)
 			needsApple := checkOnly || createInAppKey || createAPIKey
 			if !needsApple && vendorNumber == "" {
+				rt.Out.Success(fmt.Sprintf("App %s already has all Apple keys configured — nothing to create.", appID))
+				rt.Out.Info("Pass --force to create fresh keys anyway (e.g. after revoking the old ones in App Store Connect).")
 				return rt.Out.Render(appleConfigurationResult{
-					AppID: appID,
+					AppID:             appID,
+					Mode:              "noop",
+					AlreadyConfigured: true,
 				})
 			}
 
