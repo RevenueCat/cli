@@ -161,15 +161,22 @@ func DeleteProfile(name string) error {
 	return nil
 }
 
+// configDir is ~/.config/revenuecat on every platform (honoring
+// XDG_CONFIG_HOME), following developer-CLI convention rather than
+// os.UserConfigDir's platform-specific locations, so docs and support can
+// reference one path everywhere. RC_CONFIG_DIR overrides.
 func configDir() (string, error) {
 	if v := os.Getenv("RC_CONFIG_DIR"); v != "" {
 		return v, nil
 	}
-	base, err := os.UserConfigDir()
+	if v := os.Getenv("XDG_CONFIG_HOME"); v != "" {
+		return filepath.Join(v, "revenuecat"), nil
+	}
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, "revenuecat"), nil
+	return filepath.Join(home, ".config", "revenuecat"), nil
 }
 
 func profilePath(profile string) (string, error) {
