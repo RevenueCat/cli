@@ -208,9 +208,24 @@ type RunAgentInput struct {
 	State          any            `json:"state"`
 	Messages       []UserMessage  `json:"messages"`
 	Tools          []struct{}     `json:"tools"`
-	Context        []struct{}     `json:"context"`
+	Context        []ContextEntry `json:"context"`
 	ForwardedProps ForwardedProps `json:"forwardedProps"`
 	Resume         []ResumeEntry  `json:"resume,omitempty"`
+}
+
+// ContextEntry is an AG-UI client context hint forwarded to the agent.
+type ContextEntry struct {
+	Description string `json:"description"`
+	Value       string `json:"value"`
+}
+
+// CLIContext tells Rico it is talking to a terminal rather than the
+// dashboard, so links must be absolute to be clickable.
+var CLIContext = ContextEntry{
+	Description: "client environment",
+	Value: "The user is chatting from the RevenueCat CLI in a terminal, not the dashboard web app. " +
+		"Relative dashboard paths are not clickable here — always give full absolute URLs " +
+		"(https://app.revenuecat.com/...) when referring to dashboard pages.",
 }
 
 type UserMessage struct {
@@ -250,7 +265,7 @@ func ResumeInput(conversationID, runID string, context DashboardContext, resume 
 		RunID:          runID,
 		Messages:       []UserMessage{},
 		Tools:          []struct{}{},
-		Context:        []struct{}{},
+		Context:        []ContextEntry{CLIContext},
 		ForwardedProps: ForwardedProps{DashboardContext: context},
 		Resume:         resume,
 	}

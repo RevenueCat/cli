@@ -26,6 +26,10 @@ type Chat struct {
 	Send func(ctx context.Context, message string, emit *ChatEmitter)
 	// Transcript preloads history (e.g. when resuming a conversation).
 	Transcript []ChatEntry
+	// RelativeLinkBase, when set, prefixes relative markdown link targets
+	// ("[x](/path)") in assistant messages so they are clickable in a
+	// terminal (e.g. "https://app.revenuecat.com").
+	RelativeLinkBase string
 }
 
 type ChatRole int
@@ -378,12 +382,16 @@ func (m *chatModel) renderEntry(entry ChatEntry) string {
 	case ChatNotice:
 		return chatNoticeStyle.Render("  "+entry.Text) + "\n"
 	default: // assistant
+		text := entry.Text
+		if m.cfg.RelativeLinkBase != "" {
+			text = strings.ReplaceAll(text, "](/", "]("+m.cfg.RelativeLinkBase+"/")
+		}
 		if m.markdown != nil {
-			if rendered, err := m.markdown.Render(entry.Text); err == nil {
+			if rendered, err := m.markdown.Render(text); err == nil {
 				return rendered
 			}
 		}
-		return entry.Text + "\n"
+		return text + "\n"
 	}
 }
 

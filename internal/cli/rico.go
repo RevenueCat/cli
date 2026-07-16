@@ -173,10 +173,11 @@ type ricoToolCallInfo struct {
 func (s *ricoSession) chatWindow(ctx context.Context) error {
 	transcript := s.loadTranscript(ctx)
 	chat := tui.Chat{
-		Title:       "Rico",
-		Subtitle:    "conversation " + s.conversationID,
-		Placeholder: "Ask Rico anything about your RevenueCat projects…",
-		Transcript:  transcript,
+		Title:            "Rico",
+		Subtitle:         "conversation " + s.conversationID,
+		Placeholder:      "Ask Rico anything about your RevenueCat projects…",
+		Transcript:       transcript,
+		RelativeLinkBase: envOrDefault("RC_DASHBOARD_URL", "https://app.revenuecat.com"),
 		Send: func(turnCtx context.Context, message string, emit *tui.ChatEmitter) {
 			turnCtx, cancel := context.WithTimeout(turnCtx, s.opts.timeout)
 			defer cancel()
