@@ -8,6 +8,7 @@ require (
 	github.com/charmbracelet/huh v1.0.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/itchyny/gojq v0.12.19
+	github.com/keybase/go-keychain v0.0.1
 	github.com/oapi-codegen/oapi-codegen/v2 v2.7.0
 	github.com/oapi-codegen/runtime v1.4.1
 	github.com/spf13/cobra v1.8.1
