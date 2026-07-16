@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -80,7 +81,24 @@ func (npxSkillsInstaller) Run(cmd *cobra.Command, args []string) error {
 	child.Stdout = cmd.ErrOrStderr()
 	child.Stderr = cmd.ErrOrStderr()
 	child.Stdin = cmd.InOrStdin()
+	if skillsInstallIsGlobal(args) {
+		dir, err := os.MkdirTemp("", "rc-skills-install-")
+		if err != nil {
+			return fmt.Errorf("create isolated skills install directory: %w", err)
+		}
+		defer os.RemoveAll(dir)
+		child.Dir = dir
+	}
 	return child.Run()
+}
+
+func skillsInstallIsGlobal(args []string) bool {
+	for _, arg := range args {
+		if arg == "--global" {
+			return true
+		}
+	}
+	return false
 }
 
 func newSkillsCmd() *cobra.Command {

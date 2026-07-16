@@ -237,7 +237,9 @@ workflows. Global installation is the default so RevenueCat workflows are
 available in every project. The CLI installs the four project-setup skills
 without showing the underlying 36-skill picker; pass `--all` only when the full
 catalog is wanted. `--project` creates the standard project-local skill files
-and lock file instead. Marketplace installations for Codex, Claude Code, Cursor,
+and lock file instead. Global installs run in an isolated temporary directory,
+so they do not add a lock file or hidden skill directory to the customer's
+current repository. Marketplace installations for Codex, Claude Code, Cursor,
 VS Code, and Gemini are documented at
 https://www.revenuecat.com/docs/tools/overview.
 

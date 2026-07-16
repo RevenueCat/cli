@@ -16,6 +16,15 @@ type recordingSkillsInstaller struct {
 	calls int
 }
 
+func TestSkillsInstallGlobalScopeUsesIsolatedWorkingDirectory(t *testing.T) {
+	if !skillsInstallIsGlobal([]string{"skills", "add", officialToolkitSource, "--global"}) {
+		t.Fatal("global install was not detected")
+	}
+	if skillsInstallIsGlobal([]string{"skills", "add", officialToolkitSource}) {
+		t.Fatal("project install was detected as global")
+	}
+}
+
 func TestSkillsShowsCopyReadyPromptsWithoutJSONDump(t *testing.T) {
 	cmd := newSkillsCmdWithInstaller(&recordingSkillsInstaller{})
 	var stdout, stderr bytes.Buffer
