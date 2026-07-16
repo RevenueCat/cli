@@ -131,6 +131,20 @@ func (f *fakeAppleCheckClient) FetchVendorNumber(context.Context, *appleconnect.
 	return "", errors.New("vendor number unavailable in tests")
 }
 
+func (f *fakeAppleCheckClient) AppExists(context.Context, *appleconnect.Session, string) (bool, error) {
+	return true, nil
+}
+
+func (f *fakeAppleCheckClient) RegisterBundleID(context.Context, *appleconnect.Session, string, string) error {
+	f.mutated = true
+	return errors.New("unexpected bundle ID registration")
+}
+
+func (f *fakeAppleCheckClient) CreateApp(context.Context, *appleconnect.Session, string, string, string) error {
+	f.mutated = true
+	return errors.New("unexpected App Store Connect app creation")
+}
+
 func equalStrings(left, right []string) bool {
 	if len(left) != len(right) {
 		return false

@@ -40,9 +40,66 @@ type appleConnectClient interface {
 	CreateInAppPurchaseKey(context.Context, *appleconnect.Session, string) (*appleconnect.Key, error)
 	CreateAppStoreConnectKey(context.Context, *appleconnect.Session, string) (*appleconnect.Key, error)
 	FetchVendorNumber(context.Context, *appleconnect.Session) (string, error)
+	AppExists(context.Context, *appleconnect.Session, string) (bool, error)
+	RegisterBundleID(context.Context, *appleconnect.Session, string, string) error
+	CreateApp(context.Context, *appleconnect.Session, string, string, string) error
 }
 
 type appleConnectFactory func() (appleConnectClient, error)
+
+// ensureAppStoreAppRecord checks that the RevenueCat app's bundle ID has an
+// App Store Connect app record and offers to create it (Developer Portal
+// bundle ID + ASC app, like fastlane produce) when it doesn't. A missing
+// record never blocks key setup — keys are account-level — so declining or
+// non-interactive runs just get a warning.
+func ensureAppStoreAppRecord(ctx context.Context, rt *Runtime, apple appleConnectClient, session *appleconnect.Session, app *api.App) error {
+	bundleID := app.AppStore.BundleID
+	if bundleID == "" {
+		return nil
+	}
+	rt.Out.Info("Checking App Store Connect for bundle ID " + bundleID + "…")
+	exists, err := apple.AppExists(ctx, session, bundleID)
+	if err != nil {
+		rt.Out.Warn("Could not verify the App Store Connect app record: " + err.Error())
+		return nil
+	}
+	if exists {
+		rt.Out.Info("App Store Connect app record found.")
+		return nil
+	}
+	rt.Out.Warn("No App Store Connect app exists for " + bundleID + " — products and TestFlight need one.")
+	if rt.Globals.NoInput || !tui.IsInteractive() {
+		rt.Out.Warn("Create it in App Store Connect, or re-run rc apps apple setup interactively to create it from here.")
+		return nil
+	}
+	create, err := tui.ConfirmDefault(rt.Globals.NoInput,
+		"Create it now? (registers the bundle ID in the Developer Portal and creates the App Store Connect app)", true)
+	if err != nil {
+		return err
+	}
+	if !create {
+		rt.Out.Info("Skipped — create the app in App Store Connect before configuring products.")
+		return nil
+	}
+	name := strings.TrimSpace(strings.TrimSuffix(app.Name, "(App Store)"))
+	sku := bundleID
+	if err := tui.Form(rt.Globals.NoInput).
+		Field(huh.NewInput().Title("App name (shown on the App Store)").Value(&name).Validate(tui.Required("app name"))).
+		Field(huh.NewInput().Title("SKU (internal ID, not visible on the App Store)").Value(&sku).Validate(tui.Required("SKU"))).
+		Run(); err != nil {
+		return err
+	}
+	rt.Out.Info("Registering bundle ID " + bundleID + " in the Developer Portal…")
+	if err := apple.RegisterBundleID(ctx, session, bundleID, name); err != nil {
+		return err
+	}
+	rt.Out.Info("Creating the App Store Connect app…")
+	if err := apple.CreateApp(ctx, session, name, bundleID, sku); err != nil {
+		return err
+	}
+	rt.Out.Success("Created App Store Connect app " + name + " (" + bundleID + ")")
+	return nil
+}
 
 func appleConfiguredLabel(configured bool) string {
 	if configured {
@@ -226,6 +283,9 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						step++
 					}
 					planStep("Sign in to Apple (trusted-device or SMS verification)")
+					if app.AppStore.BundleID != "" {
+						planStep("Verify the App Store Connect app record for " + app.AppStore.BundleID + " (offering to create it if missing)")
+					}
 					if createInAppKey {
 						planStep(fmt.Sprintf("Create in-app purchase key %q in App Store Connect", inAppKeyName))
 					}
@@ -364,6 +424,10 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						}},
 						Raw: result,
 					})
+				}
+
+				if err := ensureAppStoreAppRecord(cmd.Context(), rt, apple, session, app); err != nil {
+					return err
 				}
 
 				if vendorNumber == "" {
