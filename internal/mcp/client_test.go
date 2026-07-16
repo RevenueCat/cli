@@ -2,13 +2,22 @@ package mcp_test
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/revenuecat/cli/internal/mcp"
 )
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
 
 func TestCallToolSendsAuthenticatedJSONRPC(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -74,5 +83,25 @@ func TestCallToolReturnsToolErrors(t *testing.T) {
 	_, err := client.CallTool(context.Background(), "edit-paywall-ai", nil)
 	if err == nil || err.Error() != "Paywall AI Editor: Paywall revision is stale" {
 		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestCallToolExplainsTLSInterception(t *testing.T) {
+	httpClient := &http.Client{
+		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+			return nil, tls.RecordHeaderError{Msg: "first record does not look like a TLS handshake"}
+		}),
+	}
+	client := mcp.NewClient(mcp.Options{Token: "token", HTTPClient: httpClient})
+
+	_, err := client.CallTool(context.Background(), "create-paywall-ai", nil)
+	if err == nil {
+		t.Fatal("expected TLS error")
+	}
+	if !errors.Is(err, tls.RecordHeaderError{Msg: "first record does not look like a TLS handshake"}) {
+		t.Fatalf("wrapped error = %v", err)
+	}
+	if got := err.Error(); !strings.Contains(got, "proxy or content filter") || !strings.Contains(got, "Allowlist") {
+		t.Fatalf("error = %q", got)
 	}
 }

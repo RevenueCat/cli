@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -104,6 +106,10 @@ func (c *Client) CallTool(ctx context.Context, name string, arguments map[string
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		var recordHeaderError tls.RecordHeaderError
+		if errors.As(err, &recordHeaderError) {
+			return nil, fmt.Errorf("calling RevenueCat MCP: TLS handshake failed; a proxy or content filter may be intercepting mcp.revenuecat.ai. Allowlist the domain or switch networks, then retry: %w", err)
+		}
 		return nil, fmt.Errorf("calling RevenueCat MCP: %w", err)
 	}
 	defer resp.Body.Close()
