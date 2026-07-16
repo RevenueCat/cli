@@ -114,6 +114,8 @@ func inferCapabilities(c *cobra.Command) []string {
 		"show":      "show",
 		"get":       "show",
 		"create":    "create",
+		"generate":  "generate",
+		"edit":      "edit",
 		"update":    "update",
 		"delete":    "delete",
 		"archive":   "archive",

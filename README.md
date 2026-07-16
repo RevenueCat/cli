@@ -65,7 +65,7 @@ rc charts show mrr
 | **Offerings** | `list` · `show` · `verify` · `preview` · `create` · `update` · `set-current` · `archive` |
 | **Packages** | `list` (across all offerings) · `show` · `products` · `create` · `update` · `delete` · `attach` · `detach` |
 | **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `store sync` |
-| **Paywalls** | `list` · `show` · `create` · `publish` · `unpublish` · `delete` |
+| **Paywalls** | `list` · `show` · `create` · `generate` · `edit` · `task` · `publish` · `unpublish` · `delete` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
 | **Apps** | `list` · `show` · `create` · `update` · `delete` · `apple check` · `apple setup` |
 | **Audit log** | `rc audit` with `--limit` and `--since` |
@@ -75,6 +75,35 @@ rc charts show mrr
 rc --help          # see everything
 rc customer --help # see subcommands for any noun
 ```
+
+### Generate and edit paywalls with AI
+
+`rc` can use RevenueCat's Paywall AI Editor through the authenticated Cloud MCP
+service. Human-friendly commands prompt for the direction and wait for the draft:
+
+```bash
+rc paywalls generate
+rc paywalls edit pw_abc
+```
+
+Agents provide the same inputs explicitly. The result is always an unpublished
+draft; review and publishing remain separate actions:
+
+```bash
+rc paywalls generate ofrng_default \
+  --prompt "A calm annual-first paywall using our blue brand palette" \
+  --context "Meditation app for busy parents" --json --no-input
+
+rc paywalls edit pw_abc \
+  --prompt "Emphasize annual savings and replace the hero image" \
+  --json --no-input
+
+rc paywalls publish pw_abc --yes --json --no-input
+```
+
+Pass `--async` to return a durable task ID immediately, then use `rc paywalls
+task <task-id>` or `--wait`. The CLI sends the active RevenueCat credential to
+Cloud MCP; Astra credentials are never stored locally.
 
 ### Verify a Test Store setup
 

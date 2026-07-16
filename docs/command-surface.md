@@ -188,6 +188,9 @@ rc products store discard <plan-id>                      # discard without apply
 rc paywalls list
 rc paywalls show <id>
 rc paywalls create                                       # create an offering-attached draft
+rc paywalls generate [offering-id]                       # create a draft with Paywall AI Editor; waits by default
+rc paywalls edit [id]                                    # edit a draft with Paywall AI Editor; waits by default
+rc paywalls task <task-id>                               # inspect or wait for an async AI task
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes
 rc paywalls delete <id>
