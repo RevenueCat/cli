@@ -58,6 +58,7 @@ func (r *Runtime) API() (*api.Client, error) {
 		APIKey:    r.Config.BearerToken(), // works for both API keys and OAuth tokens
 		BaseURL:   r.Config.BaseURL,
 		UserAgent: userAgent(r.Globals.Version),
+		Canary:    canaryName(),
 	})
 	return r.client, nil
 }
@@ -92,6 +93,12 @@ func oauthClientID() string {
 		return v
 	}
 	return api.DefaultOAuthClientID
+}
+
+// canaryName returns the X-RC-Canary routing value from RC_CANARY, so any
+// command can target a canary deployment (e.g. RC_CANARY=my-canary rc ...).
+func canaryName() string {
+	return os.Getenv("RC_CANARY")
 }
 
 func userAgent(version string) string {

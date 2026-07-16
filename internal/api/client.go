@@ -29,6 +29,8 @@ type Options struct {
 	BaseURL    string
 	HTTPClient *http.Client
 	UserAgent  string
+	// Canary is sent as X-RC-Canary to route requests to a canary deployment.
+	Canary string
 }
 
 type cacheEntry struct {
@@ -41,6 +43,7 @@ type Client struct {
 	apiKey    string
 	http      *http.Client
 	userAgent string
+	canary    string
 	cache     sync.Map // url string → cacheEntry; GET-only, session-scoped
 
 	Projects        *ProjectsService
@@ -77,7 +80,7 @@ func NewClient(opts Options) *Client {
 	if ua == "" {
 		ua = "revenuecat-cli/dev"
 	}
-	c := &Client{baseURL: u, apiKey: opts.APIKey, http: hc, userAgent: ua}
+	c := &Client{baseURL: u, apiKey: opts.APIKey, http: hc, userAgent: ua, canary: opts.Canary}
 	c.Projects = &ProjectsService{c: c}
 	c.Customers = &CustomersService{c: c}
 	c.Entitlements = &EntitlementsService{c: c}
@@ -121,6 +124,9 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+	if c.canary != "" {
+		req.Header.Set("X-RC-Canary", c.canary)
+	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -228,6 +234,9 @@ func (c *Client) Raw(ctx context.Context, method, path string, body []byte) ([]b
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+	if c.canary != "" {
+		req.Header.Set("X-RC-Canary", c.canary)
+	}
 	if len(body) > 0 {
 		req.Header.Set("Content-Type", "application/json")
 	}
