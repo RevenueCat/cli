@@ -13,6 +13,7 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/appleconnect"
+	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -194,21 +195,24 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			needsApple := checkOnly || createInAppKey || createAPIKey
 			if !needsApple && vendorNumber == "" {
 				rt.Out.Success("Nothing to create — existing keys were kept.")
-				return rt.Out.Render(appleConfigurationResult{
-					AppID:             appID,
-					Mode:              "noop",
-					AlreadyConfigured: true,
-				})
+				if rt.Out.IsJSON() {
+					return rt.Out.Render(appleConfigurationResult{
+						AppID:             appID,
+						Mode:              "noop",
+						AlreadyConfigured: true,
+					})
+				}
+				return nil
 			}
 
 			if needsApple {
 				if !rt.Globals.NoInput && tui.IsInteractive() {
 					if checkOnly {
 						rt.Out.Info(appleCheckInstructions)
+						rt.Out.Info(privacy)
 					} else {
-						rt.Out.Info(appleSetupInstructions)
+						rt.Out.Info("Credentials go directly to Apple — never to RevenueCat. New private keys are uploaded to RevenueCat and never stored locally or shown.")
 					}
-					rt.Out.Info(privacy)
 				}
 				if !checkOnly && !rt.Out.IsJSON() {
 					rt.Out.Info("Plan:")
@@ -337,7 +341,23 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						result.WouldCreate = append(result.WouldCreate, string(appleconnect.AppStoreConnectKey))
 					}
 					rt.Out.Success("Apple check succeeded; no keys were created and RevenueCat was not changed")
-					return rt.Out.Render(result)
+					wouldCreate := "nothing — all keys configured"
+					if len(result.WouldCreate) > 0 {
+						wouldCreate = strings.Join(result.WouldCreate, ", ")
+					}
+					return rt.Out.RenderCard(output.Card{
+						Title:    fmt.Sprintf("%s (%s)", app.Name, appID),
+						Subtitle: fmt.Sprintf("App Store Connect team %s (%d)", result.ProviderName, result.ProviderID),
+						Sections: []output.CardSection{{
+							Heading: "Apple access",
+							Lines: []output.CardLine{
+								{Key: "In-app purchase keys", Value: "accessible"},
+								{Key: "App Store Connect keys", Value: "accessible"},
+								{Key: "A real run would create", Value: wouldCreate},
+							},
+						}},
+						Raw: result,
+					})
 				}
 
 				if vendorNumber == "" {
@@ -408,8 +428,34 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				return appleConfigurationError(fmt.Errorf("upload Apple configuration to RevenueCat: %w", err), createdIDs)
 			}
 			result.VendorNumberConfigured = vendorNumber != ""
-			rt.Out.Success(fmt.Sprintf("Uploaded the new keys to RevenueCat app %s", appID))
-			return rt.Out.Render(result)
+			rt.Out.Success("Apple credentials configured")
+			subtitle := ""
+			if result.ProviderName != "" {
+				subtitle = fmt.Sprintf("App Store Connect team %s (%d)", result.ProviderName, result.ProviderID)
+			}
+			keptOrCreated := func(id string) string {
+				if id == "" {
+					return "kept existing"
+				}
+				return id + " (created)"
+			}
+			vendorLine := "unchanged"
+			if vendorNumber != "" {
+				vendorLine = vendorNumber
+			}
+			return rt.Out.RenderCard(output.Card{
+				Title:    fmt.Sprintf("%s (%s)", app.Name, appID),
+				Subtitle: subtitle,
+				Sections: []output.CardSection{{
+					Heading: "Configured",
+					Lines: []output.CardLine{
+						{Key: "In-app purchase key", Value: keptOrCreated(result.InAppPurchaseKeyID)},
+						{Key: "App Store Connect API key", Value: keptOrCreated(result.AppStoreConnectAPIKeyID)},
+						{Key: "Vendor number", Value: vendorLine},
+					},
+				}},
+				Raw: result,
+			})
 		},
 	}
 	cmd.Flags().StringVar(&appleID, "apple-id", "", "Apple Account email (env: RC_APPLE_ID)")
