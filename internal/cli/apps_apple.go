@@ -322,6 +322,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					if err != nil {
 						return appleConfigurationError(err, createdIDs)
 					}
+					rt.Out.Success(fmt.Sprintf("Created in-app purchase key %s (%q) in App Store Connect", key.ID, inAppKeyName))
 					createdIDs = append(createdIDs, string(key.Kind)+":"+key.ID)
 					result.InAppPurchaseKeyID = key.ID
 					update.AppStore.SubscriptionPrivateKey = &key.PrivateKey
@@ -333,6 +334,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					if err != nil {
 						return appleConfigurationError(err, createdIDs)
 					}
+					rt.Out.Success(fmt.Sprintf("Created App Store Connect API key %s (%q)", key.ID, apiKeyName))
 					createdIDs = append(createdIDs, string(key.Kind)+":"+key.ID)
 					result.AppStoreConnectAPIKeyID = key.ID
 					update.AppStore.AppStoreConnectAPIKey = &key.PrivateKey
@@ -347,7 +349,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				return appleConfigurationError(fmt.Errorf("upload Apple configuration to RevenueCat: %w", err), createdIDs)
 			}
 			result.VendorNumberConfigured = vendorNumber != ""
-			rt.Out.Success(fmt.Sprintf("Configured Apple credentials for app %s", appID))
+			rt.Out.Success(fmt.Sprintf("Uploaded the new keys to RevenueCat app %s", appID))
 			return rt.Out.Render(result)
 		},
 	}
