@@ -126,6 +126,7 @@ rc customer transfer <from> --to <id>
 rc customer override-offering <id> --offering <id>
 rc customer clear-override <id>
 rc customer restore-google <id> --token <t>
+rc customer simulate-purchase                            # Test Store only; --app-id/--product/--app-user-id + confirmation/--yes
 rc customer subscriptions <id>
 rc customer purchases <id>
 rc customer entitlements <id>                            # active
@@ -149,6 +150,8 @@ rc entitlements detach <id> <product-id> [...]
 # Offerings + packages
 rc offerings list
 rc offerings show <id>
+rc offerings verify [id]                                 # graph: packages → products/prices → entitlements + paywall state
+rc offerings preview [app-id]                           # SDK-eye v1 offerings response; --app-user-id/--public-api-key
 rc offerings create
 rc offerings update <id>
 rc offerings set-current <id>                            # make this the SDK's current offering; confirmation/--yes
@@ -160,6 +163,7 @@ rc packages show <package-id>
 rc packages create <offering-id>
 rc packages update <package-id>
 rc packages delete <package-id>
+rc packages products <package-id>                       # list attached products and eligibility criteria
 rc packages attach <package-id> <product-id> [...]
 rc packages detach <package-id> <product-id> [...]
 
@@ -183,7 +187,8 @@ rc products store discard <plan-id>                      # discard without apply
 # Paywalls
 rc paywalls list
 rc paywalls show <id>
-rc paywalls create                                       # create an offering-attached draft; publish in dashboard
+rc paywalls create                                       # create an offering-attached draft
+rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls delete <id>
 
 # Subscriptions

@@ -145,8 +145,12 @@ endpoints:
   # Paywalls
   - method: GET
     path: /projects/{project_id}/paywalls
+  - method: POST
+    path: /projects/{project_id}/paywalls
   - method: GET
     path: /projects/{project_id}/paywalls/{paywall_id}
+  - method: POST
+    path: /projects/{project_id}/paywalls/{paywall_id}/actions/publish
   - method: DELETE
     path: /projects/{project_id}/paywalls/{paywall_id}
 

@@ -244,7 +244,16 @@ func TestAuthSignupHelpExplainsCredentialHandling(t *testing.T) {
 func TestAuthStatusAndLogoutOnlyRenderStructuredDataWithJSON(t *testing.T) {
 	configDir := t.TempDir()
 	t.Setenv("RC_CONFIG_DIR", configDir)
-	if err := config.Save("", &config.Config{TokenType: "oauth", AccessToken: "access", AccountEmail: "dev@example.com", AccountName: "Example Developer", ProjectID: "proj_test"}); err != nil {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/projects" {
+			http.Error(w, "unexpected request", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"list","items":[{"id":"proj_test","name":"Test","created_at":1,"object":"project"}]}`)
+	}))
+	t.Cleanup(server.Close)
+	if err := config.Save("", &config.Config{TokenType: "oauth", AccessToken: "access", AccountEmail: "dev@example.com", AccountName: "Example Developer", ProjectID: "proj_test", BaseURL: server.URL}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -274,7 +283,7 @@ func TestAuthStatusAndLogoutOnlyRenderStructuredDataWithJSON(t *testing.T) {
 	if errb != "" {
 		t.Fatalf("JSON status wrote stderr: %s", errb)
 	}
-	for _, want := range []string{`"authenticated": true`, `"method": "oauth"`, `"account_email": "dev@example.com"`, `"account_name": "Example Developer"`, `"project_id": "proj_test"`} {
+	for _, want := range []string{`"authenticated": true`, `"method": "oauth"`, `"account_email": "dev@example.com"`, `"account_name": "Example Developer"`, `"project_id": "proj_test"`, `"project_status": "valid"`} {
 		if !strings.Contains(out, want) {
 			t.Errorf("JSON status missing %s:\n%s", want, out)
 		}
@@ -296,6 +305,27 @@ func TestAuthStatusAndLogoutOnlyRenderStructuredDataWithJSON(t *testing.T) {
 	}
 	if profile.AccountEmail != "" || profile.AccountName != "" {
 		t.Fatalf("logout retained cached identity: %+v", profile)
+	}
+}
+
+func TestAuthStatusFlagsDanglingProject(t *testing.T) {
+	configDir := t.TempDir()
+	t.Setenv("RC_CONFIG_DIR", configDir)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"list","items":[]}`)
+	}))
+	t.Cleanup(server.Close)
+	if err := config.Save("", &config.Config{APIKey: "sk_test", ProjectID: "proj_gone", BaseURL: server.URL}); err != nil {
+		t.Fatal(err)
+	}
+
+	out, _, err := runCmdInConfigDir(t, configDir, "auth", "status", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, `"project_status": "not_found"`) {
+		t.Fatalf("unexpected status: %s", out)
 	}
 }
 

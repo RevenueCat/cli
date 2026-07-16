@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -20,6 +21,7 @@ func newPaywallsCmd() *cobra.Command {
 		newPaywallsListCmd(),
 		newPaywallsShowCmd(),
 		newPaywallsCreateCmd(),
+		newPaywallsPublishCmd(),
 		newPaywallsDeleteCmd(),
 	)
 	return cmd
@@ -34,9 +36,8 @@ func newPaywallsCreateCmd() *cobra.Command {
 		Long: `Creates a draft paywall using RevenueCat's default template and attaches it
 to an offering. The offering must already contain at least one package.
 
-The public API creates a draft but does not expose publishing. After creation,
-publish the reviewed paywall in the RevenueCat dashboard before claiming it is
-ready to render in production.`,
+After creation, review the draft and run ` + "`rc paywalls publish <id>`" + ` to make
+it available to RevenueCat SDKs.`,
 		Example: `  rc paywalls create --offering-id ofrng_default
   rc paywalls create --offering-id ofrng_default --json --no-input`,
 		Args: cobra.NoArgs,
@@ -64,7 +65,7 @@ ready to render in production.`,
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Created draft paywall %s", paywall.ID))
-			rt.Out.Info("Review and publish this paywall in the RevenueCat dashboard.")
+			rt.Out.Info(fmt.Sprintf("Review it, then publish with: rc paywalls publish %s", paywall.ID))
 			return rt.Out.Render(paywall)
 		},
 	}
@@ -94,8 +95,8 @@ func newPaywallsListCmd() *cobra.Command {
 			rows := make([][]string, 0, len(page.Items))
 			for _, p := range page.Items {
 				published := "—"
-				if p.PublishedAt != 0 {
-					published = formatMillis(int64(p.PublishedAt))
+				if p.PublishedAt != nil {
+					published = formatMillis(int64(*p.PublishedAt))
 				}
 				rows = append(rows, []string{p.ID, p.OfferingID, formatMillis(int64(p.CreatedAt)), published})
 			}
@@ -106,6 +107,76 @@ func newPaywallsListCmd() *cobra.Command {
 			})
 		},
 	}
+}
+
+func newPaywallsPublishCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "publish [id]",
+		Short: "Publish the current paywall draft",
+		Long: `Publishes the current draft and makes its components available to RevenueCat SDKs.
+
+This changes the customer-facing paywall. Review the draft before publishing.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc paywalls publish pw_abc
+  rc paywalls publish pw_abc --yes --no-input --json`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			paywallID, err := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+				return paywallPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			if !rt.Globals.AssumeYes {
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Publish paywall %q?", paywallID))
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return fmt.Errorf("aborted")
+				}
+			}
+			paywall, err := client.Paywalls.Publish(cmd.Context(), projectID, paywallID)
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Published %s", paywall.ID))
+			return rt.Out.Render(paywall)
+		},
+	}
+}
+
+func paywallPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
+	page, err := client.Paywalls.List(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PickerItem, len(page.Items))
+	for i, paywall := range page.Items {
+		label := paywall.Name
+		if label == "" {
+			label = paywall.ID
+		}
+		items[i] = PickerItem{ID: paywall.ID, Label: label}
+	}
+	return items, nil
+}
+
+func formatPublishedAt(publishedAt *api.Millis) string {
+	if publishedAt == nil {
+		return "draft"
+	}
+	return formatMillis(int64(*publishedAt))
 }
 
 func newPaywallsShowCmd() *cobra.Command {

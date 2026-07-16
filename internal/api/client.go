@@ -232,6 +232,9 @@ func (c *Client) Raw(ctx context.Context, method, path string, body []byte) ([]b
 		return nil, 0, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return nil, resp.StatusCode, parseError(resp)
+	}
 	data, err := io.ReadAll(resp.Body)
 	return data, resp.StatusCode, err
 }

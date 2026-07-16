@@ -71,7 +71,7 @@ func TestAppsKeys_ReturnsTypedPublicSDKKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, `"key": "appl_test"`) || !strings.Contains(out, `"environment": "production"`) {
+	if !strings.Contains(out, `"key": "appl_test"`) || !strings.Contains(out, `"environment": "production"`) || !strings.Contains(out, `"key_type": "App Store"`) {
 		t.Fatalf("unexpected SDK key output: %s", out)
 	}
 }
@@ -208,7 +208,34 @@ func TestPaywallsCreate_CreatesDraftForOffering(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, `"id": "pw_test"`) || !strings.Contains(out, `"offering_id": "ofrng_default"`) {
+	if !strings.Contains(out, `"id": "pw_test"`) || !strings.Contains(out, `"offering_id": "ofrng_default"`) || !strings.Contains(out, `"published_at": null`) {
+		t.Fatalf("unexpected output: %s", out)
+	}
+}
+
+func TestPaywallsPublishRequiresConfirmationAndReturnsState(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/paywalls/pw_test/actions/publish" {
+			http.Error(w, "unexpected request", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"pw_test","name":"Default Paywall","offering_id":"ofrng_default","created_at":1,"published_at":2,"object":"paywall"}`)
+	}))
+	t.Cleanup(server.Close)
+
+	_, _, err := runProjectSetupCommand(t, server.URL,
+		"paywalls", "publish", "pw_test", "--json", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "pass --yes") {
+		t.Fatalf("error = %v, want --yes guidance", err)
+	}
+
+	out, _, err := runProjectSetupCommand(t, server.URL,
+		"paywalls", "publish", "pw_test", "--yes", "--json", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, `"published_at": 2`) {
 		t.Fatalf("unexpected output: %s", out)
 	}
 }

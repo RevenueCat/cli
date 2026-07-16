@@ -312,11 +312,12 @@ func newPackagesProductsCmd() *cobra.Command {
 				return err
 			}
 			rows := make([][]string, 0, len(page.Items))
-			for _, p := range page.Items {
-				rows = append(rows, []string{p.ID, derefStr(p.DisplayName), p.StoreIdentifier})
+			for _, association := range page.Items {
+				p := association.Product
+				rows = append(rows, []string{p.ID, derefStr(p.DisplayName), p.StoreIdentifier, string(association.EligibilityCriteria)})
 			}
 			return rt.Out.RenderTable(output.Table{
-				Columns: []string{"ID", "DISPLAY NAME", "STORE ID"},
+				Columns: []string{"ID", "DISPLAY NAME", "STORE ID", "ELIGIBILITY"},
 				Rows:    rows,
 				Raw:     page,
 			})
@@ -356,7 +357,12 @@ func newPackagesAttachCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "attach <package-id> <product-id> [product-id...]",
 		Short: "Attach products to a package",
-		Args:  cobra.MinimumNArgs(2),
+		Long: `Attach one or more products to a package. Positional arguments are the
+package ID followed by every product ID to attach. Products default to the
+"all" eligibility criteria, which applies to every supported SDK version.`,
+		Example: `  rc packages attach pkg_monthly prod_test_monthly
+  rc packages attach pkg_monthly prod_ios_monthly prod_android_monthly --json --no-input`,
+		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -380,7 +386,10 @@ func newPackagesDetachCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "detach <package-id> <product-id> [product-id...]",
 		Short: "Detach products from a package",
-		Args:  cobra.MinimumNArgs(2),
+		Long: `Detach one or more products from a package. Positional arguments are the
+package ID followed by every product ID to detach.`,
+		Example: `  rc packages detach pkg_monthly prod_legacy --json --no-input`,
+		Args:    cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

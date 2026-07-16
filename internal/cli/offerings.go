@@ -2,7 +2,9 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -21,6 +23,8 @@ func newOfferingsCmd() *cobra.Command {
 	cmd.AddCommand(
 		newOfferingsListCmd(),
 		newOfferingsShowCmd(),
+		newOfferingsVerifyCmd(),
+		newOfferingsPreviewCmd(),
 		newOfferingsCreateCmd(),
 		newOfferingsUpdateCmd(),
 		newOfferingsSetCurrentCmd(),
@@ -29,6 +33,215 @@ func newOfferingsCmd() *cobra.Command {
 		newOfferingsRestoreCmd(),
 		newOfferingsPackagesCmd(),
 	)
+	return cmd
+}
+
+type offeringVerification struct {
+	Offering     api.Offering          `json:"offering"`
+	Packages     []verifiedPackage     `json:"packages"`
+	Paywalls     []api.Paywall         `json:"paywalls"`
+	Entitlements []verifiedEntitlement `json:"entitlements"`
+	Issues       []string              `json:"issues"`
+}
+
+type verifiedPackage struct {
+	Package  api.Package       `json:"package"`
+	Products []verifiedProduct `json:"products"`
+}
+
+type verifiedProduct struct {
+	Product             api.Product             `json:"product"`
+	EligibilityCriteria api.EligibilityCriteria `json:"eligibility_criteria"`
+	Prices              []api.ProductPrice      `json:"prices,omitempty"`
+	PriceError          string                  `json:"price_error,omitempty"`
+}
+
+type verifiedEntitlement struct {
+	Entitlement api.Entitlement `json:"entitlement"`
+	Products    []api.Product   `json:"products"`
+}
+
+func newOfferingsVerifyCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "verify [id]",
+		Short: "Verify the complete configuration served by an offering",
+		Long: `Builds one read-only graph containing the offering, its packages, attached
+products and prices, matching entitlements, and attached paywall publication state.
+The issues array calls out missing links that would prevent a working purchase flow.`,
+		Example: `  rc offerings verify ofrng_default --json --no-input`,
+		Args:    cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			offeringID, err := requireID(rt, argAt(args, 0), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			verification, err := verifyOffering(cmd.Context(), client, projectID, offeringID)
+			if err != nil {
+				return err
+			}
+			return rt.Out.Render(verification)
+		},
+	}
+}
+
+func verifyOffering(ctx context.Context, client *api.Client, projectID, offeringID string) (*offeringVerification, error) {
+	offering, err := client.Offerings.Get(ctx, projectID, offeringID)
+	if err != nil {
+		return nil, err
+	}
+	result := &offeringVerification{Offering: *offering, Packages: []verifiedPackage{}, Paywalls: []api.Paywall{}, Entitlements: []verifiedEntitlement{}, Issues: []string{}}
+	productIDs := map[string]bool{}
+
+	packages, err := client.Packages.List(ctx, projectID, offeringID)
+	if err != nil {
+		return nil, err
+	}
+	if len(packages.Items) == 0 {
+		result.Issues = append(result.Issues, "offering has no packages")
+	}
+	for _, pkg := range packages.Items {
+		entry := verifiedPackage{Package: pkg, Products: []verifiedProduct{}}
+		associations, err := client.Packages.ListProducts(ctx, projectID, pkg.ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(associations.Items) == 0 {
+			result.Issues = append(result.Issues, fmt.Sprintf("package %s has no attached products", pkg.ID))
+		}
+		for _, association := range associations.Items {
+			productIDs[association.Product.ID] = true
+			product := verifiedProduct{Product: association.Product, EligibilityCriteria: association.EligibilityCriteria}
+			prices, priceErr := client.Products.ListPrices(ctx, projectID, association.Product.ID)
+			if priceErr != nil {
+				product.PriceError = priceErr.Error()
+			} else {
+				product.Prices = prices
+			}
+			entry.Products = append(entry.Products, product)
+		}
+		result.Packages = append(result.Packages, entry)
+	}
+
+	paywalls, err := client.Paywalls.List(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	for _, paywall := range paywalls.Items {
+		if paywall.OfferingID == offeringID {
+			result.Paywalls = append(result.Paywalls, paywall)
+			if paywall.PublishedAt == nil {
+				result.Issues = append(result.Issues, fmt.Sprintf("paywall %s is still a draft", paywall.ID))
+			}
+		}
+	}
+	if len(result.Paywalls) == 0 {
+		result.Issues = append(result.Issues, "offering has no attached paywall")
+	}
+
+	entitlements, err := client.Entitlements.List(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	coveredProducts := map[string]bool{}
+	for _, entitlement := range entitlements.Items {
+		products, err := client.Entitlements.ListProducts(ctx, projectID, entitlement.ID)
+		if err != nil {
+			return nil, err
+		}
+		entry := verifiedEntitlement{Entitlement: entitlement, Products: []api.Product{}}
+		for _, product := range products.Items {
+			if productIDs[product.ID] {
+				entry.Products = append(entry.Products, product)
+				coveredProducts[product.ID] = true
+			}
+		}
+		if len(entry.Products) > 0 {
+			result.Entitlements = append(result.Entitlements, entry)
+		}
+	}
+	for productID := range productIDs {
+		if !coveredProducts[productID] {
+			result.Issues = append(result.Issues, fmt.Sprintf("product %s is not attached to an entitlement", productID))
+		}
+	}
+	return result, nil
+}
+
+func newOfferingsPreviewCmd() *cobra.Command {
+	var appUserID, publicAPIKey string
+	appUserIDDefault := os.Getenv("RC_APP_USER_ID")
+	if appUserIDDefault == "" {
+		appUserIDDefault = "rc-cli-preview"
+	}
+	cmd := &cobra.Command{
+		Use:   "preview [app-id]",
+		Short: "Fetch the offerings payload exactly as an SDK sees it",
+		Long: `Calls the RevenueCat v1 SDK offerings endpoint with an app's public SDK key.
+Use this to verify the current offering, package-product mapping, and published
+paywall components. A null paywall_components value means the SDK is receiving
+the fallback rather than a published dashboard paywall.`,
+		Example: `  rc offerings preview app_test --json --no-input
+  rc offerings preview app_ios --public-api-key appl_... --app-user-id preview-user --json --no-input`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
+				apps, err := client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(apps.Items))
+				for i, app := range apps.Items {
+					items[i] = PickerItem{ID: app.ID, Label: fmt.Sprintf("%s  (%s)", app.Name, app.Type)}
+				}
+				return items, nil
+			})
+			if err != nil {
+				return err
+			}
+			if publicAPIKey == "" {
+				keys, err := client.Apps.PublicAPIKeys(cmd.Context(), projectID, appID)
+				if err != nil {
+					return err
+				}
+				if len(keys.Items) != 1 {
+					return fmt.Errorf("app has %d public SDK keys; pass --public-api-key to choose one", len(keys.Items))
+				}
+				publicAPIKey = keys.Items[0].Key
+			}
+			sdk := api.NewSDKService(rt.Config.BaseURL, nil, userAgent(rt.Globals.Version))
+			raw, err := sdk.Offerings(cmd.Context(), publicAPIKey, appUserID)
+			if err != nil {
+				return err
+			}
+			var payload any
+			if err := json.Unmarshal(raw, &payload); err != nil {
+				return fmt.Errorf("decoding SDK offerings response: %w", err)
+			}
+			return rt.Out.Render(payload)
+		},
+	}
+	cmd.Flags().StringVar(&appUserID, "app-user-id", appUserIDDefault, "app user ID sent to the SDK endpoint (or RC_APP_USER_ID)")
+	cmd.Flags().StringVar(&publicAPIKey, "public-api-key", os.Getenv("RC_PUBLIC_API_KEY"), "public SDK API key; auto-selected when the app has one (or RC_PUBLIC_API_KEY)")
 	return cmd
 }
 
@@ -420,7 +633,7 @@ func offeringToItem(ctx context.Context, client *api.Client, projectID string, o
 					pw := pw
 					item := paywallToItem(projectID, pw)
 					sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
-						Cells: []string{pw.Name, formatMillis(int64(pw.PublishedAt))},
+						Cells: []string{pw.Name, formatPublishedAt(pw.PublishedAt)},
 						Item:  &item,
 					})
 				}
@@ -456,8 +669,8 @@ func packageToItem(ctx context.Context, client *api.Client, projectID, offeringI
 				Cols:  []string{"DISPLAY NAME", "STORE ID", "TYPE", "STATE"},
 				Empty: "no products attached",
 			}
-			for _, prod := range prods.Items {
-				prod := prod
+			for _, association := range prods.Items {
+				prod := association.Product
 				item := productToItem(prod)
 				sec.Rows = append(sec.Rows, tui.BrowserSectionRow{
 					Cells: []string{derefStr(prod.DisplayName), prod.StoreIdentifier, string(prod.Type), string(prod.State)},
@@ -478,14 +691,14 @@ func paywallToItem(projectID string, pw api.Paywall) tui.BrowserItem {
 	return tui.BrowserItem{
 		ID:     pw.ID,
 		Label:  pw.Name,
-		Meta:   formatMillis(int64(pw.PublishedAt)),
+		Meta:   formatPublishedAt(pw.PublishedAt),
 		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings", dashboardProjectID(projectID)),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: pw.ID},
 			{Key: "Name", Value: pw.Name},
 			{Key: "Auto-scale fonts", Value: scaleFonts},
 			{Key: "Created", Value: formatMillis(int64(pw.CreatedAt))},
-			{Key: "Published", Value: formatMillis(int64(pw.PublishedAt))},
+			{Key: "Published", Value: formatPublishedAt(pw.PublishedAt)},
 		},
 	}
 }

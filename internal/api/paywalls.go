@@ -8,13 +8,13 @@ import (
 type PaywallsService struct{ c *Client }
 
 type Paywall struct {
-	ID                         string `json:"id"`
-	Name                       string `json:"name,omitempty"`
-	OfferingID                 string `json:"offering_id,omitempty"`
-	AutomaticallyScaleFontSize bool   `json:"automatically_scale_font_size,omitempty"`
-	CreatedAt                  Millis `json:"created_at,omitempty"`
-	PublishedAt                Millis `json:"published_at,omitempty"`
-	Object                     string `json:"object,omitempty"`
+	ID                         string  `json:"id"`
+	Name                       string  `json:"name,omitempty"`
+	OfferingID                 string  `json:"offering_id,omitempty"`
+	AutomaticallyScaleFontSize bool    `json:"automatically_scale_font_size,omitempty"`
+	CreatedAt                  Millis  `json:"created_at,omitempty"`
+	PublishedAt                *Millis `json:"published_at"`
+	Object                     string  `json:"object,omitempty"`
 }
 
 type PaywallCreate struct {
@@ -37,6 +37,13 @@ func (s *PaywallsService) Get(ctx context.Context, projectID, id string) (*Paywa
 func (s *PaywallsService) Create(ctx context.Context, projectID string, body PaywallCreate) (*Paywall, error) {
 	var out Paywall
 	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "paywalls"), body, &out)
+	return &out, err
+}
+
+func (s *PaywallsService) Publish(ctx context.Context, projectID, id string) (*Paywall, error) {
+	var out Paywall
+	path := encodePath("projects", projectID, "paywalls", id, "actions") + "/publish"
+	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
 

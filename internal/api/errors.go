@@ -42,7 +42,7 @@ func parseError(resp *http.Response) error {
 	body, _ := io.ReadAll(resp.Body)
 	e := &APIError{Status: resp.StatusCode, RequestID: resp.Header.Get("X-Request-Id")}
 	if json.Unmarshal(body, e) != nil || (e.Type == "" && e.Message == "") {
-		e.Message = string(body)
+		e.Message = fmt.Sprintf("upstream returned a non-JSON HTTP %d response (%s)", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 	if e.Type == "" {
 		switch resp.StatusCode {

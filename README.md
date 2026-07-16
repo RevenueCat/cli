@@ -59,12 +59,13 @@ rc charts show mrr
 
 | Area | Commands |
 |---|---|
-| **Customers** | `show` · `list` · `grant` · `revoke` · `transfer` · `aliases` · `attributes` |
+| **Customers** | `show` · `list` · `grant` · `revoke` · `transfer` · `aliases` · `attributes` · `simulate-purchase` |
 | **Subscriptions** | `show` · `cancel` · `extend` · `refund` · `transactions` |
 | **Entitlements** | `list` · `show` · `create` · `update` · `attach` · `detach` |
-| **Offerings** | `list` · `show` · `create` · `update` · `set-current` · `archive` |
-| **Packages** | `list` (across all offerings) · `show` · `create` · `update` · `delete` · `attach` · `detach` |
+| **Offerings** | `list` · `show` · `verify` · `preview` · `create` · `update` · `set-current` · `archive` |
+| **Packages** | `list` (across all offerings) · `show` · `products` · `create` · `update` · `delete` · `attach` · `detach` |
 | **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `store sync` |
+| **Paywalls** | `list` · `show` · `create` · `publish` · `delete` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
 | **Apps** | `list` · `show` · `create` · `update` · `delete` · `apple check` · `apple setup` |
 | **Audit log** | `rc audit` with `--limit` and `--since` |
@@ -74,6 +75,25 @@ rc charts show mrr
 rc --help          # see everything
 rc customer --help # see subcommands for any noun
 ```
+
+### Verify a Test Store setup
+
+Agents can inspect the complete offering graph, see the payload delivered to an
+SDK, and create a real headless Test Store transaction without raw API calls:
+
+```bash
+rc offerings verify ofrng_default --json --no-input
+rc offerings preview app_test --app-user-id demo-user --json --no-input
+rc customer simulate-purchase \
+  --app-id app_test --product premium_monthly --app-user-id demo-user \
+  --yes --json --no-input
+```
+
+`offerings verify` includes packages, attached products and prices, matching
+entitlements, paywall publication state, and an `issues` array. `offerings
+preview` uses the app's public SDK key and exposes the v1 SDK response; a null
+`paywall_components` value indicates fallback content rather than a published
+dashboard paywall.
 
 ### Product store-state plans (experimental)
 

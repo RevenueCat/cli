@@ -299,7 +299,7 @@ func newAuthStatusCmd() *cobra.Command {
 		Use:     "status",
 		Aliases: []string{"whoami"},
 		Short:   "Show the current authentication state",
-		Long:    `Displays the active profile, cached account identity when known, auth method, and project context. Does not make any API calls.`,
+		Long:    `Displays the active profile, cached account identity when known, auth method, and project context. If a project is configured, validates that it is still accessible.`,
 		Example: `  rc auth status
   rc auth status --json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -307,6 +307,17 @@ func newAuthStatusCmd() *cobra.Command {
 
 			profileName := config.ProfileName(rt.Globals.Profile)
 			authenticated := rt.Config.BearerToken() != ""
+			projectStatus := "not_configured"
+			if authenticated && rt.Config.ProjectID != "" {
+				projectStatus = "unavailable"
+				if client, err := rt.API(); err == nil {
+					if _, err := client.Projects.Get(cmd.Context(), rt.Config.ProjectID); err == nil {
+						projectStatus = "valid"
+					} else if apiErr, ok := err.(*api.APIError); ok && apiErr.Status == http.StatusNotFound {
+						projectStatus = "not_found"
+					}
+				}
+			}
 
 			var method string
 			switch {
@@ -339,18 +350,24 @@ func newAuthStatusCmd() *cobra.Command {
 				rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", profileName))
 				rt.Out.Info("Account identity is not cached for this login")
 			}
+			if projectStatus == "not_found" {
+				rt.Out.Warn(fmt.Sprintf("Configured project %s is no longer accessible; run `rc projects use`", rt.Config.ProjectID))
+			} else if projectStatus == "unavailable" {
+				rt.Out.Info(fmt.Sprintf("Could not validate configured project %s", rt.Config.ProjectID))
+			}
 
 			if !rt.Out.IsJSON() {
 				return nil
 			}
 			return rt.Out.Render(map[string]any{
-				"profile":       profileName,
-				"authenticated": authenticated,
-				"account_email": rt.Config.AccountEmail,
-				"account_name":  rt.Config.AccountName,
-				"method":        method,
-				"project_id":    rt.Config.ProjectID,
-				"base_url":      rt.Config.BaseURL,
+				"profile":        profileName,
+				"authenticated":  authenticated,
+				"account_email":  rt.Config.AccountEmail,
+				"account_name":   rt.Config.AccountName,
+				"method":         method,
+				"project_id":     rt.Config.ProjectID,
+				"project_status": projectStatus,
+				"base_url":       rt.Config.BaseURL,
 			})
 		},
 	}

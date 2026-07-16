@@ -2,9 +2,14 @@ package cli
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -38,9 +43,147 @@ func newCustomersCmd() *cobra.Command {
 		newCustomerOverrideOfferingCmd(),
 		newCustomerClearOverrideCmd(),
 		newCustomerRestoreGoogleCmd(),
+		newCustomerSimulatePurchaseCmd(),
 		newCustomerWalletCmd(),
 	)
 	return cmd
+}
+
+func newCustomerSimulatePurchaseCmd() *cobra.Command {
+	var appID, productRef, appUserID, publicAPIKey string
+	cmd := &cobra.Command{
+		Use:   "simulate-purchase",
+		Short: "Simulate a Test Store purchase for a customer",
+		Long: `Creates a real RevenueCat Test Store transaction through the same receipt
+endpoint used by the SDK. The selected app must have a test_ public SDK key.
+The product may be given by RevenueCat product ID or store identifier.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc customer simulate-purchase --app-id app_test --product premium_monthly --app-user-id demo-user
+  rc customer simulate-purchase --app-id app_test --product prod_abc --app-user-id demo-user --yes --json --no-input`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			appID, err = requireID(rt, appID, "app", func() ([]PickerItem, error) {
+				apps, err := client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return nil, err
+				}
+				items := make([]PickerItem, len(apps.Items))
+				for i, app := range apps.Items {
+					items[i] = PickerItem{ID: app.ID, Label: fmt.Sprintf("%s  (%s)", app.Name, app.Type)}
+				}
+				return items, nil
+			})
+			if err != nil {
+				return err
+			}
+
+			products, err := client.Products.List(cmd.Context(), projectID, &api.ProductListOptions{AppID: appID})
+			if err != nil {
+				return err
+			}
+			if productRef == "" {
+				productRef, err = requireID(rt, "", "product", func() ([]PickerItem, error) {
+					items := make([]PickerItem, len(products.Items))
+					for i, product := range products.Items {
+						items[i] = PickerItem{ID: product.ID, Label: fmt.Sprintf("%s  (%s)", product.StoreIdentifier, derefStr(product.DisplayName))}
+					}
+					return items, nil
+				})
+				if err != nil {
+					return err
+				}
+			}
+			var selected *api.Product
+			for i := range products.Items {
+				product := &products.Items[i]
+				if product.ID == productRef || product.StoreIdentifier == productRef {
+					selected = product
+					break
+				}
+			}
+			if selected == nil {
+				return fmt.Errorf("product %q was not found in app %s", productRef, appID)
+			}
+
+			if appUserID == "" {
+				if err := tui.Form(rt.Globals.NoInput).Field(huh.NewInput().
+					Title("App user ID").
+					Value(&appUserID).
+					Validate(tui.Required("app user ID"))).Run(); err != nil {
+					return err
+				}
+			}
+			if publicAPIKey == "" {
+				keys, err := client.Apps.PublicAPIKeys(cmd.Context(), projectID, appID)
+				if err != nil {
+					return err
+				}
+				for _, key := range keys.Items {
+					if strings.HasPrefix(key.Key, "test_") {
+						publicAPIKey = key.Key
+						break
+					}
+				}
+			}
+			if !strings.HasPrefix(publicAPIKey, "test_") {
+				return fmt.Errorf("app %s does not have a Test Store public SDK key; --public-api-key must start with test_", appID)
+			}
+			if !rt.Globals.AssumeYes {
+				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Simulate purchase of %s for customer %s?", selected.StoreIdentifier, appUserID))
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return fmt.Errorf("aborted")
+				}
+			}
+
+			fetchToken, err := simulatedStoreFetchToken()
+			if err != nil {
+				return err
+			}
+			sdk := api.NewSDKService(rt.Config.BaseURL, nil, userAgent(rt.Globals.Version))
+			raw, err := sdk.SimulatePurchase(cmd.Context(), publicAPIKey, api.SimulatedPurchase{
+				FetchToken: fetchToken, AppUserID: appUserID, ProductID: selected.StoreIdentifier,
+				InitiationSource: "purchase", SDKOriginated: true,
+			})
+			if err != nil {
+				return err
+			}
+			var customerInfo any
+			if err := json.Unmarshal(raw, &customerInfo); err != nil {
+				return fmt.Errorf("decoding simulated purchase response: %w", err)
+			}
+			rt.Out.Success(fmt.Sprintf("Simulated purchase for %s", appUserID))
+			return rt.Out.Render(map[string]any{
+				"app_id": appID, "app_user_id": appUserID, "product": *selected,
+				"fetch_token": fetchToken, "customer_info": customerInfo,
+			})
+		},
+	}
+	cmd.Flags().StringVar(&appID, "app-id", os.Getenv("RC_APP_ID"), "Test Store app ID (or RC_APP_ID)")
+	cmd.Flags().StringVar(&productRef, "product", os.Getenv("RC_PRODUCT"), "product ID or store identifier (or RC_PRODUCT)")
+	cmd.Flags().StringVar(&appUserID, "app-user-id", os.Getenv("RC_APP_USER_ID"), "customer app user ID (or RC_APP_USER_ID)")
+	cmd.Flags().StringVar(&publicAPIKey, "public-api-key", os.Getenv("RC_PUBLIC_API_KEY"), "Test Store public SDK key; discovered from the app if omitted (or RC_PUBLIC_API_KEY)")
+	return cmd
+}
+
+func simulatedStoreFetchToken() (string, error) {
+	random := make([]byte, 16)
+	if _, err := rand.Read(random); err != nil {
+		return "", fmt.Errorf("generating simulated transaction ID: %w", err)
+	}
+	return fmt.Sprintf("TEST_%d_%s", time.Now().UnixMilli(), hex.EncodeToString(random)), nil
 }
 
 func newCustomerAliasesCmd() *cobra.Command {

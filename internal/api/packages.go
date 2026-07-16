@@ -17,7 +17,8 @@ func (s *PackagesService) List(ctx context.Context, projectID, offeringID string
 
 func (s *PackagesService) Get(ctx context.Context, projectID, id string) (*Package, error) {
 	var out Package
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "packages", id), nil, &out)
+	path := encodePath("projects", projectID, "packages", id) + "?expand=product"
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
 	return &out, err
 }
 
@@ -48,14 +49,21 @@ func (s *PackagesService) Update(ctx context.Context, projectID, id string, body
 	return &out, err
 }
 
-func (s *PackagesService) ListProducts(ctx context.Context, projectID, id string) (*Page[Product], error) {
-	var out Page[Product]
+func (s *PackagesService) ListProducts(ctx context.Context, projectID, id string) (*ProductsFromPackage, error) {
+	var out ProductsFromPackage
 	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "packages", id, "products"), nil, &out)
 	return &out, err
 }
 
 func (s *PackagesService) AttachProducts(ctx context.Context, projectID, id string, productIDs []string) error {
-	body := map[string]any{"product_ids": productIDs}
+	products := make([]PackageProductIDAssociation, len(productIDs))
+	for i, productID := range productIDs {
+		products[i] = PackageProductIDAssociation{
+			ProductID:           productID,
+			EligibilityCriteria: All,
+		}
+	}
+	body := AttachProductsToPackageJSONBody{Products: products}
 	path := encodePath("projects", projectID, "packages", id, "actions") + "/attach_products"
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }

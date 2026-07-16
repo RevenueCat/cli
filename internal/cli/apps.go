@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -417,15 +418,40 @@ These are client-side public keys, not secret RevenueCat API keys.`,
 				return err
 			}
 			rows := make([][]string, len(keys.Items))
+			rawItems := make([]map[string]any, len(keys.Items))
 			for i, key := range keys.Items {
-				rows[i] = []string{key.ID, string(key.Environment), key.Key, formatMillis(key.CreatedAt)}
+				keyType := publicSDKKeyType(key.Key)
+				rows[i] = []string{key.ID, keyType, string(key.Environment), key.Key, formatMillis(key.CreatedAt)}
+				rawItems[i] = map[string]any{
+					"id": key.ID, "object": key.Object, "app_id": key.AppID, "key": key.Key,
+					"key_type": keyType, "environment": key.Environment, "created_at": key.CreatedAt,
+				}
 			}
 			return rt.Out.RenderTable(output.Table{
-				Columns: []string{"ID", "ENVIRONMENT", "PUBLIC SDK KEY", "CREATED"},
+				Columns: []string{"ID", "STORE / KEY TYPE", "API ENVIRONMENT", "PUBLIC SDK KEY", "CREATED"},
 				Rows:    rows,
-				Raw:     keys,
+				Raw: map[string]any{
+					"object": keys.Object, "items": rawItems, "next_page": keys.NextPage, "url": keys.URL,
+				},
 			})
 		},
+	}
+}
+
+func publicSDKKeyType(key string) string {
+	switch {
+	case strings.HasPrefix(key, "test_"):
+		return "Test Store"
+	case strings.HasPrefix(key, "appl_"):
+		return "App Store"
+	case strings.HasPrefix(key, "goog_"):
+		return "Google Play"
+	case strings.HasPrefix(key, "amaz_"):
+		return "Amazon Appstore"
+	case strings.HasPrefix(key, "strp_"):
+		return "Stripe"
+	default:
+		return "Public SDK"
 	}
 }
 

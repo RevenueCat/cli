@@ -121,6 +121,9 @@ func inferCapabilities(c *cobra.Command) []string {
 		"push":    "push",
 		"attach":  "attach",
 		"detach":  "detach",
+		"publish": "publish",
+		"verify":  "verify",
+		"preview": "preview",
 	}
 	seen := map[string]bool{}
 	var caps []string
