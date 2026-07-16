@@ -572,6 +572,9 @@ func validateSignupPassword(password string) error {
 }
 
 func saveRevenueCatPasswordToKeychain(ctx context.Context, email, password, securityExecutable string) error {
+	if strings.ContainsAny(password, "\r\n") {
+		return fmt.Errorf("passwords containing line breaks cannot be saved with the macOS security utility")
+	}
 	cmd := exec.CommandContext(ctx, securityExecutable,
 		"add-internet-password",
 		"-a", email,
@@ -581,7 +584,7 @@ func saveRevenueCatPasswordToKeychain(ctx context.Context, email, password, secu
 		"-U",
 		"-w",
 	)
-	cmd.Stdin = strings.NewReader(password + "\n")
+	cmd.Stdin = strings.NewReader(password + "\n" + password + "\n")
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("security command failed: %s", strings.TrimSpace(string(output)))
 	}

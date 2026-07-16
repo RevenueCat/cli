@@ -13,7 +13,7 @@ func TestSaveRevenueCatPasswordToKeychainUsesStdinAndWebsiteCredential(t *testin
 	executable := filepath.Join(dir, "security")
 	argsFile := filepath.Join(dir, "args")
 	stdinFile := filepath.Join(dir, "stdin")
-	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$ARGS_FILE\"\nIFS= read -r password\nprintf '%s' \"$password\" > \"$STDIN_FILE\"\n"
+	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$ARGS_FILE\"\ncat > \"$STDIN_FILE\"\n"
 	if err := os.WriteFile(executable, []byte(script), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,14 @@ func TestSaveRevenueCatPasswordToKeychainUsesStdinAndWebsiteCredential(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(stdin) != password {
+	if string(stdin) != password+"\n"+password+"\n" {
 		t.Fatalf("security stdin = %q", stdin)
+	}
+}
+
+func TestSaveRevenueCatPasswordToKeychainRejectsLineBreaks(t *testing.T) {
+	err := saveRevenueCatPasswordToKeychain(context.Background(), "dev@example.com", "secret\npassword", "security")
+	if err == nil || !strings.Contains(err.Error(), "line breaks") {
+		t.Fatalf("error = %v", err)
 	}
 }
