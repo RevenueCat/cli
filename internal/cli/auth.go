@@ -490,7 +490,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	passwordSaved := false
 	if savePassword {
 		rt.Out.Info("Saving the website password in macOS Keychain…")
-		if err := saveRevenueCatPasswordToKeychain(ctx, email, password, "security"); err != nil {
+		if err := saveRevenueCatPasswordToKeychain(ctx, email, password, "/usr/bin/swift"); err != nil {
 			rt.Out.Warn(fmt.Sprintf("Account created, but the password could not be saved to Keychain: %v", err))
 		} else {
 			passwordSaved = true
@@ -577,22 +577,45 @@ func validateSignupPassword(password string) error {
 	return nil
 }
 
-func saveRevenueCatPasswordToKeychain(ctx context.Context, email, password, securityExecutable string) error {
-	if strings.ContainsAny(password, "\r\n") {
-		return fmt.Errorf("passwords containing line breaks cannot be saved with the macOS security utility")
-	}
-	cmd := exec.CommandContext(ctx, securityExecutable,
-		"add-internet-password",
-		"-a", email,
-		"-s", "app.revenuecat.com",
-		"-l", "RevenueCat",
-		"-r", "htps",
-		"-U",
-		"-w",
-	)
-	cmd.Stdin = strings.NewReader(password + "\n" + password + "\n")
+const macOSKeychainStoreProgram = `
+import Foundation
+import Security
+
+guard CommandLine.arguments.count == 2 else {
+    fputs("missing account\n", stderr)
+    exit(2)
+}
+
+let account = CommandLine.arguments[1]
+let password = FileHandle.standardInput.readDataToEndOfFile()
+let query: [String: Any] = [
+    kSecClass as String: kSecClassInternetPassword,
+    kSecAttrAccount as String: account,
+    kSecAttrServer as String: "app.revenuecat.com",
+    kSecAttrProtocol as String: kSecAttrProtocolHTTPS,
+]
+let attributes: [String: Any] = [
+    kSecValueData as String: password,
+    kSecAttrLabel as String: "RevenueCat",
+]
+
+var status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+if status == errSecItemNotFound {
+    var item = query
+    attributes.forEach { item[$0.key] = $0.value }
+    status = SecItemAdd(item as CFDictionary, nil)
+}
+guard status == errSecSuccess else {
+    fputs("Keychain error \(status)\n", stderr)
+    exit(1)
+}
+`
+
+func saveRevenueCatPasswordToKeychain(ctx context.Context, email, password, swiftExecutable string) error {
+	cmd := exec.CommandContext(ctx, swiftExecutable, "-e", macOSKeychainStoreProgram, email)
+	cmd.Stdin = strings.NewReader(password)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("security command failed: %s", strings.TrimSpace(string(output)))
+		return fmt.Errorf("Keychain helper failed: %s", strings.TrimSpace(string(output)))
 	}
 	return nil
 }

@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-func TestSaveRevenueCatPasswordToKeychainUsesStdinAndWebsiteCredential(t *testing.T) {
+func TestSaveRevenueCatPasswordToKeychainUsesSecurityFrameworkAndStdin(t *testing.T) {
 	dir := t.TempDir()
-	executable := filepath.Join(dir, "security")
+	executable := filepath.Join(dir, "swift")
 	argsFile := filepath.Join(dir, "args")
 	stdinFile := filepath.Join(dir, "stdin")
 	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$ARGS_FILE\"\ncat > \"$STDIN_FILE\"\n"
@@ -31,7 +31,7 @@ func TestSaveRevenueCatPasswordToKeychainUsesStdinAndWebsiteCredential(t *testin
 	if strings.Contains(string(args), password) {
 		t.Fatal("password was exposed in process arguments")
 	}
-	for _, want := range []string{"add-internet-password", "dev@example.com", "app.revenuecat.com", "RevenueCat", "htps", "-U", "-w"} {
+	for _, want := range []string{"-e", "import Security", "SecItemUpdate", "SecItemAdd", "dev@example.com", "app.revenuecat.com", "RevenueCat"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("security arguments missing %q:\n%s", want, args)
 		}
@@ -40,14 +40,7 @@ func TestSaveRevenueCatPasswordToKeychainUsesStdinAndWebsiteCredential(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(stdin) != password+"\n"+password+"\n" {
+	if string(stdin) != password {
 		t.Fatalf("security stdin = %q", stdin)
-	}
-}
-
-func TestSaveRevenueCatPasswordToKeychainRejectsLineBreaks(t *testing.T) {
-	err := saveRevenueCatPasswordToKeychain(context.Background(), "dev@example.com", "secret\npassword", "security")
-	if err == nil || !strings.Contains(err.Error(), "line breaks") {
-		t.Fatalf("error = %v", err)
 	}
 }
