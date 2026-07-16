@@ -45,6 +45,49 @@ func (r *recordingSkillsInstaller) Run(_ *cobra.Command, args []string) error {
 	return nil
 }
 
+func TestSkillsInstallDefaultsToCoreBundleWithoutPicker(t *testing.T) {
+	installer := &recordingSkillsInstaller{}
+	cmd := newSkillsCmdWithInstaller(installer)
+	cmd.SetArgs([]string{"install"})
+	cmd.SetContext(WithRuntime(context.Background(), &Runtime{
+		Globals: &Globals{},
+		Out:     output.NewRenderer(cmd.OutOrStdout(), cmd.ErrOrStderr(), false, true, false, ""),
+	}))
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(installer.args, "--skill") {
+		t.Fatalf("installer args missing --skill: %v", installer.args)
+	}
+	for _, skill := range defaultToolkitSkills {
+		if !slices.Contains(installer.args, skill) {
+			t.Errorf("installer args missing core skill %q: %v", skill, installer.args)
+		}
+	}
+	if installer.args[len(installer.args)-1] != "--yes" {
+		t.Fatalf("installer args do not suppress selection UI: %v", installer.args)
+	}
+}
+
+func TestSkillsInstallAllOmitsCoreSkillFilter(t *testing.T) {
+	installer := &recordingSkillsInstaller{}
+	cmd := newSkillsCmdWithInstaller(installer)
+	cmd.SetArgs([]string{"install", "--all"})
+	cmd.SetContext(WithRuntime(context.Background(), &Runtime{
+		Globals: &Globals{},
+		Out:     output.NewRenderer(cmd.OutOrStdout(), cmd.ErrOrStderr(), false, true, false, ""),
+	}))
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if slices.Contains(installer.args, "--skill") {
+		t.Fatalf("all install unexpectedly filtered skills: %v", installer.args)
+	}
+	if installer.args[len(installer.args)-1] != "--yes" {
+		t.Fatalf("installer args do not suppress selection UI: %v", installer.args)
+	}
+}
+
 func TestSkillsInstallDelegatesToOfficialToolkit(t *testing.T) {
 	installer := &recordingSkillsInstaller{}
 	cmd := newSkillsCmdWithInstaller(installer)

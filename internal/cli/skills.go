@@ -15,6 +15,13 @@ const (
 	projectSkillTrigger   = "Use the create-revenuecat-project skill to make this app RevenueCat Test Store-ready, then report every later production-store stage separately."
 )
 
+var defaultToolkitSkills = []string{
+	"create-revenuecat-project",
+	"integrate-revenuecat",
+	"revenuecat-paywall",
+	"revenuecat-store-state",
+}
+
 type skillsInstaller interface {
 	Run(*cobra.Command, []string) error
 }
@@ -138,7 +145,7 @@ agent UI.`,
 }
 
 func newSkillsInstallCmd(installer skillsInstaller) *cobra.Command {
-	var global, project, copyFiles bool
+	var global, project, copyFiles, all bool
 	var branch string
 	var agents, skills []string
 	cmd := &cobra.Command{
@@ -151,7 +158,9 @@ func newSkillsInstallCmd(installer skillsInstaller) *cobra.Command {
 The standard Skills CLI detects supported agents and owns installation paths,
 lock files, security review, and updates. This command does not vendor or cache
 a separate copy of the toolkit inside rc. Pass --project to install into the
-current repository instead. Under --no-input, pass --yes.
+current repository instead. The default installs the four skills needed for
+complete project setup without opening the underlying skill picker. Pass --all
+to install every RevenueCat skill. Under --no-input, pass --yes.
 
 After installing or updating, start a new agent session or reload the agent so
 it discovers the latest skills. Then ask naturally for RevenueCat setup or name
@@ -163,6 +172,7 @@ overrides the environment variable.`,
   rc skills install --project
   RC_SKILLS_BRANCH=rc-cli-project-setup-workflows rc skills install
   rc skills install --branch rc-cli-project-setup-workflows
+  rc skills install --all
   rc skills install --agent codex --yes --no-input
   rc skills install --skill create-revenuecat-project --yes --no-input`,
 		Args: cobra.NoArgs,
@@ -176,6 +186,10 @@ overrides the environment variable.`,
 			if branch != "" {
 				source = "https://github.com/RevenueCat/ai-toolkit/tree/" + branch
 			}
+			selectedSkills := append([]string(nil), skills...)
+			if len(selectedSkills) == 0 && !all {
+				selectedSkills = append(selectedSkills, defaultToolkitSkills...)
+			}
 			args := []string{"--yes", "skills", "add", source}
 			if !project {
 				args = append(args, "--global")
@@ -184,16 +198,14 @@ overrides the environment variable.`,
 				args = append(args, "--agent")
 				args = append(args, agents...)
 			}
-			if len(skills) > 0 {
+			if len(selectedSkills) > 0 {
 				args = append(args, "--skill")
-				args = append(args, skills...)
+				args = append(args, selectedSkills...)
 			}
 			if copyFiles {
 				args = append(args, "--copy")
 			}
-			if rt.Globals.AssumeYes {
-				args = append(args, "--yes")
-			}
+			args = append(args, "--yes")
 			if err := installer.Run(cmd, args); err != nil {
 				return fmt.Errorf("install RevenueCat AI Toolkit: %w", err)
 			}
@@ -210,7 +222,8 @@ overrides the environment variable.`,
 				"branch":          branch,
 				"scope":           scope,
 				"agents":          agents,
-				"skills":          skills,
+				"skills":          selectedSkills,
+				"all":             all,
 				"command":         "npx " + strings.Join(args[1:], " "),
 				"docs_url":        officialToolkitDocs,
 				"next_step":       "Start a new agent session or reload the agent.",
@@ -228,7 +241,9 @@ overrides the environment variable.`,
 	cmd.Flags().StringVar(&branch, "branch", "", "ai-toolkit branch to install (env: RC_SKILLS_BRANCH)")
 	cmd.MarkFlagsMutuallyExclusive("global", "project")
 	cmd.Flags().StringSliceVar(&agents, "agent", nil, "agents to install for (passed to the standard Skills CLI)")
-	cmd.Flags().StringSliceVar(&skills, "skill", nil, "specific toolkit skills to install")
+	cmd.Flags().StringSliceVar(&skills, "skill", nil, "specific toolkit skills to install instead of the core setup bundle")
+	cmd.Flags().BoolVar(&all, "all", false, "install all RevenueCat skills instead of the core setup bundle")
+	cmd.MarkFlagsMutuallyExclusive("skill", "all")
 	cmd.Flags().BoolVar(&copyFiles, "copy", false, "copy skill files instead of symlinking them")
 	return cmd
 }

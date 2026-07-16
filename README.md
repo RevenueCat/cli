@@ -234,9 +234,11 @@ rc skills install --project # opt into repository-local installation
 `rc` delegates installation to the standard Skills CLI, which also owns future
 updates, instead of shipping a second, potentially stale copy of RevenueCat
 workflows. Global installation is the default so RevenueCat workflows are
-available in every project; `--project` creates the standard project-local skill
-files and lock file instead. Marketplace installations for Codex, Claude Code,
-Cursor, VS Code, and Gemini are documented at
+available in every project. The CLI installs the four project-setup skills
+without showing the underlying 36-skill picker; pass `--all` only when the full
+catalog is wanted. `--project` creates the standard project-local skill files
+and lock file instead. Marketplace installations for Codex, Claude Code, Cursor,
+VS Code, and Gemini are documented at
 https://www.revenuecat.com/docs/tools/overview.
 
 Run `rc skills install` again to update an existing installation, then start a
