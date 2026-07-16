@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -384,7 +385,7 @@ func (m *chatModel) renderEntry(entry ChatEntry) string {
 	default: // assistant
 		text := entry.Text
 		if m.cfg.RelativeLinkBase != "" {
-			text = strings.ReplaceAll(text, "](/", "]("+m.cfg.RelativeLinkBase+"/")
+			text = absolutizeLinks(text, m.cfg.RelativeLinkBase)
 		}
 		if m.markdown != nil {
 			if rendered, err := m.markdown.Render(text); err == nil {
@@ -426,6 +427,20 @@ func (m *chatModel) View() string {
 		m.viewport.View() + "\n" +
 		inputBox.Width(max(m.width-2, 12)).Render(m.input.View()) + "\n" +
 		footer
+}
+
+// barePathPattern matches dashboard-looking absolute paths in prose: after
+// whitespace, start of text, an opening paren, or a backtick. The character
+// class excludes closing punctuation so trailing ")." stays out of the URL.
+var barePathPattern = regexp.MustCompile(
+	"(^|[\\s(`])(/(?:projects|apps|customers|settings|overview|charts|activity|integrations|paywalls|offerings|products|experiments)[A-Za-z0-9_\\-/?=&#%]*)",
+)
+
+// absolutizeLinks rewrites relative markdown link targets and bare dashboard
+// paths to absolute URLs so terminals can open them.
+func absolutizeLinks(text, base string) string {
+	text = strings.ReplaceAll(text, "](/", "]("+base+"/")
+	return barePathPattern.ReplaceAllString(text, "${1}"+base+"${2}")
 }
 
 // sizeInput grows the textarea with its content, up to 5 lines.
