@@ -32,7 +32,7 @@ func TestSkillsShowsCopyReadyPromptsWithoutJSONDump(t *testing.T) {
 	if stdout.Len() != 0 {
 		t.Fatalf("human skills output dumped JSON: %s", stdout.String())
 	}
-	for _, want := range []string{"Copy one of these starter prompts", "create-revenuecat-project skill", "integrate-revenuecat skill", "revenuecat-store-state skill", "revenuecat-status skill"} {
+	for _, want := range []string{"Copy one of these starter prompts", "Make this app Test Store-ready", "Connect my Apple account", "Sync my App Store catalog", "create-revenuecat-project skill", "integrate-revenuecat skill", "revenuecat-store-state skill", "revenuecat-status skill"} {
 		if !bytes.Contains(stderr.Bytes(), []byte(want)) {
 			t.Errorf("starter prompts missing %q: %s", want, stderr.String())
 		}

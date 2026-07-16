@@ -19,11 +19,31 @@ type ProductCreate struct {
 	Type            string                    `json:"type"` // "subscription" | "one_time"
 	AppID           string                    `json:"app_id"`
 	DisplayName     string                    `json:"display_name,omitempty"`
+	Title           string                    `json:"title,omitempty"`
 	Subscription    *ProductSubscriptionInput `json:"subscription,omitempty"`
 }
 
 type ProductUpdate struct {
 	DisplayName *string `json:"display_name,omitempty"`
+}
+
+type ProductPrice struct {
+	ID           *string `json:"id"`
+	Currency     string  `json:"currency"`
+	AmountMicros int64   `json:"amount_micros"`
+}
+
+type ProductPriceInput struct {
+	Currency     string `json:"currency"`
+	AmountMicros int64  `json:"amount_micros"`
+}
+
+type ProductPricesCreate struct {
+	Prices []ProductPriceInput `json:"prices"`
+}
+
+type ProductPriceUpdate struct {
+	AmountMicros int64 `json:"amount_micros"`
 }
 
 func (s *ProductsService) List(ctx context.Context, projectID string, opts *ProductListOptions) (*Page[Product], error) {
@@ -51,6 +71,27 @@ func (s *ProductsService) Get(ctx context.Context, projectID, id string) (*Produ
 func (s *ProductsService) Update(ctx context.Context, projectID, id string, body ProductUpdate) (*Product, error) {
 	var out Product
 	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "products", id), body, &out)
+	return &out, err
+}
+
+func (s *ProductsService) ListPrices(ctx context.Context, projectID, productID string) ([]ProductPrice, error) {
+	var out []ProductPrice
+	path := encodePath("projects", projectID, "products", productID, "prices")
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
+	return out, err
+}
+
+func (s *ProductsService) CreateTestStorePrices(ctx context.Context, projectID, productID string, body ProductPricesCreate) ([]ProductPrice, error) {
+	var out []ProductPrice
+	path := encodePath("projects", projectID, "products", productID, "test_store_prices")
+	err := s.c.do(ctx, http.MethodPost, path, body, &out)
+	return out, err
+}
+
+func (s *ProductsService) UpdatePrice(ctx context.Context, projectID, productID, currency string, body ProductPriceUpdate) (*ProductPrice, error) {
+	var out ProductPrice
+	path := encodePath("projects", projectID, "products", productID, "prices", currency)
+	err := s.c.do(ctx, http.MethodPatch, path, body, &out)
 	return &out, err
 }
 

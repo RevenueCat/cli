@@ -17,6 +17,11 @@ type Paywall struct {
 	Object                     string `json:"object,omitempty"`
 }
 
+type PaywallCreate struct {
+	OfferingID                 string `json:"offering_id"`
+	AutomaticallyScaleFontSize bool   `json:"automatically_scale_font_size"`
+}
+
 func (s *PaywallsService) List(ctx context.Context, projectID string) (*Page[Paywall], error) {
 	var out Page[Paywall]
 	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "paywalls"), nil, &out)
@@ -26,6 +31,12 @@ func (s *PaywallsService) List(ctx context.Context, projectID string) (*Page[Pay
 func (s *PaywallsService) Get(ctx context.Context, projectID, id string) (*Paywall, error) {
 	var out Paywall
 	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "paywalls", id), nil, &out)
+	return &out, err
+}
+
+func (s *PaywallsService) Create(ctx context.Context, projectID string, body PaywallCreate) (*Paywall, error) {
+	var out Paywall
+	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "paywalls"), body, &out)
 	return &out, err
 }
 

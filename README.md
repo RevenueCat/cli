@@ -245,8 +245,9 @@ Skills do not run when installed. The agent selects one when the user's request
 matches its description. For predictable project creation, say:
 
 ```text
-Use the create-revenuecat-project skill to create my RevenueCat account and
-configure my project, apps, products, entitlements, and offerings.
+Use the create-revenuecat-project skill to make the app in this directory
+RevenueCat Test Store-ready end to end, then report every production-store
+stage separately.
 ```
 
 Agents may also select that skill automatically for requests such as “Set up
@@ -258,13 +259,18 @@ Bare `rc skills` only shows help; it never installs or changes anything.
 Examples:
 
 ```text
-Use the create-revenuecat-project skill to create my RevenueCat account if
-needed and configure my project, apps, products, entitlements, offerings, and
-packages. Ask before accepting legal terms or applying store changes.
+Use the create-revenuecat-project skill to inspect the app in this directory,
+create my RevenueCat account if needed, and finish the Test Store-ready stage
+end to end: products and prices, entitlement, offering and packages, dashboard
+paywall, dependencies, debug test_ key, app code, build, and simulated purchase.
 
-Use the integrate-revenuecat skill to inspect this app, connect it to the
-correct RevenueCat project, install and configure the Purchases SDK, and verify
-the integration.
+Continue this app's RevenueCat setup with the Apple stage of the
+create-revenuecat-project skill. Run the read-only Apple check first, then give
+me the local interactive rc apps apple setup command for Apple sign-in and 2FA.
+
+Use the revenuecat-store-state skill to plan App Store Connect products matching
+the verified Test Store catalog. Wait for approval before applying that same
+plan ID, then attach the Apple products and configure the release appl_ key.
 
 Use the revenuecat-status skill to audit my RevenueCat project, identify
 missing or inconsistent configuration, and give me exact recovery steps
@@ -273,9 +279,10 @@ without changing anything first.
 
 The toolkit can discover every CLI contract with `rc commands --json` and
 `rc schema <command> --json`. Project-setup primitives include
-`rc offerings set-current <id> --yes` and `rc apps keys <app-id> --json`, so an
-agent can finish catalog setup and return the public SDK key without raw API
-calls.
+`rc products prices set <id> --price USD=9.99`,
+`rc offerings set-current <id> --yes`, and `rc apps keys <app-id> --json`, so
+an agent can finish Test Store catalog setup and return typed public SDK keys
+without raw API calls.
 
 ## Global flags
 

@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -30,6 +31,7 @@ func newProductsCmd() *cobra.Command {
 		newProductsArchiveCmd(),
 		newProductsRestoreCmd(),
 		newProductsPushCmd(),
+		newProductsPricesCmd(),
 		newProductsStoreCmd(),
 	)
 	return cmd
@@ -214,7 +216,7 @@ func newProductsListCmd() *cobra.Command {
 }
 
 func newProductsCreateCmd() *cobra.Command {
-	var storeID, productType, appID, displayName, duration string
+	var storeID, productType, appID, displayName, title, duration string
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a product",
@@ -223,8 +225,9 @@ func newProductsCreateCmd() *cobra.Command {
 --store-id is the product identifier on the platform store (required).
 --type must be "subscription" or "one_time" (required; picker shown in TTY).
 --app-id is the RevenueCat app ID (required; picker shown in TTY).
+--title is the user-facing product title required by Test Store products.
 --duration (optional, subscriptions only) is an ISO 8601 duration, e.g. P1M, P1Y.`,
-		Example: `  rc products create --store-id com.example.monthly --type subscription --app-id app_abc
+		Example: `  rc products create --store-id premium_monthly --type subscription --app-id app_test --title "Premium Monthly" --duration P1M
   rc products create --store-id com.example.once --type one_time --app-id app_abc --display-name "Unlock Everything"`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -270,6 +273,7 @@ func newProductsCreateCmd() *cobra.Command {
 				Type:            productType,
 				AppID:           appID,
 				DisplayName:     displayName,
+				Title:           title,
 			}
 			if duration != "" {
 				body.Subscription = &api.ProductSubscriptionInput{Duration: api.Duration(duration)}
@@ -286,8 +290,160 @@ func newProductsCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&productType, "type", "", "product type: subscription or one_time (picker shown in TTY if omitted)")
 	cmd.Flags().StringVar(&appID, "app-id", "", "app ID to associate with (picker shown in TTY if omitted)")
 	cmd.Flags().StringVar(&displayName, "display-name", "", "human-readable display name")
+	cmd.Flags().StringVar(&title, "title", "", "user-facing product title (required for Test Store products)")
 	cmd.Flags().StringVar(&duration, "duration", "", "subscription duration as ISO 8601 (e.g. P1M, P1Y)")
 	return cmd
+}
+
+func newProductsPricesCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "prices [product-id]",
+		Short: "List Test Store or Web Billing product prices",
+		Long: `Lists configured prices for a Test Store or Web Billing product.
+
+Use prices set to idempotently create missing currencies or update existing
+Test Store prices. Amounts are entered as decimal major units, not micros.`,
+		Example: `  rc products prices prod_abc --json --no-input
+  rc products prices set prod_abc --price USD=9.99 --price EUR=8.99 --json --no-input`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, productID, client, err := productPriceContext(cmd, args)
+			if err != nil {
+				return err
+			}
+			prices, err := client.Products.ListPrices(cmd.Context(), projectID, productID)
+			if err != nil {
+				return err
+			}
+			return renderProductPrices(rt, prices)
+		},
+	}
+	cmd.AddCommand(newProductsPricesSetCmd())
+	return cmd
+}
+
+func newProductsPricesSetCmd() *cobra.Command {
+	var rawPrices []string
+	cmd := &cobra.Command{
+		Use:   "set [product-id]",
+		Short: "Create or update Test Store product prices",
+		Long: `Sets exact Test Store product prices by currency. Missing currencies are
+created through the Test Store price API; existing currencies are updated.
+Running the same command again is safe and makes no unnecessary writes.
+
+Values use ISO 4217 currency and decimal major units: --price USD=9.99.`,
+		Example: `  rc products prices set prod_abc --price USD=9.99
+  rc products prices set prod_abc --price USD=9.99 --price EUR=8.99 --json --no-input`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			desired, err := parseProductPrices(rawPrices)
+			if err != nil {
+				return err
+			}
+			projectID, productID, client, err := productPriceContext(cmd, args)
+			if err != nil {
+				return err
+			}
+			existing, err := client.Products.ListPrices(cmd.Context(), projectID, productID)
+			if err != nil {
+				return err
+			}
+			byCurrency := make(map[string]api.ProductPrice, len(existing))
+			for _, price := range existing {
+				byCurrency[strings.ToUpper(price.Currency)] = price
+			}
+			missing := make([]api.ProductPriceInput, 0)
+			for _, price := range desired {
+				current, ok := byCurrency[price.Currency]
+				if !ok {
+					missing = append(missing, price)
+					continue
+				}
+				if current.AmountMicros == price.AmountMicros {
+					continue
+				}
+				if _, err := client.Products.UpdatePrice(cmd.Context(), projectID, productID, price.Currency, api.ProductPriceUpdate{AmountMicros: price.AmountMicros}); err != nil {
+					return err
+				}
+			}
+			if len(missing) > 0 {
+				if _, err := client.Products.CreateTestStorePrices(cmd.Context(), projectID, productID, api.ProductPricesCreate{Prices: missing}); err != nil {
+					return err
+				}
+			}
+			prices, err := client.Products.ListPrices(cmd.Context(), projectID, productID)
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Configured %d product price(s)", len(desired)))
+			return renderProductPrices(rt, prices)
+		},
+	}
+	cmd.Flags().StringSliceVar(&rawPrices, "price", nil, "price as CURRENCY=AMOUNT, repeatable (required)")
+	_ = cmd.MarkFlagRequired("price")
+	return cmd
+}
+
+func productPriceContext(cmd *cobra.Command, args []string) (string, string, *api.Client, error) {
+	rt := RuntimeFrom(cmd.Context())
+	projectID, err := requireProject(rt)
+	if err != nil {
+		return "", "", nil, err
+	}
+	client, err := rt.API()
+	if err != nil {
+		return "", "", nil, err
+	}
+	productID, err := requireID(rt, argAt(args, 0), "product", func() ([]PickerItem, error) {
+		return productPickerItems(cmd.Context(), client, projectID)
+	})
+	if err != nil {
+		return "", "", nil, err
+	}
+	return projectID, productID, client, nil
+}
+
+func parseProductPrices(values []string) ([]api.ProductPriceInput, error) {
+	prices := make([]api.ProductPriceInput, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		currency, amount, ok := strings.Cut(value, "=")
+		currency = strings.ToUpper(strings.TrimSpace(currency))
+		amount = strings.TrimSpace(amount)
+		if !ok || len(currency) != 3 || amount == "" {
+			return nil, fmt.Errorf("--price %q must use CURRENCY=AMOUNT, for example USD=9.99", value)
+		}
+		if _, ok := seen[currency]; ok {
+			return nil, fmt.Errorf("--price contains duplicate currency %s", currency)
+		}
+		amountMicros, err := decimalToMicros(amount)
+		if err != nil {
+			return nil, fmt.Errorf("--price %s: %w", currency, err)
+		}
+		seen[currency] = struct{}{}
+		prices = append(prices, api.ProductPriceInput{Currency: currency, AmountMicros: amountMicros})
+	}
+	return prices, nil
+}
+
+func renderProductPrices(rt *Runtime, prices []api.ProductPrice) error {
+	rows := make([][]string, len(prices))
+	for i, price := range prices {
+		rows[i] = []string{price.Currency, formatPriceMicros(price.AmountMicros)}
+	}
+	return rt.Out.RenderTable(output.Table{
+		Columns: []string{"CURRENCY", "AMOUNT"},
+		Rows:    rows,
+		Raw:     prices,
+	})
+}
+
+func formatPriceMicros(amount int64) string {
+	formatted := fmt.Sprintf("%.6f", float64(amount)/1_000_000)
+	formatted = strings.TrimRight(formatted, "0")
+	return strings.TrimRight(formatted, ".")
 }
 
 func newProductsShowCmd() *cobra.Command {

@@ -165,12 +165,14 @@ rc packages detach <package-id> <product-id> [...]
 # Products
 rc products list
 rc products show <id>
-rc products create
+rc products create                                        # --title supports required Test Store product titles
 rc products update <id>
 rc products delete <id>
 rc products archive <id>
 rc products restore <id>
 rc products push <id>                                    # push to store
+rc products prices [product-id]                         # list Test Store / Web Billing prices
+rc products prices set [product-id] --price USD=9.99    # idempotently create or update Test Store prices
 rc products store sync [app-id]                          # human flow: input → plan → review → confirm → apply
 rc products store plan [app-id]                          # persist desired state + diff in Khepri; accepts --file <path|->
 rc products store show <plan-id>                         # inspect the exact persisted plan from any process
@@ -180,8 +182,8 @@ rc products store discard <plan-id>                      # discard without apply
 # Paywalls
 rc paywalls list
 rc paywalls show <id>
-rc paywalls create
-rc paywalls delete <id>                                  # no update in API yet
+rc paywalls create                                       # create an offering-attached draft; publish in dashboard
+rc paywalls delete <id>
 
 # Subscriptions
 rc subscriptions show <id>
@@ -260,7 +262,8 @@ rc chat                                                  # internal agent chat
 
 ## What's intentionally NOT here
 
-- **No `update` on `projects` or `paywalls`** — API doesn't expose them.
+- **No `update` on `projects`** — API doesn't expose it. Paywall draft update is
+  deferred because its component schema needs a purpose-built editing UX.
 - **No plugin system.** YAGNI; oclif model is a Node bet, not a Go one.
 - **No `--account` flag.** Account is implicit in the API key.
 - **No bulk-import** until there's a concrete ask.
