@@ -127,6 +127,10 @@ func (f *fakeAppleCheckClient) CreateAppStoreConnectKey(context.Context, *applec
 	return nil, errors.New("unexpected App Store Connect key creation")
 }
 
+func (f *fakeAppleCheckClient) FetchVendorNumber(context.Context, *appleconnect.Session) (string, error) {
+	return "", errors.New("vendor number unavailable in tests")
+}
+
 func equalStrings(left, right []string) bool {
 	if len(left) != len(right) {
 		return false

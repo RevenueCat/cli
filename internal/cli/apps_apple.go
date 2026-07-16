@@ -38,6 +38,7 @@ type appleConnectClient interface {
 	CheckKeyAccess(context.Context, *appleconnect.Session, appleconnect.KeyKind) error
 	CreateInAppPurchaseKey(context.Context, *appleconnect.Session, string) (*appleconnect.Key, error)
 	CreateAppStoreConnectKey(context.Context, *appleconnect.Session, string) (*appleconnect.Key, error)
+	FetchVendorNumber(context.Context, *appleconnect.Session) (string, error)
 }
 
 type appleConnectFactory func() (appleConnectClient, error)
@@ -190,16 +191,6 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			if err != nil {
 				return err
 			}
-			if !checkOnly && vendorNumber == "" &&
-				!rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive() {
-				rt.Out.Info("The vendor number links App Store sales reports to RevenueCat. Find it in")
-				rt.Out.Info("App Store Connect → Payments and Financial Reports, next to your legal entity name.")
-				if err := tui.Form(rt.Globals.NoInput).
-					Field(huh.NewInput().Title("Vendor number (blank keeps the current setting)").Value(&vendorNumber)).
-					Run(); err != nil {
-					return err
-				}
-			}
 			needsApple := checkOnly || createInAppKey || createAPIKey
 			if !needsApple && vendorNumber == "" {
 				rt.Out.Success("Nothing to create — existing keys were kept.")
@@ -235,6 +226,8 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					}
 					if vendorNumber != "" {
 						planStep("Set vendor number " + vendorNumber)
+					} else {
+						planStep("Look up your vendor number in App Store Connect and set it on the RevenueCat app")
 					}
 					planStep("Upload the results to RevenueCat app " + appID + " (keys are never stored locally)")
 				}
@@ -345,6 +338,26 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					}
 					rt.Out.Success("Apple check succeeded; no keys were created and RevenueCat was not changed")
 					return rt.Out.Render(result)
+				}
+
+				if vendorNumber == "" {
+					rt.Out.Info("Looking up your vendor number in App Store Connect…")
+					fetched, err := apple.FetchVendorNumber(cmd.Context(), session)
+					switch {
+					case err == nil:
+						vendorNumber = fetched
+						rt.Out.Success("Found vendor number " + vendorNumber)
+					case !rt.Globals.NoInput && tui.IsInteractive():
+						rt.Out.Warn("Could not fetch it automatically: " + err.Error())
+						rt.Out.Info("Find it in App Store Connect → Payments and Financial Reports, next to your legal entity name.")
+						if err := tui.Form(rt.Globals.NoInput).
+							Field(huh.NewInput().Title("Vendor number (blank keeps the current setting)").Value(&vendorNumber)).
+							Run(); err != nil {
+							return err
+						}
+					default:
+						rt.Out.Warn("Could not fetch the vendor number automatically; set it later with --vendor-number. (" + err.Error() + ")")
+					}
 				}
 
 				if createInAppKey {
