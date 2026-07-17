@@ -250,6 +250,19 @@ func (r *Renderer) Title(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
 }
 
+// Plan renders the guided-command plan: a titled, numbered list of the
+// steps a consequential flow is about to take. Keep steps terse and
+// state-aware — list what will happen this run, not every possibility.
+func (r *Renderer) Plan(steps []string) {
+	if r.json || r.quiet {
+		return
+	}
+	r.Title("Plan")
+	for i, step := range steps {
+		r.Info(fmt.Sprintf("%d. %s", i+1, step))
+	}
+}
+
 // Field prints an aligned key/value line for status blocks: dim key,
 // normal value, indented under a Title.
 func (r *Renderer) Field(key, value string) {

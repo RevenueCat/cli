@@ -300,35 +300,30 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					}
 				}
 				if !checkOnly && !rt.Out.IsJSON() {
-					rt.Out.Title("Plan")
-					step := 1
-					planStep := func(text string) {
-						rt.Out.Info(fmt.Sprintf("%d. %s", step, text))
-						step++
-					}
-					planStep("Sign in to Apple (2FA)")
+					steps := []string{"Sign in to Apple (2FA)"}
 					if app.AppStore.BundleID != "" {
-						planStep("Verify the App Store Connect app for " + app.AppStore.BundleID)
+						steps = append(steps, "Verify the App Store Connect app for "+app.AppStore.BundleID)
 					}
 					switch {
 					case promptDecisions:
-						planStep("Choose which keys to create or replace")
+						steps = append(steps, "Choose which keys to create or replace")
 					case createInAppKey && createAPIKey:
-						planStep("Create the in-app purchase and App Store Connect API keys")
+						steps = append(steps, "Create the in-app purchase and App Store Connect API keys")
 					case createInAppKey:
-						planStep("Create the in-app purchase key")
+						steps = append(steps, "Create the in-app purchase key")
 					case createAPIKey:
-						planStep("Create the App Store Connect API key")
+						steps = append(steps, "Create the App Store Connect API key")
 					}
 					switch {
 					case vendorNumber != "":
-						planStep("Set vendor number " + vendorNumber)
+						steps = append(steps, "Set vendor number "+vendorNumber)
 					case existingVendor != "":
-						planStep("Check the vendor number against Apple")
+						steps = append(steps, "Check the vendor number against Apple")
 					default:
-						planStep("Look up and confirm the vendor number")
+						steps = append(steps, "Look up and confirm the vendor number")
 					}
-					planStep("Save to RevenueCat")
+					steps = append(steps, "Save to RevenueCat")
+					rt.Out.Plan(steps)
 				}
 				if !checkOnly && !rt.Globals.AssumeYes {
 					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Sign in to Apple now?")
