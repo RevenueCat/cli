@@ -190,15 +190,37 @@ func TestRicoConversations_ListJSON(t *testing.T) {
 // astraServers stubs both the v2 API (draft creation) and the Astra editor.
 func astraTestServers(t *testing.T) (apiURL, astraURL string, editorInputs *[]map[string]any) {
 	t.Helper()
+	var patched []map[string]any
 	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
 		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/paywalls"):
 			io.WriteString(w, `{"id":"pw_new","offering_id":"ofrng_default","created_at":1720000000000,"published_at":null}`)
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
+			io.WriteString(w, `{"id":"pw_new","offering_id":"ofrng_default","created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":3,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`)
+		case r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			patched = append(patched, body)
+			io.WriteString(w, `{"id":"pw_new","offering_id":"ofrng_default","created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":4,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`)
 		default:
 			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
 		}
 	}))
+	t.Cleanup(func() {
+		if len(patched) == 0 {
+			t.Error("design was never PATCHed onto the RevenueCat draft")
+			return
+		}
+		last := patched[len(patched)-1]
+		if last["revision"] != 3.0 {
+			t.Errorf("PATCH revision = %v", last["revision"])
+		}
+		config, _ := last["components_config"].(map[string]any)
+		if config["stack"] != true {
+			t.Errorf("PATCH components_config = %v", last["components_config"])
+		}
+	})
 	t.Cleanup(apiServer.Close)
 
 	var inputs []map[string]any
@@ -312,9 +334,9 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	}
 }
 
-func TestPaywallsEdit_RequiresSessionFile(t *testing.T) {
+func TestPaywallsEdit_RequiresSessionOrID(t *testing.T) {
 	_, _, err := runCmd(t, "paywalls", "edit", "--prompt", "x", "--no-input", "--api-key", "sk_test")
-	if err == nil || !strings.Contains(err.Error(), "--session is required") {
+	if err == nil || !strings.Contains(err.Error(), "pass a paywall ID or --session") {
 		t.Fatalf("err = %v", err)
 	}
 }

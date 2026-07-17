@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -82,13 +83,11 @@ func newPaywallsGenerateCmd() *cobra.Command {
 prompt using Astra, the Paywall AI editor — the same engine behind the
 dashboard's AI mode.
 
-The editor state is saved to a session file so follow-up edits keep their
-context: pass the same --session to rc paywalls edit. Astra may answer with a
-clarifying question instead of a design — reply with another edit turn.
-
-Limitation: the AI-designed components live in the session file only. The
-public API cannot yet write paywall components, so rc paywalls publish would
-publish the default template, not the design; finish in the dashboard editor.`,
+Each completed turn saves the design onto the RevenueCat paywall draft, and
+the editor state is also kept in a session file so follow-up edits retain the
+conversation: pass the same --session to rc paywalls edit. Astra may answer
+with a clarifying question instead of a design — reply with another edit
+turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 		Example: `  rc paywalls generate
   rc paywalls generate ofrng_default --prompt "A calm annual-first paywall"
   rc paywalls generate ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
@@ -161,24 +160,31 @@ func newPaywallsEditCmd() *cobra.Command {
 		timeout: 10 * time.Minute,
 	}
 	cmd := &cobra.Command{
-		Use:   "edit --session <file>",
+		Use:   "edit [paywall-id]",
 		Short: "Edit a paywall with the Paywall AI editor",
-		Long: `Continues a Paywall AI editor session from its session file (written by
-rc paywalls generate) and applies a natural-language edit.
+		Long: `Applies a natural-language edit to a paywall.
 
-Editing a paywall whose state only exists in the dashboard builder is not yet
-supported from the CLI: the public API does not expose paywall component
-state, so there is nothing to send the editor. Use the dashboard's AI mode
-for those, or start fresh with rc paywalls generate.`,
-		Example: `  rc paywalls edit --session pw_abc.astra.json --prompt "Make annual the visual default"
+Given a paywall ID, the current draft (or published) components are fetched
+from RevenueCat as the starting state — any paywall is editable, including
+dashboard-authored ones. Given --session (written by rc paywalls generate),
+the design conversation continues with its full context. Each completed turn
+saves the design back onto the RevenueCat draft.`,
+		Example: `  rc paywalls edit pw_abc --prompt "Make annual the visual default"
   rc paywalls edit --session pw_abc.astra.json --prompt "Add social proof" --json --no-input`,
-		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			if opts.sessionPath == "" {
-				return fmt.Errorf("--session is required; rc paywalls generate writes it (see --help for why)")
+			var session *astraSession
+			var err error
+			switch {
+			case opts.sessionPath != "":
+				session, err = loadAstraSession(opts.sessionPath)
+			case argAt(args, 0) != "":
+				session, err = seedSessionFromServer(cmd.Context(), rt, argAt(args, 0))
+				opts.sessionPath = argAt(args, 0) + ".astra.json"
+			default:
+				return fmt.Errorf("pass a paywall ID or --session <file>")
 			}
-			session, err := loadAstraSession(opts.sessionPath)
 			if err != nil {
 				return err
 			}
@@ -190,6 +196,60 @@ for those, or start fresh with rc paywalls generate.`,
 	}
 	addPaywallAIFlags(cmd, &opts)
 	return cmd
+}
+
+// seedSessionFromServer starts an editor session from the paywall's current
+// RevenueCat state (draft components, falling back to published).
+func seedSessionFromServer(ctx context.Context, rt *Runtime, paywallID string) (*astraSession, error) {
+	projectID, err := requireProject(rt)
+	if err != nil {
+		return nil, err
+	}
+	client, err := rt.API()
+	if err != nil {
+		return nil, err
+	}
+	paywall, err := client.Paywalls.GetWithComponents(ctx, projectID, paywallID)
+	if err != nil {
+		return nil, err
+	}
+	version := (*api.PaywallComponentsVersion)(nil)
+	if paywall.Components != nil {
+		version = paywall.Components.Draft
+		if version == nil {
+			version = paywall.Components.Published
+		}
+	}
+	if version == nil || len(version.ComponentsConfig) == 0 {
+		return nil, fmt.Errorf("paywall %s has no component state to edit; design one with rc paywalls generate", paywallID)
+	}
+	locale := version.DefaultLocale
+	if locale == "" {
+		locale = "en_US"
+	}
+	localizations := version.ComponentsLocalizations
+	if len(localizations) == 0 {
+		localizations = json.RawMessage(`{"` + locale + `": {}}`)
+	}
+	var offeringID *string
+	if paywall.OfferingID != "" {
+		offeringID = &paywall.OfferingID
+	}
+	return &astraSession{
+		Version:   1,
+		ProjectID: projectID,
+		PaywallID: paywall.ID,
+		Revision:  version.Revision,
+		Paywall: astra.PaywallData{
+			DefaultLocale:           locale,
+			OfferingID:              offeringID,
+			ComponentsConfig:        version.ComponentsConfig,
+			ComponentsLocalizations: localizations,
+		},
+		UIConfig:         json.RawMessage(minimalUIConfig),
+		ProductVariables: map[string]string{},
+		SessionItems:     json.RawMessage(`{}`),
+	}, nil
 }
 
 func newPaywallsRewindCmd() *cobra.Command {
@@ -286,12 +346,12 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 			return fmt.Errorf("Paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message)
 		case astra.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
-			return finishPaywallAI(rt, opts, session, event)
+			return finishPaywallAI(ctx, rt, opts, session, event)
 		}
 	}
 }
 
-func finishPaywallAI(rt *Runtime, opts paywallAIOptions, session *astraSession, event *astra.Event) error {
+func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *astraSession, event *astra.Event) error {
 	session.SessionID = event.SessionID
 	session.TraceID = event.TraceID
 	if event.Paywall != nil {
@@ -306,16 +366,74 @@ func finishPaywallAI(rt *Runtime, opts paywallAIOptions, session *astraSession, 
 	if err := saveAstraSession(opts.sessionPath, session); err != nil {
 		return err
 	}
-	rt.Out.Success("Paywall design updated (draft " + session.PaywallID + ")")
-	rt.Out.Info("Session saved to " + opts.sessionPath + " — continue with: rc paywalls edit --session " + opts.sessionPath)
-	rt.Out.Warn("The AI design lives in the session file only: the public API cannot yet save paywall components, so publishing now would ship the default template. Finish the design in the dashboard paywall editor.")
+	saved := false
+	if err := persistPaywallDesign(ctx, rt, session); err != nil {
+		rt.Out.Warn("Could not save the design to RevenueCat: " + err.Error())
+		rt.Out.Info("The design is safe in " + opts.sessionPath + "; re-run rc paywalls edit to retry saving.")
+	} else {
+		saved = true
+		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
+		rt.Out.Info("Publish after review with: rc paywalls publish " + session.PaywallID)
+	}
+	rt.Out.Info("Continue designing with: rc paywalls edit --session " + opts.sessionPath)
 	return rt.Out.Render(map[string]any{
-		"paywall_id":   session.PaywallID,
-		"session_id":   session.SessionID,
-		"trace_id":     session.TraceID,
-		"session_file": opts.sessionPath,
-		"activity":     event.Activity,
+		"paywall_id":     session.PaywallID,
+		"session_id":     session.SessionID,
+		"trace_id":       session.TraceID,
+		"session_file":   opts.sessionPath,
+		"saved_to_draft": saved,
+		"activity":       event.Activity,
 	})
+}
+
+// persistPaywallDesign PATCHes the designed components onto the RevenueCat
+// paywall draft, using the server's current draft revision to avoid stale
+// writes (retried once on a revision conflict).
+func persistPaywallDesign(ctx context.Context, rt *Runtime, session *astraSession) error {
+	client, err := rt.API()
+	if err != nil {
+		return err
+	}
+	update := api.PaywallDraftUpdate{
+		ComponentsConfig:        session.Paywall.ComponentsConfig,
+		ComponentsLocalizations: session.Paywall.ComponentsLocalizations,
+		DefaultLocale:           session.Paywall.DefaultLocale,
+	}
+	for attempt := 0; ; attempt++ {
+		revision, err := currentDraftRevision(ctx, client, session.ProjectID, session.PaywallID)
+		if err != nil {
+			return err
+		}
+		update.Revision = revision
+		updated, err := client.Paywalls.UpdateDraft(ctx, session.ProjectID, session.PaywallID, update)
+		if err == nil {
+			if updated.Components != nil && updated.Components.Draft != nil && updated.Components.Draft.Revision != nil {
+				session.Revision = updated.Components.Draft.Revision
+			}
+			return nil
+		}
+		var apiErr *api.APIError
+		if attempt == 0 && errors.As(err, &apiErr) && apiErr.Status == 409 {
+			continue // stale revision: refetch and retry once
+		}
+		return err
+	}
+}
+
+func currentDraftRevision(ctx context.Context, client *api.Client, projectID, paywallID string) (int, error) {
+	paywall, err := client.Paywalls.GetWithComponents(ctx, projectID, paywallID)
+	if err != nil {
+		return 0, err
+	}
+	if paywall.Components != nil {
+		if d := paywall.Components.Draft; d != nil && d.Revision != nil {
+			return *d.Revision, nil
+		}
+		if p := paywall.Components.Published; p != nil && p.Revision != nil {
+			return *p.Revision, nil
+		}
+	}
+	return 0, nil
 }
 
 // reportPaywallAIActivity prints activity items not yet shown; snapshots carry
