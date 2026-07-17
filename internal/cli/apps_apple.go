@@ -132,10 +132,16 @@ func newAppleConnectClient() (appleConnectClient, error) {
 }
 
 const appleSetupInstructions = `This setup will:
-  1. Sign in directly to Apple with your Apple Account.
-  2. Ask for trusted-device or SMS verification when Apple requires it.
-  3. Create the Apple keys you confirmed above.
-  4. Download each private key once and upload it directly to RevenueCat.
+  1. Show the app's current Apple configuration and ask per key whether to
+     create or replace anything (nothing happens without consent).
+  2. Sign in directly to Apple with your Apple Account, with trusted-device
+     or SMS verification when Apple requires it.
+  3. Offer to create the App Store Connect app record when the bundle ID has
+     none (Developer Portal registration + ASC app).
+  4. Create the Apple keys you confirmed, download each private key once, and
+     upload it directly to RevenueCat.
+  5. Fetch your sales-report vendor number from Apple and confirm before
+     setting it on the RevenueCat app.
 
 Before continuing, have a trusted Apple device or phone available and use an
 Apple Account with permission to manage App Store Connect integration keys.`

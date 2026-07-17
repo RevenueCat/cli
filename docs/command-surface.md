@@ -109,8 +109,8 @@ rc apps update <id>
 rc apps delete <id>
 rc apps keys <app-id>                                    # typed public SDK keys for app integration
 rc apps storekit-config <app-id>                         # store_kit_config; optionally writes .storekit JSON
-rc apps apple check [app-id]                             # POC: validate Apple login, 2FA, team, and key access
-rc apps apple setup [app-id]                             # POC: create/upload missing IAP and ASC keys
+rc apps apple check [app-id]                             # validate Apple login, 2FA, team, and key access (read-only)
+rc apps apple setup [app-id]                             # interactive: create ASC app record if missing, per-key consent for IAP/ASC keys, auto-fetch vendor number
 
 # Customers — busiest noun
 rc customer show [id]                                    # already embeds active_entitlements; we'll add subs + purchases
@@ -305,13 +305,17 @@ rc chat                                                  # internal agent chat
    optional defaults, but is never a prerequisite and desired state is never
    stored globally. These development-only v2 endpoints require the
    `PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag until they ship.
-9. **Apple credential setup POC** — `apps apple check` validates App Store
+9. **Apple credential setup** — `apps apple check` validates App Store
    Connect login, trusted-device/SMS 2FA, team selection, and read-only key
-   access. `apps apple setup` creates one-time downloadable In-App Purchase and
-   App Store Connect API keys and uploads them through the public v2 app update
-   endpoint. Vendor number remains an optional setup flag because Apple exposes
-   no supported discovery endpoint. Small Business Program dates remain out of
-   scope because the public RevenueCat v2 app update schema does not expose them.
+   access. `apps apple setup` shows the app's current configuration, asks per
+   key before creating or replacing (never silently), can create a missing App
+   Store Connect app record (Developer Portal bundle ID + ASC app, like
+   fastlane produce), fetches the sales-report vendor number from the Apple
+   session with confirmation before setting it, and uploads everything through
+   the public v2 app update endpoint. Both commands are marked
+   `requires_human` in `rc schema`/`rc commands` because Apple sign-in needs a
+   person with 2FA. Small Business Program dates remain out of scope because
+   the public RevenueCat v2 app update schema does not expose them.
 10. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
 11. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
 12. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
