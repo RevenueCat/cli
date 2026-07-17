@@ -250,6 +250,15 @@ func (r *Renderer) Title(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
 }
 
+// Field prints an aligned key/value line for status blocks: dim key,
+// normal value, indented under a Title.
+func (r *Renderer) Field(key, value string) {
+	if r.json || r.quiet {
+		return
+	}
+	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(key, 26)), value)
+}
+
 // Blank prints an empty separator line between logical sections.
 func (r *Renderer) Blank() {
 	if r.json || r.quiet {

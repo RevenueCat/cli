@@ -255,10 +255,11 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				if vendorLabel == "" {
 					vendorLabel = "not configured"
 				}
-				rt.Out.Title(fmt.Sprintf("Apple configuration — %s (%s)", app.Name, appID))
-				rt.Out.Info("In-app purchase key         " + appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
-				rt.Out.Info("App Store Connect API key   " + appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
-				rt.Out.Info("Vendor number               " + vendorLabel)
+				rt.Out.Title("Apple configuration — " + app.Name)
+				rt.Out.Field("App", appID)
+				rt.Out.Field("In-app purchase key", appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
+				rt.Out.Field("App Store Connect API key", appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
+				rt.Out.Field("Vendor number", vendorLabel)
 			}
 			// Interactive setups defer the per-key decisions until after Apple
 			// sign-in so they can be made against live App Store Connect state
@@ -302,32 +303,35 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					rt.Out.Title("Plan")
 					step := 1
 					planStep := func(text string) {
-						rt.Out.Info(fmt.Sprintf("  %d. %s", step, text))
+						rt.Out.Info(fmt.Sprintf("%d. %s", step, text))
 						step++
 					}
-					planStep("Sign in to Apple (trusted-device or SMS verification)")
+					planStep("Sign in to Apple (2FA)")
 					if app.AppStore.BundleID != "" {
-						planStep("Verify the App Store Connect app record for " + app.AppStore.BundleID + " (offering to create it if missing)")
+						planStep("Verify the App Store Connect app for " + app.AppStore.BundleID)
 					}
 					switch {
 					case promptDecisions:
-						planStep("Ask which Apple keys to create or replace (nothing changes without consent)")
+						planStep("Choose which keys to create or replace")
 					case createInAppKey && createAPIKey:
-						planStep(fmt.Sprintf("Create in-app purchase key %q and App Store Connect API key %q", inAppKeyName, apiKeyName))
+						planStep("Create the in-app purchase and App Store Connect API keys")
 					case createInAppKey:
-						planStep(fmt.Sprintf("Create in-app purchase key %q in App Store Connect", inAppKeyName))
+						planStep("Create the in-app purchase key")
 					case createAPIKey:
-						planStep(fmt.Sprintf("Create App Store Connect API key %q", apiKeyName))
+						planStep("Create the App Store Connect API key")
 					}
-					if vendorNumber != "" {
+					switch {
+					case vendorNumber != "":
 						planStep("Set vendor number " + vendorNumber)
-					} else {
-						planStep("Look up your vendor number in App Store Connect and confirm before setting it")
+					case existingVendor != "":
+						planStep("Check the vendor number against Apple")
+					default:
+						planStep("Look up and confirm the vendor number")
 					}
-					planStep("Upload the results to RevenueCat app " + appID + " (keys are never stored locally)")
+					planStep("Save to RevenueCat")
 				}
 				if !checkOnly && !rt.Globals.AssumeYes {
-					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Continue and sign in to Apple?")
+					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Sign in to Apple now?")
 					if err != nil {
 						return err
 					}
