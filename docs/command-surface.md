@@ -101,6 +101,7 @@ rc projects show [id]
 rc projects create                                      # create a project; --use saves it as active
 rc projects use <id>                                     # switch profile default (interactive picker if no arg)
 rc projects collaborators                                # list-only in API
+rc browse                                                # interactive project hub TUI (customers, offerings, apps, ...)
 
 # Apps (per-project)
 rc apps list
