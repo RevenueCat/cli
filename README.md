@@ -22,26 +22,7 @@ npx @revenuecat/cli --help
 npm install -g @revenuecat/cli
 ```
 
-**Direct install** — no Xcode Command Line Tools required:
-```bash
-curl -fsSL https://raw.githubusercontent.com/RevenueCat/revenuecat-cli/main/install.sh | sh
-```
-
-Installs to `/usr/local/bin` by default. Use `--install-dir` to change:
-```bash
-curl -fsSL https://raw.githubusercontent.com/RevenueCat/revenuecat-cli/main/install.sh | sh -s -- --install-dir ~/.local/bin
-```
-
 Or download a binary directly from the [releases page](../../releases).
-
-## Updating
-
-```bash
-rc update          # download and install the latest version
-rc update --check  # exit 1 if an update is available (useful in CI)
-```
-
-> **Windows:** `rc update` is not supported on Windows. Download the latest release directly from the [releases page](../../releases).
 
 ## Quick start
 

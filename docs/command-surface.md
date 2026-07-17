@@ -91,7 +91,6 @@ rc skills install                                        # install four core ski
 rc skills prompts                                        # show copy-ready starter prompts; --json returns prompts for agent UIs
 rc open [section] [id]                                   # open the dashboard deep-linked to the active project (uses existing browser session)
 rc version
-rc update                                                # self-update from GitHub Releases; --check exits 1 if stale (not supported on Windows)
 rc completion <shell>
 
 # Project / workspace

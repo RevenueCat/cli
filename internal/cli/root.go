@@ -129,7 +129,6 @@ Agent-friendly entrypoints:
 		newSchemaCmd(root),
 		newCommandsCmd(root),
 		newVersionCmd(),
-		newUpdateCmd(),
 	)
 
 	return root
