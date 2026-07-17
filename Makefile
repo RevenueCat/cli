@@ -1,4 +1,4 @@
-.PHONY: build test check fmt fmt-check vet lint cover install-hooks lefthook gen
+.PHONY: build test check fmt fmt-check vet lint cover install-hooks gen
 
 build:
 	go build ./...
@@ -33,7 +33,11 @@ tidy:
 
 install-hooks:
 	@command -v lefthook >/dev/null || go install github.com/evilmartians/lefthook@latest
-	lefthook install
+	@if command -v lefthook >/dev/null; then \
+		lefthook install; \
+	else \
+		PATH="$(shell go env GOPATH)/bin:$$PATH" lefthook install; \
+	fi
 
 gen: ## Regenerate API types from OpenAPI spec
 	@if ! python3 -c "import yaml" 2>/dev/null; then \
