@@ -11,7 +11,7 @@ import (
 
 const (
 	revenueCatKeychainLabel    = "RevenueCat"
-	revenueCatKeychainProtocol = "htps"
+	revenueCatKeychainProtocol = "htps" // kSecAttrProtocolHTTPS four-char code — not a typo
 	revenueCatKeychainServer   = "app.revenuecat.com"
 )
 
