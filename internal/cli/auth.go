@@ -244,23 +244,35 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		if e := r.URL.Query().Get("error"); e != "" {
 			desc := r.URL.Query().Get("error_description")
-			fmt.Fprintf(w, "<html><body><p>Authorization failed: %s %s — you may close this tab.</p></body></html>", e, desc)
-			errCh <- fmt.Errorf("authorization denied: %s %s", e, desc)
+			fmt.Fprintf(w, "<html><body><p>Authorization failed — you may close this tab.</p></body></html>")
+			select {
+			case errCh <- fmt.Errorf("authorization denied: %s %s", e, desc):
+			default:
+			}
 			return
 		}
 		if got := r.URL.Query().Get("state"); got != state {
 			fmt.Fprintf(w, "<html><body><p>Invalid state — you may close this tab.</p></body></html>")
-			errCh <- fmt.Errorf("state mismatch (possible CSRF); please try logging in again")
+			select {
+			case errCh <- fmt.Errorf("state mismatch (possible CSRF); please try logging in again"):
+			default:
+			}
 			return
 		}
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			fmt.Fprintf(w, "<html><body><p>Missing code — you may close this tab.</p></body></html>")
-			errCh <- fmt.Errorf("callback missing 'code' parameter")
+			select {
+			case errCh <- fmt.Errorf("callback missing 'code' parameter"):
+			default:
+			}
 			return
 		}
 		fmt.Fprintf(w, "<html><body><p>Authorization successful — you may close this tab.</p></body></html>")
-		codeCh <- code
+		select {
+		case codeCh <- code:
+		default:
+		}
 	})
 
 	srv := &http.Server{Handler: mux}
@@ -320,7 +332,7 @@ func openBrowser(url string) error {
 	case "darwin":
 		cmd = exec.Command("open", url)
 	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", url)
+		cmd = exec.Command("cmd", "/c", "start", "", url)
 	default:
 		cmd = exec.Command("xdg-open", url)
 	}
