@@ -250,6 +250,16 @@ func (r *Renderer) Title(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
 }
 
+// Answer is the durable receipt for an answered prompt. Interactive forms
+// erase themselves when they complete, so every decision the user makes is
+// echoed back as a permanent transcript line.
+func (r *Renderer) Answer(key, value string) {
+	if r.json || r.quiet {
+		return
+	}
+	fmt.Fprintf(r.stderr, "%s %s %s\n", r.style(r.success, "✓"), r.style(r.dim, padRight(key, 26)), value)
+}
+
 // Plan renders the guided-command plan: a titled, numbered list of the
 // steps a consequential flow is about to take. Keep steps terse and
 // state-aware — list what will happen this run, not every possibility.

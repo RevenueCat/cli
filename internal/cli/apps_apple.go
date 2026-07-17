@@ -101,6 +101,21 @@ func ensureAppStoreAppRecord(ctx context.Context, rt *Runtime, apple appleConnec
 	return nil
 }
 
+// keyDecisionLabel names the user's choice for a key so the transcript
+// records it after the prompt disappears.
+func keyDecisionLabel(create, configured bool) string {
+	switch {
+	case create && configured:
+		return "replace"
+	case create:
+		return "create"
+	case configured:
+		return "keep existing"
+	default:
+		return "skip"
+	}
+}
+
 func appleConfiguredLabel(configured bool) string {
 	if configured {
 		return "configured"
@@ -361,6 +376,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				if err != nil {
 					return err
 				}
+				rt.Out.Blank()
 				rt.Out.Info("Signing in to Apple as " + appleID + "…")
 				session, err := apple.Login(cmd.Context(), appleID, password)
 				if err != nil {
@@ -417,6 +433,9 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				}
 				result.ProviderID = session.Provider.ID
 				result.ProviderName = session.Provider.Name
+				if session.Provider.Name != "" {
+					rt.Out.Answer("Team", fmt.Sprintf("%s (%d)", session.Provider.Name, session.Provider.ID))
+				}
 				if checkOnly {
 					if err := apple.CheckKeyAccess(cmd.Context(), session, appleconnect.InAppPurchaseKey); err != nil {
 						return err
@@ -461,10 +480,12 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					if err != nil {
 						return err
 					}
+					rt.Out.Answer("In-app purchase key", keyDecisionLabel(createInAppKey, app.AppStore.SubscriptionKeyConfigured))
 					createAPIKey, err = decideAppleKey(rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, true)
 					if err != nil {
 						return err
 					}
+					rt.Out.Answer("App Store Connect API key", keyDecisionLabel(createAPIKey, app.AppStore.AppStoreConnectAPIKeyConfigured))
 				}
 
 				if vendorNumber == "" {
@@ -488,8 +509,9 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						}
 						if use {
 							vendorNumber = fetched
+							rt.Out.Answer("Vendor number", fetched)
 						} else {
-							rt.Out.Info("Keeping the RevenueCat app's current vendor number setting.")
+							rt.Out.Answer("Vendor number", "unchanged")
 						}
 					case !rt.Globals.NoInput && tui.IsInteractive():
 						rt.Out.Warn("Could not fetch it automatically: " + err.Error())
