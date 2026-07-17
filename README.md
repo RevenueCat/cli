@@ -138,7 +138,7 @@ The toolkit can discover every CLI contract with `rc commands --json` and
 |---|---|
 | `--json` | Machine-readable output |
 | `--no-input` | Fail rather than prompt (for scripts/CI) |
-| `--profile <name>` | Config profile (`$RC_PROFILE` or `"default"`) |
+| `--profile <name>` | Config profile (precedence: flag → `$RC_PROFILE` → `rc profiles use` → `"default"`) |
 | `--api-key <key>` | Override profile key (`$RC_API_KEY`) |
 | `--yes, -y` | Skip confirmation prompts |
 | `--no-color` | Disable ANSI color (also respects `$NO_COLOR`) |

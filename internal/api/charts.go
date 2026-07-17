@@ -61,7 +61,7 @@ type ChartValue struct {
 type ChartShowOptions struct {
 	// Resolution: "0"=day "1"=week "2"=month "3"=quarter "4"=year (empty = server default)
 	Resolution string
-	// StartDate / EndDate are unix seconds. Zero means no filter.
+	// StartDate / EndDate are unix seconds (converted to YYYY-MM-DD by Show). Zero means no filter.
 	StartDate int64
 	EndDate   int64
 	// Filters are chart-specific key=value params (from --filter flags).
