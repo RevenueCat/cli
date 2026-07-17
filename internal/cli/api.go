@@ -67,25 +67,25 @@ Exit code reflects the HTTP status: non-2xx responses exit non-zero.`,
 					return werr
 				}
 				// Ensure trailing newline for shell friendliness.
-				if len(data) > 0 && data[len(data)-1] != '\n' {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout())
-				}
-			}
-			if status >= 400 {
-				var code int
-				switch {
-				case status == 401 || status == 403:
-					code = 4
-				case status == 404:
-					code = 5
-				case status == 429:
-					code = 6
-				default:
-					code = 1
-				}
-				return &SilentExitError{Code: code}
-			}
-			return nil
+		if len(data) > 0 && data[len(data)-1] != '\n' {
+			_, _ = fmt.Fprintln(cmd.OutOrStdout())
+		}
+	}
+	if status < 200 || status >= 300 {
+		var code int
+		switch {
+		case status == 401 || status == 403:
+			code = 4
+		case status == 404:
+			code = 5
+		case status == 429:
+			code = 6
+		default:
+			code = 1
+		}
+		return &SilentExitError{Code: code}
+	}
+	return nil
 		},
 	}
 	cmd.Flags().StringVar(&bodyFlag, "body", "", `request body: JSON string, @file, or @- for stdin`)

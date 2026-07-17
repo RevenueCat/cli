@@ -547,13 +547,13 @@ func newChartApp(
 }
 
 // RunChartView runs an interactive scrollable chart viewer. Returns an error if
-// stdout is not a TTY — callers should fall back to --json.
+// stdout or stdin is not a TTY — callers should fall back to --json.
 func RunChartView(
 	data *api.ChartData,
 	fetchFn func(resID string, startUnix int64) (*api.ChartData, error),
 	noColor bool,
 ) error {
-	if !term.IsTerminal(int(os.Stdout.Fd())) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) || !term.IsTerminal(int(os.Stdin.Fd())) {
 		return fmt.Errorf("chart view requires a terminal — pass --json for machine-readable output")
 	}
 	app := newChartApp(data, fetchFn, noColor)
