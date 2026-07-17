@@ -35,19 +35,16 @@ Replace the JSON dump with a card view in TTY mode. `--json` path unchanged.
 **Where:** new `internal/output/card.go` with a `RenderCard(spec)` API; the
 spec is composable so other future detail views can reuse it.
 
-### 1.2 Implement `--format` with gojq (M, 3h)
+### 1.2 ~~Implement `--format` with gojq~~ ✓ DONE
 
-Currently the flag is documented but unimplemented — a small lie that's
-hard to defend. Wire it up properly.
+~~Currently the flag is documented but unimplemented.~~ Already implemented
+in `internal/output/output.go` via `github.com/itchyny/gojq`.
 
-**Acceptance:**
-- `rc customer list --json --format '.data.items[].id'` works.
-- Plain JSON path expressions (jq syntax).
-- Errors in the expression go to stderr with a clear message; exit 2.
-- `--format` is only meaningful with `--json` (warn or no-op otherwise).
-
-**Where:** `internal/output/output.go:Render` — apply gojq before writing
-when both `--json` and `--format` are set.
+**Acceptance (met):**
+- ✓ `rc customer list --json --format '.data.items[].id'` works.
+- ✓ Plain JSON path expressions (jq syntax).
+- ✓ Errors in the expression go to stderr with a clear message; exit 2.
+- ✓ `--format` is only meaningful with `--json` (warns otherwise).
 
 ### 1.3 `rc profiles` management (S, 2–3h)
 
@@ -78,11 +75,9 @@ Make the most common API failures self-resolving.
 `internal/cli/runtime.go:ExitCodeFor` (route by type), `internal/cli/run.go`
 (emit `hint` field).
 
-### 1.5 Remove `--format` from help if not implemented yet (XS, 5min)
+### 1.5 ~~Remove `--format` from help if not implemented yet~~ ✓ OBSOLETE
 
-Belt-and-suspenders: until 1.2 ships, the flag should not be listed. Either
-ship 1.2 in the same PR as removing the placeholder, or remove the
-placeholder first and re-add when 1.2 lands.
+`--format` is already implemented; this item is no longer relevant.
 
 ---
 
@@ -155,7 +150,7 @@ Each answer unblocks 1–3 commands in the existing roadmap (see README).
 
 ## Recommended sequencing
 
-1. **Phase 1 in order: 1.2 → 1.4 → 1.3 → 1.1.** Smallest-and-most-embarrassing first; ends with the biggest UX win.
+1. **Phase 1 in order: 1.4 → 1.3 → 1.1.** Smallest-and-most-embarrassing first; ends with the biggest UX win. (1.2 and 1.5 already complete.)
 2. **Commit + push to GitHub.** Get real CI signal, get internal users on it.
 3. **Collect feedback for 1 week.**
 4. **Re-prioritize Phase 2** based on what actually comes up — likely a different order than what's written above.
