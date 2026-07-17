@@ -70,18 +70,24 @@ func newAppsListCmd() *cobra.Command {
 				for i, a := range page.Items {
 					items[i] = appToItem(projectID, a)
 				}
-				return tui.RunBrowserTable("Apps", []string{"ID", "NAME", "TYPE", "CREATED"}, items)
+				err := tui.RunBrowserTable("Apps", []string{"ID", "NAME", "TYPE", "CREATED", "CREDENTIALS"}, items)
+				appleSetupHintForApps(rt, page.Items)
+				return err
 			}
 
 			rows := make([][]string, 0, len(page.Items))
 			for _, a := range page.Items {
-				rows = append(rows, []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt)})
+				rows = append(rows, []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt), appCredentialStatus(a)})
 			}
-			return rt.Out.RenderTable(output.Table{
-				Columns: []string{"ID", "NAME", "TYPE", "CREATED"},
+			if err := rt.Out.RenderTable(output.Table{
+				Columns: []string{"ID", "NAME", "TYPE", "CREATED", "CREDENTIALS"},
 				Rows:    rows,
 				Raw:     page,
-			})
+			}); err != nil {
+				return err
+			}
+			appleSetupHintForApps(rt, page.Items)
+			return nil
 		},
 	}
 }
@@ -121,8 +127,11 @@ func newAppsShowCmd() *cobra.Command {
 			}
 			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
 				item := appToItem(projectID, *a)
-				return tui.RunBrowser("App", []tui.BrowserItem{item})
+				err := tui.RunBrowser("App", []tui.BrowserItem{item})
+				appleSetupHintForApps(rt, []api.App{*a})
+				return err
 			}
+			appleSetupHintForApps(rt, []api.App{*a})
 			return rt.Out.Render(a)
 		},
 	}
@@ -373,14 +382,46 @@ func appToItem(projectID string, a api.App) tui.BrowserItem {
 		ID:     a.ID,
 		Label:  a.Name,
 		Meta:   string(a.Type),
-		Row:    []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt)},
+		Row:    []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt), appCredentialStatus(a)},
 		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/apps/%s", dashboardProjectID(projectID), a.ID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: a.ID},
 			{Key: "Name", Value: a.Name},
 			{Key: "Type", Value: string(a.Type)},
 			{Key: "Created", Value: formatMillis(a.CreatedAt)},
+			{Key: "Credentials", Value: appCredentialStatus(a)},
 		},
+	}
+}
+
+// appCredentialStatus summarizes store-credential readiness for list views.
+// Only App Store apps have CLI-checkable credential state today.
+func appCredentialStatus(a api.App) string {
+	if string(a.Type) != "app_store" || a.AppStore == nil {
+		return "—"
+	}
+	switch {
+	case a.AppStore.SubscriptionKeyConfigured && a.AppStore.AppStoreConnectAPIKeyConfigured:
+		return "ready"
+	case a.AppStore.SubscriptionKeyConfigured || a.AppStore.AppStoreConnectAPIKeyConfigured:
+		return "partial — run: rc apps apple setup"
+	default:
+		return "missing — run: rc apps apple setup"
+	}
+}
+
+// appleSetupHintForApps explains the CREDENTIALS column when any App Store
+// app still needs Apple keys: without them RevenueCat cannot validate App
+// Store purchases or manage products.
+func appleSetupHintForApps(rt *Runtime, apps []api.App) {
+	for _, a := range apps {
+		if string(a.Type) != "app_store" || a.AppStore == nil {
+			continue
+		}
+		if !a.AppStore.SubscriptionKeyConfigured || !a.AppStore.AppStoreConnectAPIKeyConfigured {
+			rt.Out.Warn(fmt.Sprintf("%s is missing Apple credentials — App Store purchases can't be validated until they're set.", a.ID))
+			rt.Out.Info(fmt.Sprintf("Run `rc apps apple setup %s` in a local terminal (interactive Apple sign-in with 2FA).", a.ID))
+		}
 	}
 }
 
