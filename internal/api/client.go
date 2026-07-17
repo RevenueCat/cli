@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -139,12 +140,14 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 
 	// 304: serve from cache.
 	if resp.StatusCode == http.StatusNotModified {
-		if v, ok := c.cache.Load(urlStr); ok && out != nil {
-			if entry, ok := v.(cacheEntry); ok {
-				return json.Unmarshal(entry.body, out)
-			}
+		if out == nil {
+			return nil
 		}
-		return nil
+		v, ok := c.cache.Load(urlStr)
+		if !ok {
+			return fmt.Errorf("received 304 but no cached body found for %s", urlStr)
+		}
+		return json.Unmarshal(v.(cacheEntry).body, out)
 	}
 
 	if resp.StatusCode >= 400 {
@@ -205,7 +208,8 @@ func encodePath(parts ...string) string {
 }
 
 // Raw executes a raw HTTP request and returns the response body and status code.
-// Auth headers are set from the client's API key. Useful for the `rc api` passthrough command.
+// Auth headers are set from the client's bearer token (API key or OAuth access token).
+// Useful for the `rc api` passthrough command.
 func (c *Client) Raw(ctx context.Context, method, path string, body []byte) ([]byte, int, error) {
 	var rdr io.Reader
 	if len(body) > 0 {
