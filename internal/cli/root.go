@@ -101,6 +101,7 @@ Agent-friendly entrypoints:
 	whoamiAlias.Hidden = true
 
 	root.AddCommand(
+		newOpenCmd(),
 		newAuthCmd(),
 		loginAlias,
 		whoamiAlias,
