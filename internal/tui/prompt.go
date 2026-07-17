@@ -1,6 +1,8 @@
-// Package tui wraps charmbracelet/huh so every interactive prompt
-//   - skips fields that are already set (via flag/env), and
-//   - fails cleanly under --no-input or non-TTY instead of hanging.
+// Package tui wraps charmbracelet/huh to ensure every interactive prompt fails
+// cleanly under --no-input or non-TTY instead of hanging.
+//
+// Field skipping (when values are already set via flags/env) is the caller's
+// responsibility — they must check the value before calling Field().
 //
 // This is the linchpin of dual-use (human + LLM): one command surface, two
 // modes of driving it.
@@ -24,12 +26,11 @@ func Form(noInput bool) *FormBuilder {
 	return &FormBuilder{noInput: noInput}
 }
 
-// Field adds an interactive field, but only if its bound value is currently
-// the zero value. huh fields bind via Value(&x); we can't introspect that here,
-// so the caller's prompt library convention is: pre-populate from flags before
-// calling Field, and pass nil/skip when satisfied. For simplicity in the
-// scaffold we just always include fields and rely on huh's WithAccessible mode
-// for non-TTY environments.
+// Field adds an interactive field to the form. It unconditionally appends the
+// field — callers must decide whether to call this based on whether the value
+// is already set (e.g. via flag). Under --no-input, fields are validated via
+// their attached Validate() functions; required fields should use
+// Validate(Required(...)) to enforce presence in non-interactive mode.
 func (b *FormBuilder) Field(f huh.Field) *FormBuilder {
 	b.fields = append(b.fields, f)
 	return b

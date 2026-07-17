@@ -32,7 +32,7 @@ type Renderer struct {
 	json    bool
 	noColor bool
 	quiet   bool
-	format  string // jsonpath-style projection (TODO: wire to a jq-lite eval)
+	format  string // jq expression applied to --json output (via gojq)
 
 	success lipgloss.Style
 	info    lipgloss.Style
