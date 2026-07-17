@@ -32,32 +32,6 @@ func (c *Client) AppExists(ctx context.Context, session *Session, bundleID strin
 	return len(out.Data) > 0, nil
 }
 
-// RegisterBundleID registers an explicit iOS bundle ID in the Apple Developer
-// Portal. An already-registered identifier is not an error.
-func (c *Client) RegisterBundleID(ctx context.Context, session *Session, identifier, name string) error {
-	if session == nil || session.client != c {
-		return errors.New("authenticated Apple session is required")
-	}
-	body := map[string]any{
-		"data": map[string]any{
-			"type": "bundleIds",
-			"attributes": map[string]any{
-				"identifier": identifier,
-				"name":       name,
-				"platform":   "IOS",
-			},
-		},
-	}
-	err := c.doJSON(ctx, http.MethodPost, c.ascBaseURL+"/iris/v1/bundleIds", body, nil, irisHeaders(c.ascBaseURL))
-	if err != nil && strings.Contains(strings.ToLower(err.Error()), "already") {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("register bundle ID %s: %w", identifier, err)
-	}
-	return nil
-}
-
 // CreateApp creates the App Store Connect app record, mirroring fastlane
 // produce: fetch the creation template, fill it in, and post it back.
 func (c *Client) CreateApp(ctx context.Context, session *Session, name, bundleID, sku string) error {
