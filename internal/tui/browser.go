@@ -862,11 +862,11 @@ func (m *browser) viewDetail(f *bframe) string {
 
 var (
 	brTitle    = lipgloss.NewStyle().Bold(true).Foreground(output.BrandRed)
-	brCursor   = lipgloss.NewStyle().Foreground(output.BrandRed).Bold(true)
+	brCursor   = lipgloss.NewStyle().Foreground(output.AccentViolet).Bold(true)
 	brSelected = lipgloss.NewStyle().Bold(true)
 	brDim      = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	brFilter   = lipgloss.NewStyle().Foreground(output.WarnAmber)
-	brSection  = lipgloss.NewStyle().Foreground(output.BrandRed).Bold(true)
+	brSection  = lipgloss.NewStyle().Bold(true)
 	brErr      = lipgloss.NewStyle().Foreground(output.ErrorRed).Bold(true)
 	brLink     = lipgloss.NewStyle().Foreground(output.InfoBlue)
 	brLinkSel  = lipgloss.NewStyle().Foreground(output.GreenOK).Bold(true)

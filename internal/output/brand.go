@@ -15,6 +15,11 @@ var (
 	GreenOK   = lipgloss.AdaptiveColor{Light: "#00845E", Dark: "#11D483"}
 	WarnAmber = lipgloss.AdaptiveColor{Light: "#AC592D", Dark: "#E79462"}
 	InfoBlue  = lipgloss.AdaptiveColor{Light: "#4F62C4", Dark: "#7D8EF2"}
+	// AccentViolet is the interaction accent (focus, selection, cursors) —
+	// RC violet. Red is reserved: brand red for section/title landmarks
+	// only, error red for failures only, because in terminals colored red
+	// text reads as danger regardless of brand.
+	AccentViolet = lipgloss.AdaptiveColor{Light: "#7C5CA8", Dark: "#A987D1"}
 )
 
 // Shared semantic styles. Commands and TUIs should use these instead of

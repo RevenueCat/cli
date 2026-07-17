@@ -127,7 +127,7 @@ var (
 				Border(lipgloss.RoundedBorder()).
 				BorderForeground(lipgloss.Color("8")).
 				Padding(0, 1)
-	chatInputActive = output.BrandRed
+	chatInputActive = output.AccentViolet
 )
 
 func newChatModel(cfg Chat) *chatModel {

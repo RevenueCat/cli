@@ -14,23 +14,26 @@ import (
 	"os"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 
 	"github.com/revenuecat/cli/internal/output"
 )
 
-// BrandTheme is huh's Charm theme recolored with the RevenueCat palette so
-// every prompt, picker, and confirm reads as the same product.
+// BrandTheme follows the CLI's color standard: ANSI semantics carry meaning
+// (red is danger), RC violet is the single interaction accent (focus,
+// selection, cursor), and field titles stay neutral bold so labels never
+// look like errors. Brand red appears only at section landmarks, not here.
 func BrandTheme() *huh.Theme {
 	t := huh.ThemeCharm()
-	t.Focused.Title = t.Focused.Title.Foreground(output.BrandRed).Bold(true)
-	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(output.BrandRed)
-	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(output.BrandRed)
+	t.Focused.Title = t.Focused.Title.Foreground(lipgloss.NoColor{}).Bold(true)
+	t.Blurred.Title = t.Blurred.Title.Foreground(lipgloss.NoColor{}).Bold(true).Faint(true)
+	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(output.AccentViolet)
+	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(output.AccentViolet)
 	t.Focused.SelectedPrefix = t.Focused.SelectedPrefix.Foreground(output.GreenOK)
-	t.Focused.FocusedButton = t.Focused.FocusedButton.Background(output.BrandRed)
-	t.Focused.TextInput.Prompt = t.Focused.TextInput.Prompt.Foreground(output.BrandRed)
-	t.Focused.TextInput.Cursor = t.Focused.TextInput.Cursor.Foreground(output.BrandRed)
-	t.Focused.Base = t.Focused.Base.BorderForeground(output.BrandRed)
+	t.Focused.FocusedButton = t.Focused.FocusedButton.Background(output.AccentViolet)
+	t.Focused.TextInput.Prompt = t.Focused.TextInput.Prompt.Foreground(output.AccentViolet)
+	t.Focused.TextInput.Cursor = t.Focused.TextInput.Cursor.Foreground(output.AccentViolet)
 	return t
 }
 
@@ -83,7 +86,7 @@ func ConfirmDefault(noInput bool, msg string, defaultValue bool) (bool, error) {
 	}
 	ok := defaultValue
 	confirm := huh.NewConfirm().Title(msg).Value(&ok)
-	err := huh.NewForm(huh.NewGroup(confirm)).WithTheme(BrandTheme()).Run()
+	err := huh.NewForm(huh.NewGroup(confirm)).WithTheme(BrandTheme()).WithShowHelp(false).Run()
 	return ok, err
 }
 
