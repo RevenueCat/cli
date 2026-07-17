@@ -90,7 +90,6 @@ rc skills install                                        # install four core ski
                                                          # RC_SKILLS_BRANCH / --branch installs an unreleased toolkit branch
 rc skills prompts                                        # show copy-ready starter prompts; --json returns prompts for agent UIs
 rc version
-rc update                                                # self-update from GitHub Releases; --check exits 1 if stale (not supported on Windows)
 rc completion <shell>
 
 # Project / workspace
