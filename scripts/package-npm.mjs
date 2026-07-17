@@ -40,6 +40,8 @@ if (!version || version === true) {
 }
 
 // GoReleaser lays binaries out as dist/<build-id>_<goos>_<goarch>[_<goamd64>]/<binary>.
+// (Documented layout: https://goreleaser.com/customization/builds/#build-output —
+// if a GoReleaser upgrade changes this, findBinary is the only place to touch.)
 function findBinary(platform) {
   const entries = fs.readdirSync(distDir, { withFileTypes: true });
   for (const entry of entries) {
