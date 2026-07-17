@@ -16,7 +16,7 @@ type Globals struct {
 	Profile   string
 	APIKey    string
 	ProjectID string
-	Format    string // jsonpath-style projection, applied to --json output
+	Format    string // jq/gojq expression, applied to --json output
 	NoColor   bool
 	AssumeYes bool
 	Version   string

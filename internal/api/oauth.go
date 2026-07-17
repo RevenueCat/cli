@@ -57,7 +57,7 @@ type authorizationResponse struct {
 	RedirectURI string `json:"redirect_uri"`
 }
 
-// AuthorizeURL builds the /auth/authorize URL the user's browser should visit.
+// AuthorizeURL builds the /oauth2/authorize URL the user's browser should visit.
 // state is a caller-generated random value that the server echoes back; callers
 // must verify it in the callback to prevent CSRF.
 func (s *OAuthService) AuthorizeURL(redirectURI, challenge, state string) string {

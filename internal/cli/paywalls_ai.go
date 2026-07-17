@@ -332,7 +332,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	for {
 		event, err := stream.Next()
 		if err == io.EOF {
-			return fmt.Errorf("Astra closed the stream without completing the run")
+			return fmt.Errorf("astra closed the stream without completing the run")
 		}
 		if err != nil {
 			return err
@@ -343,7 +343,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 		case astra.EventTurnSnapshot:
 			reportedActivity = reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 		case astra.EventRunFailed:
-			return fmt.Errorf("Paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message)
+			return fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message)
 		case astra.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			return finishPaywallAI(ctx, rt, opts, session, event)

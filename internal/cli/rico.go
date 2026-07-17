@@ -426,7 +426,7 @@ func (s *ricoSession) streamRun(ctx context.Context, input rico.RunAgentInput, r
 			sink.Tool(event.ToolCallName)
 		case rico.EventRunError:
 			result.Status = "error"
-			return nil, fmt.Errorf("Rico run failed: %s", event.Message)
+			return nil, fmt.Errorf("rico run failed: %s", event.Message)
 		case rico.EventRunFinished:
 			if event.Outcome != nil && event.Outcome.Type == "interrupt" {
 				result.Status = "interrupted"
