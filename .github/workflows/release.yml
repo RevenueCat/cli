@@ -26,3 +26,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Token with write access to RevenueCat/homebrew-tap
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - name: Publish npm packages (@revenuecat/cli + platform binaries)
+        run: node scripts/package-npm.mjs --version "${GITHUB_REF_NAME#v}" --dist dist --out npm-dist --publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

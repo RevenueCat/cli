@@ -15,6 +15,13 @@ rc charts show mrr
 brew install RevenueCat/tap/rc
 ```
 
+**npm / npx** — no Homebrew required; ideal for CI, agent sandboxes, and React Native projects. The package ships the same native Go binary; Node only dispatches:
+```bash
+npx @revenuecat/cli --help
+# or install it
+npm install -g @revenuecat/cli
+```
+
 **Direct install** — no Xcode Command Line Tools required:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/RevenueCat/revenuecat-cli/main/install.sh | sh

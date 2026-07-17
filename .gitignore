@@ -6,3 +6,4 @@
 # Agent harness local state (Claude Code, Cursor, etc.)
 .claude/
 .cursor/mcp.json
+npm-dist/
