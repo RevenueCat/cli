@@ -251,38 +251,34 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				rt.Out.Info("  In-app purchase key:        " + appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
 				rt.Out.Info("  App Store Connect API key:  " + appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
 			}
-			createInAppKey, err := decideAppleKey(rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, !checkOnly)
-			if err != nil {
-				return err
-			}
-			createAPIKey, err := decideAppleKey(rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, !checkOnly)
-			if err != nil {
-				return err
-			}
-			// Declining every key can still be a valid run: verifying (and
-			// creating) the App Store Connect app record and the vendor number
-			// need the Apple session too.
-			verifyOnly := false
-			if !checkOnly && !createInAppKey && !createAPIKey && vendorNumber == "" &&
-				!rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive() {
-				verifyOnly, err = tui.ConfirmDefault(rt.Globals.NoInput,
-					"No keys selected. Sign in to Apple anyway to verify the App Store Connect app record and vendor number?", true)
+			// Interactive setups defer the per-key decisions until after Apple
+			// sign-in so they can be made against live App Store Connect state
+			// (app record, vendor number). Non-interactive runs decide from
+			// flags now and can exit without touching Apple.
+			promptDecisions := !checkOnly && !rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive()
+			createInAppKey, createAPIKey := false, false
+			if !promptDecisions {
+				createInAppKey, err = decideAppleKey(rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, false)
 				if err != nil {
 					return err
 				}
-			}
-			needsApple := checkOnly || createInAppKey || createAPIKey || verifyOnly
-			if !needsApple && vendorNumber == "" {
-				rt.Out.Success("Nothing to do — existing configuration was kept.")
-				if rt.Out.IsJSON() {
-					return rt.Out.Render(appleConfigurationResult{
-						AppID:             appID,
-						Mode:              "noop",
-						AlreadyConfigured: true,
-					})
+				createAPIKey, err = decideAppleKey(rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, false)
+				if err != nil {
+					return err
 				}
-				return nil
+				if !checkOnly && !createInAppKey && !createAPIKey && vendorNumber == "" {
+					rt.Out.Success("Nothing to do — existing configuration was kept.")
+					if rt.Out.IsJSON() {
+						return rt.Out.Render(appleConfigurationResult{
+							AppID:             appID,
+							Mode:              "noop",
+							AlreadyConfigured: true,
+						})
+					}
+					return nil
+				}
 			}
+			needsApple := checkOnly || promptDecisions || createInAppKey || createAPIKey
 
 			if needsApple {
 				if !rt.Globals.NoInput && tui.IsInteractive() {
@@ -304,16 +300,20 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					if app.AppStore.BundleID != "" {
 						planStep("Verify the App Store Connect app record for " + app.AppStore.BundleID + " (offering to create it if missing)")
 					}
-					if createInAppKey {
+					switch {
+					case promptDecisions:
+						planStep("Ask which Apple keys to create or replace (nothing changes without consent)")
+					case createInAppKey && createAPIKey:
+						planStep(fmt.Sprintf("Create in-app purchase key %q and App Store Connect API key %q", inAppKeyName, apiKeyName))
+					case createInAppKey:
 						planStep(fmt.Sprintf("Create in-app purchase key %q in App Store Connect", inAppKeyName))
-					}
-					if createAPIKey {
+					case createAPIKey:
 						planStep(fmt.Sprintf("Create App Store Connect API key %q", apiKeyName))
 					}
 					if vendorNumber != "" {
 						planStep("Set vendor number " + vendorNumber)
 					} else {
-						planStep("Look up your vendor number in App Store Connect and set it on the RevenueCat app")
+						planStep("Look up your vendor number in App Store Connect and confirm before setting it")
 					}
 					planStep("Upload the results to RevenueCat app " + appID + " (keys are never stored locally)")
 				}
@@ -446,6 +446,17 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 
 				if err := ensureAppStoreAppRecord(cmd.Context(), rt, apple, session, app); err != nil {
 					return err
+				}
+
+				if promptDecisions {
+					createInAppKey, err = decideAppleKey(rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, true)
+					if err != nil {
+						return err
+					}
+					createAPIKey, err = decideAppleKey(rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, true)
+					if err != nil {
+						return err
+					}
 				}
 
 				if vendorNumber == "" {
