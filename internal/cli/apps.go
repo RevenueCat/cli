@@ -472,13 +472,26 @@ These are client-side public keys, not secret RevenueCat API keys.`,
 					"key_type": keyType, "environment": key.Environment, "created_at": key.CreatedAt,
 				}
 			}
-			return rt.Out.RenderTable(output.Table{
+			// The custom URL scheme belongs with SDK integration values: apps
+			// register it for paywall preview and redemption deep links.
+			scheme := ""
+			if extras, err := client.Apps.GetExtras(cmd.Context(), projectID, appID); err == nil {
+				scheme = extras.CustomURLScheme
+			}
+			if err := rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "STORE / KEY TYPE", "API ENVIRONMENT", "PUBLIC SDK KEY", "CREATED"},
 				Rows:    rows,
 				Raw: map[string]any{
 					"object": keys.Object, "items": rawItems, "next_page": keys.NextPage, "url": keys.URL,
+					"custom_url_scheme": scheme,
 				},
-			})
+			}); err != nil {
+				return err
+			}
+			if scheme != "" {
+				rt.Out.Info("Custom URL scheme (register for paywall preview / redemption links): " + scheme)
+			}
+			return nil
 		},
 	}
 }

@@ -246,10 +246,19 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				return fmt.Errorf("app %s is not an App Store app", appID)
 			}
 
+			existingVendor := ""
+			if extras, err := rc.Apps.GetExtras(cmd.Context(), projectID, appID); err == nil {
+				existingVendor = extras.AppStoreVendorNumber()
+			}
 			if !checkOnly {
+				vendorLabel := existingVendor
+				if vendorLabel == "" {
+					vendorLabel = "not configured"
+				}
 				rt.Out.Info(fmt.Sprintf("Current Apple configuration for %s (%s):", app.Name, appID))
 				rt.Out.Info("  In-app purchase key:        " + appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
 				rt.Out.Info("  App Store Connect API key:  " + appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
+				rt.Out.Info("  Vendor number:              " + vendorLabel)
 			}
 			// Interactive setups defer the per-key decisions until after Apple
 			// sign-in so they can be made against live App Store Connect state
@@ -463,12 +472,17 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					rt.Out.Info("Looking up your vendor number in App Store Connect…")
 					fetched, err := apple.FetchVendorNumber(cmd.Context(), session)
 					switch {
+					case err == nil && fetched == existingVendor:
+						rt.Out.Info("Vendor number " + fetched + " already matches the RevenueCat app; nothing to change.")
 					case err == nil:
 						rt.Out.Success("Found vendor number " + fetched)
 						use := true
 						if !rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive() {
-							use, err = tui.ConfirmDefault(rt.Globals.NoInput,
-								"Set vendor number "+fetched+" on the RevenueCat app? (replaces any previously saved value)", true)
+							question := "Set vendor number " + fetched + " on the RevenueCat app?"
+							if existingVendor != "" {
+								question = "Replace vendor number " + existingVendor + " with " + fetched + " on the RevenueCat app?"
+							}
+							use, err = tui.ConfirmDefault(rt.Globals.NoInput, question, true)
 							if err != nil {
 								return err
 							}

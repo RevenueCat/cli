@@ -28,6 +28,31 @@ type AppUpdate struct {
 	AppStore *AppStoreAppConfig `json:"app_store,omitempty"`
 }
 
+// AppExtras carries App read-model fields added after the generated types
+// were last regenerated (khepri #22858): the custom URL scheme used for
+// paywall preview / redemption deep links, and the App Store vendor number.
+// Both are empty when unset or when the server predates the fields.
+type AppExtras struct {
+	CustomURLScheme string `json:"custom_url_scheme,omitempty"`
+	AppStore        *struct {
+		VendorNumber string `json:"app_store_connect_vendor_number,omitempty"`
+	} `json:"app_store,omitempty"`
+}
+
+func (e *AppExtras) AppStoreVendorNumber() string {
+	if e == nil || e.AppStore == nil {
+		return ""
+	}
+	return e.AppStore.VendorNumber
+}
+
+// GetExtras fetches the newer read-model fields for an app.
+func (s *AppsService) GetExtras(ctx context.Context, projectID, id string) (*AppExtras, error) {
+	var out AppExtras
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps", id), nil, &out)
+	return &out, err
+}
+
 type AmazonAppConfig struct {
 	PackageName  string  `json:"package_name"`
 	SharedSecret *string `json:"shared_secret,omitempty"`

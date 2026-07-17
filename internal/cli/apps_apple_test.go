@@ -59,8 +59,14 @@ func TestAppsAppleCheck_AuthenticatesAndNeverMutates(t *testing.T) {
 	mu.Lock()
 	requests := append([]string(nil), revenueCatRequests...)
 	mu.Unlock()
-	if len(requests) != 1 || requests[0] != "GET /projects/proj/apps/app" {
-		t.Fatalf("RevenueCat requests = %v, want one read-only app request", requests)
+	// Two read-only fetches: the app record plus the extras (vendor number).
+	for _, request := range requests {
+		if request != "GET /projects/proj/apps/app" {
+			t.Fatalf("RevenueCat requests = %v, want only read-only app requests", requests)
+		}
+	}
+	if len(requests) == 0 {
+		t.Fatal("no RevenueCat requests made")
 	}
 	if apple.mutated {
 		t.Fatal("Apple check called a mutating key-creation method")
