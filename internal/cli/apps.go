@@ -219,7 +219,7 @@ func newAppsCreateCmd() *cobra.Command {
 			rt.Out.Success(fmt.Sprintf("Created app %s", a.ID))
 			if appType == "app_store" && subscriptionPrivateKey == "" {
 				rt.Out.Warn("Apple credentials are still required before App Store purchases can be validated.")
-				rt.Out.Info(fmt.Sprintf("Run `rc apps apple setup %s` in a local terminal — it signs in to Apple with 2FA, so a human must run it (agents: hand this command to the user).", a.ID))
+				rt.Out.Hint(fmt.Sprintf("Next:  rc apps apple setup %s  (Apple sign-in with 2FA — a human must run this)", a.ID))
 			}
 			return rt.Out.Render(a)
 		},
@@ -420,7 +420,7 @@ func appleSetupHintForApps(rt *Runtime, apps []api.App) {
 		}
 		if !a.AppStore.SubscriptionKeyConfigured || !a.AppStore.AppStoreConnectAPIKeyConfigured {
 			rt.Out.Warn(fmt.Sprintf("%s is missing Apple credentials — App Store purchases can't be validated until they're set.", a.ID))
-			rt.Out.Info(fmt.Sprintf("Run `rc apps apple setup %s` in a local terminal (interactive Apple sign-in with 2FA).", a.ID))
+			rt.Out.Hint(fmt.Sprintf("Fix it:  rc apps apple setup %s  (interactive Apple sign-in with 2FA)", a.ID))
 		}
 	}
 }

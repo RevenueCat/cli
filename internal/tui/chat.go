@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/revenuecat/cli/internal/output"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -114,18 +116,18 @@ type chatModel struct {
 }
 
 var (
-	chatHeaderStyle   = lipgloss.NewStyle().Bold(true)
+	chatHeaderStyle   = lipgloss.NewStyle().Foreground(output.BrandRed).Bold(true)
 	chatDimStyle      = lipgloss.NewStyle().Faint(true)
-	chatUserStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true)
+	chatUserStyle     = lipgloss.NewStyle().Foreground(output.BrandRed).Bold(true)
 	chatToolStyle     = lipgloss.NewStyle().Faint(true)
-	chatNoticeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-	chatApproveStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
-	chatDestructStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true)
+	chatNoticeStyle   = lipgloss.NewStyle().Foreground(output.WarnAmber)
+	chatApproveStyle  = lipgloss.NewStyle().Foreground(output.GreenOK).Bold(true)
+	chatDestructStyle = lipgloss.NewStyle().Foreground(output.ErrorRed).Bold(true)
 	chatInputBoxStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
 				BorderForeground(lipgloss.Color("8")).
 				Padding(0, 1)
-	chatInputActive = lipgloss.Color("6")
+	chatInputActive = output.BrandRed
 )
 
 func newChatModel(cfg Chat) *chatModel {

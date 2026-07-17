@@ -309,7 +309,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	ctx, cancel := context.WithTimeout(ctx, opts.timeout)
 	defer cancel()
 
-	rt.Out.Info("Starting Paywall AI editor run")
+	rt.Out.Info("Designing with Astra — this can take a few minutes…")
 	stream, err := client.Stream(ctx, astra.EditorRequest{
 		ProjectID:        session.ProjectID,
 		PaywallID:        session.PaywallID,
@@ -369,13 +369,13 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	saved := false
 	if err := persistPaywallDesign(ctx, rt, session); err != nil {
 		rt.Out.Warn("Could not save the design to RevenueCat: " + err.Error())
-		rt.Out.Info("The design is safe in " + opts.sessionPath + "; re-run rc paywalls edit to retry saving.")
+		rt.Out.Hint("The design is safe in " + opts.sessionPath + " — re-run rc paywalls edit to retry saving.")
 	} else {
 		saved = true
 		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
-		rt.Out.Info("Publish after review with: rc paywalls publish " + session.PaywallID)
+		rt.Out.Hint("Keep designing:  rc paywalls edit --session " + opts.sessionPath)
+		rt.Out.Hint("Publish when ready:  rc paywalls publish " + session.PaywallID)
 	}
-	rt.Out.Info("Continue designing with: rc paywalls edit --session " + opts.sessionPath)
 	return rt.Out.Render(map[string]any{
 		"paywall_id":     session.PaywallID,
 		"session_id":     session.SessionID,

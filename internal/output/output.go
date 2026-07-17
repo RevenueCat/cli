@@ -38,6 +38,8 @@ type Renderer struct {
 	info    lipgloss.Style
 	warn    lipgloss.Style
 	errSty  lipgloss.Style
+	dim     lipgloss.Style
+	accent  lipgloss.Style
 }
 
 func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format string) *Renderer {
@@ -51,10 +53,12 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 		format:  format,
 	}
 	if !noColor {
-		r.success = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true)
-		r.info = lipgloss.NewStyle().Foreground(lipgloss.Color("12"))
-		r.warn = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
-		r.errSty = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true)
+		r.success = StyleSuccess
+		r.info = StyleDim
+		r.warn = StyleWarn
+		r.errSty = StyleError
+		r.dim = StyleDim
+		r.accent = StyleAccent
 	}
 	return r
 }
@@ -224,7 +228,34 @@ func (r *Renderer) Info(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.info, "• ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+msg)
+}
+
+// Hint is guidance about what to do next — a whole line, dimmed, so it never
+// competes with results.
+func (r *Renderer) Hint(msg string) {
+	if r.json || r.quiet {
+		return
+	}
+	fmt.Fprintln(r.stderr, r.style(r.dim, "  "+msg))
+}
+
+// Title starts a visually distinct section: a brand-colored bar plus a bold
+// heading, preceded by a blank line so output breathes.
+func (r *Renderer) Title(msg string) {
+	if r.json || r.quiet {
+		return
+	}
+	fmt.Fprintln(r.stderr)
+	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
+}
+
+// Blank prints an empty separator line between logical sections.
+func (r *Renderer) Blank() {
+	if r.json || r.quiet {
+		return
+	}
+	fmt.Fprintln(r.stderr)
 }
 
 func (r *Renderer) Warn(msg string) {

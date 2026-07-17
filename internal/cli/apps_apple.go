@@ -255,10 +255,10 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				if vendorLabel == "" {
 					vendorLabel = "not configured"
 				}
-				rt.Out.Info(fmt.Sprintf("Current Apple configuration for %s (%s):", app.Name, appID))
-				rt.Out.Info("  In-app purchase key:        " + appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
-				rt.Out.Info("  App Store Connect API key:  " + appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
-				rt.Out.Info("  Vendor number:              " + vendorLabel)
+				rt.Out.Title(fmt.Sprintf("Apple configuration — %s (%s)", app.Name, appID))
+				rt.Out.Info("In-app purchase key         " + appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
+				rt.Out.Info("App Store Connect API key   " + appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
+				rt.Out.Info("Vendor number               " + vendorLabel)
 			}
 			// Interactive setups defer the per-key decisions until after Apple
 			// sign-in so they can be made against live App Store Connect state
@@ -295,11 +295,11 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						rt.Out.Info(appleCheckInstructions)
 						rt.Out.Info(privacy)
 					} else {
-						rt.Out.Info("Credentials go directly to Apple — never to RevenueCat. New private keys are uploaded to RevenueCat and never stored locally or shown.")
+						rt.Out.Hint("Credentials go directly to Apple — never to RevenueCat. New keys upload to RevenueCat and are never stored locally or shown.")
 					}
 				}
 				if !checkOnly && !rt.Out.IsJSON() {
-					rt.Out.Info("Plan:")
+					rt.Out.Title("Plan")
 					step := 1
 					planStep := func(text string) {
 						rt.Out.Info(fmt.Sprintf("  %d. %s", step, text))
@@ -537,7 +537,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				rt.Out.Info("Setting vendor number " + vendorNumber + "…")
 			}
 			if len(createdIDs) > 0 || vendorNumber != "" {
-				rt.Out.Info("Uploading configuration to RevenueCat…")
+				rt.Out.Info("Saving to RevenueCat…")
 				if _, err := rc.Apps.Update(cmd.Context(), projectID, appID, update); err != nil {
 					return appleConfigurationError(fmt.Errorf("upload Apple configuration to RevenueCat: %w", err), createdIDs)
 				}

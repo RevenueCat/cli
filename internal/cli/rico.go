@@ -191,7 +191,7 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 	if err := chat.RunChat(); err != nil {
 		return err
 	}
-	s.rt.Out.Info("Resume this conversation with: rc rico chat -r")
+	s.rt.Out.Hint("Resume this conversation:  rc rico chat -r")
 	return nil
 }
 
@@ -329,7 +329,7 @@ func (s *ricoChatUISink) Approve(interrupt rico.Interrupt, label string) (bool, 
 
 func (s *ricoSession) repl(ctx context.Context) error {
 	s.rt.Out.Info("Chatting with Rico — empty line or Ctrl-D to exit")
-	s.rt.Out.Info("Conversation: " + s.conversationID)
+	s.rt.Out.Hint("Conversation " + s.conversationID)
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Fprint(os.Stderr, "\n> ")
@@ -362,7 +362,7 @@ func (s *ricoSession) turn(ctx context.Context, message string) error {
 	if s.rt.Out.IsJSON() {
 		return s.rt.Out.Render(result)
 	}
-	s.rt.Out.Info("Conversation " + s.conversationID + " · run " + result.RunID)
+	s.rt.Out.Hint("Conversation " + s.conversationID + " · run " + result.RunID)
 	return nil
 }
 

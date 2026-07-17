@@ -108,6 +108,7 @@ To add e.g. `offerings`:
 - **Module path**: `github.com/revenuecat/cli`
 - **Go version**: 1.25 (pinned via `mise.toml`; run `mise install` once)
 - **Formatting**: `gofmt` / `go vet` clean. CI enforces.
+- **Output style**: use the semantic helpers on the renderer — `Success` (result), `Info` (progress, dim `·`), `Warn`, `Error`, `Hint` (dimmed next-step guidance), `Title` (brand-red section bar), `Blank` (breathing room). Colors come from `internal/output/brand.go` (RevenueCat palette; brand red is identity, never errors). Voice: short, verb-first, say the outcome not the mechanism ("Saving to RevenueCat…" not "Uploading configuration to the v2 endpoint…"); next-step commands go in a `Hint`, not prose.
 - **Errors**: return typed `*api.APIError` from the API layer. CLI layer maps to
   exit codes via `runtime.go:ExitCodeFor`. Use `errors.As`, never string match.
 - **Context**: every API method takes `ctx context.Context` first. Pass

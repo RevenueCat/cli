@@ -67,15 +67,15 @@ func (r *Renderer) RenderCard(c Card) error {
 	}
 
 	titleStyle := lipgloss.NewStyle().Bold(true)
-	subtitleStyle := lipgloss.NewStyle().Faint(true)
-	headingStyle := lipgloss.NewStyle().Bold(true).Underline(true)
+	subtitleStyle := StyleDim
+	headingStyle := lipgloss.NewStyle().Foreground(BrandRed).Bold(true)
 	emptyStyle := lipgloss.NewStyle().Faint(true).Italic(true)
 
 	if c.Title != "" {
-		fmt.Fprintln(r.stdout, r.style(titleStyle, c.Title))
+		fmt.Fprintln(r.stdout, r.style(StyleAccent, "▍ ")+r.style(titleStyle, c.Title))
 	}
 	if c.Subtitle != "" {
-		fmt.Fprintln(r.stdout, r.style(subtitleStyle, c.Subtitle))
+		fmt.Fprintln(r.stdout, "  "+r.style(subtitleStyle, c.Subtitle))
 	}
 
 	for _, s := range c.Sections {
