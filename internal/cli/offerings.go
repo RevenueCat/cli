@@ -333,7 +333,10 @@ func offeringToItem(ctx context.Context, client *api.Client, projectID string, o
 
 			// Packages — selectable, drills to package detail
 			pp, err := client.Packages.List(ctx, projectID, o.ID)
-			if err == nil {
+			if err != nil {
+				return nil, err
+			}
+			{
 				sec := tui.BrowserSection{
 					Title: "Packages",
 					Cols:  []string{"LOOKUP KEY", "DISPLAY NAME", "POSITION"},
