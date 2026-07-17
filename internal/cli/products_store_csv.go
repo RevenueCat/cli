@@ -405,7 +405,7 @@ func mergeCSVScalar(target *string, value, field string, line int) error {
 
 func mergeCSVMapValue(target map[string]any, key string, value any, field string, line int) error {
 	if existing, ok := target[key]; ok && !reflect.DeepEqual(existing, value) {
-		return fmt.Errorf("store-state CSV line %d: conflicting %s values", line, field)
+		return fmt.Errorf("store-state CSV line %d: conflicting %s values (%v vs %v)", line, field, existing, value)
 	}
 	target[key] = value
 	return nil
