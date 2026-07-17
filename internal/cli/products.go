@@ -246,6 +246,9 @@ func newProductsCreateCmd() *cobra.Command {
 					return err
 				}
 			}
+			if productType != "subscription" && productType != "one_time" {
+				return fmt.Errorf("--type must be 'subscription' or 'one_time', got %q", productType)
+			}
 			client, err := rt.API()
 			if err != nil {
 				return err
@@ -270,7 +273,7 @@ func newProductsCreateCmd() *cobra.Command {
 				AppID:           appID,
 				DisplayName:     displayName,
 			}
-			if duration != "" {
+			if productType == "subscription" && duration != "" {
 				body.Subscription = &api.ProductSubscription{Duration: duration}
 			}
 			p, err := client.Products.Create(cmd.Context(), projectID, body)
