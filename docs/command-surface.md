@@ -86,7 +86,6 @@ rc config                                                # show resolved config
 rc commands                                              # agent discovery (tree)
 rc schema <cmd>                                          # agent discovery (flags)
 rc version
-rc update                                                # self-update from GitHub Releases; --check exits 1 if stale (not supported on Windows)
 rc completion <shell>
 
 # Project / workspace
