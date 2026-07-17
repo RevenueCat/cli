@@ -670,12 +670,11 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 	}), nil
 }
 
-// agentAuthToken returns the credential sent to the Rico/Astra backends.
-// They currently validate dashboard session tokens (rc_auth_token), not the
-// CLI's v2-API OAuth tokens, so RC_AGENT_AUTH_TOKEN lets a dashboard token
-// override until those backends accept CLI OAuth.
+// agentAuthToken returns the credential sent to the Rico/Astra backends —
+// the CLI's own bearer token; both backends accept CLI OAuth tokens
+// (verified live 2026-07-17).
 func agentAuthToken(rt *Runtime) string {
-	return envOrDefault("RC_AGENT_AUTH_TOKEN", rt.Config.BearerToken())
+	return rt.Config.BearerToken()
 }
 
 func ricoFriendlyError(err error) error {
