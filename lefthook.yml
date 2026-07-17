@@ -1,4 +1,4 @@
 pre-commit:
   commands:
     checks:
-      run: zsh -l -c 'mise exec -- make check'
+      run: mise exec -- make check
