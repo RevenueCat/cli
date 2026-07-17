@@ -16,7 +16,7 @@ Quick reference:
   the whole pitch.
 - **Don't name commands after HTTP shape.** `rc customer grant`, not
   `rc post-promotional-entitlement`.
-- **Errors**: typed `*api.Error` from the API layer; CLI maps to exit codes
+- **Errors**: typed `*api.APIError` from the API layer; CLI maps to exit codes
   via `internal/cli/runtime.go:ExitCodeFor`.
 
 For the full guide, including the "add a new resource" recipe and the

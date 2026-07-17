@@ -72,8 +72,8 @@ func (s *CustomersService) Purchases(ctx context.Context, projectID, customerID 
 // GET /projects/{project_id}/customers/{customer_id}/active_entitlements
 //
 // NOTE: also embedded in the customer GET response.
-func (s *CustomersService) ActiveEntitlements(ctx context.Context, projectID, customerID string) (*Page[Entitlement], error) {
-	var out Page[Entitlement]
+func (s *CustomersService) ActiveEntitlements(ctx context.Context, projectID, customerID string) (*Page[CustomerEntitlement], error) {
+	var out Page[CustomerEntitlement]
 	if err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "active_entitlements"), nil, &out); err != nil {
 		return nil, err
 	}
