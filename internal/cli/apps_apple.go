@@ -259,9 +259,21 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			if err != nil {
 				return err
 			}
-			needsApple := checkOnly || createInAppKey || createAPIKey
+			// Declining every key can still be a valid run: verifying (and
+			// creating) the App Store Connect app record and the vendor number
+			// need the Apple session too.
+			verifyOnly := false
+			if !checkOnly && !createInAppKey && !createAPIKey && vendorNumber == "" &&
+				!rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive() {
+				verifyOnly, err = tui.ConfirmDefault(rt.Globals.NoInput,
+					"No keys selected. Sign in to Apple anyway to verify the App Store Connect app record and vendor number?", true)
+				if err != nil {
+					return err
+				}
+			}
+			needsApple := checkOnly || createInAppKey || createAPIKey || verifyOnly
 			if !needsApple && vendorNumber == "" {
-				rt.Out.Success("Nothing to create — existing keys were kept.")
+				rt.Out.Success("Nothing to do — existing configuration was kept.")
 				if rt.Out.IsJSON() {
 					return rt.Out.Render(appleConfigurationResult{
 						AppID:             appID,
@@ -499,9 +511,13 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				update.AppStore.AppStoreConnectVendorNumber = &vendorNumber
 				rt.Out.Info("Setting vendor number " + vendorNumber + "…")
 			}
-			rt.Out.Info("Uploading configuration to RevenueCat…")
-			if _, err := rc.Apps.Update(cmd.Context(), projectID, appID, update); err != nil {
-				return appleConfigurationError(fmt.Errorf("upload Apple configuration to RevenueCat: %w", err), createdIDs)
+			if len(createdIDs) > 0 || vendorNumber != "" {
+				rt.Out.Info("Uploading configuration to RevenueCat…")
+				if _, err := rc.Apps.Update(cmd.Context(), projectID, appID, update); err != nil {
+					return appleConfigurationError(fmt.Errorf("upload Apple configuration to RevenueCat: %w", err), createdIDs)
+				}
+			} else {
+				rt.Out.Info("No RevenueCat changes to upload.")
 			}
 			result.VendorNumberConfigured = vendorNumber != ""
 			rt.Out.Success("Apple credentials configured")
