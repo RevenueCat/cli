@@ -73,6 +73,9 @@ func RunBrowserTable(title string, cols []string, items []BrowserItem) error {
 }
 
 func run(initial bframe) error {
+	if !IsInteractive() {
+		return fmt.Errorf("interactive browser requires a terminal; use --json or --no-input variants instead")
+	}
 	w, h, _ := term.GetSize(int(os.Stdout.Fd()))
 	if w == 0 {
 		w = 80
@@ -93,7 +96,9 @@ func OpenURL(url string) error {
 	case "darwin":
 		cmd = exec.Command("open", url)
 	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", url)
+		// The first quoted argument to `start` is the window title; pass an
+		// empty title so URLs with special characters open correctly.
+		cmd = exec.Command("cmd", "/c", "start", "", url)
 	default:
 		cmd = exec.Command("xdg-open", url)
 	}
@@ -869,10 +874,11 @@ var (
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 func brTrunc(s string, maxLen int) string {
-	if maxLen <= 3 || len(s) <= maxLen {
+	runes := []rune(s)
+	if maxLen <= 3 || len(runes) <= maxLen {
 		return s
 	}
-	return s[:maxLen-1] + "…"
+	return string(runes[:maxLen-1]) + "…"
 }
 
 func brPadRight(s string, n int) string {
