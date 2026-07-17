@@ -99,7 +99,7 @@ To add e.g. `offerings`:
 - Don't introduce premature abstractions. Three similar commands is fine; wait
   for the fourth before extracting.
 - Don't add a dependency without checking if `stdlib` covers it.
-- Don't auto-generate. This is a hand-crafted CLI; that's the whole pitch.
+- Don't auto-generate *commands* — the CLI surface is hand-crafted; that's the whole pitch. API *types* are the exception: `make gen` regenerates `internal/api/types_gen.go` from the OpenAPI spec, and CI enforces it stays current.
 - Don't put CLI concerns (flags, prompts, color) in `internal/api/`.
 - Don't put HTTP concerns (URLs, headers, retries) in `internal/cli/`.
 
@@ -108,7 +108,7 @@ To add e.g. `offerings`:
 - **Module path**: `github.com/revenuecat/cli`
 - **Go version**: 1.25 (pinned via `mise.toml`; run `mise install` once)
 - **Formatting**: `gofmt` / `go vet` clean. CI enforces.
-- **Errors**: return typed `*api.Error` from the API layer. CLI layer maps to
+- **Errors**: return typed `*api.APIError` from the API layer. CLI layer maps to
   exit codes via `runtime.go:ExitCodeFor`. Use `errors.As`, never string match.
 - **Context**: every API method takes `ctx context.Context` first. Pass
   `cmd.Context()` through.
