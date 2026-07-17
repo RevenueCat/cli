@@ -772,7 +772,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 		AutoLoad: func() ([]tui.BrowserSection, error) {
 			// Parallel fetch of all customer sub-resources.
 			type results struct {
-				ents *api.Page[api.Entitlement]
+				ents *api.Page[api.CustomerEntitlement]
 				subs *api.Page[api.Subscription]
 				purs *api.Page[api.Purchase]
 				invs *api.Page[api.Invoice]
@@ -843,15 +843,24 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 			var sections []tui.BrowserSection
 
 			// Active entitlements — selectable, drills to entitlement detail
-			sec0 := tui.BrowserSection{Title: "Active Entitlements", Cols: []string{"LOOKUP KEY", "CREATED", "EXPIRES"}, Empty: "no active entitlements"}
+			sec0 := tui.BrowserSection{Title: "Active Entitlements", Cols: []string{"ENTITLEMENT", "EXPIRES"}, Empty: "no active entitlements"}
 			if res.ents != nil {
-				for _, e := range res.ents.Items {
-					e := e
-					item := entitlementToItem(ctx, client, projectID, e)
-					sec0.Rows = append(sec0.Rows, tui.BrowserSectionRow{
-						Cells: []string{nonEmpty(e.LookupKey, e.ID), formatMillis(e.CreatedAt), ""},
-						Item:  &item,
-					})
+				for _, ce := range res.ents.Items {
+					expires := "never"
+					if ce.ExpiresAt != nil {
+						expires = formatMillis(*ce.ExpiresAt)
+					}
+					label := ce.EntitlementID
+					row := tui.BrowserSectionRow{Cells: []string{label, expires}}
+					// Active entitlements carry only the ID on the wire; fetch
+					// the definition so the row shows the lookup key and can
+					// drill into the full entitlement view.
+					if ent, err := client.Entitlements.Get(ctx, projectID, ce.EntitlementID); err == nil {
+						row.Cells[0] = nonEmpty(ent.LookupKey, ent.ID)
+						item := entitlementToItem(ctx, client, projectID, *ent)
+						row.Item = &item
+					}
+					sec0.Rows = append(sec0.Rows, row)
 				}
 			}
 			sections = append(sections, sec0)
