@@ -128,8 +128,8 @@ else
   tar -xzf "$TMP/$ARCHIVE" -C "$TMP" "$BINARY_IN_ARCHIVE"
 fi
 
-if [ ! -f "$EXTRACTED" ]; then
-  echo "Binary not found after extraction." >&2
+if [ ! -f "$EXTRACTED" ] || [ -L "$EXTRACTED" ]; then
+  echo "Binary not found after extraction or is a symbolic link." >&2
   exit 1
 fi
 
