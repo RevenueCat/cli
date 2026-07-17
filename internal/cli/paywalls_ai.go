@@ -83,8 +83,12 @@ prompt using Astra, the Paywall AI editor — the same engine behind the
 dashboard's AI mode.
 
 The editor state is saved to a session file so follow-up edits keep their
-context: pass the same --session to rc paywalls edit. The draft stays
-unpublished; review it and run rc paywalls publish when ready.`,
+context: pass the same --session to rc paywalls edit. Astra may answer with a
+clarifying question instead of a design — reply with another edit turn.
+
+Limitation: the AI-designed components live in the session file only. The
+public API cannot yet write paywall components, so rc paywalls publish would
+publish the default template, not the design; finish in the dashboard editor.`,
 		Example: `  rc paywalls generate
   rc paywalls generate ofrng_default --prompt "A calm annual-first paywall"
   rc paywalls generate ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
@@ -302,9 +306,9 @@ func finishPaywallAI(rt *Runtime, opts paywallAIOptions, session *astraSession, 
 	if err := saveAstraSession(opts.sessionPath, session); err != nil {
 		return err
 	}
-	rt.Out.Success("Paywall draft " + session.PaywallID + " updated")
+	rt.Out.Success("Paywall design updated (draft " + session.PaywallID + ")")
 	rt.Out.Info("Session saved to " + opts.sessionPath + " — continue with: rc paywalls edit --session " + opts.sessionPath)
-	rt.Out.Info("Publish after review with: rc paywalls publish " + session.PaywallID)
+	rt.Out.Warn("The AI design lives in the session file only: the public API cannot yet save paywall components, so publishing now would ship the default template. Finish the design in the dashboard paywall editor.")
 	return rt.Out.Render(map[string]any{
 		"paywall_id":   session.PaywallID,
 		"session_id":   session.SessionID,
