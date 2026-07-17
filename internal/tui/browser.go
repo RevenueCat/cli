@@ -9,6 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/revenuecat/cli/internal/output"
 	"golang.org/x/term"
 )
 
@@ -860,15 +861,15 @@ func (m *browser) viewDetail(f *bframe) string {
 // ── styles ───────────────────────────────────────────────────────────────────
 
 var (
-	brTitle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("63"))
-	brCursor   = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true)
+	brTitle    = lipgloss.NewStyle().Bold(true).Foreground(output.BrandRed)
+	brCursor   = lipgloss.NewStyle().Foreground(output.BrandRed).Bold(true)
 	brSelected = lipgloss.NewStyle().Bold(true)
 	brDim      = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	brFilter   = lipgloss.NewStyle().Foreground(lipgloss.Color("226"))
-	brSection  = lipgloss.NewStyle().Foreground(lipgloss.Color("33")).Bold(true)
-	brErr      = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true)
-	brLink     = lipgloss.NewStyle().Foreground(lipgloss.Color("33"))
-	brLinkSel  = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true)
+	brFilter   = lipgloss.NewStyle().Foreground(output.WarnAmber)
+	brSection  = lipgloss.NewStyle().Foreground(output.BrandRed).Bold(true)
+	brErr      = lipgloss.NewStyle().Foreground(output.ErrorRed).Bold(true)
+	brLink     = lipgloss.NewStyle().Foreground(output.InfoBlue)
+	brLinkSel  = lipgloss.NewStyle().Foreground(output.GreenOK).Bold(true)
 )
 
 // ── helpers ──────────────────────────────────────────────────────────────────

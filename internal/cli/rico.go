@@ -220,6 +220,7 @@ func pickRicoConversation(ctx context.Context, rt *Runtime, client *rico.Client)
 		Filtering(true).
 		Value(&chosen)
 	form := huh.NewForm(huh.NewGroup(selectField)).
+		WithTheme(tui.BrandTheme()).
 		WithProgramOptions(tea.WithAltScreen())
 	if err := form.Run(); err != nil {
 		return "", err

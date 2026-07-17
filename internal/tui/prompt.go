@@ -15,7 +15,24 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"golang.org/x/term"
+
+	"github.com/revenuecat/cli/internal/output"
 )
+
+// BrandTheme is huh's Charm theme recolored with the RevenueCat palette so
+// every prompt, picker, and confirm reads as the same product.
+func BrandTheme() *huh.Theme {
+	t := huh.ThemeCharm()
+	t.Focused.Title = t.Focused.Title.Foreground(output.BrandRed).Bold(true)
+	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(output.BrandRed)
+	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(output.BrandRed)
+	t.Focused.SelectedPrefix = t.Focused.SelectedPrefix.Foreground(output.GreenOK)
+	t.Focused.FocusedButton = t.Focused.FocusedButton.Background(output.BrandRed)
+	t.Focused.TextInput.Prompt = t.Focused.TextInput.Prompt.Foreground(output.BrandRed)
+	t.Focused.TextInput.Cursor = t.Focused.TextInput.Cursor.Foreground(output.BrandRed)
+	t.Focused.Base = t.Focused.Base.BorderForeground(output.BrandRed)
+	return t
+}
 
 type FormBuilder struct {
 	noInput bool
@@ -52,7 +69,7 @@ func (b *FormBuilder) Run() error {
 		}
 		return nil
 	}
-	form := huh.NewForm(huh.NewGroup(b.fields...))
+	form := huh.NewForm(huh.NewGroup(b.fields...)).WithTheme(BrandTheme())
 	return form.Run()
 }
 
@@ -65,7 +82,8 @@ func ConfirmDefault(noInput bool, msg string, defaultValue bool) (bool, error) {
 		return false, fmt.Errorf("%s (pass --yes to confirm non-interactively)", msg)
 	}
 	ok := defaultValue
-	err := huh.NewConfirm().Title(msg).Value(&ok).Run()
+	confirm := huh.NewConfirm().Title(msg).Value(&ok)
+	err := huh.NewForm(huh.NewGroup(confirm)).WithTheme(BrandTheme()).Run()
 	return ok, err
 }
 
