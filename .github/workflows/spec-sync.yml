@@ -46,14 +46,17 @@ jobs:
           run_diff() {
             local label="$1" old="$2" new="$3"
             shift 3
-            # exit 1 from spec-diff.py means changes found; exit 0 means identical
-            if section=$(python3 scripts/spec-diff.py "$old" "$new" --title "$label" "$@"); then
-              : # no changes
-            else
+            # exit 0 = identical, 1 = changes found, anything else = real error
+            section=$(python3 scripts/spec-diff.py "$old" "$new" --title "$label" "$@")
+            status=$?
+            if [ "$status" -eq 1 ]; then
               SUMMARY="${SUMMARY}${section}
 
 "
               CHANGED=true
+            elif [ "$status" -ne 0 ]; then
+              echo "::error::spec-diff failed for $label (exit $status)"
+              exit "$status"
             fi
           }
 

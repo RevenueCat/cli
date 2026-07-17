@@ -242,7 +242,7 @@ def classify_operation_changes(param_changes, body_changes, resp_changes, depr_c
         return WARNING
     all_changes = param_changes + body_changes + resp_changes
     for c in all_changes:
-        if c.startswith("+ New **required**") or c.startswith("- Removed") or "→ **True**" in c.lower() or "→ **true**" in c:
+        if c.startswith("+ New **required**") or c.startswith("- Removed") or "→ **true**" in c.lower():
             return CRITICAL
     if all_changes:
         return WARNING
