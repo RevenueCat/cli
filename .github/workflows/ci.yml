@@ -15,7 +15,7 @@ jobs:
           go-version: stable
           cache: true
       - name: Install Python deps for codegen
-        run: pip install pyyaml
+        run: python3 -m pip install pyyaml
 
       - name: Verify generated types are up to date
         run: |
