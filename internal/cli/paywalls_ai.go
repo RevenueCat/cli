@@ -37,6 +37,28 @@ type astraSession struct {
 	AppContext       json.RawMessage   `json:"app_context,omitempty"`
 }
 
+// Minimal valid editor state for a brand-new paywall, mirroring the
+// dashboard's buildMinimalPaywall test helper: an empty root stack on a
+// white background, no fonts or presets yet.
+const minimalComponentsConfig = `{
+  "base": {
+    "stack": {
+      "id": "root",
+      "type": "stack",
+      "dimension": {"type": "vertical", "alignment": "center", "distribution": "start"},
+      "size": {"width": {"type": "fill"}, "height": {"type": "fill"}},
+      "margin": {"top": 0, "bottom": 0, "leading": 0, "trailing": 0},
+      "padding": {"top": 0, "bottom": 0, "leading": 0, "trailing": 0},
+      "components": []
+    },
+    "sticky_footer": null,
+    "background": {"type": "color", "value": {"light": {"type": "hex", "value": "#FFFFFF"}}},
+    "header": null
+  }
+}`
+
+const minimalUIConfig = `{"fonts": {}, "presets": {"saved_colors": []}}`
+
 type paywallAIOptions struct {
 	prompt      string
 	offeringID  string
@@ -110,12 +132,12 @@ unpublished; review it and run rc paywalls publish when ready.`,
 				Paywall: astra.PaywallData{
 					DefaultLocale:           "en_US",
 					OfferingID:              &offeringID,
-					ComponentsConfig:        json.RawMessage(`{}`),
-					ComponentsLocalizations: json.RawMessage(`{}`),
+					ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
+					ComponentsLocalizations: json.RawMessage(`{"en_US": {}}`),
 				},
-				UIConfig:         json.RawMessage(`{}`),
+				UIConfig:         json.RawMessage(minimalUIConfig),
 				ProductVariables: map[string]string{},
-				SessionItems:     json.RawMessage(`null`),
+				SessionItems:     json.RawMessage(`{}`),
 			}
 			if opts.sessionPath == "" {
 				opts.sessionPath = paywall.ID + ".astra.json"

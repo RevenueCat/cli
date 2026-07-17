@@ -148,10 +148,10 @@ func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	// The dashboard authenticates with the rc_auth_token cookie; send the
-	// bearer header too for token-based auth support.
+	// Bearer only: Astra accepts CLI OAuth tokens in the Authorization
+	// header. Do not also send an rc_auth_token cookie — an invalid cookie
+	// shadows a valid bearer token and fails the whole request.
 	req.Header.Set("Authorization", "Bearer "+c.token)
-	req.AddCookie(&http.Cookie{Name: "rc_auth_token", Value: c.token})
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 	if c.userAgent != "" {
