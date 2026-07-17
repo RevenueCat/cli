@@ -780,44 +780,65 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 			var res results
 			var mu sync.Mutex
 			var wg sync.WaitGroup
+			var firstErr error
+			fetchErr := func(err error) {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				mu.Unlock()
+			}
 			wg.Add(4)
 			go func() {
 				defer wg.Done()
 				p, err := client.Customers.ActiveEntitlements(ctx, projectID, c.ID)
-				if err == nil {
-					mu.Lock()
-					res.ents = p
-					mu.Unlock()
+				if err != nil {
+					fetchErr(err)
+					return
 				}
+				mu.Lock()
+				res.ents = p
+				mu.Unlock()
 			}()
 			go func() {
 				defer wg.Done()
 				p, err := client.Customers.Subscriptions(ctx, projectID, c.ID)
-				if err == nil {
-					mu.Lock()
-					res.subs = p
-					mu.Unlock()
+				if err != nil {
+					fetchErr(err)
+					return
 				}
+				mu.Lock()
+				res.subs = p
+				mu.Unlock()
 			}()
 			go func() {
 				defer wg.Done()
 				p, err := client.Customers.Purchases(ctx, projectID, c.ID)
-				if err == nil {
-					mu.Lock()
-					res.purs = p
-					mu.Unlock()
+				if err != nil {
+					fetchErr(err)
+					return
 				}
+				mu.Lock()
+				res.purs = p
+				mu.Unlock()
 			}()
 			go func() {
 				defer wg.Done()
 				p, err := client.Invoices.ListForCustomer(ctx, projectID, c.ID)
-				if err == nil {
-					mu.Lock()
-					res.invs = p
-					mu.Unlock()
+				if err != nil {
+					fetchErr(err)
+					return
 				}
+				mu.Lock()
+				res.invs = p
+				mu.Unlock()
 			}()
 			wg.Wait()
+			// Partial results still render (their sections show data), but if
+			// every fetch failed surface the error instead of an empty view.
+			if firstErr != nil && res.ents == nil && res.subs == nil && res.purs == nil && res.invs == nil {
+				return nil, firstErr
+			}
 
 			var sections []tui.BrowserSection
 
@@ -906,8 +927,8 @@ func subscriptionToItem(ctx context.Context, client *api.Client, projectID, cust
 			var sections []tui.BrowserSection
 
 			// Transactions — display only (no sub-detail for a transaction)
-			txPage, err := client.Subscriptions.Transactions(ctx, projectID, s.ID)
-			if err == nil {
+			txPage, txErr := client.Subscriptions.Transactions(ctx, projectID, s.ID)
+			if txErr == nil {
 				sec := tui.BrowserSection{Title: "Transactions", Cols: []string{"ID", "PURCHASED", "REVENUE USD"}, Empty: "no transactions"}
 				for _, t := range txPage.Items {
 					rev := ""
@@ -922,8 +943,8 @@ func subscriptionToItem(ctx context.Context, client *api.Client, projectID, cust
 			}
 
 			// Entitlements — selectable, drills to entitlement detail
-			entPage, err := client.Subscriptions.Entitlements(ctx, projectID, s.ID)
-			if err == nil {
+			entPage, entErr := client.Subscriptions.Entitlements(ctx, projectID, s.ID)
+			if entErr == nil {
 				sec := tui.BrowserSection{Title: "Entitlements", Cols: []string{"LOOKUP KEY", "DISPLAY NAME"}, Empty: "no entitlements"}
 				for _, e := range entPage.Items {
 					e := e
@@ -936,6 +957,10 @@ func subscriptionToItem(ctx context.Context, client *api.Client, projectID, cust
 				sections = append(sections, sec)
 			}
 
+			// Partial results still render; only a total failure surfaces.
+			if txErr != nil && entErr != nil {
+				return nil, txErr
+			}
 			return sections, nil
 		},
 	}
