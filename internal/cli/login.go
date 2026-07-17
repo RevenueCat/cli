@@ -46,7 +46,9 @@ storing it on disk — useful for CI.`,
 				rt.Out.Info("Generate an API key at https://app.revenuecat.com/settings/api-keys")
 			}
 
-			// Every prompt is also a flag. tui.Form only renders fields that are unset.
+			// Every prompt is also a flag. If a flag is set, huh will use it as the
+			// field's default value (the user can still edit it in interactive mode,
+			// or in --no-input mode it will be validated as-is).
 			err := tui.Form(rt.Globals.NoInput).
 				Field(huh.NewInput().
 					Title("RevenueCat API key").

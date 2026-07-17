@@ -106,7 +106,7 @@ To add e.g. `offerings`:
 ## Conventions
 
 - **Module path**: `github.com/revenuecat/cli`
-- **Go version**: 1.23+
+- **Go version**: 1.25.0+
 - **Formatting**: `gofmt` / `go vet` clean. CI enforces.
 - **Errors**: return typed `*api.Error` from the API layer. CLI layer maps to
   exit codes via `runtime.go:ExitCodeFor`. Use `errors.As`, never string match.
