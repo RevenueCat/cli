@@ -348,6 +348,22 @@ func (r *Renderer) Title(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
 }
 
+// Notice renders a must-read callout: a colored bar block that stands out
+// from the narration without being an error. Use for trust and safety
+// statements at the moment they matter (e.g. before a credential prompt) —
+// never dim these.
+func (r *Renderer) Notice(lines ...string) {
+	if r.json || r.quiet {
+		return
+	}
+	fmt.Fprintln(r.stderr)
+	bar := lipgloss.NewStyle().Foreground(InfoBlue).Bold(true)
+	for _, line := range lines {
+		fmt.Fprintln(r.stderr, r.style(bar, "▐ ")+line)
+	}
+	fmt.Fprintln(r.stderr)
+}
+
 // Answer is the durable receipt for an answered prompt. Interactive forms
 // erase themselves when they complete, so every decision the user makes is
 // echoed back as a permanent transcript line.

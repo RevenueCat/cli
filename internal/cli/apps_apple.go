@@ -311,7 +311,6 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						rt.Out.Info(appleCheckInstructions)
 						rt.Out.Info(privacy)
 					} else {
-						rt.Out.Hint("Credentials go directly to Apple — never to RevenueCat. New keys upload to RevenueCat and are never stored locally or shown.")
 					}
 				}
 				if !checkOnly && !rt.Out.IsJSON() {
@@ -348,6 +347,12 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					if !confirmed {
 						return errors.New("cancelled")
 					}
+				}
+				if !rt.Globals.NoInput && tui.IsInteractive() {
+					rt.Out.Notice(
+						"Your Apple credentials go directly to Apple — never to RevenueCat.",
+						"New keys are uploaded to RevenueCat and never stored on disk or shown.",
+					)
 				}
 				if err := tui.Form(rt.Globals.NoInput).
 					Field(huh.NewInput().Title("Apple Account email").Value(&appleID).Validate(tui.Required("Apple Account email"))).
