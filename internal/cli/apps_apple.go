@@ -271,7 +271,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					vendorLabel = "not configured"
 				}
 				rt.Out.Title("Apple configuration — " + app.Name)
-				rt.Out.Lead("Signs in to Apple and sets up the keys RevenueCat needs — nothing changes without your OK.")
+				rt.Out.Lead("Signs in to App Store Connect and sets up the keys RevenueCat needs — nothing changes without your OK.")
 				rt.Out.Field("App", appID)
 				rt.Out.Field("In-app purchase key", appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured), "validates App Store purchases")
 				rt.Out.Field("App Store Connect API key", appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured), "manages products and prices")
