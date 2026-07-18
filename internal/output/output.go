@@ -348,6 +348,30 @@ func (r *Renderer) Title(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
 }
 
+// Lead is the orienting sentence(s) under a Title: what this flow is for
+// and what the pieces mean, in plain language. Normal weight — education
+// is content, not chrome — and wrapped for readability. One Lead per flow,
+// at the top; stay terse afterwards.
+func (r *Renderer) Lead(text string) {
+	if r.json || r.quiet {
+		return
+	}
+	const width = 76
+	words := strings.Fields(text)
+	line := " "
+	for _, w := range words {
+		if len(line)+1+len(w) > width {
+			fmt.Fprintln(r.stderr, line)
+			line = " "
+		}
+		line += " " + w
+	}
+	if strings.TrimSpace(line) != "" {
+		fmt.Fprintln(r.stderr, line)
+	}
+	fmt.Fprintln(r.stderr)
+}
+
 // Notice renders a must-read callout: a colored bar block that stands out
 // from the narration without being an error. Use for trust and safety
 // statements at the moment they matter (e.g. before a credential prompt) —
