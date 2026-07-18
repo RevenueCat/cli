@@ -237,7 +237,7 @@ the fallback rather than a published dashboard paywall.`,
 			if err := json.Unmarshal(raw, &payload); err != nil {
 				return fmt.Errorf("decoding SDK offerings response: %w", err)
 			}
-			return rt.Out.Render(payload)
+			return rt.Out.RenderJSON(payload)
 		},
 	}
 	cmd.Flags().StringVar(&appUserID, "app-user-id", appUserIDDefault, "app user ID sent to the SDK endpoint (or RC_APP_USER_ID)")

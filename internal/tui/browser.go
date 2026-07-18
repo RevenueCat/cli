@@ -864,7 +864,7 @@ var (
 	brTitle    = lipgloss.NewStyle().Bold(true).Foreground(output.BrandRed)
 	brCursor   = lipgloss.NewStyle().Foreground(output.AccentViolet).Bold(true)
 	brSelected = lipgloss.NewStyle().Bold(true)
-	brDim      = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	brDim      = lipgloss.NewStyle().Foreground(output.NeutralGray)
 	brFilter   = lipgloss.NewStyle().Foreground(output.WarnAmber)
 	brSection  = lipgloss.NewStyle().Bold(true)
 	brErr      = lipgloss.NewStyle().Foreground(output.ErrorRed).Bold(true)

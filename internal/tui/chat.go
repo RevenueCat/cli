@@ -125,7 +125,7 @@ var (
 	chatDestructStyle = lipgloss.NewStyle().Foreground(output.ErrorRed).Bold(true)
 	chatInputBoxStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("8")).
+				BorderForeground(output.NeutralGray).
 				Padding(0, 1)
 	chatInputActive = output.AccentViolet
 )

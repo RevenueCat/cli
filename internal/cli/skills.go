@@ -245,7 +245,7 @@ overrides the environment variable.`,
 			}
 			rt.Out.Success("Installed the RevenueCat AI Toolkit")
 			rt.Out.Info("Start a new agent session or reload the agent to discover the installed skills.")
-			rt.Out.Info("Run `rc skills prompts` for copy-ready ways to get started.")
+			rt.Out.Hint("Copy-ready starter prompts:  rc skills prompts")
 			result := map[string]any{
 				"installed":       true,
 				"source":          source,

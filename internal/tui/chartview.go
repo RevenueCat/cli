@@ -12,6 +12,7 @@ import (
 	"github.com/NimbleMarkets/ntcharts/linechart"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/revenuecat/cli/internal/output"
 	"golang.org/x/term"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -372,7 +373,7 @@ func (m *chartApp) buildLineView() string {
 
 func (m *chartApp) renderToolbar() string {
 	faintStyle := lipgloss.NewStyle().Faint(true)
-	selectedFocused := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("39"))
+	selectedFocused := lipgloss.NewStyle().Bold(true).Foreground(output.AccentViolet)
 	selectedUnfocused := lipgloss.NewStyle().Bold(true)
 
 	renderGroup := func(groupIdx int, label string, options []string, selectedIdx int) string {
@@ -520,7 +521,7 @@ func newChartApp(
 	fetchFn func(resID string, startUnix int64) (*api.ChartData, error),
 	noColor bool,
 ) *chartApp {
-	completeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("39"))
+	completeStyle := lipgloss.NewStyle().Foreground(output.AccentViolet)
 	incompleteStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	if noColor {
 		completeStyle = lipgloss.NewStyle()

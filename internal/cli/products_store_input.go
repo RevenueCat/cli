@@ -174,8 +174,8 @@ func promptStoreState(app *api.App) ([]api.StoreStatePlanDesiredState, error) {
 			},
 			Common: common, StoreState: storeState,
 		})
-		var another bool
-		if err := huh.NewConfirm().Title("Add another product?").Value(&another).Run(); err != nil {
+		another, err := tui.ConfirmDefault(false, "Add another product?", false)
+		if err != nil {
 			return nil, err
 		}
 		if !another {

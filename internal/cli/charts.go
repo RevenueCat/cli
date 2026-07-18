@@ -52,7 +52,8 @@ func runChartsList(cmd *cobra.Command, _ []string) error {
 				return tui.RunBrowserTable("Charts", []string{"NAME"}, items)
 			}
 		}
-		rt.Out.Info("Not signed in — showing the static chart list. Run `rc login` for the interactive browser.")
+		rt.Out.Info("Not signed in — showing the static chart list.")
+		rt.Out.Hint("Log in for the interactive browser:  rc login")
 	}
 
 	rows := make([][]string, len(api.ValidChartNames))

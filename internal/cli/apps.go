@@ -560,7 +560,7 @@ func newAppsStoreKitConfigCmd() *cobra.Command {
 				rt.Out.Success(fmt.Sprintf("Wrote %s", outputPath))
 				return rt.Out.Render(map[string]any{"ok": true, "app_id": appID, "path": outputPath})
 			}
-			return rt.Out.Render(cfg)
+			return rt.Out.RenderJSON(cfg)
 		},
 	}
 	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "write StoreKit JSON contents to a file")

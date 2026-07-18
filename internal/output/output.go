@@ -16,6 +16,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
+	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/itchyny/gojq"
@@ -95,9 +98,104 @@ func (r *Renderer) Render(v any) error {
 		// --format without --json: warn on stderr, fall through to pretty.
 		fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+"--format is only applied to --json output; ignoring")
 	}
+	return r.renderHuman(v)
+}
+
+// RenderJSON always emits JSON, even in human mode — for commands whose
+// output IS structured data (rc schema, rc commands, SDK payload dumps).
+func (r *Renderer) RenderJSON(v any) error {
+	if r.json {
+		return r.Render(v)
+	}
 	enc := json.NewEncoder(r.stdout)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
+}
+
+// renderHuman is the human-mode fallback for structured results: aligned
+// key/value lines instead of raw JSON. Commands with richer views use
+// RenderCard/RenderTable; this guarantees no human ever sees a JSON blob.
+func (r *Renderer) renderHuman(v any) error {
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &m); err != nil {
+		// Not an object (array/scalar): print compactly.
+		fmt.Fprintln(r.stdout, humanValue(raw))
+		return nil
+	}
+	keys := humanKeyOrder(m)
+	width := 0
+	for _, k := range keys {
+		if len(k) > width {
+			width = len(k)
+		}
+	}
+	for _, k := range keys {
+		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(k, width)), humanFieldValue(k, m[k]))
+	}
+	return nil
+}
+
+// humanFieldValue formats millisecond-epoch timestamp fields as dates.
+func humanFieldValue(key string, raw json.RawMessage) string {
+	if strings.HasSuffix(key, "_at") {
+		var ms int64
+		if json.Unmarshal(raw, &ms) == nil && ms > 1_000_000_000_000 && ms < 10_000_000_000_000 {
+			return time.UnixMilli(ms).UTC().Format("2006-01-02 15:04 MST")
+		}
+	}
+	return humanValue(raw)
+}
+
+// humanKeyOrder puts identity first, drops noise keys, sorts the rest.
+func humanKeyOrder(m map[string]json.RawMessage) []string {
+	first := []string{"id", "name", "lookup_key", "display_name"}
+	drop := map[string]bool{"object": true, "ok": true}
+	var keys []string
+	seen := map[string]bool{}
+	for _, k := range first {
+		if _, exists := m[k]; exists {
+			keys = append(keys, k)
+			seen[k] = true
+		}
+	}
+	var rest []string
+	for k := range m {
+		if !seen[k] && !drop[k] {
+			rest = append(rest, k)
+		}
+	}
+	sort.Strings(rest)
+	return append(keys, rest...)
+}
+
+// humanValue renders one JSON value on one line: scalars verbatim, short
+// composites as compact JSON, long ones summarized.
+func humanValue(raw json.RawMessage) string {
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		if s == "" {
+			return "—"
+		}
+		return s
+	}
+	trimmed := string(raw)
+	if trimmed == "null" {
+		return "—"
+	}
+	if len(trimmed) <= 60 {
+		return trimmed
+	}
+	if trimmed[0] == '[' {
+		var items []json.RawMessage
+		if json.Unmarshal(raw, &items) == nil {
+			return fmt.Sprintf("(%d items)", len(items))
+		}
+	}
+	return "{…}"
 }
 
 // renderJSONFiltered runs the user's gojq expression over the envelope and

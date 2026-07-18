@@ -69,7 +69,7 @@ it available to RevenueCat SDKs.`,
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Created draft paywall %s", paywall.ID))
-			rt.Out.Info(fmt.Sprintf("Review it, then publish with: rc paywalls publish %s", paywall.ID))
+			rt.Out.Hint(fmt.Sprintf("Review it, then publish:  rc paywalls publish %s", paywall.ID))
 			return rt.Out.Render(paywall)
 		},
 	}

@@ -49,8 +49,9 @@ func TestRender_PrettyMode_WritesToStdoutOnly(t *testing.T) {
 	if errb.Len() != 0 {
 		t.Errorf("data must not go to stderr; got %q", errb.String())
 	}
-	if !strings.Contains(out.String(), `"k"`) || !strings.Contains(out.String(), `"v"`) {
-		t.Errorf("expected k/v in stdout; got %q", out.String())
+	// Human mode renders aligned key/value lines, never JSON.
+	if strings.Contains(out.String(), `"k"`) || !strings.Contains(out.String(), "k") || !strings.Contains(out.String(), "v") {
+		t.Errorf("expected humanized k/v in stdout; got %q", out.String())
 	}
 }
 
@@ -164,9 +165,9 @@ func TestRender_FormatWithoutJSON_WarnsAndFallsThrough(t *testing.T) {
 	if !strings.Contains(errb.String(), "--format is only applied to --json") {
 		t.Errorf("expected warning on stderr; got %q", errb.String())
 	}
-	// stdout should still have the pretty-JSON fallback, not the filtered output.
-	if !strings.Contains(out.String(), `"id"`) {
-		t.Errorf("expected fallback pretty output; got %q", out.String())
+	// stdout falls through to the humanized rendering, not the filtered output.
+	if !strings.Contains(out.String(), "id") || !strings.Contains(out.String(), "x") {
+		t.Errorf("expected humanized fallback output; got %q", out.String())
 	}
 }
 

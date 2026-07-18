@@ -31,7 +31,7 @@ Use this from an agent rather than scraping the human --help output.`,
 			if err != nil {
 				return err
 			}
-			return rt.Out.Render(commandSchema(target))
+			return rt.Out.RenderJSON(commandSchema(target))
 		},
 	}
 }
@@ -42,7 +42,7 @@ func newCommandsCmd(root *cobra.Command) *cobra.Command {
 		Short: "Print the full command tree (for agent discovery)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			return rt.Out.Render(commandTree(root))
+			return rt.Out.RenderJSON(commandTree(root))
 		},
 	}
 }

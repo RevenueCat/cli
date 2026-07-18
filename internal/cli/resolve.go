@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 
@@ -54,6 +55,16 @@ func requireID(rt *Runtime, arg, noun string, fetch func() ([]PickerItem, error)
 		Value(&chosen)
 	if err := tui.Form(false).Field(sel).Run(); err != nil {
 		return "", err
+	}
+	for _, item := range items {
+		if item.ID == chosen {
+			label := noun
+			if label != "" {
+				label = strings.ToUpper(label[:1]) + label[1:]
+			}
+			rt.Out.Answer(label, item.Label)
+			break
+		}
 	}
 	return chosen, nil
 }

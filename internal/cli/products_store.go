@@ -265,7 +265,7 @@ func createAndWaitForStoreStatePlan(ctx context.Context, rt *Runtime, client *ap
 	if err != nil {
 		return nil, err
 	}
-	rt.Out.Info("Created persisted store-state plan " + created.ID)
+	rt.Out.Success("Plan " + created.ID + " saved for review")
 	if _, err := client.StoreStatePlans.Plan(ctx, projectID, created.ID); err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func applyStoreStatePlan(ctx context.Context, rt *Runtime, client *api.Client, p
 		return fmt.Errorf("store-state plan %s cannot be applied from status %s; available actions: %s", plan.ID, plan.Status, strings.Join(plan.Actions, ", "))
 	}
 	if !rt.Globals.AssumeYes {
-		confirmed, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Apply persisted plan %s to its stores?", plan.ID))
+		confirmed, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Apply plan %s to the connected stores?", plan.ID))
 		if err != nil {
 			return err
 		}
@@ -309,7 +309,7 @@ func applyStoreStatePlan(ctx context.Context, rt *Runtime, client *api.Client, p
 	if plan.Status == "apply_errored" {
 		return fmt.Errorf("store-state plan %s failed while applying: %s", plan.ID, storeStateApplyErrors(plan))
 	}
-	rt.Out.Success("Applied product store-state plan " + plan.ID)
+	rt.Out.Success("Applied plan " + plan.ID + " to the stores")
 	return renderStoreStatePlanResult(rt, plan)
 }
 

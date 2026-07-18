@@ -116,6 +116,9 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 				if err := form.Run(); err != nil {
 					return err
 				}
+				rt.Out.Answer("Email", email)
+				rt.Out.Answer("Name", name)
+				rt.Out.Answer("Product updates", map[bool]string{true: "yes", false: "no"}[marketingEmails])
 				if password == "" && !generatePassword {
 					var passwordMode string
 					if err := tui.Form(false).Field(huh.NewSelect[string]().
@@ -128,6 +131,7 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 						return err
 					}
 					generatePassword = passwordMode == passwordGenerate
+					rt.Out.Answer("Password", map[bool]string{true: "generate", false: "create my own"}[generatePassword])
 				}
 				if password == "" && !generatePassword {
 					var confirmation string
@@ -143,22 +147,23 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 					}
 				}
 				if runtime.GOOS == "darwin" && !savePassword {
-					confirmed, err := tui.ConfirmDefault(false, "Save this RevenueCat website password in the local macOS login Keychain (does not sync to Apple Passwords/iCloud)?", true)
+					confirmed, err := tui.ConfirmDefault(false, "Save the password in your macOS Keychain?", true)
 					if err != nil {
 						return err
 					}
 					savePassword = confirmed
+					rt.Out.Answer("Keychain", map[bool]string{true: "save password", false: "don't save"}[savePassword])
 				}
 				if !acceptTerms {
-					rt.Out.Info("Review the Terms of Service: https://www.revenuecat.com/terms")
-					rt.Out.Info("Review the Privacy Policy: https://www.revenuecat.com/privacy")
-					confirmed, err := tui.Confirm(false, "Accept the RevenueCat Terms of Service and Privacy Policy?")
+					rt.Out.Hint("Terms: https://www.revenuecat.com/terms · Privacy: https://www.revenuecat.com/privacy")
+					confirmed, err := tui.Confirm(false, "Accept the Terms of Service and Privacy Policy, and create the account now?")
 					if err != nil {
 						return err
 					}
 					if !confirmed {
 						return fmt.Errorf("signup requires accepting the Terms of Service and Privacy Policy")
 					}
+					rt.Out.Blank()
 				}
 			}
 
@@ -242,6 +247,7 @@ anything on disk.`,
 			if err := tui.Form(false).Field(sel).Run(); err != nil {
 				return err
 			}
+			rt.Out.Answer("Login method", map[string]string{loginMethodOAuth: "browser (RevenueCat account)", loginMethodAPIKey: "API key"}[method])
 
 			switch method {
 			case loginMethodOAuth:
@@ -344,7 +350,8 @@ func newAuthStatusCmd() *cobra.Command {
 			}
 
 			if !authenticated {
-				rt.Out.Info(fmt.Sprintf("Not logged in (profile: %s) — run `rc auth login`", profileName))
+				rt.Out.Info(fmt.Sprintf("Not logged in (profile: %s)", profileName))
+				rt.Out.Hint("Log in:  rc auth login")
 			} else if identity != "" {
 				rt.Out.Success(fmt.Sprintf("Logged in as %s (profile: %s)", identity, profileName))
 			} else {
@@ -488,7 +495,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 		return ctx.Err()
 	}
 
-	rt.Out.Info("Authorization received — exchanging code for tokens…")
+	rt.Out.Info("Authorized — finishing sign-in…")
 
 	tr, err := svc.ExchangeCode(ctx, code, redirectURI, verifier)
 	if err != nil {
@@ -586,7 +593,8 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	rt.Out.Info("Check your email to verify the account.")
 	rt.Out.Info("Next, copy this into a new agent session:")
 	rt.Out.Info(projectSkillTrigger)
-	rt.Out.Info("Install the toolkit with `rc skills install` if needed, or start manually with `rc projects create --name \"My App\" --use`.")
+	rt.Out.Hint("Install agent workflows:  rc skills install")
+	rt.Out.Hint("Or start manually:  rc projects create --name \"My App\" --use")
 	result := map[string]any{
 		"account_created":             true,
 		"authenticated":               true,
@@ -643,7 +651,8 @@ func clearProjectBinding(rt *Runtime) {
 		return
 	}
 	if rt.Config.ProjectID != "" {
-		rt.Out.Info("Cleared saved project " + rt.Config.ProjectID + " — run `rc projects use` to pick one for this account.")
+		rt.Out.Info("Cleared saved project " + rt.Config.ProjectID + ".")
+		rt.Out.Hint("Pick one for this account:  rc projects use")
 	}
 	rt.Config.ProjectID = ""
 }
@@ -653,7 +662,7 @@ func finishLogin(ctx context.Context, rt *Runtime, _ *api.Client) error {
 		return err
 	}
 	rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", config.ProfileName(rt.Globals.Profile)))
-	rt.Out.Info("Run `rc projects use` to set a default project, or you'll be prompted on first use.")
+	rt.Out.Hint("Set a default project:  rc projects use  (or pick one when prompted)")
 	return rt.Out.Render(map[string]any{
 		"profile": config.ProfileName(rt.Globals.Profile),
 	})

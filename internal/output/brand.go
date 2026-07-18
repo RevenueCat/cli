@@ -20,6 +20,8 @@ var (
 	// only, error red for failures only, because in terminals colored red
 	// text reads as danger regardless of brand.
 	AccentViolet = lipgloss.AdaptiveColor{Light: "#7C5CA8", Dark: "#A987D1"}
+	// NeutralGray is chrome: borders, archived states, secondary chips.
+	NeutralGray = lipgloss.AdaptiveColor{Light: "#8A8A8A", Dark: "#585858"}
 )
 
 // Shared semantic styles. Commands and TUIs should use these instead of

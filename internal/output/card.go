@@ -114,19 +114,20 @@ func (r *Renderer) styleChip(c Chip) string {
 		return "[" + c.Label + "]"
 	}
 	base := lipgloss.NewStyle().Padding(0, 1).Bold(true)
+	white := lipgloss.Color("15")
 	switch c.Tone {
 	case ToneActive:
-		base = base.Background(lipgloss.Color("28")).Foreground(lipgloss.Color("15"))
+		base = base.Background(GreenOK).Foreground(white)
 	case ToneArchived:
-		base = base.Background(lipgloss.Color("240")).Foreground(lipgloss.Color("15"))
+		base = base.Background(NeutralGray).Foreground(white)
 	case ToneExpired:
-		base = base.Background(lipgloss.Color("124")).Foreground(lipgloss.Color("15"))
+		base = base.Background(ErrorRed).Foreground(white)
 	case ToneTrial:
-		base = base.Background(lipgloss.Color("33")).Foreground(lipgloss.Color("15"))
+		base = base.Background(InfoBlue).Foreground(white)
 	case ToneWarning:
-		base = base.Background(lipgloss.Color("172")).Foreground(lipgloss.Color("15"))
+		base = base.Background(WarnAmber).Foreground(white)
 	default:
-		base = base.Background(lipgloss.Color("236")).Foreground(lipgloss.Color("252"))
+		base = base.Background(NeutralGray).Foreground(white)
 	}
 	return base.Render(c.Label)
 }

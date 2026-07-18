@@ -525,6 +525,7 @@ func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
 		if err := tui.Form(false).Field(pickSel).Run(); err != nil {
 			return "", err
 		}
+		rt.Out.Answer("Project", pick)
 		return pick, nil
 	}
 
