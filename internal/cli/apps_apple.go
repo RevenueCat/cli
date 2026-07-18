@@ -351,7 +351,8 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				}
 				if !rt.Globals.NoInput && tui.IsInteractive() {
 					rt.Out.Notice(
-						"Your Apple email and password go only to Apple — RevenueCat never sees them.",
+						"Your Apple email and password go only to Apple and are never saved —",
+						"RevenueCat never sees them.",
 						"Apple keys created here upload straight to your RevenueCat project — they are",
 						"never saved on this computer or displayed.",
 					)
