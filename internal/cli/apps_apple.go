@@ -282,6 +282,21 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			// (app record, vendor number). Non-interactive runs decide from
 			// flags now and can exit without touching Apple.
 			promptDecisions := !checkOnly && !rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive()
+			// A fully configured app gets an exit ramp before any Apple
+			// sign-in: replacing working keys is the exception, not the
+			// default. Explicit intent (--force, --vendor-number) skips it.
+			allConfigured := app.AppStore.SubscriptionKeyConfigured &&
+				app.AppStore.AppStoreConnectAPIKeyConfigured && existingVendor != ""
+			if promptDecisions && allConfigured && !force && vendorNumber == "" {
+				cont, err := tui.ConfirmDefault(rt.Globals.NoInput, "Everything is already configured. Continue and replace parts of it?", false)
+				if err != nil {
+					return err
+				}
+				if !cont {
+					rt.Out.Success("Kept the existing configuration.")
+					return nil
+				}
+			}
 			createInAppKey, createAPIKey := false, false
 			if !promptDecisions {
 				createInAppKey, err = decideAppleKey(rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, false)
