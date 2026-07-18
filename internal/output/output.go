@@ -417,11 +417,12 @@ func (r *Renderer) Field(key, value string, note ...string) {
 	if r.json || r.quiet {
 		return
 	}
-	suffix := ""
 	if len(note) > 0 && note[0] != "" {
-		suffix = "  " + r.style(r.dim, "· "+note[0])
+		// Pad the value only when a note follows so notes column-align and
+		// bare values carry no trailing whitespace.
+		value = padRight(value, 15) + "  " + r.style(r.dim, "· "+note[0])
 	}
-	fmt.Fprintf(r.stderr, "  %s  %s%s\n", r.style(r.dim, padRight(key, 26)), padRight(value, 15), suffix)
+	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(key, 26)), value)
 }
 
 // Blank prints an empty separator line between logical sections.
