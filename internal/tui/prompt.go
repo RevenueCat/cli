@@ -25,15 +25,29 @@ import (
 // selection, cursor), and field titles stay neutral bold so labels never
 // look like errors. Brand red appears only at section landmarks, not here.
 func BrandTheme() *huh.Theme {
-	t := huh.ThemeCharm()
-	t.Focused.Title = t.Focused.Title.Foreground(lipgloss.NoColor{}).Bold(true)
-	t.Blurred.Title = t.Blurred.Title.Foreground(lipgloss.NoColor{}).Bold(true).Faint(true)
-	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(output.AccentViolet)
+	t := huh.ThemeBase()
+	dim := lipgloss.NewStyle().Faint(true)
+	// Labels stay neutral; only interaction carries the violet accent.
+	t.Focused.Title = t.Focused.Title.Bold(true)
+	t.Blurred.Title = t.Blurred.Title.Bold(true).Faint(true)
+	t.Focused.Description = dim
+	t.Blurred.Description = dim
+	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(output.AccentViolet).SetString("> ")
 	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(output.AccentViolet)
 	t.Focused.SelectedPrefix = t.Focused.SelectedPrefix.Foreground(output.GreenOK)
-	t.Focused.FocusedButton = t.Focused.FocusedButton.Background(output.AccentViolet)
+	t.Focused.FocusedButton = t.Focused.FocusedButton.Background(output.AccentViolet).Foreground(lipgloss.Color("15")).Bold(true)
+	t.Focused.BlurredButton = t.Focused.BlurredButton.Background(output.NeutralGray).Foreground(lipgloss.Color("15"))
+	t.Blurred.FocusedButton = t.Focused.FocusedButton
+	t.Blurred.BlurredButton = t.Focused.BlurredButton
 	t.Focused.TextInput.Prompt = t.Focused.TextInput.Prompt.Foreground(output.AccentViolet)
 	t.Focused.TextInput.Cursor = t.Focused.TextInput.Cursor.Foreground(output.AccentViolet)
+	t.Focused.TextInput.Placeholder = dim
+	t.Blurred.TextInput.Placeholder = dim
+	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(output.ErrorRed)
+	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(output.ErrorRed)
+	t.Help.ShortKey = dim
+	t.Help.ShortDesc = dim
+	t.Help.ShortSeparator = dim
 	return t
 }
 
