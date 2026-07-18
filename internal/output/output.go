@@ -413,11 +413,15 @@ func (r *Renderer) Plan(steps []string) {
 
 // Field prints an aligned key/value line for status blocks: dim key,
 // normal value, indented under a Title.
-func (r *Renderer) Field(key, value string) {
+func (r *Renderer) Field(key, value string, note ...string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(key, 26)), value)
+	suffix := ""
+	if len(note) > 0 && note[0] != "" {
+		suffix = "  " + r.style(r.dim, "· "+note[0])
+	}
+	fmt.Fprintf(r.stderr, "  %s  %s%s\n", r.style(r.dim, padRight(key, 26)), padRight(value, 15), suffix)
 }
 
 // Blank prints an empty separator line between logical sections.

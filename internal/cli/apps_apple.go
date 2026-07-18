@@ -271,11 +271,11 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					vendorLabel = "not configured"
 				}
 				rt.Out.Title("Apple configuration — " + app.Name)
-				rt.Out.Lead("RevenueCat needs two Apple keys: the in-app purchase key lets it validate App Store purchases, and the App Store Connect API key lets it manage products and prices for you. This setup signs in to Apple and creates whatever is missing.")
+				rt.Out.Lead("Signs in to Apple and sets up the keys RevenueCat needs — nothing changes without your OK.")
 				rt.Out.Field("App", appID)
-				rt.Out.Field("In-app purchase key", appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
-				rt.Out.Field("App Store Connect API key", appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
-				rt.Out.Field("Vendor number", vendorLabel+"  (connects Apple sales reports to your revenue charts)")
+				rt.Out.Field("In-app purchase key", appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured), "validates App Store purchases")
+				rt.Out.Field("App Store Connect API key", appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured), "manages products and prices")
+				rt.Out.Field("Vendor number", vendorLabel, "links sales reports to revenue charts")
 			}
 			// Interactive setups defer the per-key decisions until after Apple
 			// sign-in so they can be made against live App Store Connect state
