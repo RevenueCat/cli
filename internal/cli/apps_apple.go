@@ -315,7 +315,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					}
 				}
 				if !checkOnly && !rt.Out.IsJSON() {
-					steps := []string{"Sign in to Apple (2FA)"}
+					steps := []string{"Sign in to App Store Connect with your Apple Account"}
 					if app.AppStore.BundleID != "" {
 						steps = append(steps, "Verify the App Store Connect app for "+app.AppStore.BundleID)
 					}
@@ -341,7 +341,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					rt.Out.Plan(steps)
 				}
 				if !checkOnly && !rt.Globals.AssumeYes {
-					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Sign in to Apple now?")
+					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Sign in to App Store Connect now?")
 					if err != nil {
 						return err
 					}
@@ -385,7 +385,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					return err
 				}
 				rt.Out.Blank()
-				rt.Out.Info("Signing in to Apple as " + appleID + "…")
+				rt.Out.Info("Signing in to App Store Connect as " + appleID + "…")
 				session, err := apple.Login(cmd.Context(), appleID, password)
 				if err != nil {
 					var twoFactor *appleconnect.TwoFactorRequiredError
