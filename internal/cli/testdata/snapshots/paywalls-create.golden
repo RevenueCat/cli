@@ -1,0 +1,7 @@
+$ rc paywalls create --offering-id ofrng_snap --no-input --project-id proj_snap --api-key sk_snap
+✓ Created draft paywall pw_snap
+  Review it, then publish:  rc paywalls publish pw_snap
+id            pw_snap
+created_at    2026-07-16 22:45 UTC
+offering_id   ofrng_snap
+published_at  —

@@ -50,3 +50,6 @@ gen: ## Regenerate API types from OpenAPI spec
 	$$PYTHON scripts/preprocess-spec.py docs/specs/v2-developer.yaml /tmp/v2-clean.yaml
 	go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen \
 		--config oapi-codegen.yaml /tmp/v2-clean.yaml
+
+preview: ## Render output snapshots to SVGs in docs/previews (brew install charmbracelet/tap/freeze)
+	./scripts/preview.sh

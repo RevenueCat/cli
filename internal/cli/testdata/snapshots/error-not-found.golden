@@ -1,0 +1,2 @@
+$ rc offerings show ofrng_missing --no-input --project-id proj_snap --api-key sk_snap
+(exit: resource_missing: not found)

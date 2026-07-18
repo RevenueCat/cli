@@ -1,0 +1,3 @@
+$ rc auth status --no-input
+· Not logged in (profile: default)
+  Log in:  rc auth login
