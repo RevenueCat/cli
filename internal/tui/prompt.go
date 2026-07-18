@@ -86,6 +86,10 @@ func (b *FormBuilder) Run() error {
 		}
 		return nil
 	}
+	// Rhythm is owned here, not at call sites: every interactive form gets a
+	// blank line above it so prompts never butt against prior output. This is
+	// the only place that decision lives — it cannot be forgotten per command.
+	fmt.Fprintln(os.Stderr)
 	form := huh.NewForm(huh.NewGroup(b.fields...)).WithTheme(BrandTheme())
 	return form.Run()
 }
@@ -99,6 +103,7 @@ func ConfirmDefault(noInput bool, msg string, defaultValue bool) (bool, error) {
 		return false, fmt.Errorf("%s (pass --yes to confirm non-interactively)", msg)
 	}
 	ok := defaultValue
+	fmt.Fprintln(os.Stderr) // same rule as FormBuilder.Run: prompts own their spacing
 	confirm := huh.NewConfirm().Title(msg).Value(&ok)
 	err := huh.NewForm(huh.NewGroup(confirm)).WithTheme(BrandTheme()).WithShowHelp(false).Run()
 	return ok, err
