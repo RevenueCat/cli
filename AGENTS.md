@@ -9,6 +9,9 @@ non-obvious conventions.
 - **[docs/command-surface.md](./docs/command-surface.md)** — the full
   command tree, naming decisions, and build order. Read before adding,
   renaming, or removing a command. Update it *before* the code.
+- **[docs/design-system.md](./docs/design-system.md)** — tokens, output and
+  interaction primitives, guided-flow patterns, and the tests that enforce
+  the boundaries. Read before writing any user-facing output.
 - **README.md** — user-facing pitch + install + global flags.
 - This file — agent + contributor conventions.
 

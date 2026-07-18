@@ -104,14 +104,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Refund purchase %q?", args[0]))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Refund purchase %q?", args[0])); err != nil {
+				return err
 			}
 			client, err := rt.API()
 			if err != nil {

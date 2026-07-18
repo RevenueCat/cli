@@ -143,14 +143,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Push product %q to its store?", productID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Push product %q to its store?", productID)); err != nil {
+				return err
 			}
 			if err := client.Products.Push(cmd.Context(), projectID, productID); err != nil {
 				return err
@@ -549,14 +543,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete product %q?", productID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete product %q?", productID)); err != nil {
+				return err
 			}
 			if err := client.Products.Delete(cmd.Context(), projectID, productID); err != nil {
 				return err

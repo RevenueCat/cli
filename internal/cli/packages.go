@@ -268,14 +268,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete package %q?", packageID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete package %q?", packageID)); err != nil {
+				return err
 			}
 			if err := client.Packages.Delete(cmd.Context(), projectID, packageID); err != nil {
 				return err

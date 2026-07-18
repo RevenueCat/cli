@@ -357,14 +357,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete app %q?", appID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete app %q?", appID)); err != nil {
+				return err
 			}
 			if err := client.Apps.Delete(cmd.Context(), projectID, appID); err != nil {
 				return err

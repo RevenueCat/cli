@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
-	"github.com/revenuecat/cli/internal/tui"
 )
 
 func newProductsStoreCmd() *cobra.Command {
@@ -206,14 +204,8 @@ func newProductsStoreDiscardCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				confirmed, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Discard store-state plan %s without applying it?", args[0]))
-				if err != nil {
-					return err
-				}
-				if !confirmed {
-					return errors.New("cancelled")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Discard store-state plan %s without applying it?", args[0])); err != nil {
+				return err
 			}
 			result, err := client.StoreStatePlans.Discard(cmd.Context(), projectID, args[0])
 			if err != nil {
@@ -290,14 +282,9 @@ func applyStoreStatePlan(ctx context.Context, rt *Runtime, client *api.Client, p
 		}
 		return fmt.Errorf("store-state plan %s cannot be applied from status %s; available actions: %s", plan.ID, plan.Status, strings.Join(plan.Actions, ", "))
 	}
-	if !rt.Globals.AssumeYes {
-		confirmed, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Apply plan %s to the connected stores?", plan.ID))
-		if err != nil {
-			return err
-		}
-		if !confirmed {
-			return fmt.Errorf("cancelled; plan %s remains persisted and unapplied", plan.ID)
-		}
+	if err := confirmOrAbort(rt, fmt.Sprintf("Apply plan %s to the connected stores?", plan.ID),
+		fmt.Sprintf("plan %s remains persisted and unapplied", plan.ID)); err != nil {
+		return err
 	}
 	if _, err := client.StoreStatePlans.Apply(ctx, projectID, plan.ID); err != nil {
 		return err

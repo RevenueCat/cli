@@ -138,14 +138,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if !strings.HasPrefix(publicAPIKey, "test_") {
 				return fmt.Errorf("app %s does not have a Test Store public SDK key; --public-api-key must start with test_", appID)
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Simulate purchase of %s for customer %s?", selected.StoreIdentifier, appUserID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Simulate purchase of %s for customer %s?", selected.StoreIdentifier, appUserID)); err != nil {
+				return err
 			}
 
 			fetchToken, err := simulatedStoreFetchToken()
@@ -308,14 +302,8 @@ to skip the confirmation prompt.`,
 			if to == "" {
 				return fmt.Errorf("--to is required")
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Transfer %s -> %s?", args[0], to))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Transfer %s -> %s?", args[0], to)); err != nil {
+				return err
 			}
 			client, err := rt.API()
 			if err != nil {
@@ -717,15 +705,8 @@ pick from the list interactively.`,
 					return err
 				}
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput,
-					fmt.Sprintf("Grant %q to customer %q (%s)?", entitlementID, customerID, duration))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Grant %q to customer %q (%s)?", entitlementID, customerID, duration)); err != nil {
+				return err
 			}
 			result, err := client.Customers.GrantEntitlement(cmd.Context(), projectID, customerID, entitlementID, duration)
 			if err != nil {
@@ -785,15 +766,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput,
-					fmt.Sprintf("Revoke %q from customer %q?", entitlementID, customerID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Revoke %q from customer %q?", entitlementID, customerID)); err != nil {
+				return err
 			}
 			if err := client.Customers.RevokeEntitlement(cmd.Context(), projectID, customerID, entitlementID); err != nil {
 				return err

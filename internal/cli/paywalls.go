@@ -8,7 +8,6 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
-	"github.com/revenuecat/cli/internal/tui"
 )
 
 func newPaywallsCmd() *cobra.Command {
@@ -141,14 +140,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Publish paywall %q?", paywallID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Publish paywall %q?", paywallID)); err != nil {
+				return err
 			}
 			paywall, err := client.Paywalls.Publish(cmd.Context(), projectID, paywallID)
 			if err != nil {
@@ -188,14 +181,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Unpublish paywall %q?", paywallID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Unpublish paywall %q?", paywallID)); err != nil {
+				return err
 			}
 			paywall, err := client.Paywalls.Unpublish(cmd.Context(), projectID, paywallID)
 			if err != nil {
@@ -271,14 +258,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete paywall %q?", args[0]))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete paywall %q?", args[0])); err != nil {
+				return err
 			}
 			client, err := rt.API()
 			if err != nil {

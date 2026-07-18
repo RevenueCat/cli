@@ -596,14 +596,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete conversation %q?", args[0]))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete conversation %q?", args[0])); err != nil {
+				return err
 			}
 			client, err := ricoClient(rt, baseURL)
 			if err != nil {

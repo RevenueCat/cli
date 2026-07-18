@@ -382,14 +382,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete entitlement %q?", entID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete entitlement %q?", entID)); err != nil {
+				return err
 			}
 			if err := client.Entitlements.Delete(cmd.Context(), projectID, entID); err != nil {
 				return err

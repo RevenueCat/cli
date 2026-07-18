@@ -274,14 +274,8 @@ setting a different offering as current.`,
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Make offering %q current?", offeringID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Make offering %q current?", offeringID)); err != nil {
+				return err
 			}
 			current := true
 			offering, err := client.Offerings.Update(cmd.Context(), projectID, offeringID, api.OfferingUpdate{IsCurrent: &current})
@@ -551,14 +545,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete offering %q?", offeringID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete offering %q?", offeringID)); err != nil {
+				return err
 			}
 			if err := client.Offerings.Delete(cmd.Context(), projectID, offeringID); err != nil {
 				return err

@@ -227,14 +227,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.AssumeYes {
-				ok, err := tui.Confirm(rt.Globals.NoInput, fmt.Sprintf("Delete webhook %q?", webhookID))
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("aborted")
-				}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete webhook %q?", webhookID)); err != nil {
+				return err
 			}
 			if err := client.Webhooks.Delete(cmd.Context(), projectID, webhookID); err != nil {
 				return err
