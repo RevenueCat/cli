@@ -70,7 +70,7 @@ func runSetup(cmd *cobra.Command) error {
 	platform := platformFromLabel(projectLabel)
 	agents := detectAgents()
 
-	account := "not logged in  (the agent can create an account or sign you in)"
+	account := "not logged in"
 	if rt.Config != nil && rt.Config.BearerToken() != "" {
 		account = "logged in"
 		if rt.Config.AccountEmail != "" {
@@ -92,6 +92,12 @@ func runSetup(cmd *cobra.Command) error {
 		rt.Out.Field("Agents found", "none", "install Claude Code, Codex, Cursor, or Gemini CLI for agent-driven setup")
 	}
 
+	if rt.Config == nil || rt.Config.BearerToken() == "" {
+		if err := setupAuthenticate(cmd, rt); err != nil {
+			return err
+		}
+	}
+
 	rt.Out.Info("Checking where this project stands…")
 	stage := detectSetupStage(cmd, rt, platform)
 	rt.Out.Field("Stage", stage.Label)
@@ -108,7 +114,7 @@ func runSetup(cmd *cobra.Command) error {
 		}
 	}
 
-	prompt := starterPromptByID(stage.PromptID)
+	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
 	choice, err := pickSetupAgent(agents)
 	if err != nil {
 		return err
@@ -250,6 +256,63 @@ func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupSta
 		}
 	}
 	return setupStage{"store apps connected and catalogs synced", "check-project"}
+}
+
+// setupToolingNote pins the launched agent to the CLI: without it, agents
+// with the RevenueCat MCP available reach for MCP tools even though the
+// prompt came from the CLI.
+func setupToolingNote(rt *Runtime) string {
+	authed := ""
+	if rt.Config != nil && rt.Config.BearerToken() != "" {
+		authed = " and already authenticated"
+	}
+	return "\n\nTooling: use the `rc` CLI for every RevenueCat operation — it is installed" + authed +
+		". Prefer it over the RevenueCat MCP and the dashboard for anything it supports; discover its surface with `rc commands --json` and `rc schema <command>`."
+}
+
+// setupAuthenticate resolves auth before the terminal is handed to an agent:
+// browser login and signup are human actions, and doing them mid-agent-run
+// means fighting the agent for the terminal.
+func setupAuthenticate(cmd *cobra.Command, rt *Runtime) error {
+	const (
+		optLogin = iota
+		optSignup
+		optSkip
+	)
+	choice := optLogin
+	if err := tui.Form(false).
+		Field(huh.NewSelect[int]().
+			Title("You're not logged in. What would you like to do?").
+			Options(
+				huh.NewOption("Log in (opens your browser)", optLogin),
+				huh.NewOption("Create a RevenueCat account", optSignup),
+				huh.NewOption("Skip — the agent can handle it later", optSkip),
+			).
+			Value(&choice)).
+		Run(); err != nil {
+		return err
+	}
+	switch choice {
+	case optLogin:
+		if err := loginWithOAuth(cmd.Context(), rt); err != nil {
+			return err
+		}
+	case optSignup:
+		signup := newAuthSignupCmd()
+		signup.SetContext(cmd.Context())
+		if err := signup.RunE(signup, nil); err != nil {
+			return err
+		}
+	default:
+		rt.Out.Answer("Account", "skipped — the agent will sign you in or up")
+		return nil
+	}
+	account := "logged in"
+	if rt.Config != nil && rt.Config.AccountEmail != "" {
+		account = rt.Config.AccountEmail
+	}
+	rt.Out.Answer("Account", account)
+	return nil
 }
 
 func starterPromptByID(id string) string {
