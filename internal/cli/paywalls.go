@@ -2,7 +2,9 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -145,7 +147,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			}
 			paywall, err := client.Paywalls.Publish(cmd.Context(), projectID, paywallID)
 			if err != nil {
-				return err
+				return wrapPaywallActionGateError(err, "publish")
 			}
 			rt.Out.Success(fmt.Sprintf("Published %s", paywall.ID))
 			return rt.Out.Render(paywall)
@@ -186,7 +188,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			}
 			paywall, err := client.Paywalls.Unpublish(cmd.Context(), projectID, paywallID)
 			if err != nil {
-				return err
+				return wrapPaywallActionGateError(err, "unpublish")
 			}
 			rt.Out.Success(fmt.Sprintf("Unpublished %s", paywall.ID))
 			return rt.Out.Render(paywall)
@@ -272,4 +274,16 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
 		},
 	}
+}
+
+// wrapPaywallActionGateError explains the beta gate on the paywall
+// publish/unpublish v2 actions: they 404 with a bare "Resource not found"
+// for projects without beta API access (khepri #22939 proposes ungating).
+// Without this hint, agents chase the 404 as a paywall-existence bug.
+func wrapPaywallActionGateError(err error, action string) error {
+	var apiErr *api.APIError
+	if errors.As(err, &apiErr) && apiErr.Status == 404 && strings.Contains(apiErr.Message, "Resource not found") {
+		return fmt.Errorf("%w\n%s is currently gated to beta API access — %s this paywall from the RevenueCat dashboard (Paywalls -> open the draft -> %s), or ask for v2 beta API access", err, action, action, action)
+	}
+	return err
 }
