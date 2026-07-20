@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/revenuecat/cli/internal/tui"
 	"strings"
 
 	"github.com/revenuecat/cli/internal/config"
@@ -103,7 +105,18 @@ Agent-friendly entrypoints:
 	whoamiAlias.Use = "whoami"
 	whoamiAlias.Hidden = true
 
+	// Bare `rc` (and bare `npx @revenuecat/cli`) in an interactive terminal is
+	// the acquisition path: land in the guided setup, which shows state and
+	// asks before doing anything. Everywhere else keeps cobra's help.
+	root.RunE = func(cmd *cobra.Command, args []string) error {
+		if g.JSON || g.NoInput || !tui.IsInteractive() {
+			return cmd.Help()
+		}
+		return runSetup(cmd)
+	}
+
 	root.AddCommand(
+		newSetupCmd(),
 		newOpenCmd(),
 		newAuthCmd(),
 		loginAlias,
