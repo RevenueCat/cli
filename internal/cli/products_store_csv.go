@@ -208,6 +208,11 @@ func mergeAppStoreCSVRow(p *storeCSVProduct, value func(string) string, locale s
 			return err
 		}
 	}
+	if notes := value("app_store_review_notes"); notes != "" {
+		if err := mergeCSVMapValue(childMap(p.storeState, "review_information"), "notes", notes, "app_store_review_notes", line); err != nil {
+			return err
+		}
+	}
 	name := value("app_store_subscription_group_localized_name")
 	customName := value("app_store_subscription_group_custom_app_name")
 	if name == "" && customName == "" {

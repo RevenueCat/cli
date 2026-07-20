@@ -47,7 +47,12 @@ No local file is required. Without --file, interactive terminals prompt for
 product fields and keep the answers only in process memory. For automation,
 use the explicit plan/show/apply commands so separate processes share the
 server-persisted plan ID. --plan-only remains as a compatibility shortcut for
-creating and reviewing without applying.`,
+creating and reviewing without applying.
+
+Warnings about review notes, the review screenshot, and subscription group
+localizations are App Review submission requirements, not creation blockers —
+each warning prints a hint naming the exact CSV column or JSON field that
+clears it.`,
 		Example: `  rc products store sync app_abc
   rc products store sync app_abc --file catalog.csv
   cat desired-states.json | rc products store sync app_abc --file - --input-format json --plan-only --json`,
@@ -96,7 +101,15 @@ process exits. Apply that exact reviewed plan with:
 
 For agents, pass --json --no-input and either --file <path> or --file - with
 --input-format csv|json. Do not rerun plan before applying: use the returned
-plan ID so the applied state is exactly what was reviewed.`,
+plan ID so the applied state is exactly what was reviewed.
+
+App Store submission readiness: warnings about review notes, the review
+screenshot, and subscription group localizations mark App Review requirements,
+not creation blockers — products create fine without them. Provide review
+notes via the app_store_review_notes CSV column (or
+store_state.review_information.notes in JSON); group display names via the
+app_store_subscription_group_localized_name CSV column. A placeholder review
+screenshot is uploaded automatically; replace it before submitting to Apple.`,
 		Example: `  rc products store plan app_abc --file catalog.csv --json --no-input
   cat desired-states.json | rc products store plan app_abc --file - --input-format json --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
@@ -348,12 +361,27 @@ func printStoreStatePlanPreview(rt *Runtime, plan *api.StoreStatePlan) {
 		for _, diff := range item.Diff {
 			rt.Out.Info(fmt.Sprintf("  %s: %v -> %v", diff.Field, diff.FromValue, diff.ToValue))
 		}
-		for _, warning := range item.Warnings {
-			rt.Out.Warn(fmt.Sprintf("%s [%s]: %s", warning.Severity, warning.Field, warning.Message))
-		}
+		printStoreStateWarnings(rt, item.Warnings)
 	}
-	for _, warning := range plan.Warnings {
+	printStoreStateWarnings(rt, plan.Warnings)
+}
+
+// submissionWarningHints explains warnings that mark App Store *submission*
+// requirements (not creation blockers) and names the exact input that clears
+// each one — otherwise the plan warns about fields it never tells you how to
+// set.
+var submissionWarningHints = map[string]string{
+	"store_state.review_information.notes":         "needed for App Review — set app_store_review_notes in CSV or store_state.review_information.notes in JSON",
+	"store_state.review_information.screenshot":    "a placeholder is uploaded so creation proceeds — replace it with a real paywall screenshot before submitting for review",
+	"store_state.subscription_group_localizations": "needed for App Store submission — set app_store_subscription_group_localized_name (+ locale) in CSV or store_state.subscription_group_localizations.<locale>.name in JSON",
+}
+
+func printStoreStateWarnings(rt *Runtime, warnings []api.StoreStatePlanWarning) {
+	for _, warning := range warnings {
 		rt.Out.Warn(fmt.Sprintf("%s [%s]: %s", warning.Severity, warning.Field, warning.Message))
+		if hint, ok := submissionWarningHints[warning.Field]; ok {
+			rt.Out.Hint(hint)
+		}
 	}
 }
 

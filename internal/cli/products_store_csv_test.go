@@ -8,9 +8,9 @@ import (
 
 func TestReadStoreStateCSV_AppStoreCanonicalRows(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "catalog.csv")
-	content := `row_type,store,store_identifier,product_type,display_name,title,duration,territory,amount,currency,start_date,available,available_in_new_territories,locale,localized_name,localized_description,app_store_subscription_group_name,app_store_subscription_group_localized_name,app_store_subscription_group_custom_app_name
-price,app_store,com.example.pro,subscription,Pro Monthly,Premium,P1M,US,3.99,USD,2026-07-20,true,true,,,,Premium Group,,
-localization,app_store,com.example.pro,subscription,Pro Monthly,Premium,P1M,,,,,,,en-US,Premium,Premium subscription,Premium Group,Premium Subscriptions,Example
+	content := `row_type,store,store_identifier,product_type,display_name,title,duration,territory,amount,currency,start_date,available,available_in_new_territories,locale,localized_name,localized_description,app_store_subscription_group_name,app_store_subscription_group_localized_name,app_store_subscription_group_custom_app_name,app_store_review_notes
+price,app_store,com.example.pro,subscription,Pro Monthly,Premium,P1M,US,3.99,USD,2026-07-20,true,true,,,,Premium Group,,,Log in with demo@example.com / demo123
+localization,app_store,com.example.pro,subscription,Pro Monthly,Premium,P1M,,,,,,,en-US,Premium,Premium subscription,Premium Group,Premium Subscriptions,Example,
 `
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
@@ -36,6 +36,10 @@ localization,app_store,com.example.pro,subscription,Pro Monthly,Premium,P1M,,,,,
 	localizations := state.Common["localizations"].(map[string]any)
 	if localizations["en-US"].(map[string]any)["name"] != "Premium" {
 		t.Fatalf("unexpected localizations: %+v", localizations)
+	}
+	review := state.StoreState["review_information"].(map[string]any)
+	if review["notes"] != "Log in with demo@example.com / demo123" {
+		t.Fatalf("unexpected review notes: %+v", review)
 	}
 	if state.StoreState["subscription_group_name"] != "Premium Group" {
 		t.Fatalf("unexpected store state: %+v", state.StoreState)
