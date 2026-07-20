@@ -37,14 +37,39 @@ Use this from an agent rather than scraping the human --help output.`,
 }
 
 func newCommandsCmd(root *cobra.Command) *cobra.Command {
-	return &cobra.Command{
+	var schemas bool
+	cmd := &cobra.Command{
 		Use:   "commands",
 		Short: "Print the full command tree (for agent discovery)",
+		Long: `Prints the command tree as JSON. Pass --schemas to include every command's
+full schema (flags, args, examples) in one call — cheaper for an agent than
+running rc schema per command.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if schemas {
+				return rt.Out.RenderJSON(commandTreeWithSchemas(root))
+			}
 			return rt.Out.RenderJSON(commandTree(root))
 		},
 	}
+	cmd.Flags().BoolVar(&schemas, "schemas", false, "include full flag/arg/example schemas for every command")
+	return cmd
+}
+
+// commandTreeWithSchemas is the whole surface in one document: the agent
+// answer to "stop researching the CLI one command at a time".
+func commandTreeWithSchemas(c *cobra.Command) map[string]any {
+	tree := commandSchema(c)
+	subs := []map[string]any{}
+	for _, sc := range c.Commands() {
+		if sc.Hidden {
+			continue
+		}
+		subs = append(subs, commandTreeWithSchemas(sc))
+	}
+	tree["commands"] = subs
+	delete(tree, "subcommands")
+	return tree
 }
 
 func newVersionCmd() *cobra.Command {

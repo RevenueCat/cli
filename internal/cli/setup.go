@@ -267,7 +267,7 @@ func setupToolingNote(rt *Runtime) string {
 		authed = " and already authenticated"
 	}
 	return "\n\nTooling: use the `rc` CLI for every RevenueCat operation — it is installed" + authed +
-		". Prefer it over the RevenueCat MCP and the dashboard for anything it supports; discover its surface with `rc commands --json` and `rc schema <command>`."
+		". Prefer it over the RevenueCat MCP and the dashboard for anything it supports; discover the entire command surface in ONE call with `rc commands --schemas` (do not run `rc schema` per command)."
 }
 
 // setupAuthenticate resolves auth before the terminal is handed to an agent:
