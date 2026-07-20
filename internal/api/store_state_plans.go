@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"net/url"
 )
 
 type StoreStatePlansService struct{ c *Client }
@@ -80,6 +81,16 @@ type StoreStatePlanWarning struct {
 func (s *StoreStatePlansService) Create(ctx context.Context, projectID string, body StoreStatePlanCreate) (*StoreStatePlanActionResponse, error) {
 	var out StoreStatePlanActionResponse
 	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "store_state", "plans"), body, &out)
+	return &out, err
+}
+
+func (s *StoreStatePlansService) List(ctx context.Context, projectID, status string) (*Page[StoreStatePlan], error) {
+	var out Page[StoreStatePlan]
+	path := encodePath("projects", projectID, "store_state", "plans")
+	if status != "" {
+		path += "?status=" + url.QueryEscape(status)
+	}
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
 	return &out, err
 }
 

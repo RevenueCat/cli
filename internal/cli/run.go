@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
@@ -50,6 +51,11 @@ func hintFor(err error) string {
 	}
 	if errors.Is(err, ErrNotAuthenticated) {
 		return "Run `rc login` or set RC_API_KEY."
+	}
+	msg := err.Error()
+	if strings.Contains(msg, "Additional properties are not allowed") &&
+		(strings.Contains(msg, "review_information") || strings.Contains(msg, "subscription_group")) {
+		return "review_information and subscription_group_localizations belong inside store_state, not at the desired-state top level or under common."
 	}
 	return ""
 }

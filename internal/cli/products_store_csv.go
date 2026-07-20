@@ -402,7 +402,7 @@ func mergeCSVScalar(target *string, value, field string, line int) error {
 		return nil
 	}
 	if *target != "" && *target != value {
-		return fmt.Errorf("store-state CSV line %d: conflicting %s values %q and %q", line, field, *target, value)
+		return fmt.Errorf("store-state CSV line %d: conflicting %s values %q and %q — every row for the same store_identifier must repeat identical product-level fields", line, field, *target, value)
 	}
 	*target = value
 	return nil

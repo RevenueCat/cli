@@ -29,7 +29,52 @@ that exact plan. Files are optional; pass --file - to read CSV or JSON stdin.`,
 		newProductsStoreApplyCmd(),
 		newProductsStoreDiscardCmd(),
 		newProductsStoreScreenshotCmd(),
+		newProductsStoreListCmd(),
 	)
+	return cmd
+}
+
+func newProductsStoreListCmd() *cobra.Command {
+	var status string
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List product store-state plans",
+		Long: `Lists the project's persisted store-state plans so a lost plan ID can be
+recovered in a later session. Filter with --status (draft, planned, applied,
+apply_errored, discarded, ...).`,
+		Example: `  rc products store list
+  rc products store list --status planned --json --no-input`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			page, err := client.StoreStatePlans.List(cmd.Context(), projectID, status)
+			if err != nil {
+				return err
+			}
+			rows := make([][]string, 0, len(page.Items))
+			for _, plan := range page.Items {
+				changes := ""
+				if plan.Summary != nil {
+					changes = fmt.Sprintf("%d create, %d modify", plan.Summary.ProductsAdded, plan.Summary.ProductsModified)
+				}
+				rows = append(rows, []string{plan.ID, plan.Status, changes})
+			}
+			return rt.Out.RenderTable(output.Table{
+				Columns: []string{"PLAN ID", "STATUS", "CHANGES"},
+				Rows:    rows,
+				Raw:     page,
+			})
+		},
+	}
+	cmd.Flags().StringVar(&status, "status", "", "filter by plan status")
 	return cmd
 }
 

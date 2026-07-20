@@ -1,7 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"strings"
 
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
@@ -131,5 +134,38 @@ Agent-friendly entrypoints:
 		newVersionCmd(),
 	)
 
+	root.SetFlagErrorFunc(suggestFlag)
 	return root
+}
+
+// suggestFlag appends a did-you-mean to unknown-flag errors: agents guess
+// short forms (--project for --project-id) and cobra offers command
+// suggestions but not flag ones.
+func suggestFlag(cmd *cobra.Command, err error) error {
+	msg := err.Error()
+	const prefix = "unknown flag: --"
+	idx := strings.Index(msg, prefix)
+	if idx < 0 {
+		return err
+	}
+	unknown := strings.TrimSpace(msg[idx+len(prefix):])
+	best, bestScore := "", 0
+	seen := func(f *pflag.Flag) {
+		score := 0
+		if strings.HasPrefix(f.Name, unknown) || strings.HasPrefix(unknown, f.Name) {
+			score = len(unknown)
+			if len(f.Name) < len(unknown) {
+				score = len(f.Name)
+			}
+		}
+		if score > bestScore {
+			best, bestScore = f.Name, score
+		}
+	}
+	cmd.Flags().VisitAll(seen)
+	cmd.InheritedFlags().VisitAll(seen)
+	if best == "" || bestScore < 3 {
+		return err
+	}
+	return fmt.Errorf("%s (did you mean --%s?)", msg, best)
 }
