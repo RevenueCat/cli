@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
+	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -90,6 +91,10 @@ func runSetup(cmd *cobra.Command) error {
 		rt.Out.Field("Agents found", "none", "install Claude Code, Codex, Cursor, or Gemini CLI for agent-driven setup")
 	}
 
+	rt.Out.Info("Checking where this project stands…")
+	stage := detectSetupStage(cmd, rt)
+	rt.Out.Field("Stage", stage.Label)
+
 	if !projectDetected {
 		cont, err := tui.ConfirmDefault(false, "No app project detected in this directory. Set up here anyway?", false)
 		if err != nil {
@@ -102,7 +107,7 @@ func runSetup(cmd *cobra.Command) error {
 		}
 	}
 
-	prompt := setupPrompt()
+	prompt := starterPromptByID(stage.PromptID)
 	choice, err := pickSetupAgent(agents)
 	if err != nil {
 		return err
@@ -119,7 +124,7 @@ func runSetup(cmd *cobra.Command) error {
 
 	rt.Out.Plan([]string{
 		"Install/update the RevenueCat AI Toolkit skills for " + choice.Name,
-		"Launch " + choice.Name + " with the setup prompt (takes over this terminal)",
+		"Launch " + choice.Name + " with the \"" + stage.PromptID + "\" prompt (takes over this terminal)",
 	})
 	if err := confirmOrAbort(rt, "Launch "+choice.Name+" now?"); err != nil {
 		return err
@@ -140,12 +145,72 @@ func runSetup(cmd *cobra.Command) error {
 	return agent.Run()
 }
 
-// setupPrompt is the full-journey prompt: the same contract as the
-// test-store-ready starter prompt, which the toolkit skills are written
-// against.
-func setupPrompt() string {
+// setupStage is where this project stands in the onboarding journey; it
+// selects which starter prompt the launched agent receives, so re-running
+// rc setup always hands over the NEXT stage rather than starting over.
+type setupStage struct {
+	Label    string // shown on the state block
+	PromptID string // starter prompt handed to the agent
+}
+
+// detectSetupStage reads project state through the public API. Detection is
+// deliberately local and cheap (three list calls); on any read error it
+// falls back to the beginning, which is always safe because the skills
+// themselves re-verify state.
+func detectSetupStage(cmd *cobra.Command, rt *Runtime) setupStage {
+	fromNothing := setupStage{"new setup — nothing configured yet", "test-store-ready"}
+	if rt.Config == nil || rt.Config.BearerToken() == "" {
+		return fromNothing
+	}
+	// Read-only: use the bound project or nothing. Detection must never
+	// prompt — a picker popping mid-"checking" would be exactly the
+	// surprise this flow exists to avoid.
+	projectID := rt.Config.ProjectID
+	if projectID == "" {
+		return setupStage{"logged in — no project selected (rc projects use <id> resumes an existing one)", "test-store-ready"}
+	}
+	client, err := rt.API()
+	if err != nil {
+		return fromNothing
+	}
+	ctx := cmd.Context()
+	apps, err := client.Apps.List(ctx, projectID)
+	if err != nil {
+		return fromNothing
+	}
+	offerings, err := client.Offerings.List(ctx, projectID)
+	if err != nil {
+		return fromNothing
+	}
+	if len(offerings.Items) == 0 {
+		return setupStage{"project exists — Test Store catalog not finished", "test-store-ready"}
+	}
+	var appStore *api.App
+	for i := range apps.Items {
+		if apps.Items[i].Type == "app_store" {
+			appStore = &apps.Items[i]
+			break
+		}
+	}
+	if appStore == nil || appStore.AppStore == nil ||
+		!appStore.AppStore.SubscriptionKeyConfigured || !appStore.AppStore.AppStoreConnectAPIKeyConfigured {
+		return setupStage{"Test Store ready — Apple account not connected", "connect-apple"}
+	}
+	products, err := client.Products.List(ctx, projectID, nil)
+	if err != nil {
+		return fromNothing
+	}
+	for _, p := range products.Items {
+		if p.AppID == appStore.ID {
+			return setupStage{"Apple connected and catalog synced", "check-project"}
+		}
+	}
+	return setupStage{"Apple connected — App Store catalog not synced", "sync-apple-catalog"}
+}
+
+func starterPromptByID(id string) string {
 	for _, p := range revenueCatStarterPrompts() {
-		if p.ID == "test-store-ready" {
+		if p.ID == id {
 			return p.Prompt
 		}
 	}
