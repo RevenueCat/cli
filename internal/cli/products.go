@@ -444,10 +444,21 @@ func formatPriceMicros(amount int64) string {
 }
 
 func newProductsShowCmd() *cobra.Command {
-	return &cobra.Command{
+	var withStoreState bool
+	cmd := &cobra.Command{
 		Use:   "show [id]",
 		Short: "Show a product",
-		Args:  cobra.MaximumNArgs(1),
+		Long: `Shows a RevenueCat product.
+
+Pass --store-state to also read the product's live state from its store:
+next effective territory prices (scheduled changes include a start date),
+availability, localizations, and App Review metadata. The live read requires
+configured store credentials and reaches the store directly, so it takes a
+few seconds.`,
+		Example: `  rc products show prod_abc
+  rc products show prod_abc --store-state
+  rc products show prod_abc --store-state --json --no-input`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -468,6 +479,21 @@ func newProductsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if withStoreState {
+				rt.Out.Info("Reading live state from the store…")
+				state, err := client.StoreState.Get(cmd.Context(), projectID, productID)
+				if err != nil {
+					return fmt.Errorf("read live store state: %w", err)
+				}
+				if rt.Out.IsJSON() {
+					return rt.Out.Render(map[string]any{"product": p, "store_state": state})
+				}
+				if err := rt.Out.Render(p); err != nil {
+					return err
+				}
+				renderLiveStoreState(rt, state)
+				return nil
+			}
 			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
 				item := productToItem(*p)
 				return tui.RunBrowser("Product", []tui.BrowserItem{item})
@@ -475,6 +501,8 @@ func newProductsShowCmd() *cobra.Command {
 			return rt.Out.Render(p)
 		},
 	}
+	cmd.Flags().BoolVar(&withStoreState, "store-state", false, "also read live prices, availability, and review metadata from the store")
+	return cmd
 }
 
 func newProductsUpdateCmd() *cobra.Command {

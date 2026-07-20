@@ -49,6 +49,47 @@ type StoreStateOperation struct {
 	CompletedAt  *Millis `json:"completed_at"`
 }
 
+// LiveStoreState is the live read of a product's state in its store. Pricing
+// is the next effective price per territory (scheduled changes carry
+// start_date).
+type LiveStoreState struct {
+	ProjectID   string            `json:"project_id"`
+	ProductID   string            `json:"product_id"`
+	Store       string            `json:"store"`
+	StoreStatus *StoreStatus      `json:"store_status"`
+	Common      *StoreStateCommon `json:"common"`
+	StoreState  map[string]any    `json:"store_state"`
+}
+
+type StoreStatus struct {
+	Status string `json:"status"`
+}
+
+type StoreStateCommon struct {
+	Pricing *struct {
+		TerritoryPrices map[string]TerritoryPrice `json:"territory_prices"`
+	} `json:"pricing"`
+	Availability *struct {
+		Territories map[string]bool `json:"territories"`
+	} `json:"availability"`
+	Localizations map[string]struct {
+		Name        string  `json:"name"`
+		Description *string `json:"description"`
+	} `json:"localizations"`
+}
+
+type TerritoryPrice struct {
+	AmountMicros int64   `json:"amount_micros"`
+	Currency     string  `json:"currency"`
+	StartDate    *string `json:"start_date"`
+}
+
+func (s *StoreStateService) Get(ctx context.Context, projectID, productID string) (*LiveStoreState, error) {
+	var out LiveStoreState
+	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "products", productID, "store_state"), nil, &out)
+	return &out, err
+}
+
 func (s *StoreStateService) ReserveScreenshotUpload(ctx context.Context, projectID, productID, filename string, fileSize int64) (*ScreenshotUploadReservation, error) {
 	var out ScreenshotUploadReservation
 	body := map[string]any{"filename": filename, "file_size": fileSize}

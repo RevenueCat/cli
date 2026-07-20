@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -168,6 +169,67 @@ func waitForStoreStateOperation(ctx context.Context, client *api.Client, project
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-time.After(2 * time.Second):
+		}
+	}
+}
+
+// renderLiveStoreState prints the live store read under the product: status,
+// next effective prices per territory, localizations, and App Review
+// metadata — the fields agents kept asking `products show` for.
+func renderLiveStoreState(rt *Runtime, state *api.LiveStoreState) {
+	rt.Out.Blank()
+	rt.Out.Title("Live store state — " + state.Store)
+	if state.StoreStatus != nil {
+		rt.Out.Field("Store status", state.StoreStatus.Status)
+	}
+	if state.Common != nil {
+		if state.Common.Pricing != nil && len(state.Common.Pricing.TerritoryPrices) > 0 {
+			territories := make([]string, 0, len(state.Common.Pricing.TerritoryPrices))
+			for territory := range state.Common.Pricing.TerritoryPrices {
+				territories = append(territories, territory)
+			}
+			sort.Strings(territories)
+			for _, territory := range territories {
+				price := state.Common.Pricing.TerritoryPrices[territory]
+				label := fmt.Sprintf("%.2f %s", float64(price.AmountMicros)/1e6, price.Currency)
+				note := ""
+				if price.StartDate != nil && *price.StartDate != "" {
+					note = "scheduled — starts " + *price.StartDate
+				}
+				rt.Out.Field("Price "+territory, label, note)
+			}
+		}
+		if state.Common.Availability != nil {
+			available := 0
+			for _, ok := range state.Common.Availability.Territories {
+				if ok {
+					available++
+				}
+			}
+			rt.Out.Field("Availability", fmt.Sprintf("%d of %d territories", available, len(state.Common.Availability.Territories)))
+		}
+		if len(state.Common.Localizations) > 0 {
+			locales := make([]string, 0, len(state.Common.Localizations))
+			for locale := range state.Common.Localizations {
+				locales = append(locales, locale)
+			}
+			sort.Strings(locales)
+			rt.Out.Field("Localizations", strings.Join(locales, ", "))
+		}
+	}
+	if state.Store == "app_store" && state.StoreState != nil {
+		if review, ok := state.StoreState["review_information"].(map[string]any); ok {
+			notes, _ := review["notes"].(string)
+			if notes != "" {
+				rt.Out.Field("Review notes", "provided", "required for App Review")
+			} else {
+				rt.Out.Field("Review notes", "not provided", "required for App Review")
+			}
+			if review["screenshot"] != nil {
+				rt.Out.Field("Review screenshot", "attached")
+			} else {
+				rt.Out.Field("Review screenshot", "not attached", "rc products store screenshot <id> --file paywall.png")
+			}
 		}
 	}
 }
