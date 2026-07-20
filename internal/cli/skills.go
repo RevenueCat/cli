@@ -54,14 +54,9 @@ func revenueCatStarterPrompts() []starterPrompt {
 			Prompt: "Continue this app's RevenueCat setup with the Apple stage of the create-revenuecat-project skill. Verify the App Store app and bundle ID, run the read-only Apple check first, then give me the local interactive rc apps apple setup command for Apple sign-in and 2FA. Verify the missing In-App Purchase and App Store Connect keys are configured without asking me to paste Apple credentials into chat.",
 		},
 		{
-			ID:     "sync-apple-catalog",
-			Title:  "Sync my App Store catalog",
-			Prompt: "Use the revenuecat-store-state skill to create a persisted plan for App Store Connect products matching this app's verified Test Store catalog, including subscription groups, prices, availability, and localizations. Show me the exact plan and wait for approval before applying that same plan ID. After apply, attach the Apple products to the existing RevenueCat entitlement and packages, configure the release appl_ key separately from debug, and report Apple sandbox verification separately.",
-		},
-		{
-			ID:     "sync-play-catalog",
-			Title:  "Sync my Google Play catalog",
-			Prompt: "Use the revenuecat-store-state skill to create a persisted plan for Google Play products matching this app's verified Test Store catalog, including base plans, prices, and availability. Play service credentials must already be configured in the RevenueCat dashboard — check the app first and hand me the dashboard steps if they are missing. Show me the exact plan and wait for approval before applying that same plan ID. After apply, attach the Play products to the existing RevenueCat entitlement and packages.",
+			ID:     "sync-store-catalog",
+			Title:  "Sync my product catalog to the stores",
+			Prompt: "Use the revenuecat-store-state skill to create a persisted plan for this project's store products matching its verified Test Store catalog — App Store Connect (subscription groups, prices, availability, localizations) and/or Google Play (base plans, prices, availability), depending on which store apps the project has. For Play, service credentials must already be configured in the RevenueCat dashboard — check first and hand me the dashboard steps if missing. Show me the exact plan and wait for approval before applying that same plan ID. After apply, attach the store products to the existing RevenueCat entitlement and packages, configure the release platform key separately from debug, and report store sandbox verification separately.",
 		},
 		{
 			ID:     "integrate-sdk",

@@ -237,16 +237,16 @@ func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupSta
 			return setupStage{"Test Store ready — Apple account not connected", "connect-apple"}
 		}
 		if !hasProducts(appStore) {
-			return setupStage{"Apple connected — App Store catalog not synced", "sync-apple-catalog"}
+			return setupStage{"Apple connected — App Store catalog not synced", "sync-store-catalog"}
 		}
 	}
 	playRelevant := playStore != nil || platform == "android" || platform == "cross"
 	if playRelevant {
 		if playStore == nil {
-			return setupStage{"Test Store ready — Play Store app not created (Play credentials are configured in the dashboard)", "sync-play-catalog"}
+			return setupStage{"Test Store ready — Play Store app not created (Play credentials are configured in the dashboard)", "sync-store-catalog"}
 		}
 		if !hasProducts(playStore) {
-			return setupStage{"Play Store app exists — catalog not synced", "sync-play-catalog"}
+			return setupStage{"Play Store app exists — catalog not synced", "sync-store-catalog"}
 		}
 	}
 	return setupStage{"store apps connected and catalogs synced", "check-project"}
