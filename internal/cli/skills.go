@@ -46,7 +46,7 @@ func revenueCatStarterPrompts() []starterPrompt {
 		{
 			ID:     "test-store-ready",
 			Title:  "Make this app Test Store-ready",
-			Prompt: "Use the create-revenuecat-project skill to inspect the app in this directory, create my RevenueCat account if needed, and finish the Test Store-ready stage end to end: project, Test Store products and prices, entitlement, offering and packages, dashboard paywall, Purchases and RevenueCatUI dependencies, debug test_ key configuration, app code, build, and a simulated purchase that unlocks the entitlement. Ask before accepting legal terms and report any incomplete stage explicitly.",
+			Prompt: "Use the create-revenuecat-project skill to inspect the app in this directory, create my RevenueCat account if needed, and make this app Test Store-ready. The outcome is a user experience, not a test assertion: a user in a normal dev run can find an Upgrade entry in the app's navigation, open the RevenueCat paywall, complete a purchase, and see the entitlement unlock. Acceptance: drive that actual in-app flow (not a CLI or backend shortcut) in the app's normal dev/simulator run mode. Build whatever that requires: project, Test Store products and prices, entitlement, offering and packages, dashboard paywall, Purchases and RevenueCatUI dependencies, and app code. Configure RevenueCat with the test_ key on every normal dev launch — the test_ key decides WHICH environment, never WHETHER to configure; do not gate configure() behind debug or test flags. Ask before accepting legal terms and report any incomplete stage explicitly.",
 		},
 		{
 			ID:     "connect-apple",
