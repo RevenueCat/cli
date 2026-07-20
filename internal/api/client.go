@@ -60,6 +60,7 @@ type Client struct {
 	Benchmarks      *BenchmarksService
 	Apps            *AppsService
 	StoreStatePlans *StoreStatePlansService
+	StoreState      *StoreStateService
 	// add as we go: Discounts, Experiments, VirtualCurrencies catalog
 }
 
@@ -95,6 +96,7 @@ func NewClient(opts Options) *Client {
 	c.Benchmarks = &BenchmarksService{c: c}
 	c.Apps = &AppsService{c: c}
 	c.StoreStatePlans = &StoreStatePlansService{c: c}
+	c.StoreState = &StoreStateService{c: c}
 	return c
 }
 

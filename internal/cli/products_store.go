@@ -28,6 +28,7 @@ that exact plan. Files are optional; pass --file - to read CSV or JSON stdin.`,
 		newProductsStoreShowCmd(),
 		newProductsStoreApplyCmd(),
 		newProductsStoreDiscardCmd(),
+		newProductsStoreScreenshotCmd(),
 	)
 	return cmd
 }
@@ -372,7 +373,7 @@ func printStoreStatePlanPreview(rt *Runtime, plan *api.StoreStatePlan) {
 // set.
 var submissionWarningHints = map[string]string{
 	"store_state.review_information.notes":         "needed for App Review — set app_store_review_notes in CSV or store_state.review_information.notes in JSON",
-	"store_state.review_information.screenshot":    "a placeholder is uploaded so creation proceeds — replace it with a real paywall screenshot before submitting for review",
+	"store_state.review_information.screenshot":    "a placeholder is uploaded so creation proceeds — attach a real one with: rc products store screenshot <product-id> --file paywall.png",
 	"store_state.subscription_group_localizations": "needed for App Store submission — set app_store_subscription_group_localized_name (+ locale) in CSV or store_state.subscription_group_localizations.<locale>.name in JSON",
 }
 
