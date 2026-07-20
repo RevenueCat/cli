@@ -59,6 +59,11 @@ func revenueCatStarterPrompts() []starterPrompt {
 			Prompt: "Use the revenuecat-store-state skill to create a persisted plan for App Store Connect products matching this app's verified Test Store catalog, including subscription groups, prices, availability, and localizations. Show me the exact plan and wait for approval before applying that same plan ID. After apply, attach the Apple products to the existing RevenueCat entitlement and packages, configure the release appl_ key separately from debug, and report Apple sandbox verification separately.",
 		},
 		{
+			ID:     "sync-play-catalog",
+			Title:  "Sync my Google Play catalog",
+			Prompt: "Use the revenuecat-store-state skill to create a persisted plan for Google Play products matching this app's verified Test Store catalog, including base plans, prices, and availability. Play service credentials must already be configured in the RevenueCat dashboard — check the app first and hand me the dashboard steps if they are missing. Show me the exact plan and wait for approval before applying that same plan ID. After apply, attach the Play products to the existing RevenueCat entitlement and packages.",
+		},
+		{
 			ID:     "integrate-sdk",
 			Title:  "Integrate only the RevenueCat SDK",
 			Prompt: "Use the integrate-revenuecat skill to inspect this app, install the correct Purchases dependencies, configure debug with the Test Store key and release with the platform key, build both paths, and verify offerings load. Do not create dashboard resources unless I ask.",

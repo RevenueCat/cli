@@ -67,6 +67,7 @@ func runSetup(cmd *cobra.Command) error {
 		return err
 	}
 	projectLabel, projectDetected := detectAppProject(dir)
+	platform := platformFromLabel(projectLabel)
 	agents := detectAgents()
 
 	account := "not logged in  (the agent can create an account or sign you in)"
@@ -92,7 +93,7 @@ func runSetup(cmd *cobra.Command) error {
 	}
 
 	rt.Out.Info("Checking where this project stands…")
-	stage := detectSetupStage(cmd, rt)
+	stage := detectSetupStage(cmd, rt, platform)
 	rt.Out.Field("Stage", stage.Label)
 
 	if !projectDetected {
@@ -157,7 +158,22 @@ type setupStage struct {
 // deliberately local and cheap (three list calls); on any read error it
 // falls back to the beginning, which is always safe because the skills
 // themselves re-verify state.
-func detectSetupStage(cmd *cobra.Command, rt *Runtime) setupStage {
+// platformFromLabel maps the directory detection label to a platform hint so
+// an Android-only project is never told to connect an Apple account.
+func platformFromLabel(label string) string {
+	switch {
+	case strings.Contains(label, "Xcode"), strings.Contains(label, "Swift"):
+		return "ios"
+	case strings.Contains(label, "Android"):
+		return "android"
+	case strings.Contains(label, "Flutter"), strings.Contains(label, "React Native"), strings.Contains(label, "Expo"):
+		return "cross"
+	default:
+		return "unknown"
+	}
+}
+
+func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupStage {
 	fromNothing := setupStage{"new setup — nothing configured yet", "test-store-ready"}
 	if rt.Config == nil || rt.Config.BearerToken() == "" {
 		return fromNothing
@@ -185,27 +201,55 @@ func detectSetupStage(cmd *cobra.Command, rt *Runtime) setupStage {
 	if len(offerings.Items) == 0 {
 		return setupStage{"project exists — Test Store catalog not finished", "test-store-ready"}
 	}
-	var appStore *api.App
+	var appStore, playStore *api.App
 	for i := range apps.Items {
-		if apps.Items[i].Type == "app_store" {
-			appStore = &apps.Items[i]
-			break
+		switch apps.Items[i].Type {
+		case "app_store":
+			if appStore == nil {
+				appStore = &apps.Items[i]
+			}
+		case "play_store":
+			if playStore == nil {
+				playStore = &apps.Items[i]
+			}
 		}
-	}
-	if appStore == nil || appStore.AppStore == nil ||
-		!appStore.AppStore.SubscriptionKeyConfigured || !appStore.AppStore.AppStoreConnectAPIKeyConfigured {
-		return setupStage{"Test Store ready — Apple account not connected", "connect-apple"}
 	}
 	products, err := client.Products.List(ctx, projectID, nil)
 	if err != nil {
 		return fromNothing
 	}
-	for _, p := range products.Items {
-		if p.AppID == appStore.ID {
-			return setupStage{"Apple connected and catalog synced", "check-project"}
+	hasProducts := func(app *api.App) bool {
+		for _, p := range products.Items {
+			if app != nil && p.AppID == app.ID {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Apple applies when an App Store app exists, or none does but the
+	// directory looks like an iOS/cross-platform app. Android-only projects
+	// skip straight to the Play path.
+	appleRelevant := appStore != nil || (playStore == nil && platform != "android")
+	if appleRelevant {
+		if appStore == nil || appStore.AppStore == nil ||
+			!appStore.AppStore.SubscriptionKeyConfigured || !appStore.AppStore.AppStoreConnectAPIKeyConfigured {
+			return setupStage{"Test Store ready — Apple account not connected", "connect-apple"}
+		}
+		if !hasProducts(appStore) {
+			return setupStage{"Apple connected — App Store catalog not synced", "sync-apple-catalog"}
 		}
 	}
-	return setupStage{"Apple connected — App Store catalog not synced", "sync-apple-catalog"}
+	playRelevant := playStore != nil || platform == "android" || platform == "cross"
+	if playRelevant {
+		if playStore == nil {
+			return setupStage{"Test Store ready — Play Store app not created (Play credentials are configured in the dashboard)", "sync-play-catalog"}
+		}
+		if !hasProducts(playStore) {
+			return setupStage{"Play Store app exists — catalog not synced", "sync-play-catalog"}
+		}
+	}
+	return setupStage{"store apps connected and catalogs synced", "check-project"}
 }
 
 func starterPromptByID(id string) string {
