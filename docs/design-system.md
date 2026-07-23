@@ -49,6 +49,7 @@ semantic styles (`StyleTitle`, `StyleSuccess`, `StyleError`, `StyleDim`, …).
 - `tui.Form(...)` and `tui.Confirm*` are the only ways to prompt. They apply
   `BrandTheme()` and print their own leading blank line — spacing is a
   property of the primitive, not a convention at call sites.
+- `decide(rt, title, presetFromFlag, choices)` is the only way to make a branching choice (N options): flag preset, else TTY picker, else `--no-input` error naming every flag. Never hand-roll `tui.Select` in a command. Entity pickers use `requireID`.
 - `confirmOrAbort(rt, msg)` (in `internal/cli`) is the only way to ask
   consent. It owns the `--yes` / `--no-input` / decline contract so every
   command answers those flags identically.
