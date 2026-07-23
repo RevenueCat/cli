@@ -20,14 +20,76 @@ type agentClient struct {
 	Name       string // display name
 	Binary     string // executable looked up in PATH
 	ToolkitKey string // skills-CLI agent identifier for the toolkit install
-	LaunchArgs func(prompt string) []string
+	LaunchArgs func(prompt, autonomy string) []string
+}
+
+// Autonomy levels for the launched agent. "trusted" pre-approves the tools
+// the setup journey actually uses (rc, file edits, builds) so the human
+// isn't asked to approve every step of a run they already consented to;
+// "full" removes approvals entirely; "manual" is the agent's default.
+const (
+	autonomyTrusted = "trusted"
+	autonomyFull    = "full"
+	autonomyManual  = "manual"
+)
+
+// trustedClaudeTools pre-approves the setup journey's real tool usage: every
+// rc command, file edits, and the platform build/test commands the skills run.
+var trustedClaudeTools = []string{
+	"Bash(rc:*)", "Bash(npx:*)",
+	"Bash(xcodebuild:*)", "Bash(xcrun:*)", "Bash(pod:*)", "Bash(swift:*)",
+	"Bash(./gradlew:*)", "Bash(gradle:*)", "Bash(flutter:*)", "Bash(dart:*)",
+	"Bash(npm:*)", "Bash(yarn:*)", "Bash(pnpm:*)",
+	// dev-loop long tail observed in live runs: sim control, tool managers,
+	// opening the simulator/dashboard, VCS reads, and `cd X && build`
+	// compounds (every segment of a compound must match a rule).
+	"Bash(mise:*)", "Bash(tuist:*)", "Bash(git:*)",
+	"Bash(bundle:*)", "Bash(fastlane:*)", "Bash(make:*)", "Bash(cd:*)",
+	"Bash(mkdir:*)", "Bash(cat:*)", "Bash(ls:*)", "Bash(grep:*)", "Bash(jq:*)",
 }
 
 var agentClients = []agentClient{
-	{"Claude Code", "claude", "claude-code", func(p string) []string { return []string{p} }},
-	{"Codex", "codex", "codex", func(p string) []string { return []string{p} }},
-	{"Cursor", "cursor-agent", "cursor", func(p string) []string { return []string{p} }},
-	{"Gemini CLI", "gemini", "gemini-cli", func(p string) []string { return []string{"-i", p} }},
+	{"Claude Code", "claude", "claude-code", func(p, autonomy string) []string {
+		switch autonomy {
+		case autonomyTrusted:
+			// Prompt first — --allowedTools is variadic and would swallow a
+			// trailing positional. Patterns must be SEPARATE args: a
+			// comma-joined value registers as one bogus pattern that
+			// matches nothing (live-debugged: nothing was pre-approved).
+			args := []string{p, "--permission-mode", "acceptEdits", "--allowedTools"}
+			return append(args, trustedClaudeTools...)
+		case autonomyFull:
+			return []string{"--dangerously-skip-permissions", p}
+		default:
+			return []string{p}
+		}
+	}},
+	{"Codex", "codex", "codex", func(p, autonomy string) []string {
+		switch autonomy {
+		case autonomyTrusted:
+			return []string{"--full-auto", p}
+		case autonomyFull:
+			return []string{"--dangerously-bypass-approvals-and-sandbox", p}
+		default:
+			return []string{p}
+		}
+	}},
+	{"Cursor", "cursor-agent", "cursor", func(p, autonomy string) []string {
+		if autonomy == autonomyTrusted || autonomy == autonomyFull {
+			return []string{"--force", p}
+		}
+		return []string{p}
+	}},
+	{"Gemini CLI", "gemini", "gemini-cli", func(p, autonomy string) []string {
+		switch autonomy {
+		case autonomyTrusted:
+			return []string{"--approval-mode", "auto_edit", "-i", p}
+		case autonomyFull:
+			return []string{"--yolo", "-i", p}
+		default:
+			return []string{"-i", p}
+		}
+	}},
 }
 
 func newSetupCmd() *cobra.Command {
@@ -46,6 +108,7 @@ the step-by-step commands in the docs.`,
   npx @revenuecat/cli setup`,
 		Args: cobra.NoArgs,
 		Annotations: map[string]string{
+			"surface":               "punted",
 			"requires_human":        "true",
 			"requires_human_reason": "launches the user's local AI agent in an interactive terminal; agents should follow the RevenueCat skills directly instead",
 		},
@@ -102,6 +165,18 @@ func runSetup(cmd *cobra.Command) error {
 	stage := detectSetupStage(cmd, rt, platform)
 	rt.Out.Field("Stage", stage.Label)
 
+	// Everything that would interrupt the agent mid-run (Apple sign-in, 2FA)
+	// happens before the handoff.
+	appleDeferred := false
+	if stage.PromptID == "connect-apple" || (stage.PromptID == "test-store-ready" && rt.Config != nil && rt.Config.BearerToken() != "") {
+		if offerOneShotApple(cmd, rt, dir, platform) {
+			stage = detectSetupStage(cmd, rt, platform)
+			rt.Out.Field("Stage", stage.Label)
+		} else if platform == "ios" || platform == "cross" {
+			appleDeferred = true
+		}
+	}
+
 	if !projectDetected {
 		cont, err := tui.ConfirmDefault(false, "No app project detected in this directory. Set up here anyway?", false)
 		if err != nil {
@@ -115,6 +190,9 @@ func runSetup(cmd *cobra.Command) error {
 	}
 
 	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
+	if appleDeferred {
+		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
+	}
 	choice, err := pickSetupAgent(agents)
 	if err != nil {
 		return err
@@ -129,8 +207,43 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	rt.Out.Answer("Agent", choice.Name)
 
+	autonomy := autonomyTrusted
+	if err := tui.Form(false).
+		Field(huh.NewSelect[string]().
+			Title("How much should "+choice.Name+" do without asking?").
+			Options(
+				huh.NewOption("Run the setup freely (pre-approves rc, file edits, and builds)", autonomyTrusted),
+				huh.NewOption("Ask me before each step", autonomyManual),
+				huh.NewOption("Everything, no approvals at all", autonomyFull),
+			).
+			Value(&autonomy)).
+		Run(); err != nil {
+		return err
+	}
+	autonomyLabels := map[string]string{
+		autonomyTrusted: "run freely (rc, edits, builds pre-approved)",
+		autonomyManual:  "ask before each step",
+		autonomyFull:    "no approvals",
+	}
+	rt.Out.Answer("Autonomy", autonomyLabels[autonomy])
+
+	skillsScope := "project"
+	if err := tui.Form(false).
+		Field(huh.NewSelect[string]().
+			Title("Install the RevenueCat skills for this project or globally?").
+			Options(
+				huh.NewOption("This project only", "project"),
+				huh.NewOption("Globally (all projects on this machine)", "global"),
+			).
+			Value(&skillsScope)).
+		Run(); err != nil {
+		return err
+	}
+	rt.Out.Answer("Skills", map[string]string{"project": "this project only", "global": "global"}[skillsScope])
+
 	rt.Out.Plan([]string{
 		"Install/update the RevenueCat AI Toolkit skills for " + choice.Name,
+		"Configure the RevenueCat MCP for " + choice.Name,
 		"Launch " + choice.Name + " with the \"" + stage.PromptID + "\" prompt (takes over this terminal)",
 	})
 	if err := confirmOrAbort(rt, "Launch "+choice.Name+" now?"); err != nil {
@@ -138,16 +251,39 @@ func runSetup(cmd *cobra.Command) error {
 	}
 
 	rt.Out.Info("Installing the RevenueCat AI Toolkit skills…")
-	installArgs := []string{"--yes", "skills", "add", officialToolkitSource, "--global", "--agent", choice.ToolkitKey}
+	toolkitSource := officialToolkitSource
+	if branch := os.Getenv("RC_SKILLS_BRANCH"); branch != "" {
+		toolkitSource = "https://github.com/RevenueCat/ai-toolkit/tree/" + branch
+		rt.Out.Info("Using toolkit branch " + branch + " (RC_SKILLS_BRANCH)")
+	}
+	installArgs := []string{"--yes", "skills", "add", toolkitSource, "--agent", choice.ToolkitKey}
+	if skillsScope == "global" {
+		installArgs = append(installArgs, "--global")
+	}
 	installArgs = append(installArgs, "--skill")
 	installArgs = append(installArgs, defaultToolkitSkills...)
-	if err := (npxSkillsInstaller{}).Run(cmd, installArgs); err != nil {
-		return fmt.Errorf("install skills: %w", err)
+	// The skills CLI is a whole guided UI of its own; inside setup it runs
+	// silently — our flow owns the questions, its output appears only on
+	// failure.
+	npxPath, err := exec.LookPath("npx")
+	if err != nil {
+		return fmt.Errorf("npx is required to install the RevenueCat AI Toolkit: %w", err)
 	}
+	install := exec.CommandContext(cmd.Context(), npxPath, installArgs...)
+	if out, err := install.CombinedOutput(); err != nil {
+		tail := string(out)
+		if len(tail) > 1200 {
+			tail = tail[len(tail)-1200:]
+		}
+		return fmt.Errorf("install skills: %w\n%s", err, strings.TrimSpace(tail))
+	}
+	rt.Out.Info("Skills installed")
+
+	configureAgentMCP(cmd, rt, choice)
 
 	rt.Out.Info("Launching " + choice.Name + "…")
 	rt.Out.Blank()
-	agent := exec.CommandContext(cmd.Context(), choice.Binary, choice.LaunchArgs(prompt)...)
+	agent := exec.CommandContext(cmd.Context(), choice.Binary, choice.LaunchArgs(prompt, autonomy)...)
 	agent.Stdin, agent.Stdout, agent.Stderr = os.Stdin, os.Stdout, os.Stderr
 	return agent.Run()
 }
@@ -168,7 +304,7 @@ type setupStage struct {
 // an Android-only project is never told to connect an Apple account.
 func platformFromLabel(label string) string {
 	switch {
-	case strings.Contains(label, "Xcode"), strings.Contains(label, "Swift"):
+	case strings.Contains(label, "Xcode"), strings.Contains(label, "Swift"), strings.Contains(label, "Tuist"):
 		return "ios"
 	case strings.Contains(label, "Android"):
 		return "android"
@@ -379,6 +515,11 @@ func detectAppProject(dir string) (label string, ok bool) {
 			return "Expo app", true
 		default:
 			return "JavaScript project", true
+		}
+	}
+	for _, tuist := range []string{"Project.swift", "Workspace.swift"} {
+		if _, err := os.Stat(filepath.Join(dir, tuist)); err == nil {
+			return "Tuist project (iOS)", true
 		}
 	}
 	if _, err := os.Stat(filepath.Join(dir, "Package.swift")); err == nil {

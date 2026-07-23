@@ -24,6 +24,12 @@ npm install -g @revenuecat/cli
 
 Or download a binary directly from the [releases page](../../releases).
 
+The two focused flows don't require installing anything:
+```bash
+npx @revenuecat/cli paywalls generate   # design a paywall with Astra
+npx @revenuecat/cli capital setup        # connect App Store Connect for RevenueCat Capital
+```
+
 ## Quick start
 
 ```bash
@@ -35,6 +41,9 @@ rc auth signup
 
 # 2. Set a default project — or choose "Ask me every time" for multi-project workflows
 rc projects use
+
+# Connect App Store Connect (for Capital / App Store products)
+rc capital setup
 
 # Look up a customer
 rc customer show cus_abc
@@ -318,6 +327,7 @@ without raw API calls.
 | `--profile <name>` | Config profile (precedence: flag → `$RC_PROFILE` → `rc profiles use` → `"default"`) |
 | `--api-key <key>` | Override profile key (`$RC_API_KEY`) |
 | `--yes, -y` | Skip confirmation prompts |
+| `--all` | Show every command in help, not just the common ones |
 | `--no-color` | Disable ANSI color (also respects `$NO_COLOR`) |
 | `--format <expr>` | jq expression applied to `--json` output |
 

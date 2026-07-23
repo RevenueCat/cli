@@ -7,6 +7,7 @@ import (
 
 	"github.com/revenuecat/cli/internal/tui"
 	"strings"
+	"testing"
 
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
@@ -18,6 +19,7 @@ type Globals struct {
 	NoInput   bool
 	Quiet     bool
 	Verbose   bool
+	ShowAll   bool
 	Profile   string
 	APIKey    string
 	ProjectID string
@@ -87,6 +89,7 @@ Agent-friendly entrypoints:
 	pf.BoolVar(&g.JSON, "json", false, "emit machine-readable JSON output")
 	pf.BoolVar(&g.NoInput, "no-input", false, "disable interactive prompts; fail if input is required")
 	pf.BoolVarP(&g.Quiet, "quiet", "q", false, "suppress non-essential output")
+	pf.BoolVar(&g.ShowAll, "all", false, "show every command, not just the common ones")
 	pf.BoolVarP(&g.Verbose, "verbose", "v", false, "enable verbose logging")
 	_ = pf.MarkHidden("verbose")
 	pf.StringVar(&g.Profile, "profile", "", "configuration profile to use (default: active profile)")
@@ -117,6 +120,7 @@ Agent-friendly entrypoints:
 
 	root.AddCommand(
 		newSetupCmd(),
+		newCapitalCmd(),
 		newOpenCmd(),
 		newAuthCmd(),
 		loginAlias,
@@ -148,6 +152,19 @@ Agent-friendly entrypoints:
 	)
 
 	root.SetFlagErrorFunc(suggestFlag)
+	applySurfaceProfile(root)
+
+	// --help skips PersistentPreRunE, so re-apply the surface from the parsed
+	// --all flag right before help renders, and footer the hidden count so a
+	// human (or a skill-less agent) knows there's more.
+	defaultHelp := root.HelpFunc()
+	root.SetHelpFunc(func(c *cobra.Command, args []string) {
+		applySurfaceProfile(root)
+		defaultHelp(c, args)
+		if c == root && !showAllSurface(root) && !testing.Testing() {
+			fmt.Fprintln(c.OutOrStdout(), "\nCommon commands shown. Run `rc --all` for every command, or `rc commands --schemas` for the full machine-readable surface.")
+		}
+	})
 	return root
 }
 

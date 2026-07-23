@@ -25,6 +25,21 @@ the code when adding/renaming a command.
    entitlements for free (embedded in API response); add subscriptions +
    purchases for the full SE-debug view.
 8. **Don't invent verbs the API can't fulfill.** Verified against fixtures.
+9. **Surface tiers scope who sees what, not who can run what.** Every command
+   is one of three tiers (set via the `surface` annotation, enforced in
+   `internal/cli/surface.go`):
+   - **human** — in the `humanSurface` allowlist, shown in `rc --help`. Keep
+     this list tight; it's the first thing a person sees. Currently:
+     `paywalls`, `capital`, `apps`, `auth`, `projects`, `version` (+ `login`).
+   - **agent-only** (default) — hidden from `rc --help`, but present in
+     `rc commands --schemas` and fully runnable. Most resource commands live
+     here: humans reach them through guided flows/pickers; agents discover
+     them through the schema channel.
+   - **punted** (`surface: "punted"` annotation) — hidden from `--help` *and*
+     schema, still runnable. For under-DX-tested commands (the one-shot
+     `setup` orchestrator). Promote to a real tier once tested.
+   `rc --all` / `RC_SURFACE=full` reveals everything to humans. Hidden never
+   means disabled — skills naming an agent-only command keep working.
 
 ## Verified API truths (from `internal/api/testdata/v2/`)
 
@@ -78,8 +93,13 @@ names; there's no list endpoint.
 ## The tree
 
 ```
+# Onboarding entry points (the two scoped npx surfaces)
+rc setup                                                 # PUNTED: one-shot agent-driven bootstrap; hidden until DX-tested
+rc capital setup                                         # RevenueCat Capital = App Store Connect key flow (wraps apps apple setup)
+rc                                                       # bare rc in a TTY -> guided setup; --help elsewhere; --all reveals every command
+
 # Auth / meta
-rc auth login                                            # browser OAuth or API key; rc login is a hidden alias
+rc auth login                                            # browser OAuth or API key; offers MCP-token import on npx runs; rc login is a hidden alias
 rc auth signup                                           # browserless signup; create/generate password; optional macOS Keychain save; returns agent next steps
 rc auth logout                                           # clears credentials from profile
 rc auth status                                           # show auth state plus cached account identity; auth whoami and root rc whoami are aliases

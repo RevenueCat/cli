@@ -62,7 +62,7 @@ func commandTreeWithSchemas(c *cobra.Command) map[string]any {
 	tree := commandSchema(c)
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if sc.Hidden {
+		if puntedFromSchema(sc) {
 			continue
 		}
 		subs = append(subs, commandTreeWithSchemas(sc))
@@ -104,7 +104,7 @@ func commandSchema(c *cobra.Command) map[string]any {
 
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if sc.Hidden {
+		if puntedFromSchema(sc) {
 			continue
 		}
 		subs = append(subs, map[string]any{
@@ -169,7 +169,7 @@ func inferCapabilities(c *cobra.Command) []string {
 	seen := map[string]bool{}
 	var caps []string
 	for _, sc := range c.Commands() {
-		if sc.Hidden {
+		if puntedFromSchema(sc) {
 			continue
 		}
 		if cap, ok := known[sc.Name()]; ok && !seen[cap] {
@@ -222,7 +222,7 @@ func commandPath(c *cobra.Command) string {
 func commandTree(c *cobra.Command) map[string]any {
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if sc.Hidden {
+		if puntedFromSchema(sc) {
 			continue
 		}
 		subs = append(subs, commandTree(sc))
