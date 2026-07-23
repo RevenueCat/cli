@@ -106,7 +106,7 @@ func offerOneShotApple(cmd *cobra.Command, rt *Runtime, dir, platform string) bo
 	if apps, err := client.Apps.List(ctx, projectID); err == nil {
 		for _, app := range apps.Items {
 			if app.Type == "app_store" {
-				appID, appName = app.ID, app.Name
+				appID = app.ID
 				break
 			}
 		}

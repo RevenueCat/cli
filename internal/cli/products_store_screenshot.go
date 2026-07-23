@@ -74,7 +74,7 @@ Apple accepts PNG or JPEG review screenshots.`,
 				return err
 			}
 			if len(reservation.UploadOperations) == 0 {
-				return fmt.Errorf("Apple returned no upload operations for screenshot %s", reservation.ScreenshotID)
+				return fmt.Errorf("no upload operations returned for screenshot %s", reservation.ScreenshotID)
 			}
 
 			rt.Out.Info(fmt.Sprintf("Uploading to Apple (%d part(s))…", len(reservation.UploadOperations)))
@@ -154,7 +154,7 @@ func executeUploadOperation(ctx context.Context, op api.UploadOperation, data []
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
-		return fmt.Errorf("Apple upload returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return fmt.Errorf("upload to Apple returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
 	}
 	return nil
 }
