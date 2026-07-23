@@ -11,6 +11,7 @@ package tui
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/charmbracelet/huh"
@@ -52,12 +53,24 @@ func BrandTheme() *huh.Theme {
 }
 
 type FormBuilder struct {
-	noInput bool
-	fields  []huh.Field
+	noInput    bool
+	fields     []huh.Field
+	testInput  io.Reader
+	testOutput io.Writer
 }
 
 func Form(noInput bool) *FormBuilder {
 	return &FormBuilder{noInput: noInput}
+}
+
+// WithScriptedIO drives the form from scripted keystrokes (r) and captures
+// rendering (w), bypassing the TTY check. For tests only: it lets us drive
+// the real huh widgets end to end instead of leaving the interactive layer
+// untested.
+func (b *FormBuilder) WithScriptedIO(r io.Reader, w io.Writer) *FormBuilder {
+	b.testInput = r
+	b.testOutput = w
+	return b
 }
 
 // Field adds an interactive field to the form. It unconditionally appends the
@@ -73,6 +86,13 @@ func (b *FormBuilder) Field(f huh.Field) *FormBuilder {
 func (b *FormBuilder) Run() error {
 	if len(b.fields) == 0 {
 		return nil
+	}
+	if b.testInput != nil {
+		return huh.NewForm(huh.NewGroup(b.fields...)).
+			WithTheme(BrandTheme()).
+			WithInput(b.testInput).
+			WithOutput(b.testOutput).
+			Run()
 	}
 	if b.noInput || !isInteractive() {
 		// Validate each field's bound value; if any required value is unset,

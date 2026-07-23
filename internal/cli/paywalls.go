@@ -32,53 +32,6 @@ func newPaywallsCmd() *cobra.Command {
 	return cmd
 }
 
-func newPaywallsCreateCmd() *cobra.Command {
-	var offeringID string
-	var automaticallyScaleFontSize bool
-	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "Create a draft paywall for an offering",
-		Long: `Creates a draft paywall using RevenueCat's default template and attaches it
-to an offering. The offering must already contain at least one package.
-
-After creation, review the draft and run ` + "`rc paywalls publish <id>`" + ` to make
-it available to RevenueCat SDKs.`,
-		Example: `  rc paywalls create --offering-id ofrng_default
-  rc paywalls create --offering-id ofrng_default --json --no-input`,
-		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			rt := RuntimeFrom(cmd.Context())
-			projectID, err := requireProject(rt)
-			if err != nil {
-				return err
-			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
-			offeringID, err = requireID(rt, offeringID, "offering", func() ([]PickerItem, error) {
-				return offeringPickerItems(cmd.Context(), client, projectID)
-			})
-			if err != nil {
-				return err
-			}
-			paywall, err := client.Paywalls.Create(cmd.Context(), projectID, api.PaywallCreate{
-				OfferingID:                 offeringID,
-				AutomaticallyScaleFontSize: automaticallyScaleFontSize,
-			})
-			if err != nil {
-				return err
-			}
-			rt.Out.Success(fmt.Sprintf("Created draft paywall %s", paywall.ID))
-			rt.Out.Hint(fmt.Sprintf("Review it, then publish:  rc paywalls publish %s", paywall.ID))
-			return rt.Out.Render(paywall)
-		},
-	}
-	cmd.Flags().StringVar(&offeringID, "offering-id", "", "offering to attach (picker shown in TTY if omitted)")
-	cmd.Flags().BoolVar(&automaticallyScaleFontSize, "automatically-scale-font-size", true, "automatically scale paywall fonts")
-	return cmd
-}
-
 func newPaywallsListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
@@ -221,9 +174,9 @@ func formatPublishedAt(publishedAt *api.Millis) string {
 
 func newPaywallsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
+		Use:   "show [id]",
 		Short: "Show a paywall",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -234,7 +187,13 @@ func newPaywallsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			p, err := client.Paywalls.Get(cmd.Context(), projectID, args[0])
+			paywallID, err := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+				return paywallPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			p, err := client.Paywalls.Get(cmd.Context(), projectID, paywallID)
 			if err != nil {
 				return err
 			}
@@ -245,7 +204,7 @@ func newPaywallsShowCmd() *cobra.Command {
 
 func newPaywallsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <id>",
+		Use:   "delete [id]",
 		Short: "Delete a paywall",
 		Long: `Permanently deletes a paywall.
 
@@ -253,18 +212,25 @@ Reversibility: irreversible. Recreate the paywall if it is deleted.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc paywalls delete pw_old --yes`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
 			}
-			if err := confirmOrAbort(rt, fmt.Sprintf("Delete paywall %q?", args[0])); err != nil {
-				return err
-			}
 			client, err := rt.API()
 			if err != nil {
+				return err
+			}
+			pickedID, err := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+				return paywallPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			args = []string{pickedID}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Delete paywall %q?", args[0])); err != nil {
 				return err
 			}
 			if err := client.Paywalls.Delete(cmd.Context(), projectID, args[0]); err != nil {

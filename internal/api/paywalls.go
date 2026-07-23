@@ -78,6 +78,22 @@ func (s *PaywallsService) UpdateDraft(ctx context.Context, projectID, id string,
 	return &out, err
 }
 
+// PaywallComponentsCreate is the from-components create variant: offering
+// optional, so paywalls can exist standalone and attach later.
+type PaywallComponentsCreate struct {
+	OfferingID              string          `json:"offering_id,omitempty"`
+	Name                    string          `json:"name,omitempty"`
+	ComponentsConfig        json.RawMessage `json:"components_config"`
+	ComponentsLocalizations json.RawMessage `json:"components_localizations"`
+	DefaultLocale           string          `json:"default_locale,omitempty"`
+}
+
+func (s *PaywallsService) CreateFromComponents(ctx context.Context, projectID string, body PaywallComponentsCreate) (*Paywall, error) {
+	var out Paywall
+	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "paywalls"), body, &out)
+	return &out, err
+}
+
 func (s *PaywallsService) Create(ctx context.Context, projectID string, body PaywallCreate) (*Paywall, error) {
 	var out Paywall
 	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "paywalls"), body, &out)

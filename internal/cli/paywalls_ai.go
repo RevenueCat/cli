@@ -61,6 +61,8 @@ const minimalComponentsConfig = `{
 const minimalUIConfig = `{"fonts": {}, "presets": {"saved_colors": []}}`
 
 type paywallAIOptions struct {
+	context     string
+	attachments []string
 	prompt      string
 	offeringID  string
 	sessionPath string
@@ -166,11 +168,33 @@ func newPaywallsEditCmd() *cobra.Command {
 
 Given a paywall ID, the current draft (or published) components are fetched
 from RevenueCat as the starting state — any paywall is editable, including
-dashboard-authored ones. Given --session (written by rc paywalls generate),
-the design conversation continues with its full context. Each completed turn
-saves the design back onto the RevenueCat draft.`,
-		Example: `  rc paywalls edit pw_abc --prompt "Make annual the visual default"
-  rc paywalls edit --session pw_abc.astra.json --prompt "Add social proof" --json --no-input`,
+dashboard-authored ones. Given --session (written by a previous generate or
+edit turn), the design conversation continues with its full context. Each
+completed turn saves the design back onto the RevenueCat draft
+(revision-guarded) and prints the dashboard builder URL to view it.
+
+Using it well:
+
+  - Write a SPECIFIC prompt: exact hex colors, font vibe, tone words, real
+    feature names, and what to avoid. Read the app's theme files and the
+    session JSON for grounding first — but only ever CHANGE the design
+    through this command; hand-editing the session file gets clobbered by
+    the next turn or fails the revision guard.
+  - Pass design references: --attachment DESIGN.md folds text style guides
+    into the direction; --attachment screenshot.png (or --image) attaches
+    visually, up to 3 images total.
+  - Keep the SAME --session file across turns — it is the conversation
+    memory. A lost session file starts the design conversation over.
+  - Astra may reply with a clarifying question instead of a design (it
+    appears in the streamed activity / the --json activity array). Answer it
+    with another edit turn on the same session.
+  - Turns take one to several minutes and stream progress; run with an
+    extended timeout (--timeout) or in the background rather than polling.
+  - Undo the last turn:  rc paywalls rewind --session <file>`,
+		Example: `  rc paywalls edit                       # picker, then it asks what to change
+  rc paywalls edit pw_abc --prompt "Background #0E1B2A, bolder CTA, keep the layout"
+  rc paywalls edit pw_abc --prompt "match this" --attachment DESIGN.md --image home.png
+  rc paywalls edit --session pw_abc.astra.json --prompt "Push the gradient harder" --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -179,9 +203,23 @@ saves the design back onto the RevenueCat draft.`,
 			switch {
 			case opts.sessionPath != "":
 				session, err = loadAstraSession(opts.sessionPath)
-			case argAt(args, 0) != "":
-				session, err = seedSessionFromServer(cmd.Context(), rt, argAt(args, 0))
-				opts.sessionPath = argAt(args, 0) + ".astra.json"
+			case argAt(args, 0) != "" || (!rt.Globals.NoInput && tui.IsInteractive()):
+				client, cerr := rt.API()
+				if cerr != nil {
+					return cerr
+				}
+				projectID, perr := requireProject(rt)
+				if perr != nil {
+					return perr
+				}
+				paywallID, perr := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+					return paywallPickerItems(cmd.Context(), client, projectID)
+				})
+				if perr != nil {
+					return perr
+				}
+				session, err = seedSessionFromServer(cmd.Context(), rt, paywallID)
+				opts.sessionPath = paywallID + ".astra.json"
 			default:
 				return fmt.Errorf("pass a paywall ID or --session <file>")
 			}
@@ -289,6 +327,8 @@ func newPaywallsRewindCmd() *cobra.Command {
 
 func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "natural-language direction (or RC_PAYWALL_PROMPT)")
+	cmd.Flags().StringVar(&opts.context, "context", "", "product/audience/brand context sent alongside the direction")
+	cmd.Flags().StringArrayVar(&opts.attachments, "attachment", nil, "design reference file: images (png/jpeg/webp) attach visually, text files (DESIGN.md, style guides) travel with the direction")
 	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: <paywall-id>.astra.json)")
 	cmd.Flags().StringArrayVar(&opts.images, "image", nil, "reference image to attach (png/jpeg/webp, max 3)")
 	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Astra endpoint (or RC_ASTRA_BASE_URL)")
@@ -301,7 +341,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	if err != nil {
 		return err
 	}
-	attachments, err := loadPaywallAIImages(opts.images)
+	attachments, textRefs, err := loadPaywallAIAttachments(opts.images, opts.attachments)
 	if err != nil {
 		return err
 	}
@@ -318,7 +358,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 		Paywall:          session.Paywall,
 		UIConfig:         session.UIConfig,
 		ProductVariables: session.ProductVariables,
-		Message:          opts.prompt,
+		Message:          withPaywallContext(opts.prompt, opts.context) + textRefs,
 		InputAttachments: attachments,
 		SessionItems:     session.SessionItems,
 		AppContext:       session.AppContext,
@@ -373,17 +413,32 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	} else {
 		saved = true
 		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
-		rt.Out.Hint("Keep designing:  rc paywalls edit --session " + opts.sessionPath)
-		rt.Out.Hint("Publish when ready:  rc paywalls publish " + session.PaywallID)
+		if errored := countErroredActivity(event.Activity); errored > 0 {
+			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by Astra — the saved draft is the complete final state (nothing partial is ever saved).", errored))
+		}
+		rt.Out.Blank()
+		rt.Out.Field("View it", paywallBuilderURL(session.ProjectID, session.PaywallID))
+		rt.Out.Field("Keep designing", "rc paywalls edit --session "+opts.sessionPath)
+		rt.Out.Field("Publish when ready", "rc paywalls publish "+session.PaywallID)
 	}
-	return rt.Out.Render(map[string]any{
-		"paywall_id":     session.PaywallID,
-		"session_id":     session.SessionID,
-		"trace_id":       session.TraceID,
-		"session_file":   opts.sessionPath,
-		"saved_to_draft": saved,
-		"activity":       event.Activity,
-	})
+	if rt.Out.IsJSON() {
+		return rt.Out.Render(map[string]any{
+			"paywall_id":     session.PaywallID,
+			"dashboard_url":  paywallBuilderURL(session.ProjectID, session.PaywallID),
+			"session_id":     session.SessionID,
+			"trace_id":       session.TraceID,
+			"session_file":   opts.sessionPath,
+			"saved_to_draft": saved,
+			"activity":       event.Activity,
+		})
+	}
+	return nil
+}
+
+// paywallBuilderURL is the dashboard's visual editor for a components
+// paywall — the thing to look at after a design turn.
+func paywallBuilderURL(projectID, paywallID string) string {
+	return fmt.Sprintf("https://app.revenuecat.com/projects/%s/paywalls/%s/builder", dashboardProjectID(projectID), paywallID)
 }
 
 // persistPaywallDesign PATCHes the designed components onto the RevenueCat
@@ -448,7 +503,11 @@ func reportPaywallAIActivity(rt *Runtime, activity []astra.ToolActivity, already
 			if text == "" {
 				text = item.ToolName
 			}
-			rt.Out.Info("⚙ " + text)
+			if item.Status == "error" {
+				rt.Out.Warn("⚙ " + text + "  (errored — Astra retries these itself)")
+			} else {
+				rt.Out.Info("⚙ " + text)
+			}
 		}
 	}
 	if len(activity) > alreadyReported {
@@ -536,4 +595,62 @@ func requirePaywallAIPrompt(rt *Runtime, prompt *string, title string) error {
 	return tui.Form(rt.Globals.NoInput).
 		Field(huh.NewInput().Title(title).Value(prompt).Validate(tui.Required("prompt"))).
 		Run()
+}
+
+// withPaywallContext folds --context into the direction sent to Astra: the
+// skills document the flag (product/audience/brand context) and agents were
+// burning generation attempts on unknown-flag errors before hand-merging it.
+func withPaywallContext(prompt, context string) string {
+	if context == "" {
+		return prompt
+	}
+	return "Context: " + context + "\n\nDirection: " + prompt
+}
+
+func countErroredActivity(activity []astra.ToolActivity) int {
+	n := 0
+	for _, item := range activity {
+		if item.Status == "error" {
+			n++
+		}
+	}
+	return n
+}
+
+// loadPaywallAIAttachments routes --image and --attachment by type: image
+// files become real Astra attachments (the server accepts only
+// png/jpeg/webp, max 3, 10MB); text design references (DESIGN.md, style
+// guides) are folded into the message, which is the only channel the editor
+// API has for them today. Anything else (fonts, binaries) errors clearly.
+func loadPaywallAIAttachments(images, attachments []string) ([]astra.InputAttachment, string, error) {
+	imagePaths := append([]string(nil), images...)
+	var textBlocks []string
+	for _, path := range attachments {
+		if _, ok := paywallAIImageTypes[strings.ToLower(filepath.Ext(path))]; ok {
+			imagePaths = append(imagePaths, path)
+			continue
+		}
+		switch strings.ToLower(filepath.Ext(path)) {
+		case ".md", ".txt", ".json", ".yaml", ".yml", ".css":
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return nil, "", fmt.Errorf("read attachment: %w", err)
+			}
+			if len(data) > 64*1024 {
+				return nil, "", fmt.Errorf("text attachment %s is %dKB; keep design references under 64KB", path, len(data)/1024)
+			}
+			textBlocks = append(textBlocks, "Design reference ("+filepath.Base(path)+"):\n```\n"+string(data)+"\n```")
+		default:
+			return nil, "", fmt.Errorf("unsupported attachment %q: Astra accepts images (png/jpeg/webp) and text design references (md/txt/json/yaml/css) — fonts and other binaries are not supported by the editor API yet", path)
+		}
+	}
+	loaded, err := loadPaywallAIImages(imagePaths)
+	if err != nil {
+		return nil, "", err
+	}
+	textRefs := ""
+	if len(textBlocks) > 0 {
+		textRefs = "\n\n" + strings.Join(textBlocks, "\n\n")
+	}
+	return loaded, textRefs, nil
 }

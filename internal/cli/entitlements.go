@@ -170,11 +170,15 @@ then grant access to anyone who purchases any of the listed products.`,
 			if err != nil {
 				return err
 			}
-			if err := client.Entitlements.AttachProducts(cmd.Context(), projectID, args[0], args[1:]); err != nil {
+			entitlementID, err := resolveEntitlementRef(cmd.Context(), client, projectID, args[0])
+			if err != nil {
+				return err
+			}
+			if err := client.Entitlements.AttachProducts(cmd.Context(), projectID, entitlementID, args[1:]); err != nil {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Attached %d product(s) to %s", len(args)-1, args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "entitlement_id": args[0], "product_ids": args[1:]})
+			return rt.Out.Render(map[string]any{"ok": true, "entitlement_id": entitlementID, "product_ids": args[1:]})
 		},
 	}
 }
@@ -194,7 +198,11 @@ func newEntitlementsDetachCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := client.Entitlements.DetachProducts(cmd.Context(), projectID, args[0], args[1:]); err != nil {
+			entitlementID, err := resolveEntitlementRef(cmd.Context(), client, projectID, args[0])
+			if err != nil {
+				return err
+			}
+			if err := client.Entitlements.DetachProducts(cmd.Context(), projectID, entitlementID, args[1:]); err != nil {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Detached %d product(s) from %s", len(args)-1, args[0]))
@@ -454,4 +462,25 @@ func entitlementToItem(ctx context.Context, client *api.Client, projectID string
 			return []tui.BrowserSection{sec}, nil
 		},
 	}
+}
+
+// resolveEntitlementRef accepts an entitlement ID or lookup key: the attach
+// examples (and the skills) have always shown lookup keys, but the API wants
+// IDs — agents burned cycles on "Could not find entitlement 'pro'".
+func resolveEntitlementRef(ctx context.Context, client *api.Client, projectID, ref string) (string, error) {
+	page, err := client.Entitlements.List(ctx, projectID)
+	if err != nil {
+		return ref, nil // let the original call surface the real error
+	}
+	for _, e := range page.Items {
+		if e.ID == ref {
+			return ref, nil
+		}
+	}
+	for _, e := range page.Items {
+		if e.LookupKey == ref {
+			return e.ID, nil
+		}
+	}
+	return ref, nil
 }

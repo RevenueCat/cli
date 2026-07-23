@@ -34,6 +34,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 			io.WriteString(w, `{"object":"app","id":"app_snap1","name":"Moodly (App Store)","type":"app_store","created_at":1784241909459,"project_id":"proj_snap","app_store":{"bundle_id":"com.example.moodly","subscription_key_configured":true,"app_store_connect_api_key_configured":false}}`)
 		case strings.HasSuffix(r.URL.Path, "/apps"):
 			io.WriteString(w, `{"object":"list","items":[{"object":"app","id":"app_snap1","name":"Moodly (App Store)","type":"app_store","created_at":1784241909459,"project_id":"proj_snap","app_store":{"bundle_id":"com.example.moodly","subscription_key_configured":true,"app_store_connect_api_key_configured":false}},{"object":"app","id":"app_snap2","name":"Test Store","type":"test_store","created_at":1784241905823,"project_id":"proj_snap"}],"next_page":null,"url":"/apps"}`)
+		case strings.HasSuffix(r.URL.Path, "/paywalls") && r.Method == http.MethodGet:
+			io.WriteString(w, `{"object":"list","items":[],"next_page":null,"url":"/paywalls"}`)
 		case strings.HasSuffix(r.URL.Path, "/paywalls") && r.Method == http.MethodPost:
 			io.WriteString(w, `{"object":"paywall","id":"pw_snap","offering_id":"ofrng_snap","created_at":1784241909459,"published_at":null}`)
 		default:

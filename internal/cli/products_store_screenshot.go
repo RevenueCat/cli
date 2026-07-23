@@ -23,7 +23,7 @@ func newProductsStoreScreenshotCmd() *cobra.Command {
 	var file string
 	var timeout time.Duration
 	cmd := &cobra.Command{
-		Use:   "screenshot <product-id>",
+		Use:   "screenshot [product-id]",
 		Short: "Upload a real App Review screenshot for a product",
 		Long: `Uploads a paywall screenshot to App Store Connect for App Review and
 attaches it to the product, replacing the automatic placeholder.
@@ -35,7 +35,7 @@ the command waits for the operation to finish.
 Apple accepts PNG or JPEG review screenshots.`,
 		Example: `  rc products store screenshot prod_abc --file paywall.png
   rc products store screenshot prod_abc --file paywall.png --json --no-input`,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -49,6 +49,13 @@ Apple accepts PNG or JPEG review screenshots.`,
 			if file == "" {
 				return fmt.Errorf("a screenshot image is required: pass --file <path to .png or .jpg>")
 			}
+			pickedID, err := requireID(rt, argAt(args, 0), "product", func() ([]PickerItem, error) {
+				return productPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			args = []string{pickedID}
 			data, err := os.ReadFile(file)
 			if err != nil {
 				return fmt.Errorf("read screenshot: %w", err)

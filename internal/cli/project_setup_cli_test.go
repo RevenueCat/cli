@@ -183,6 +183,11 @@ func TestProductsPricesSet_CreatesMissingAndUpdatesExistingCurrencies(t *testing
 
 func TestPaywallsCreate_CreatesDraftForOffering(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/projects/proj/paywalls" {
+			w.Header().Set("Content-Type", "application/json")
+			io.WriteString(w, `{"object":"list","items":[],"next_page":null,"url":"/paywalls"}`)
+			return
+		}
 		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/paywalls" {
 			http.Error(w, "unexpected request", http.StatusNotFound)
 			return
