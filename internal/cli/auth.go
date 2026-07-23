@@ -236,16 +236,31 @@ anything on disk.`,
 				return fmt.Errorf("pass --api-key or set RC_API_KEY for non-interactive login")
 			}
 
+			// A RevenueCat credential already in an agent's MCP config is
+			// offered as a fast start (skips the browser). It's opaque, so we
+			// can't tell if it's still alive here — validation happens when
+			// it's used, and a dead one nudges to browser login.
+			found := discoverMCPCredentials()
+			options := make([]huh.Option[string], 0, len(found)+2)
+			for i, c := range found {
+				options = append(options, huh.NewOption(c.label(), fmt.Sprintf("mcp:%d", i)))
+			}
+			options = append(options,
+				huh.NewOption("Log in with RevenueCat  (opens browser)", loginMethodOAuth),
+				huh.NewOption("API key  (paste from dashboard)", loginMethodAPIKey),
+			)
+
 			var method string
-			sel := huh.NewSelect[string]().
-				Title("Login method").
-				Options(
-					huh.NewOption("Log in with RevenueCat  (opens browser)", loginMethodOAuth),
-					huh.NewOption("API key  (paste from dashboard)", loginMethodAPIKey),
-				).
-				Value(&method)
-			if err := tui.Form(false).Field(sel).Run(); err != nil {
+			if err := tui.Form(false).
+				Field(huh.NewSelect[string]().Title("Login method").Options(options...).Value(&method)).
+				Run(); err != nil {
 				return err
+			}
+			if strings.HasPrefix(method, "mcp:") {
+				var i int
+				fmt.Sscanf(method, "mcp:%d", &i)
+				rt.Out.Answer("Login method", "imported from "+found[i].Source+" MCP config")
+				return loginWithMCPCredential(cmd.Context(), rt, found[i])
 			}
 			rt.Out.Answer("Login method", map[string]string{loginMethodOAuth: "browser (RevenueCat account)", loginMethodAPIKey: "API key"}[method])
 
