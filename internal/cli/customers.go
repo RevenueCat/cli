@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -14,6 +15,37 @@ import (
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
+
+// grantExpiry translates a friendly promotional duration into the absolute
+// expires_at (ms since epoch) the v2 grant endpoint requires. Durations are
+// calendar-based (a month is a calendar month, not 30 days); "lifetime" maps to
+// a far-future date since the endpoint has no null/forever expiry.
+func grantExpiry(duration string, now time.Time) (int64, error) {
+	var t time.Time
+	switch duration {
+	case "daily":
+		t = now.AddDate(0, 0, 1)
+	case "three_day":
+		t = now.AddDate(0, 0, 3)
+	case "weekly":
+		t = now.AddDate(0, 0, 7)
+	case "monthly":
+		t = now.AddDate(0, 1, 0)
+	case "two_month":
+		t = now.AddDate(0, 2, 0)
+	case "three_month":
+		t = now.AddDate(0, 3, 0)
+	case "six_month":
+		t = now.AddDate(0, 6, 0)
+	case "yearly":
+		t = now.AddDate(1, 0, 0)
+	case "lifetime":
+		t = now.AddDate(100, 0, 0)
+	default:
+		return 0, fmt.Errorf("invalid duration %q: must be one of daily, three_day, weekly, monthly, two_month, three_month, six_month, yearly, lifetime", duration)
+	}
+	return t.UnixMilli(), nil
+}
 
 // Customer commands illustrate the design principle: the CLI shape is NOT a
 // 1:1 mirror of the REST API. `rc customer show` composes the customer record
@@ -583,7 +615,11 @@ pick from the list interactively.`,
 					return fmt.Errorf("aborted")
 				}
 			}
-			result, err := client.Customers.GrantEntitlement(cmd.Context(), projectID, customerID, entitlementID, duration)
+			expiresAt, err := grantExpiry(duration, time.Now())
+			if err != nil {
+				return err
+			}
+			result, err := client.Customers.GrantEntitlement(cmd.Context(), projectID, customerID, entitlementID, expiresAt)
 			if err != nil {
 				return err
 			}
