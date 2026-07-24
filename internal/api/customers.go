@@ -109,9 +109,13 @@ func (s *CustomersService) ActiveEntitlements(ctx context.Context, projectID, cu
 }
 
 // POST /projects/{project_id}/customers/{customer_id}/actions/grant_entitlement
-func (s *CustomersService) GrantEntitlement(ctx context.Context, projectID, customerID, entitlementID, duration string) (*Entitlement, error) {
-	body := map[string]any{"entitlement_id": entitlementID, "duration": duration}
-	var out Entitlement
+//
+// The v2 endpoint takes expires_at (ms since epoch), not a named duration, and
+// returns the full Customer (with the granted entitlement embedded), not a bare
+// Entitlement. Callers translate a friendly duration into expiresAt.
+func (s *CustomersService) GrantEntitlement(ctx context.Context, projectID, customerID, entitlementID string, expiresAt int64) (*Customer, error) {
+	body := map[string]any{"entitlement_id": entitlementID, "expires_at": expiresAt}
+	var out Customer
 	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/grant_entitlement"
 	if err := s.c.do(ctx, http.MethodPost, path, body, &out); err != nil {
 		return nil, err
