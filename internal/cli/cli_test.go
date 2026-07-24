@@ -143,7 +143,9 @@ func TestWhoami_JSON_StableShape(t *testing.T) {
 func TestNoInput_FailsCleanlyOnMissingRequired(t *testing.T) {
 	// `entitlements create` requires lookup-key. Without --no-input AND with no
 	// TTY (test runs piped) the tui form will still try to render; under
-	// --no-input it must fail without hanging.
+	// --no-input it must fail without hanging. The rigorous check that the
+	// required-field validation actually fires under --no-input lives in the
+	// tui package (TestForm_NoInput_*); this is the end-to-end smoke test.
 	t.Setenv("RC_API_KEY", "sk_x") // bypass not-authenticated error
 	_, _, err := runCmd(t, "entitlements", "create", "--no-input")
 	if err == nil {
