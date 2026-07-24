@@ -51,10 +51,10 @@ func newWebhooksListCmd() *cobra.Command {
 			}
 			rows := make([][]string, 0, len(page.Items))
 			for _, w := range page.Items {
-				rows = append(rows, []string{w.ID, w.URL, w.Status, formatMillis(w.CreatedAt)})
+				rows = append(rows, []string{w.ID, w.Name, w.URL, w.Environment, formatMillis(w.CreatedAt)})
 			}
 			return rt.Out.RenderTable(output.Table{
-				Columns: []string{"ID", "URL", "STATUS", "CREATED"},
+				Columns: []string{"ID", "NAME", "URL", "ENVIRONMENT", "CREATED"},
 				Rows:    rows,
 				Raw:     page,
 			})
@@ -87,7 +87,7 @@ func newWebhooksShowCmd() *cobra.Command {
 }
 
 func newWebhooksCreateCmd() *cobra.Command {
-	var urlStr string
+	var name, urlStr string
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a webhook",
@@ -98,6 +98,7 @@ func newWebhooksCreateCmd() *cobra.Command {
 				return err
 			}
 			if err := tui.Form(rt.Globals.NoInput).
+				Field(huh.NewInput().Title("Name").Value(&name).Validate(tui.Required("name"))).
 				Field(huh.NewInput().Title("Webhook URL").Value(&urlStr).Validate(tui.Required("URL"))).
 				Run(); err != nil {
 				return err
@@ -106,7 +107,7 @@ func newWebhooksCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			w, err := client.Webhooks.Create(cmd.Context(), projectID, api.WebhookCreate{URL: urlStr})
+			w, err := client.Webhooks.Create(cmd.Context(), projectID, api.WebhookCreate{Name: name, URL: urlStr})
 			if err != nil {
 				return err
 			}
@@ -114,12 +115,13 @@ func newWebhooksCreateCmd() *cobra.Command {
 			return rt.Out.Render(w)
 		},
 	}
+	cmd.Flags().StringVar(&name, "name", "", "display name (required)")
 	cmd.Flags().StringVar(&urlStr, "url", "", "webhook URL (required)")
 	return cmd
 }
 
 func newWebhooksUpdateCmd() *cobra.Command {
-	var urlStr, status string
+	var name, urlStr string
 	cmd := &cobra.Command{
 		Use:   "update <id>",
 		Short: "Update a webhook",
@@ -131,11 +133,11 @@ func newWebhooksUpdateCmd() *cobra.Command {
 				return err
 			}
 			body := api.WebhookUpdate{}
+			if cmd.Flags().Changed("name") {
+				body.Name = &name
+			}
 			if cmd.Flags().Changed("url") {
 				body.URL = &urlStr
-			}
-			if cmd.Flags().Changed("status") {
-				body.Status = &status
 			}
 			client, err := rt.API()
 			if err != nil {
@@ -149,8 +151,8 @@ func newWebhooksUpdateCmd() *cobra.Command {
 			return rt.Out.Render(w)
 		},
 	}
+	cmd.Flags().StringVar(&name, "name", "", "new display name")
 	cmd.Flags().StringVar(&urlStr, "url", "", "new URL")
-	cmd.Flags().StringVar(&status, "status", "", "new status (active|paused)")
 	return cmd
 }
 
@@ -161,8 +163,7 @@ func newWebhooksDeleteCmd() *cobra.Command {
 		Long: `Permanently deletes a webhook integration. Future events stop being
 delivered to the configured URL.
 
-Reversibility: irreversible. To temporarily disable delivery without
-deleting, prefer ` + "`rc webhooks update <id> --status paused`" + `.
+Reversibility: irreversible. Re-create the webhook if you need it back.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc webhooks delete wh_old --yes`,
