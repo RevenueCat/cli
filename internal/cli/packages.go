@@ -188,6 +188,9 @@ func newPackagesCreateCmd() *cobra.Command {
 			if lookupKey == "" {
 				return fmt.Errorf("--lookup-key is required")
 			}
+			if displayName == "" {
+				return fmt.Errorf("--display-name is required")
+			}
 			pkg, err := client.Packages.Create(cmd.Context(), projectID, offeringID, api.PackageCreate{
 				LookupKey: lookupKey, DisplayName: displayName,
 			})
@@ -199,7 +202,7 @@ func newPackagesCreateCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&lookupKey, "lookup-key", "", "lookup key (required)")
-	cmd.Flags().StringVar(&displayName, "display-name", "", "display name")
+	cmd.Flags().StringVar(&displayName, "display-name", "", "display name (required)")
 	return cmd
 }
 

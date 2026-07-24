@@ -9,27 +9,32 @@ import (
 // 404s, the sub-type is part of the path.
 type WebhooksService struct{ c *Client }
 
+// Fields mirror the v2 WebhookIntegration schema: it carries name and
+// environment (there is no "status"/pause concept), and the auth header is a
+// single string field, authorization_header — not a map.
 type Webhook struct {
-	ID         string         `json:"id"`
-	URL        string         `json:"url,omitempty"`
-	Status     string         `json:"status,omitempty"`
-	EventTypes []string       `json:"event_types,omitempty"`
-	Auth       map[string]any `json:"authorization,omitempty"`
-	CreatedAt  Millis         `json:"created_at,omitempty"`
-	Object     string         `json:"object,omitempty"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name,omitempty"`
+	URL         string   `json:"url,omitempty"`
+	Environment string   `json:"environment,omitempty"`
+	EventTypes  []string `json:"event_types,omitempty"`
+	AppID       string   `json:"app_id,omitempty"`
+	CreatedAt   Millis   `json:"created_at,omitempty"`
+	Object      string   `json:"object,omitempty"`
 }
 
 type WebhookCreate struct {
-	URL        string         `json:"url"`
-	EventTypes []string       `json:"event_types,omitempty"`
-	Auth       map[string]any `json:"authorization,omitempty"`
+	Name                string   `json:"name"` // required by the API
+	URL                 string   `json:"url"`
+	EventTypes          []string `json:"event_types,omitempty"`
+	AuthorizationHeader string   `json:"authorization_header,omitempty"`
 }
 
 type WebhookUpdate struct {
-	URL        *string        `json:"url,omitempty"`
-	Status     *string        `json:"status,omitempty"`
-	EventTypes []string       `json:"event_types,omitempty"`
-	Auth       map[string]any `json:"authorization,omitempty"`
+	Name                *string  `json:"name,omitempty"`
+	URL                 *string  `json:"url,omitempty"`
+	EventTypes          []string `json:"event_types,omitempty"`
+	AuthorizationHeader *string  `json:"authorization_header,omitempty"`
 }
 
 func (s *WebhooksService) List(ctx context.Context, projectID string) (*Page[Webhook], error) {
