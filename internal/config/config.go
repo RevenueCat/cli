@@ -196,6 +196,9 @@ func Load(profile string) (*Config, error) {
 	} else if !os.IsNotExist(err) {
 		return nil, err
 	}
+	// Credentials live in the OS keyring when available; overlay them onto
+	// whatever the file held (the file carries them only as a fallback).
+	loadSecrets(profile, cfg)
 	if v := os.Getenv("RC_API_KEY"); v != "" {
 		cfg.APIKey = v
 	}
@@ -216,7 +219,15 @@ func Save(profile string, cfg *Config) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	b, err := json.MarshalIndent(cfg, "", "  ")
+	// Try the OS keyring first; on success the file omits the secrets, on
+	// failure (headless/Docker) they stay in the 0600 file as a fallback.
+	toWrite := cfg
+	if storeSecrets(profile, cfg) {
+		redacted := *cfg
+		redacted.APIKey, redacted.AccessToken, redacted.RefreshToken = "", "", ""
+		toWrite = &redacted
+	}
+	b, err := json.MarshalIndent(toWrite, "", "  ")
 	if err != nil {
 		return err
 	}
