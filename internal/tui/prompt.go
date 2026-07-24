@@ -96,10 +96,14 @@ func (b *FormBuilder) Run() error {
 	}
 	if b.noInput || !isInteractive() {
 		// Validate each field's bound value; if any required value is unset,
-		// surface a stable error listing what's missing.
-		// (huh doesn't expose value introspection, so callers should set
-		// Validate(Required(...)) to drive this.)
+		// surface a stable error listing what's missing. A field's Error() is
+		// only populated once its validator has run, and the form never runs
+		// here — so Blur() the field first to force validation against its
+		// bound value (seeded from the flag at construction, so this reads the
+		// real value and doesn't clobber it). Without this, Validate(Required)
+		// is a no-op under --no-input and empty required inputs slip through.
 		for _, f := range b.fields {
+			f.Blur()
 			if err := f.Error(); err != nil {
 				return fmt.Errorf("missing required input (non-interactive): %w", err)
 			}
