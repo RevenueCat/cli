@@ -291,7 +291,7 @@ func newEntitlementsCreateCmd() *cobra.Command {
 			}
 			if err := tui.Form(rt.Globals.NoInput).
 				Field(huh.NewInput().Title("Lookup key").Value(&lookupKey).Validate(tui.Required("lookup key"))).
-				Field(huh.NewInput().Title("Display name (optional)").Value(&displayName)).
+				Field(huh.NewInput().Title("Display name").Value(&displayName).Validate(tui.Required("display name"))).
 				Run(); err != nil {
 				return err
 			}
@@ -311,7 +311,7 @@ func newEntitlementsCreateCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&lookupKey, "lookup-key", "", "lookup key (required)")
-	cmd.Flags().StringVar(&displayName, "display-name", "", "display name")
+	cmd.Flags().StringVar(&displayName, "display-name", "", "display name (required)")
 	return cmd
 }
 
