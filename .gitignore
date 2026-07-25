@@ -7,3 +7,7 @@
 .claude/
 .cursor/mcp.json
 npm-dist/
+
+# Python bytecode cache (spec tooling)
+__pycache__/
+*.pyc
