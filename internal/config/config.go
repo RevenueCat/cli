@@ -5,8 +5,21 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
+
+// validateProfileName rejects names that would escape the config dir when
+// joined into a file path (path separators, "..", empty). Profile names come
+// from --profile, RC_PROFILE, or the .active file, so an unchecked name like
+// "../../x" would read/write outside ~/.config/revenuecat.
+func validateProfileName(name string) error {
+	if name == "" || name == "." || name == ".." ||
+		strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") {
+		return fmt.Errorf("invalid profile name %q: must not be empty or contain path separators", name)
+	}
+	return nil
+}
 
 type Config struct {
 	// API key auth (original).
@@ -118,6 +131,9 @@ func bytesTrimSpace(b []byte) []byte {
 // SetActiveProfile writes the .active pointer file. Errors if the named
 // profile doesn't exist on disk (avoids "active" pointing at nothing).
 func SetActiveProfile(name string) error {
+	if err := validateProfileName(name); err != nil {
+		return err
+	}
 	dir, err := configDir()
 	if err != nil {
 		return err
@@ -165,6 +181,9 @@ func filepathIsJSON(name string) bool {
 // DeleteProfile removes a profile file. If it was the active one, the
 // .active pointer is cleared.
 func DeleteProfile(name string) error {
+	if err := validateProfileName(name); err != nil {
+		return err
+	}
 	dir, err := configDir()
 	if err != nil {
 		return err
@@ -197,11 +216,15 @@ func configDir() (string, error) {
 }
 
 func profilePath(profile string) (string, error) {
+	name := ProfileName(profile)
+	if err := validateProfileName(name); err != nil {
+		return "", err
+	}
 	dir, err := configDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, ProfileName(profile)+".json"), nil
+	return filepath.Join(dir, name+".json"), nil
 }
 
 // Load reads a profile from disk, layering env vars on top.
@@ -277,11 +300,15 @@ func Save(profile string, cfg *Config) error {
 // statePath returns the path of a named auxiliary state file stored beside
 // the profile files (e.g. the last Rico conversation per profile).
 func statePath(profile, name string) (string, error) {
+	pname := ProfileName(profile)
+	if err := validateProfileName(pname); err != nil {
+		return "", err
+	}
 	dir, err := configDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, ProfileName(profile)+"."+name+".json"), nil
+	return filepath.Join(dir, pname+"."+name+".json"), nil
 }
 
 // LoadState reads a named state file into out. A missing file is not an
