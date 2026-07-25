@@ -296,10 +296,6 @@ type setupStage struct {
 	PromptID string // starter prompt handed to the agent
 }
 
-// detectSetupStage reads project state through the public API. Detection is
-// deliberately local and cheap (three list calls); on any read error it
-// falls back to the beginning, which is always safe because the skills
-// themselves re-verify state.
 // platformFromLabel maps the directory detection label to a platform hint so
 // an Android-only project is never told to connect an Apple account.
 func platformFromLabel(label string) string {
@@ -315,6 +311,10 @@ func platformFromLabel(label string) string {
 	}
 }
 
+// detectSetupStage reads project state through the public API. Detection is
+// deliberately local and cheap (three list calls); on any read error it
+// falls back to the beginning, which is always safe because the skills
+// themselves re-verify state.
 func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupStage {
 	fromNothing := setupStage{"new setup — nothing configured yet", "test-store-ready"}
 	if rt.Config == nil || rt.Config.BearerToken() == "" {
