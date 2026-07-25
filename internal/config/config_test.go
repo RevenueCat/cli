@@ -217,3 +217,44 @@ func TestLoad_CorruptFileErrors(t *testing.T) {
 		t.Fatal("want error on corrupt JSON, got nil")
 	}
 }
+
+// Env vars (RC_API_KEY etc.) are one-shot overrides. A command that saves the
+// config for an unrelated reason must not bake the ephemeral env value into the
+// profile — but an explicit change to a field must still persist.
+func TestSave_DoesNotPersistEnvOverrides(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{
+		"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": "",
+	})
+
+	// Seed a profile that already has a real API key + project on disk.
+	if err := config.Save("default", &config.Config{APIKey: "sk_disk", ProjectID: "proj_disk"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Reload with env overrides in play, then change only the project (as
+	// `rc projects use` would) and save.
+	setEnv(t, map[string]string{"RC_API_KEY": "sk_env", "RC_PROJECT_ID": "proj_env"})
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.ProjectID = "proj_chosen" // explicit command change
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	// Reload without env: the ephemeral API key must be gone, the explicit
+	// project change must have stuck.
+	setEnv(t, map[string]string{"RC_API_KEY": "", "RC_PROJECT_ID": ""})
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.APIKey != "sk_disk" {
+		t.Errorf("env API key leaked to disk: got %q, want sk_disk", got.APIKey)
+	}
+	if got.ProjectID != "proj_chosen" {
+		t.Errorf("explicit project change not persisted: got %q, want proj_chosen", got.ProjectID)
+	}
+}
