@@ -157,8 +157,15 @@ func loginWithMCPCredential(ctx context.Context, rt *Runtime, cred mcpCredential
 	if err != nil {
 		return err
 	}
-	if err := finishLogin(ctx, rt, client); err != nil {
+	// Validate the borrowed token before persisting it. finishLogin only saves
+	// config, so without an explicit API call a dead/expired token would look
+	// like a successful login and fail only on the first real command. A cheap
+	// account-level read (no project binding needed) proves the token works.
+	if _, err := client.Projects.List(ctx); err != nil {
 		return fmt.Errorf("that %s token didn't work (it may have already expired — they last about an hour). Run `rc login` and choose browser login: %w", cred.Source, err)
+	}
+	if err := finishLogin(ctx, rt, client); err != nil {
+		return err
 	}
 	rt.Out.Hint("This token expires within the hour and can't refresh. Run `rc login` (browser) when you want a session that stays logged in.")
 	return nil
