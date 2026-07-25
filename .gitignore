@@ -6,3 +6,7 @@
 # Agent harness local state (Claude Code, Cursor, etc.)
 .claude/
 .cursor/mcp.json
+
+# Python bytecode cache (spec tooling)
+__pycache__/
+*.pyc
