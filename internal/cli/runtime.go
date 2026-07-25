@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -13,8 +15,26 @@ import (
 	"github.com/revenuecat/cli/internal/output"
 )
 
-// usageError signals exit 2 — bad user input that's not the API's fault.
-// Anything matching errors.Is(err, output.ErrBadFormat) lands here too.
+// usageError marks bad user input (bad flags) so ExitCodeFor returns the
+// conventional exit 2. Flag errors are wrapped with it via the root's
+// FlagErrorFunc; cobra's own unknown-command / arg-count errors don't pass
+// through that hook, so ExitCodeFor also matches their stable messages.
+type usageError struct{ err error }
+
+func (e usageError) Error() string { return e.err.Error() }
+func (e usageError) Unwrap() error { return e.err }
+
+// cobra emits these prefixes for command/arg misuse; none pass through
+// FlagErrorFunc, so match them by message.
+func isCobraUsage(err error) bool {
+	msg := err.Error()
+	for _, p := range []string{"unknown command", "accepts ", "requires "} {
+		if strings.HasPrefix(msg, p) {
+			return true
+		}
+	}
+	return false
+}
 
 type runtimeKey struct{}
 
@@ -53,6 +73,11 @@ func (r *Runtime) API() (*api.Client, error) {
 
 	if r.Config.BearerToken() == "" {
 		return nil, ErrNotAuthenticated
+	}
+	if b := r.Config.BaseURL; b != "" {
+		if u, err := url.Parse(b); err != nil || u.Scheme == "" || u.Host == "" {
+			return nil, fmt.Errorf("invalid base URL %q (RC_BASE_URL or profile base_url): expected an absolute URL like https://api.revenuecat.com/v2", b)
+		}
 	}
 	r.client = api.NewClient(api.Options{
 		APIKey:    r.Config.BearerToken(), // works for both API keys and OAuth tokens
@@ -115,6 +140,10 @@ func ExitCodeFor(err error) int {
 		return 0
 	}
 	if errors.Is(err, output.ErrBadFormat) {
+		return 2
+	}
+	var ue usageError
+	if errors.As(err, &ue) || isCobraUsage(err) {
 		return 2
 	}
 	var apiErr *api.APIError
