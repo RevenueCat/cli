@@ -11,6 +11,23 @@ type Config struct {
 	APIKey    string `json:"api_key,omitempty"`
 	ProjectID string `json:"project_id,omitempty"`
 	BaseURL   string `json:"base_url,omitempty"`
+
+	// Provenance of env-var overrides applied at Load. Unexported (never
+	// serialized) and comparable (Config stays usable with ==). RC_API_KEY /
+	// RC_PROJECT_ID / RC_BASE_URL override for a single invocation; without
+	// this, any command that calls Save would bake the ephemeral env value
+	// permanently into the profile. See Save.
+	envAPIKey    envOverride
+	envProjectID envOverride
+	envBaseURL   envOverride
+}
+
+// envOverride records that Load replaced a field with an env-var value,
+// keeping the pre-override on-disk value so Save can restore it rather than
+// persist the ephemeral env value.
+type envOverride struct {
+	env, disk string
+	set       bool
 }
 
 const defaultProfile = "default"
@@ -159,15 +176,16 @@ func Load(profile string) (*Config, error) {
 	} else if !os.IsNotExist(err) {
 		return nil, err
 	}
-	if v := os.Getenv("RC_API_KEY"); v != "" {
-		cfg.APIKey = v
+	applyEnv := func(o *envOverride, env string, cur *string) {
+		if env == "" {
+			return
+		}
+		*o = envOverride{env: env, disk: *cur, set: true}
+		*cur = env
 	}
-	if v := os.Getenv("RC_PROJECT_ID"); v != "" {
-		cfg.ProjectID = v
-	}
-	if v := os.Getenv("RC_BASE_URL"); v != "" {
-		cfg.BaseURL = v
-	}
+	applyEnv(&cfg.envAPIKey, os.Getenv("RC_API_KEY"), &cfg.APIKey)
+	applyEnv(&cfg.envProjectID, os.Getenv("RC_PROJECT_ID"), &cfg.ProjectID)
+	applyEnv(&cfg.envBaseURL, os.Getenv("RC_BASE_URL"), &cfg.BaseURL)
 	return cfg, nil
 }
 
@@ -179,7 +197,19 @@ func Save(profile string, cfg *Config) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	b, err := json.MarshalIndent(cfg, "", "  ")
+	// Persist a copy with ephemeral env overrides reverted: a field still
+	// holding its env-injected value means no command changed it this run, so
+	// the on-disk value (not the env var) is what belongs in the profile.
+	out := *cfg
+	revert := func(o envOverride, cur *string) {
+		if o.set && *cur == o.env {
+			*cur = o.disk
+		}
+	}
+	revert(cfg.envAPIKey, &out.APIKey)
+	revert(cfg.envProjectID, &out.ProjectID)
+	revert(cfg.envBaseURL, &out.BaseURL)
+	b, err := json.MarshalIndent(&out, "", "  ")
 	if err != nil {
 		return err
 	}
