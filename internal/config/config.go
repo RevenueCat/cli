@@ -22,6 +22,23 @@ type Config struct {
 
 	ProjectID string `json:"project_id,omitempty"`
 	BaseURL   string `json:"base_url,omitempty"`
+
+	// Provenance of env-var overrides applied at Load. Unexported (never
+	// serialized) and comparable (Config stays usable with ==). RC_API_KEY /
+	// RC_PROJECT_ID / RC_BASE_URL override for a single invocation; without
+	// this, any command that calls Save would bake the ephemeral env value
+	// permanently into the profile. See Save.
+	envAPIKey    envOverride
+	envProjectID envOverride
+	envBaseURL   envOverride
+}
+
+// envOverride records that Load replaced a field with an env-var value,
+// keeping the pre-override on-disk value so Save can restore it rather than
+// persist the ephemeral env value.
+type envOverride struct {
+	env, disk string
+	set       bool
 }
 
 // BearerToken returns whichever auth credential should be sent as the
@@ -206,15 +223,16 @@ func Load(profile string) (*Config, error) {
 	// Credentials live in the OS keyring when available; overlay them onto
 	// whatever the file held (the file carries them only as a fallback).
 	loadSecrets(profile, cfg)
-	if v := os.Getenv("RC_API_KEY"); v != "" {
-		cfg.APIKey = v
+	applyEnv := func(o *envOverride, env string, cur *string) {
+		if env == "" {
+			return
+		}
+		*o = envOverride{env: env, disk: *cur, set: true}
+		*cur = env
 	}
-	if v := os.Getenv("RC_PROJECT_ID"); v != "" {
-		cfg.ProjectID = v
-	}
-	if v := os.Getenv("RC_BASE_URL"); v != "" {
-		cfg.BaseURL = v
-	}
+	applyEnv(&cfg.envAPIKey, os.Getenv("RC_API_KEY"), &cfg.APIKey)
+	applyEnv(&cfg.envProjectID, os.Getenv("RC_PROJECT_ID"), &cfg.ProjectID)
+	applyEnv(&cfg.envBaseURL, os.Getenv("RC_BASE_URL"), &cfg.BaseURL)
 	return cfg, nil
 }
 
@@ -226,11 +244,26 @@ func Save(profile string, cfg *Config) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
+	// Persist a copy with ephemeral env overrides reverted: a field still
+	// holding its env-injected value means no command changed it this run, so
+	// the on-disk value (not the env var) is what belongs in the profile. Do
+	// this before storeSecrets so an env-injected key isn't written to the
+	// keyring either.
+	out := *cfg
+	revert := func(o envOverride, cur *string) {
+		if o.set && *cur == o.env {
+			*cur = o.disk
+		}
+	}
+	revert(cfg.envAPIKey, &out.APIKey)
+	revert(cfg.envProjectID, &out.ProjectID)
+	revert(cfg.envBaseURL, &out.BaseURL)
+
 	// Try the OS keyring first; on success the file omits the secrets, on
 	// failure (headless/Docker) they stay in the 0600 file as a fallback.
-	toWrite := cfg
-	if storeSecrets(profile, cfg) {
-		redacted := *cfg
+	toWrite := &out
+	if storeSecrets(profile, &out) {
+		redacted := out
 		redacted.APIKey, redacted.AccessToken, redacted.RefreshToken = "", "", ""
 		toWrite = &redacted
 	}
