@@ -258,7 +258,12 @@ anything on disk.`,
 			}
 			if strings.HasPrefix(method, "mcp:") {
 				var i int
-				fmt.Sscanf(method, "mcp:%d", &i)
+				// method comes only from the Select above, so the index is
+				// always valid today — but validate anyway so a future flag or
+				// menu change can't turn this into an out-of-bounds panic.
+				if n, _ := fmt.Sscanf(method, "mcp:%d", &i); n != 1 || i < 0 || i >= len(found) {
+					return fmt.Errorf("invalid MCP credential selection %q", method)
+				}
 				rt.Out.Answer("Login method", "imported from "+found[i].Source+" MCP config")
 				return loginWithMCPCredential(cmd.Context(), rt, found[i])
 			}
