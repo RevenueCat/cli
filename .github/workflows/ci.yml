@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: stable
+          cache: true
+      - name: Install Python deps for codegen
+        run: python3 -m pip install pyyaml
+
+      - name: Verify generated types are up to date
+        run: |
+          cp internal/api/types_gen.go /tmp/types_gen_committed.go
+          make gen
+          if ! diff -q internal/api/types_gen.go /tmp/types_gen_committed.go > /dev/null 2>&1; then
+            echo "::error::internal/api/types_gen.go is out of date. Run 'make gen' and commit the result."
+            diff /tmp/types_gen_committed.go internal/api/types_gen.go || true
+            exit 1
+          fi
+
+      - name: gofmt
+        run: |
+          out=$(gofmt -l ./internal ./cmd)
+          if [ -n "$out" ]; then
+            echo "::error::unformatted files:"; echo "$out"; exit 1
+          fi
+      - name: vet
+        run: go vet ./...
+      - name: build
+        run: go build ./...
+      - name: test
+        run: go test -race -coverprofile=coverage.out ./...
+      - name: coverage report
+        run: go tool cover -func=coverage.out | tail -1
+      - name: staticcheck
+        uses: dominikh/staticcheck-action@9716614d4101e79b4340dd97b10e54d68234e431 # v1.4.1
+        with:
+          version: latest
+          install-go: false
+
+  darwin-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: stable
+          cache: true
+      - name: Build with native Keychain support
+        run: CGO_ENABLED=1 go build ./...
+      - name: Test native macOS code
+        run: CGO_ENABLED=1 go test ./...

@@ -1,0 +1,13 @@
+/dist/
+/rc
+*.test
+.DS_Store
+
+# Agent harness local state (Claude Code, Cursor, etc.)
+.claude/
+.cursor/mcp.json
+npm-dist/
+
+# Python bytecode cache (spec tooling)
+__pycache__/
+*.pyc

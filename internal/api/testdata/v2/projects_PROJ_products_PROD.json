@@ -1,0 +1,16 @@
+{
+  "app_id": "appa_test_001",
+  "created_at": 1735689636000,
+  "display_name": "Annual",
+  "id": "prod_test_002",
+  "object": "product",
+  "one_time": null,
+  "state": "active",
+  "store_identifier": "com.revenuecat.simpleapp.yearly",
+  "subscription": {
+    "duration": "P1Y",
+    "grace_period_duration": null,
+    "trial_duration": null
+  },
+  "type": "subscription"
+}

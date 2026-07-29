@@ -1,0 +1,189 @@
+{
+  "category": "revenue",
+  "description": "Monthly Recurring Revenue, or MRR, is a way of normalizing the scale of your business to better understand your velocity or size. It doesn't map directly to revenue, but it is a useful standardization.\n\nMRR is computed by \"normalizing\" subscriptions to a 1-month period. For example, a subscription that is $8 per month, will contribute $8 to MRR while it is active. An annual subscription that costs $120 per year will contribute $10 dollars per month to MRR for 12 months. This normalizing of all durations to a 1 month period makes it easier to compare different subscriptions of different durations together.\n\nMRR is an important measure because it not only captures the size of your subscriber base, but translates that into a real velocity metric for your business. MRR and ARR are considered the standard velocity metrics for subscription software companies.",
+  "display_name": "MRR",
+  "display_type": "default",
+  "documentation_link": "dashboard-and-metrics/charts/monthly-recurring-revenue-mrr-chart",
+  "end_date": 1809129600,
+  "filtering_allowed": true,
+  "last_computed_at": null,
+  "measures": [
+    {
+      "chartable": true,
+      "decimal_precision": 0,
+      "description": "Monthly Recurring Revenue",
+      "display_name": "MRR",
+      "tabulable": true,
+      "unit": "$"
+    }
+  ],
+  "object": "chart_data",
+  "resolution": "month",
+  "segmenting_allowed": true,
+  "segments": null,
+  "segments_limit": null,
+  "start_date": 1746057600,
+  "summary": {
+    "average": {
+      "MRR": 0
+    }
+  },
+  "unsupported_params": null,
+  "user_selectors": {
+    "revenue_type": "revenue"
+  },
+  "values": [
+    {
+      "cohort": 1746057600,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1748736000,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1751328000,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1754006400,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1756684800,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1759276800,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1761955200,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1764547200,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1767225600,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1769904000,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1772323200,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1775001600,
+      "incomplete": false,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1777593600,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1780272000,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1782864000,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1785542400,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1788220800,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1790812800,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1793491200,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1796083200,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1798761600,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1801440000,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1803859200,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1806537600,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    },
+    {
+      "cohort": 1809129600,
+      "incomplete": true,
+      "measure": 0,
+      "value": 0
+    }
+  ],
+  "yaxis": "$",
+  "yaxis_currency": "USD"
+}

@@ -1,0 +1,8 @@
+{
+  "doc_url": "https://errors.rev.cat/parameter-error",
+  "message": "'active_subscriptions_movement' is not one of ['actives', 'actives_movement', 'actives_new', 'arr', 'churn', 'cohort_explorer', 'conversion_to_paying', 'customers_new', 'ltv_per_customer', 'ltv_per_paying_customer', 'mrr', 'mrr_movement', 'prediction_explorer', 'refund_rate', 'revenue', 'subscription_retention', 'subscription_status', 'trials', 'trials_movement', 'trials_new', 'customers_active', 'trial_conversion_rate']",
+  "object": "error",
+  "param": "chart_name",
+  "retryable": false,
+  "type": "parameter_error"
+}

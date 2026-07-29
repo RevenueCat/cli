@@ -1,0 +1,18 @@
+$ rc apps apple setup app_snap1 --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Apple configuration — Moodly (App Store)
+  Signs in to App Store Connect and sets up the keys RevenueCat needs —
+  nothing changes without your OK.
+
+  App                         app_snap1
+  In-app purchase key         configured       · validates App Store purchases
+  App Store Connect API key   not configured   · manages products and prices
+  Vendor number               not configured   · links sales reports to revenue charts
+
+▍ Plan
+· 1. Sign in to App Store Connect with your Apple Account
+· 2. Verify the App Store Connect app for com.example.moodly
+· 3. Create the App Store Connect API key
+· 4. Look up and confirm the vendor number
+· 5. Save to RevenueCat
+(exit: Sign in to App Store Connect now? (pass --yes to confirm non-interactively))

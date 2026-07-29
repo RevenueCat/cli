@@ -1,0 +1,7 @@
+{
+  "doc_url": "https://errors.rev.cat/resource-missing",
+  "message": "Resource not found",
+  "object": "error",
+  "retryable": false,
+  "type": "resource_missing"
+}

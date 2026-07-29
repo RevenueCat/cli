@@ -1,0 +1,21 @@
+pre-commit:
+  commands:
+    checks:
+      run: mise exec -- make check
+
+commit-msg:
+  commands:
+    conventional:
+      run: |
+        msg=$(cat {1})
+        pattern='^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?(!)?: .{1,100}'
+        if ! echo "$msg" | grep -qE "$pattern"; then
+          echo "Commit message must follow Conventional Commits format:"
+          echo "  <type>(<scope>): <description>"
+          echo ""
+          echo "Types: feat fix docs style refactor perf test chore ci build revert"
+          echo "Example: feat(auth): add OAuth browser login"
+          echo ""
+          echo "Got: $msg"
+          exit 1
+        fi

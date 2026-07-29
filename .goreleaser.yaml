@@ -1,0 +1,86 @@
+version: 2
+
+project_name: rc
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: rc-unix-windows
+    main: ./cmd/rc
+    binary: rc
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+  - id: rc-darwin
+    main: ./cmd/rc
+    binary: rc
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: git
+  groups:
+    - title: "New features"
+      regexp: '^feat'
+      order: 0
+    - title: "Bug fixes"
+      regexp: '^fix'
+      order: 1
+    - title: "Performance"
+      regexp: '^perf'
+      order: 2
+    - title: "Other"
+      order: 999
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+      - '^style:'
+      - 'Co-Authored-By:'
+
+brews:
+  - name: rc
+    repository:
+      owner: RevenueCat
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://www.revenuecat.com"
+    description: "RevenueCat command line interface"
+    license: "MIT"
+    install: |
+      bin.install "rc"
+    test: |
+      system "#{bin}/rc", "--version"

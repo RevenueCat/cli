@@ -1,0 +1,6 @@
+$ rc paywalls create --offering-id ofrng_snap --no-input --project-id proj_snap --api-key sk_snap
+✓ Created draft paywall pw_snap
+
+  View it                     https://app.revenuecat.com/projects/snap/paywalls/pw_snap/builder
+  Design it                   rc paywalls edit pw_snap
+  Publish when ready          rc paywalls publish pw_snap

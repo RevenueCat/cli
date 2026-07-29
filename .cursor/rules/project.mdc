@@ -1,0 +1,21 @@
+---
+description: RevenueCat CLI project conventions
+alwaysApply: true
+---
+
+The canonical agent guide for this repository is [AGENTS.md](mdc:AGENTS.md).
+Read it before making changes. It covers:
+
+- The two-layer rule: `internal/api/` is REST-shaped; `internal/cli/` is
+  user-intent-shaped. Never let CLI concepts leak into `api/`, and never let
+  HTTP concepts leak into `cli/`.
+- Dual-mode contract: every command must work for humans (TTY, prompts, pretty
+  output) and agents (`--json`, `--no-input`, `--yes`, stable exit codes).
+- Every interactive prompt must also be a flag and an env var.
+- Don't auto-generate from the OpenAPI spec. This is a hand-crafted CLI.
+- Don't name commands after HTTP verbs/paths. Name them after user intent.
+- stdout = data, stderr = chatter. `--json` never auto-activates from pipe
+  detection.
+
+When in doubt about where code belongs, re-read AGENTS.md's "Where things
+live" table.

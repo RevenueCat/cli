@@ -1,0 +1,8 @@
+$ rc offerings show ofrng_snap --no-input --project-id proj_snap --api-key sk_snap
+id            ofrng_snap
+lookup_key    default
+display_name  Default
+created_at    2026-07-17 14:19 UTC
+is_current    true
+project_id    proj_snap
+state         —

@@ -1,0 +1,11 @@
+{
+  "created_at": 1735689619000,
+  "display_name": "default",
+  "id": "ofrng_test_003",
+  "is_current": true,
+  "lookup_key": "default",
+  "metadata": null,
+  "object": "offering",
+  "project_id": "proj_test_001",
+  "state": "active"
+}
