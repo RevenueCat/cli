@@ -266,14 +266,14 @@ func runAgentCmd(t *testing.T, args ...string) (string, string, error) {
 }
 
 func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
-	apiURL, astraURL, editorInputs, _ := astraTestServers(t, "ofrng_default")
+	apiURL, astraURL, editorInputs, createInputs := astraTestServers(t, "ofrng_default")
 	t.Setenv("RC_BASE_URL", apiURL)
 	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
 
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "session.json")
 	stdout, _, err := runAgentCmd(t,
-		"paywalls", "generate", "ofrng_default",
+		"paywalls", "generate", "--offering-id", "ofrng_default",
 		"--prompt", "A calm annual-first paywall",
 		"--session", sessionPath,
 		"--project-id", "proj1",
@@ -295,6 +295,9 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	}
 	if envelope.Data.PaywallID != "pw_new" || envelope.Data.SessionID != "sess1" || envelope.Data.TraceID != "tr1" {
 		t.Fatalf("data = %+v", envelope.Data)
+	}
+	if offeringID := (*createInputs)[0]["offering_id"]; offeringID != "ofrng_default" {
+		t.Fatalf("create offering_id = %v", offeringID)
 	}
 
 	// The editor request carried the project, paywall, prompt, and state.
@@ -348,10 +351,11 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 	apiURL, astraURL, editorInputs, createInputs := astraTestServers(t, "")
 	t.Setenv("RC_BASE_URL", apiURL)
 	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
+	t.Setenv("RC_OFFERING_ID", "")
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
 	_, _, err := runAgentCmd(t,
-		"paywalls", "generate", "--standalone", "--name", "Summer sale",
+		"paywalls", "generate", "--name", "Summer sale",
 		"--prompt", "A calm annual-first paywall",
 		"--session", sessionPath,
 		"--project-id", "proj1",
@@ -396,18 +400,10 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 	}
 }
 
-func TestPaywallsGenerate_StandaloneConflictsWithOffering(t *testing.T) {
-	_, _, err := runCmd(t, "paywalls", "generate", "ofrng_x", "--standalone",
+func TestPaywallsGenerate_RejectsPositionalOffering(t *testing.T) {
+	_, _, err := runCmd(t, "paywalls", "generate", "ofrng_x", "--prompt", "x",
 		"--project-id", "proj1", "--no-input", "--api-key", "sk_test")
-	if err == nil || !strings.Contains(err.Error(), "--standalone cannot be combined") {
-		t.Fatalf("err = %v", err)
-	}
-}
-
-func TestPaywallsGenerate_NoInputRequiresOfferingOrStandalone(t *testing.T) {
-	_, _, err := runCmd(t, "paywalls", "generate", "--prompt", "x",
-		"--project-id", "proj1", "--no-input", "--api-key", "sk_test")
-	if err == nil || !strings.Contains(err.Error(), "--standalone") {
+	if err == nil || !strings.Contains(err.Error(), "unknown command") {
 		t.Fatalf("err = %v", err)
 	}
 }

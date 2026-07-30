@@ -65,7 +65,6 @@ type paywallAIOptions struct {
 	attachments []string
 	prompt      string
 	offeringID  string
-	standalone  bool
 	name        string
 	sessionPath string
 	images      []string
@@ -81,14 +80,11 @@ func newPaywallsGenerateCmd() *cobra.Command {
 		timeout:    12 * time.Minute,
 	}
 	cmd := &cobra.Command{
-		Use:   "generate [offering-id]",
+		Use:   "generate",
 		Short: "Generate a paywall draft with the Paywall AI editor",
-		Long: `Creates a draft paywall for an offering and designs it from a natural-language
+		Long: `Creates a standalone draft paywall and designs it from a natural-language
 prompt using Astra, the Paywall AI editor — the same engine behind the
-dashboard's AI mode.
-
-Standalone (--standalone, or pick "Standalone (no offering)" interactively)
-creates the draft with no offering; attach it later in the dashboard.
+dashboard's AI mode. Pass --offering-id to attach the draft to an offering.
 
 Each completed turn saves the design onto the RevenueCat paywall draft, and
 the editor state is also kept in a session file so follow-up edits retain the
@@ -96,10 +92,9 @@ conversation: pass the same --session to rc paywalls edit. Astra may answer
 with a clarifying question instead of a design — reply with another edit
 turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 		Example: `  rc paywalls generate
-  rc paywalls generate ofrng_default --prompt "A calm annual-first paywall"
-  rc paywalls generate --standalone --name "Summer sale" --prompt "A calm annual-first paywall"
-  rc paywalls generate ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
-		Args: cobra.MaximumNArgs(1),
+  rc paywalls generate --name "Summer sale" --prompt "A calm annual-first paywall"
+  rc paywalls generate --offering-id ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -110,36 +105,12 @@ turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 			if err != nil {
 				return err
 			}
-			if argAt(args, 0) != "" {
-				if opts.offeringID != "" && opts.offeringID != argAt(args, 0) {
-					return fmt.Errorf("offering ID was provided both positionally and with --offering-id")
-				}
-				opts.offeringID = argAt(args, 0)
-			}
-			if opts.standalone {
-				if argAt(args, 0) != "" || cmd.Flags().Changed("offering-id") {
-					return fmt.Errorf("--standalone cannot be combined with an offering ID")
-				}
-				opts.offeringID = "" // RC_OFFERING_ID may have seeded it; --standalone wins
-			} else {
-				if opts.offeringID == "" && (rt.Globals.NoInput || !tui.IsInteractive()) {
-					return fmt.Errorf("offering ID is required; pass an offering ID or --standalone to generate a paywall without one")
-				}
-				opts.offeringID, err = requireID(rt, opts.offeringID, "offering", func() ([]PickerItem, error) {
-					items, err := offeringPickerItems(cmd.Context(), client, projectID)
-					return append([]PickerItem{{ID: "", Label: "Standalone (no offering)"}}, items...), err
-				})
-				if err != nil {
-					return err
-				}
-				opts.standalone = opts.offeringID == ""
-			}
 			if err := requirePaywallAIPrompt(rt, &opts.prompt, "Describe the paywall you want"); err != nil {
 				return err
 			}
 
 			var paywall *api.Paywall
-			if opts.standalone {
+			if opts.offeringID == "" {
 				paywall, err = client.Paywalls.CreateFromComponents(cmd.Context(), projectID, api.PaywallComponentsCreate{
 					Name:                    opts.name,
 					ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
@@ -158,7 +129,7 @@ turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 			rt.Out.Info("Created draft paywall " + paywall.ID)
 
 			var offeringID *string
-			if !opts.standalone {
+			if opts.offeringID != "" {
 				offeringID = &opts.offeringID
 			}
 			session := &astraSession{
@@ -183,8 +154,7 @@ turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 	}
 	addPaywallAIFlags(cmd, &opts)
 	cmd.Flags().StringVar(&opts.offeringID, "offering-id", opts.offeringID, "offering to attach (or RC_OFFERING_ID)")
-	cmd.Flags().BoolVar(&opts.standalone, "standalone", false, "create without an offering; attach later")
-	cmd.Flags().StringVar(&opts.name, "name", "", "paywall name (standalone paywalls)")
+	cmd.Flags().StringVar(&opts.name, "name", "", "paywall name (standalone drafts)")
 	return cmd
 }
 
