@@ -258,3 +258,20 @@ func TestSave_DoesNotPersistEnvOverrides(t *testing.T) {
 		t.Errorf("explicit project change not persisted: got %q, want proj_chosen", got.ProjectID)
 	}
 }
+
+// A profile name must not escape the config dir via path separators or "..".
+func TestProfileName_RejectsPathTraversal(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_PROFILE": "", "RC_API_KEY": ""})
+	for _, bad := range []string{"../evil", "a/b", "..", `a\b`} {
+		if _, err := config.Load(bad); err == nil {
+			t.Errorf("Load(%q) should reject an unsafe profile name", bad)
+		}
+		if err := config.Save(bad, &config.Config{}); err == nil {
+			t.Errorf("Save(%q) should reject an unsafe profile name", bad)
+		}
+	}
+	if err := config.Save("staging", &config.Config{ProjectID: "p"}); err != nil {
+		t.Errorf("a normal profile name must still work: %v", err)
+	}
+}

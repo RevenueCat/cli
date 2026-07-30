@@ -40,3 +40,38 @@ func TestCommandSurface_SchemaIncludesAgentOnlyExcludesPunted(t *testing.T) {
 		t.Error("punted command 'setup' should not appear in the schema surface")
 	}
 }
+
+// The human-help curation runs behind a testing.Testing() short-circuit, so
+// this drives curateSurface directly to keep the rules honest: humans see the
+// curated set, agents don't, punted stays hidden even under --all.
+func TestCurateSurface(t *testing.T) {
+	root := NewRootCmd("test")
+	hidden := func(name string) bool {
+		for _, c := range root.Commands() {
+			if c.Name() == name {
+				return c.Hidden
+			}
+		}
+		t.Fatalf("command %q not registered", name)
+		return false
+	}
+
+	curateSurface(root, false) // default help
+	if hidden("paywalls") {
+		t.Error("human command 'paywalls' should be visible in --help")
+	}
+	if !hidden("customer") {
+		t.Error("agent-only 'customer' should be hidden from --help")
+	}
+	if !hidden("setup") {
+		t.Error("punted 'setup' should be hidden")
+	}
+
+	curateSurface(root, true) // rc --all
+	if hidden("customer") {
+		t.Error("--all should reveal agent-only 'customer'")
+	}
+	if !hidden("setup") {
+		t.Error("--all must NOT reveal punted 'setup'")
+	}
+}

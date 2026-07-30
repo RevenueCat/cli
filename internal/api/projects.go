@@ -3,19 +3,40 @@ package api
 import (
 	"context"
 	"net/http"
+	"net/url"
 )
 
 type ProjectsService struct{ c *Client }
 
 // Project type is generated in types_gen.go.
 
-// GET /projects
+// GET /projects, following next_page until the account's projects are drained.
+// next_page is a full URL; we re-request through the base-relative path using
+// its starting_after cursor. If a page reports no cursor, we stop with what we
+// have (no worse than a single-page fetch).
 func (s *ProjectsService) List(ctx context.Context) (*Page[Project], error) {
-	var out Page[Project]
-	if err := s.c.do(ctx, http.MethodGet, "/projects", nil, &out); err != nil {
-		return nil, err
+	var all []Project
+	path := "/projects"
+	for {
+		var page Page[Project]
+		if err := s.c.do(ctx, http.MethodGet, path, nil, &page); err != nil {
+			return nil, err
+		}
+		all = append(all, page.Items...)
+		if page.NextPage == "" {
+			break
+		}
+		u, err := url.Parse(page.NextPage)
+		if err != nil {
+			break
+		}
+		cursor := u.Query().Get("starting_after")
+		if cursor == "" {
+			break
+		}
+		path = "/projects?starting_after=" + url.QueryEscape(cursor)
 	}
-	return &out, nil
+	return &Page[Project]{Items: all}, nil
 }
 
 // POST /projects

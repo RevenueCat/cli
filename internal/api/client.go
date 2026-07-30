@@ -69,7 +69,13 @@ func NewClient(opts Options) *Client {
 	if base == "" {
 		base = DefaultBaseURL
 	}
-	u, _ := url.Parse(base)
+	u, err := url.Parse(base)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		// Never leave baseURL nil/relative — buildURL dereferences it, so a bad
+		// URL here would panic on the first request. Callers should validate
+		// user input; this is the last-resort guard.
+		u, _ = url.Parse(DefaultBaseURL)
+	}
 	hc := opts.HTTPClient
 	if hc == nil {
 		hc = &http.Client{Timeout: 30 * time.Second}

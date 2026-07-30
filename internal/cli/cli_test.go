@@ -685,3 +685,17 @@ func contains(haystack []string, needle string) bool {
 	}
 	return false
 }
+
+// Usage errors (bad flags, unknown command) get the conventional exit code 2,
+// distinct from a runtime failure (1). Guards the FlagErrorFunc sentinel and
+// the cobra-message match in ExitCodeFor.
+func TestExitCode_UsageErrorsAre2(t *testing.T) {
+	_, _, err := runCmd(t, "definitely-not-a-real-command")
+	if got := cli.ExitCodeFor(err); got != 2 {
+		t.Errorf("unknown command should exit 2, got %d (err: %v)", got, err)
+	}
+	_, _, err = runCmd(t, "version", "--definitely-not-a-flag")
+	if got := cli.ExitCodeFor(err); got != 2 {
+		t.Errorf("unknown flag should exit 2, got %d (err: %v)", got, err)
+	}
+}

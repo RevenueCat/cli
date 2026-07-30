@@ -151,7 +151,9 @@ Agent-friendly entrypoints:
 		newVersionCmd(),
 	)
 
-	root.SetFlagErrorFunc(suggestFlag)
+	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
+		return usageError{suggestFlag(cmd, err)}
+	})
 	applySurfaceProfile(root)
 
 	// --help skips PersistentPreRunE, so re-apply the surface from the parsed

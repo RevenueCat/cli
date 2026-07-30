@@ -236,16 +236,36 @@ anything on disk.`,
 				return fmt.Errorf("pass --api-key or set RC_API_KEY for non-interactive login")
 			}
 
+			// A RevenueCat credential already in an agent's MCP config is
+			// offered as a fast start (skips the browser). It's opaque, so we
+			// can't tell if it's still alive here — validation happens when
+			// it's used, and a dead one nudges to browser login.
+			found := discoverMCPCredentials()
+			options := make([]huh.Option[string], 0, len(found)+2)
+			for i, c := range found {
+				options = append(options, huh.NewOption(c.label(), fmt.Sprintf("mcp:%d", i)))
+			}
+			options = append(options,
+				huh.NewOption("Log in with RevenueCat  (opens browser)", loginMethodOAuth),
+				huh.NewOption("API key  (paste from dashboard)", loginMethodAPIKey),
+			)
+
 			var method string
-			sel := huh.NewSelect[string]().
-				Title("Login method").
-				Options(
-					huh.NewOption("Log in with RevenueCat  (opens browser)", loginMethodOAuth),
-					huh.NewOption("API key  (paste from dashboard)", loginMethodAPIKey),
-				).
-				Value(&method)
-			if err := tui.Form(false).Field(sel).Run(); err != nil {
+			if err := tui.Form(false).
+				Field(huh.NewSelect[string]().Title("Login method").Options(options...).Value(&method)).
+				Run(); err != nil {
 				return err
+			}
+			if strings.HasPrefix(method, "mcp:") {
+				var i int
+				// method comes only from the Select above, so the index is
+				// always valid today — but validate anyway so a future flag or
+				// menu change can't turn this into an out-of-bounds panic.
+				if n, _ := fmt.Sscanf(method, "mcp:%d", &i); n != 1 || i < 0 || i >= len(found) {
+					return fmt.Errorf("invalid MCP credential selection %q", method)
+				}
+				rt.Out.Answer("Login method", "imported from "+found[i].Source+" MCP config")
+				return loginWithMCPCredential(cmd.Context(), rt, found[i])
 			}
 			rt.Out.Answer("Login method", map[string]string{loginMethodOAuth: "browser (RevenueCat account)", loginMethodAPIKey: "API key"}[method])
 
@@ -404,12 +424,18 @@ func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 	rt.Config.TokenExpiresAt = time.Time{}
 	rt.Config.AccountEmail = ""
 	rt.Config.AccountName = ""
-	clearProjectBinding(rt)
 
 	client, err := rt.API()
 	if err != nil {
 		return err
 	}
+	// Validate before clearing or saving: a bad key fails fast instead of a
+	// false "Logged in", and a failed login won't announce a project clear.
+	if _, err := client.Projects.List(ctx); err != nil {
+		rt.Out.Hint("Check your key at https://app.revenuecat.com/settings/api-keys")
+		return fmt.Errorf("that API key didn't work: %w", err)
+	}
+	clearProjectBinding(rt)
 	return finishLogin(ctx, rt, client)
 }
 

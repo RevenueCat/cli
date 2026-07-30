@@ -46,6 +46,8 @@ jobs:
         with:
           version: latest
           install-go: false
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
 
   darwin-build:
     runs-on: macos-14

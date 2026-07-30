@@ -50,9 +50,16 @@ func showAllSurface(root *cobra.Command) bool {
 // include them (they gate on the punted annotation, not Hidden).
 func applySurfaceProfile(root *cobra.Command) {
 	if testing.Testing() {
-		return // tests assert the full surface
+		return // tests assert the full surface; the rules themselves are
+		// covered directly by TestCurateSurface.
 	}
-	all := showAllSurface(root)
+	curateSurface(root, showAllSurface(root))
+}
+
+// curateSurface applies the visibility rules. Split out of applySurfaceProfile
+// so the rules are testable without the testing.Testing() short-circuit, which
+// would otherwise let curation regress with nothing catching it.
+func curateSurface(root *cobra.Command, all bool) {
 	for _, cmd := range root.Commands() {
 		switch {
 		case cmd.Annotations[annotationSurface] == surfacePunted:
