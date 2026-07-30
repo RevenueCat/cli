@@ -20,8 +20,8 @@ import (
 	"github.com/revenuecat/cli/internal/tui"
 )
 
-// astraSession is the state file round-tripped between editor turns. Astra
-// keeps no server-side paywall state between requests: the client must resend
+// astraSession is the state file round-tripped between editor turns. The
+// Paywall AI editor keeps no server-side paywall state between requests: the client must resend
 // the full paywall plus the opaque session blobs every turn, so the CLI
 // persists them here (the dashboard holds the same data in builder state).
 type astraSession struct {
@@ -191,7 +191,7 @@ Using it well:
     visually, up to 3 images total.
   - Keep the SAME --session file across turns — it is the conversation
     memory. A lost session file starts the design conversation over.
-  - Astra may reply with a clarifying question instead of a design (it
+  - The Paywall AI editor may reply with a clarifying question instead of a design (it
     appears in the streamed activity / the --json activity array). Answer it
     with another edit turn on the same session.
   - Turns take one to several minutes and stream progress; run with an
@@ -327,7 +327,7 @@ func newPaywallsRewindCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&sessionPath, "session", "", "editor session file")
-	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "Astra endpoint (or RC_ASTRA_BASE_URL)")
+	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "Paywall AI editor endpoint (or RC_ASTRA_BASE_URL)")
 	return cmd
 }
 
@@ -337,7 +337,7 @@ func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 	cmd.Flags().StringArrayVar(&opts.attachments, "attachment", nil, "design reference file: images (png/jpeg/webp) attach visually, text files (DESIGN.md, style guides) travel with the direction")
 	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: <paywall-id>.astra.json)")
 	cmd.Flags().StringArrayVar(&opts.images, "image", nil, "reference image to attach (png/jpeg/webp, max 3)")
-	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Astra endpoint (or RC_ASTRA_BASE_URL)")
+	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Paywall AI editor endpoint (or RC_ASTRA_BASE_URL)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait")
 }
 
@@ -355,7 +355,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	ctx, cancel := context.WithTimeout(ctx, opts.timeout)
 	defer cancel()
 
-	rt.Out.Info("Designing with Astra — this can take a few minutes…")
+	rt.Out.Info("Designing with the Paywall AI editor — this can take a few minutes…")
 	stream, err := client.Stream(ctx, astra.EditorRequest{
 		ProjectID:        session.ProjectID,
 		PaywallID:        session.PaywallID,
@@ -420,7 +420,7 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		saved = true
 		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
 		if errored := countErroredActivity(event.Activity); errored > 0 {
-			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by Astra — the saved draft is the complete final state (nothing partial is ever saved).", errored))
+			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywall AI editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
 		}
 		rt.Out.Blank()
 		rt.Out.Field("View it", paywallBuilderURL(session.ProjectID, session.PaywallID))
@@ -507,14 +507,14 @@ func reportPaywallAIActivity(rt *Runtime, activity []astra.ToolActivity, already
 	for _, item := range activity[min(alreadyReported, len(activity)):] {
 		switch item.Type {
 		case "assistant_message":
-			rt.Out.Info("Astra: " + item.Content)
+			rt.Out.Info("Paywall AI: " + item.Content)
 		default:
 			text := item.Display.Text
 			if text == "" {
 				text = item.ToolName
 			}
 			if item.Status == "error" {
-				rt.Out.Warn("⚙ " + text + "  (errored — Astra retries these itself)")
+				rt.Out.Warn("⚙ " + text + "  (errored — the Paywall AI editor retries these itself)")
 			} else {
 				rt.Out.Info("⚙ " + text)
 			}
@@ -607,7 +607,7 @@ func requirePaywallAIPrompt(rt *Runtime, prompt *string, title string) error {
 		Run()
 }
 
-// withPaywallContext folds --context into the direction sent to Astra: the
+// withPaywallContext folds --context into the direction sent to the Paywall AI editor: the
 // skills document the flag (product/audience/brand context) and agents were
 // burning generation attempts on unknown-flag errors before hand-merging it.
 func withPaywallContext(prompt, context string) string {
@@ -628,7 +628,7 @@ func countErroredActivity(activity []astra.ToolActivity) int {
 }
 
 // loadPaywallAIAttachments routes --image and --attachment by type: image
-// files become real Astra attachments (the server accepts only
+// files become real Paywall AI editor attachments (the server accepts only
 // png/jpeg/webp, max 3, 10MB); text design references (DESIGN.md, style
 // guides) are folded into the message, which is the only channel the editor
 // API has for them today. Anything else (fonts, binaries) errors clearly.
@@ -651,7 +651,7 @@ func loadPaywallAIAttachments(images, attachments []string) ([]astra.InputAttach
 			}
 			textBlocks = append(textBlocks, "Design reference ("+filepath.Base(path)+"):\n```\n"+string(data)+"\n```")
 		default:
-			return nil, "", fmt.Errorf("unsupported attachment %q: Astra accepts images (png/jpeg/webp) and text design references (md/txt/json/yaml/css) — fonts and other binaries are not supported by the editor API yet", path)
+			return nil, "", fmt.Errorf("unsupported attachment %q: the Paywall AI editor accepts images (png/jpeg/webp) and text design references (md/txt/json/yaml/css) — fonts and other binaries are not supported by the editor API yet", path)
 		}
 	}
 	loaded, err := loadPaywallAIImages(imagePaths)

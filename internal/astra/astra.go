@@ -1,4 +1,4 @@
-// Package astra is a client for the Astra paywall AI editor backend
+// Package astra is a client for the Paywall AI editor backend
 // (astra.revenuecat.com), speaking the same SSE contract as the dashboard
 // and mobile apps.
 package astra
@@ -136,7 +136,7 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
-	return fmt.Sprintf("Astra returned HTTP %d: %s", e.StatusCode, e.Message)
+	return fmt.Sprintf("the Paywall AI editor returned HTTP %d: %s", e.StatusCode, e.Message)
 }
 
 func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.Request, error) {
@@ -148,7 +148,7 @@ func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	// Bearer only: Astra accepts CLI OAuth tokens in the Authorization
+	// Bearer only: the Paywall AI editor accepts CLI OAuth tokens in the Authorization
 	// header. Do not also send an rc_auth_token cookie — an invalid cookie
 	// shadows a valid bearer token and fails the whole request.
 	req.Header.Set("Authorization", "Bearer "+c.token)
@@ -196,7 +196,7 @@ func (c *Client) Stream(ctx context.Context, request EditorRequest) (*Stream, er
 	req.Header.Set("Accept", "text/event-stream")
 	resp, err := c.stream.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("calling Astra: %w", err)
+		return nil, fmt.Errorf("calling the Paywall AI editor: %w", err)
 	}
 	if err := checkStatus(resp); err != nil {
 		resp.Body.Close()
@@ -212,7 +212,7 @@ func (c *Client) doJSON(ctx context.Context, path string, body any) error {
 	}
 	resp, err := c.rest.Do(req)
 	if err != nil {
-		return fmt.Errorf("calling Astra: %w", err)
+		return fmt.Errorf("calling the Paywall AI editor: %w", err)
 	}
 	defer resp.Body.Close()
 	return checkStatus(resp)
@@ -254,7 +254,7 @@ func (s *Stream) Next() (*Event, error) {
 		}
 		var event Event
 		if err := json.Unmarshal([]byte(frame.Data), &event); err != nil {
-			return nil, fmt.Errorf("decoding Astra event: %w", err)
+			return nil, fmt.Errorf("decoding Paywall AI editor event: %w", err)
 		}
 		return &event, nil
 	}

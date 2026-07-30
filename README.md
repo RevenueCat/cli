@@ -26,7 +26,7 @@ Or download a binary directly from the [releases page](../../releases).
 
 The two focused flows don't require installing anything:
 ```bash
-npx @revenuecat/cli paywalls generate   # design a paywall with Astra
+npx @revenuecat/cli paywalls generate   # AI-design a paywall
 npx @revenuecat/cli capital setup        # connect App Store Connect for RevenueCat Capital
 ```
 

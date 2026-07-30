@@ -187,7 +187,7 @@ func TestRicoConversations_ListJSON(t *testing.T) {
 	}
 }
 
-// astraTestServers stubs both the v2 API (draft creation) and the Astra
+// astraTestServers stubs both the v2 API (draft creation) and the Paywall AI
 // editor. offeringID == "" makes the stubs serve a standalone paywall
 // (offering_id null everywhere).
 func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string, editorInputs, createInputs *[]map[string]any) {
