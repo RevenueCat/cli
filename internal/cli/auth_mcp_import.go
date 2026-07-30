@@ -140,7 +140,6 @@ func loginWithMCPCredential(ctx context.Context, rt *Runtime, cred mcpCredential
 	if cred.durable {
 		return loginWithAPIKey(ctx, rt, cred.Token)
 	}
-	clearProjectBinding(rt)
 	rt.Config.APIKey = ""
 	rt.Config.TokenType = "oauth"
 	rt.Config.AccessToken = cred.Token
@@ -157,13 +156,19 @@ func loginWithMCPCredential(ctx context.Context, rt *Runtime, cred mcpCredential
 	if err != nil {
 		return err
 	}
-	// Validate the borrowed token before persisting it. finishLogin only saves
-	// config, so without an explicit API call a dead/expired token would look
-	// like a successful login and fail only on the first real command. A cheap
-	// account-level read (no project binding needed) proves the token works.
+	// Validate the borrowed token before persisting OR clearing anything the
+	// user can see. finishLogin only saves config, so without an explicit API
+	// call a dead/expired token would look like a successful login and fail
+	// only on the first real command. Doing this before clearProjectBinding
+	// also means a failed import doesn't announce a project clear that never
+	// gets saved. A cheap account-level read (no project binding needed) proves
+	// the token works.
 	if _, err := client.Projects.List(ctx); err != nil {
-		return fmt.Errorf("that %s token didn't work (it may have already expired — they last about an hour). Run `rc login` and choose browser login: %w", cred.Source, err)
+		rt.Out.Hint("Run `rc login` and choose browser login instead.")
+		return fmt.Errorf("that %s token didn't work (it may have already expired — they last about an hour): %w", cred.Source, err)
 	}
+	// Token is good — now safe to clear a stale project binding and persist.
+	clearProjectBinding(rt)
 	if err := finishLogin(ctx, rt, client); err != nil {
 		return err
 	}
