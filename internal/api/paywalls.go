@@ -19,11 +19,6 @@ type Paywall struct {
 	Object                     string             `json:"object,omitempty"`
 }
 
-type PaywallCreate struct {
-	OfferingID                 string `json:"offering_id"`
-	AutomaticallyScaleFontSize bool   `json:"automatically_scale_font_size"`
-}
-
 // PaywallComponents carries the published and draft component versions when
 // a paywall is fetched with expand=components.
 type PaywallComponents struct {
@@ -89,12 +84,6 @@ type PaywallComponentsCreate struct {
 }
 
 func (s *PaywallsService) CreateFromComponents(ctx context.Context, projectID string, body PaywallComponentsCreate) (*Paywall, error) {
-	var out Paywall
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "paywalls"), body, &out)
-	return &out, err
-}
-
-func (s *PaywallsService) Create(ctx context.Context, projectID string, body PaywallCreate) (*Paywall, error) {
 	var out Paywall
 	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "paywalls"), body, &out)
 	return &out, err

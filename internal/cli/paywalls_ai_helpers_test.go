@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/revenuecat/cli/internal/api"
 )
 
 func TestWithPaywallContext(t *testing.T) {
@@ -46,25 +44,5 @@ func TestLoadPaywallAIAttachments(t *testing.T) {
 
 	if _, _, err := loadPaywallAIAttachments(nil, []string{filepath.Join(dir, "font.ttf")}); err == nil {
 		t.Fatal("unsupported attachment type should error")
-	}
-}
-
-func TestPaywallOnOfferingAndLabel(t *testing.T) {
-	published := api.Millis(1)
-	pw := api.Paywall{ID: "pw_1", Name: "Summer", OfferingID: "ofrng_a", PublishedAt: &published}
-	draft := api.Paywall{ID: "pw_2", OfferingID: "ofrng_b"}
-	list := []api.Paywall{pw, draft}
-
-	if got := paywallOnOffering(list, "ofrng_a"); got == nil || got.ID != "pw_1" {
-		t.Fatalf("should find the paywall attached to ofrng_a")
-	}
-	if got := paywallOnOffering(list, "ofrng_missing"); got != nil {
-		t.Fatalf("no paywall for an unrelated offering")
-	}
-	if got := paywallLabel(&pw); got != "Summer, published" {
-		t.Fatalf("published label = %q", got)
-	}
-	if got := paywallLabel(&draft); got != "pw_2, draft" {
-		t.Fatalf("draft label should fall back to ID: %q", got)
 	}
 }

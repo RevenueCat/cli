@@ -65,6 +65,7 @@ type paywallAIOptions struct {
 	attachments []string
 	prompt      string
 	offeringID  string
+	name        string
 	sessionPath string
 	images      []string
 	baseURL     string
@@ -79,21 +80,23 @@ func newPaywallsGenerateCmd() *cobra.Command {
 		timeout:    12 * time.Minute,
 	}
 	cmd := &cobra.Command{
-		Use:   "generate [offering-id]",
+		Use:   "generate",
 		Short: "Generate a paywall draft with the Paywall AI editor",
-		Long: `Creates a draft paywall for an offering and designs it from a natural-language
-prompt using Astra, the Paywall AI editor — the same engine behind the
-dashboard's AI mode.
+		Long: `Creates a draft paywall and designs it from a natural-language prompt using
+the Paywall AI editor — the same engine behind the dashboard's AI mode.
+
+The draft is standalone unless --offering-id attaches it to an offering; an
+offering can only have one paywall, so attaching fails if it already has one.
 
 Each completed turn saves the design onto the RevenueCat paywall draft, and
 the editor state is also kept in a session file so follow-up edits retain the
-conversation: pass the same --session to rc paywalls edit. Astra may answer
-with a clarifying question instead of a design — reply with another edit
-turn. The draft stays unpublished; review it and run rc paywalls publish.`,
+conversation: pass the same --session to rc paywalls edit. The editor may
+answer with a clarifying question instead of a design — reply with another
+edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 		Example: `  rc paywalls generate
-  rc paywalls generate ofrng_default --prompt "A calm annual-first paywall"
-  rc paywalls generate ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
-		Args: cobra.MaximumNArgs(1),
+  rc paywalls generate --name "Summer sale" --prompt "A calm annual-first paywall"
+  rc paywalls generate --offering-id ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -104,39 +107,41 @@ turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 			if err != nil {
 				return err
 			}
-			if argAt(args, 0) != "" {
-				if opts.offeringID != "" && opts.offeringID != argAt(args, 0) {
-					return fmt.Errorf("offering ID was provided both positionally and with --offering-id")
-				}
-				opts.offeringID = argAt(args, 0)
-			}
-			opts.offeringID, err = requireID(rt, opts.offeringID, "offering", func() ([]PickerItem, error) {
-				return offeringPickerItems(cmd.Context(), client, projectID)
-			})
-			if err != nil {
-				return err
-			}
 			if err := requirePaywallAIPrompt(rt, &opts.prompt, "Describe the paywall you want"); err != nil {
 				return err
 			}
 
-			paywall, err := client.Paywalls.Create(cmd.Context(), projectID, api.PaywallCreate{
-				OfferingID:                 opts.offeringID,
-				AutomaticallyScaleFontSize: true,
+			paywall, err := client.Paywalls.CreateFromComponents(cmd.Context(), projectID, api.PaywallComponentsCreate{
+				OfferingID:              opts.offeringID,
+				Name:                    opts.name,
+				ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
+				ComponentsLocalizations: json.RawMessage(`{"en_US": {}}`),
+				DefaultLocale:           "en_US",
 			})
 			if err != nil {
+				// An offering can only have one paywall; the server reports
+				// that as a bare 409.
+				var apiErr *api.APIError
+				if opts.offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
+					rt.Out.Hint("Generate against another offering, or omit --offering-id to create a standalone draft and attach it in the dashboard later")
+					rt.Out.Hint("Or delete the existing paywall:  rc paywalls list, then rc paywalls delete <id>")
+					return fmt.Errorf("creating draft paywall: offering %s already has a paywall (an offering can only have one): %w", opts.offeringID, err)
+				}
 				return fmt.Errorf("creating draft paywall: %w", err)
 			}
 			rt.Out.Info("Created draft paywall " + paywall.ID)
 
-			offeringID := opts.offeringID
+			var offeringID *string
+			if opts.offeringID != "" {
+				offeringID = &opts.offeringID
+			}
 			session := &astraSession{
 				Version:   1,
 				ProjectID: projectID,
 				PaywallID: paywall.ID,
 				Paywall: astra.PaywallData{
 					DefaultLocale:           "en_US",
-					OfferingID:              &offeringID,
+					OfferingID:              offeringID,
 					ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
 					ComponentsLocalizations: json.RawMessage(`{"en_US": {}}`),
 				},
@@ -152,6 +157,7 @@ turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 	}
 	addPaywallAIFlags(cmd, &opts)
 	cmd.Flags().StringVar(&opts.offeringID, "offering-id", opts.offeringID, "offering to attach (or RC_OFFERING_ID)")
+	cmd.Flags().StringVar(&opts.name, "name", "", "paywall name")
 	return cmd
 }
 
@@ -419,7 +425,11 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		rt.Out.Blank()
 		rt.Out.Field("View it", paywallBuilderURL(session.ProjectID, session.PaywallID))
 		rt.Out.Field("Keep designing", "rc paywalls edit --session "+opts.sessionPath)
-		rt.Out.Field("Publish when ready", "rc paywalls publish "+session.PaywallID)
+		if session.Paywall.OfferingID == nil {
+			rt.Out.Field("Attach it", "dashboard → Paywalls → "+session.PaywallID+" → attach to an offering")
+		} else {
+			rt.Out.Field("Publish when ready", "rc paywalls publish "+session.PaywallID)
+		}
 	}
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(map[string]any{

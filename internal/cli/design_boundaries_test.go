@@ -72,13 +72,12 @@ func TestDesignSystemBoundaries(t *testing.T) {
 				// Pre-decide() backlog: each is flag-guarded (the field is
 				// skipped when a flag set the value) so agents already have a
 				// path; migrate to decide() opportunistically.
-				"paywalls_create.go": "dynamic entry picker (attach/duplicate/standalone list); the conflict decision itself uses decide()",
-				"apps.go":            "app type; flag-guarded, pre-decide backlog",
-				"apps_apple.go":      "ASC team pick; flag-guarded (--team-id), pre-decide backlog",
-				"auth.go":            "login method + product updates; flag-guarded, pre-decide backlog",
-				"customers.go":       "grant duration + entity picks; flag-guarded, pre-decide backlog",
-				"products.go":        "product type; flag-guarded, pre-decide backlog",
-				"projects.go":        "project pick; flag-guarded, pre-decide backlog",
+				"apps.go":       "app type; flag-guarded, pre-decide backlog",
+				"apps_apple.go": "ASC team pick; flag-guarded (--team-id), pre-decide backlog",
+				"auth.go":       "login method + product updates; flag-guarded, pre-decide backlog",
+				"customers.go":  "grant duration + entity picks; flag-guarded, pre-decide backlog",
+				"products.go":   "product type; flag-guarded, pre-decide backlog",
+				"projects.go":   "project pick; flag-guarded, pre-decide backlog",
 			},
 			useThis: "use decide(rt, title, presetFromFlag, choices) so every branch has a flag and a --no-input path",
 		},

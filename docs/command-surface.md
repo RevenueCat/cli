@@ -208,8 +208,7 @@ rc products store discard <plan-id>                      # discard without apply
 # Paywalls
 rc paywalls list
 rc paywalls show <id>
-rc paywalls create                                       # create an offering-attached draft
-rc paywalls generate [offering-id] --prompt "..."        # AI-design a new draft via Astra (live-verified); saves the design to the draft
+rc paywalls generate [--offering-id <id>] --prompt "..." # create a paywall; standalone unless --offering-id attaches it to an offering
 rc paywalls edit <paywall-id>|--session <file> --prompt  # AI-edit any paywall (draft components fetched via v2) or continue a session
 rc paywalls rewind --session <file>                      # undo the last editor action
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes

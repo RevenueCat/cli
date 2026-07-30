@@ -21,7 +21,6 @@ func newPaywallsCmd() *cobra.Command {
 	cmd.AddCommand(
 		newPaywallsListCmd(),
 		newPaywallsShowCmd(),
-		newPaywallsCreateCmd(),
 		newPaywallsGenerateCmd(),
 		newPaywallsEditCmd(),
 		newPaywallsRewindCmd(),

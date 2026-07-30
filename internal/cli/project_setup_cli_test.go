@@ -181,43 +181,6 @@ func TestProductsPricesSet_CreatesMissingAndUpdatesExistingCurrencies(t *testing
 	}
 }
 
-func TestPaywallsCreate_CreatesDraftForOffering(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet && r.URL.Path == "/projects/proj/paywalls" {
-			w.Header().Set("Content-Type", "application/json")
-			io.WriteString(w, `{"object":"list","items":[],"next_page":null,"url":"/paywalls"}`)
-			return
-		}
-		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/paywalls" {
-			http.Error(w, "unexpected request", http.StatusNotFound)
-			return
-		}
-		var body struct {
-			OfferingID                 string `json:"offering_id"`
-			AutomaticallyScaleFontSize bool   `json:"automatically_scale_font_size"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			t.Fatal(err)
-		}
-		if body.OfferingID != "ofrng_default" || !body.AutomaticallyScaleFontSize {
-			t.Fatalf("unexpected paywall body: %+v", body)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		_, _ = io.WriteString(w, `{"id":"pw_test","name":"Default Paywall","offering_id":"ofrng_default","created_at":1,"published_at":null,"automatically_scale_font_size":true,"object":"paywall"}`)
-	}))
-	t.Cleanup(server.Close)
-
-	out, _, err := runProjectSetupCommand(t, server.URL,
-		"paywalls", "create", "--offering-id", "ofrng_default", "--json", "--no-input")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(out, `"id": "pw_test"`) || !strings.Contains(out, `"offering_id": "ofrng_default"`) || !strings.Contains(out, `"published_at": null`) {
-		t.Fatalf("unexpected output: %s", out)
-	}
-}
-
 func TestPaywallsPublishRequiresConfirmationAndReturnsState(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/paywalls/pw_test/actions/publish" {
