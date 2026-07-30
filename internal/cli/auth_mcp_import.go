@@ -156,13 +156,9 @@ func loginWithMCPCredential(ctx context.Context, rt *Runtime, cred mcpCredential
 	if err != nil {
 		return err
 	}
-	// Validate the borrowed token before persisting OR clearing anything the
-	// user can see. finishLogin only saves config, so without an explicit API
-	// call a dead/expired token would look like a successful login and fail
-	// only on the first real command. Doing this before clearProjectBinding
-	// also means a failed import doesn't announce a project clear that never
-	// gets saved. A cheap account-level read (no project binding needed) proves
-	// the token works.
+	// Validate before clearing or saving: a dead token fails here instead of
+	// faking a "Logged in" that breaks on first use, and a failed import won't
+	// announce a project clear that never saved.
 	if _, err := client.Projects.List(ctx); err != nil {
 		rt.Out.Hint("Run `rc login` and choose browser login instead.")
 		return fmt.Errorf("that %s token didn't work (it may have already expired — they last about an hour): %w", cred.Source, err)
