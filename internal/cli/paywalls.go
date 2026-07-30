@@ -21,7 +21,6 @@ func newPaywallsCmd() *cobra.Command {
 	cmd.AddCommand(
 		newPaywallsListCmd(),
 		newPaywallsShowCmd(),
-		newPaywallsCreateCmd(),
 		newPaywallsGenerateCmd(),
 		newPaywallsEditCmd(),
 		newPaywallsRewindCmd(),
@@ -240,6 +239,17 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
 		},
 	}
+}
+
+// wrapOfferingPaywallExistsError turns the server's bare "already exists" 409
+// into the three ways out: another offering, delete the existing paywall, or
+// drop the offering and attach later. An offering can only have one paywall.
+func wrapOfferingPaywallExistsError(err error, offeringID string) error {
+	var apiErr *api.APIError
+	if errors.As(err, &apiErr) && apiErr.Status == 409 {
+		return fmt.Errorf("%w\noffering %s already has a paywall — an offering can only have one. Generate against another offering, delete the existing paywall (rc paywalls list, then rc paywalls delete <id>), or omit --offering-id to generate a standalone draft and attach it in the dashboard later", err, offeringID)
+	}
+	return err
 }
 
 // wrapPaywallActionGateError explains the beta gate on the paywall

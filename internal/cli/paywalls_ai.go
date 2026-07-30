@@ -82,15 +82,17 @@ func newPaywallsGenerateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate a paywall draft with the Paywall AI editor",
-		Long: `Creates a standalone draft paywall and designs it from a natural-language
-prompt using Astra, the Paywall AI editor — the same engine behind the
-dashboard's AI mode. Pass --offering-id to attach the draft to an offering.
+		Long: `Creates a draft paywall and designs it from a natural-language prompt using
+the Paywall AI editor — the same engine behind the dashboard's AI mode.
+
+The draft is standalone unless --offering-id attaches it to an offering; an
+offering can only have one paywall, so attaching fails if it already has one.
 
 Each completed turn saves the design onto the RevenueCat paywall draft, and
 the editor state is also kept in a session file so follow-up edits retain the
-conversation: pass the same --session to rc paywalls edit. Astra may answer
-with a clarifying question instead of a design — reply with another edit
-turn. The draft stays unpublished; review it and run rc paywalls publish.`,
+conversation: pass the same --session to rc paywalls edit. The editor may
+answer with a clarifying question instead of a design — reply with another
+edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 		Example: `  rc paywalls generate
   rc paywalls generate --name "Summer sale" --prompt "A calm annual-first paywall"
   rc paywalls generate --offering-id ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
@@ -124,7 +126,7 @@ turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 				})
 			}
 			if err != nil {
-				return fmt.Errorf("creating draft paywall: %w", err)
+				return fmt.Errorf("creating draft paywall: %w", wrapOfferingPaywallExistsError(err, opts.offeringID))
 			}
 			rt.Out.Info("Created draft paywall " + paywall.ID)
 

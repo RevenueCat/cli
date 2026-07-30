@@ -400,6 +400,27 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 	}
 }
 
+// An offering can only have one paywall; the server's bare 409 must come back
+// with the ways out, not as a raw API error.
+func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		io.WriteString(w, `{"object":"error","type":"resource_already_exists","message":"Paywall already exists for this offering"}`)
+	}))
+	t.Cleanup(server.Close)
+	t.Setenv("RC_BASE_URL", server.URL)
+
+	_, _, err := runAgentCmd(t,
+		"paywalls", "generate", "--offering-id", "ofrng_default",
+		"--prompt", "A calm annual-first paywall",
+		"--project-id", "proj1", "--no-input", "--api-key", "sk_test",
+	)
+	if err == nil || !strings.Contains(err.Error(), "ofrng_default already has a paywall") || !strings.Contains(err.Error(), "omit --offering-id") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestPaywallsGenerate_RejectsPositionalOffering(t *testing.T) {
 	_, _, err := runCmd(t, "paywalls", "generate", "ofrng_x", "--prompt", "x",
 		"--project-id", "proj1", "--no-input", "--api-key", "sk_test")
