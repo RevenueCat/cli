@@ -424,12 +424,19 @@ func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 	rt.Config.TokenExpiresAt = time.Time{}
 	rt.Config.AccountEmail = ""
 	rt.Config.AccountName = ""
-	clearProjectBinding(rt)
 
 	client, err := rt.API()
 	if err != nil {
 		return err
 	}
+	// Validate the key before clearing the project binding or saving, so a bad
+	// key fails fast instead of reporting a false "Logged in" (and breaking on
+	// the first real command), and a failed login never announces a project
+	// clear that was never persisted. Account-level read, no project needed.
+	if _, err := client.Projects.List(ctx); err != nil {
+		return fmt.Errorf("that API key didn't work — check it at https://app.revenuecat.com/settings/api-keys: %w", err)
+	}
+	clearProjectBinding(rt)
 	return finishLogin(ctx, rt, client)
 }
 
