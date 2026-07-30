@@ -429,12 +429,11 @@ func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 	if err != nil {
 		return err
 	}
-	// Validate the key before clearing the project binding or saving, so a bad
-	// key fails fast instead of reporting a false "Logged in" (and breaking on
-	// the first real command), and a failed login never announces a project
-	// clear that was never persisted. Account-level read, no project needed.
+	// Validate before clearing or saving: a bad key fails fast instead of a
+	// false "Logged in", and a failed login won't announce a project clear.
 	if _, err := client.Projects.List(ctx); err != nil {
-		return fmt.Errorf("that API key didn't work — check it at https://app.revenuecat.com/settings/api-keys: %w", err)
+		rt.Out.Hint("Check your key at https://app.revenuecat.com/settings/api-keys")
+		return fmt.Errorf("that API key didn't work: %w", err)
 	}
 	clearProjectBinding(rt)
 	return finishLogin(ctx, rt, client)
