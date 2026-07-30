@@ -401,7 +401,13 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	session.SessionID = event.SessionID
 	session.TraceID = event.TraceID
 	if event.Paywall != nil {
+		// Astra doesn't manage offering attachment and echoes offering_id as
+		// null — keep what the CLI established.
+		offeringID := session.Paywall.OfferingID
 		session.Paywall = *event.Paywall
+		if session.Paywall.OfferingID == nil {
+			session.Paywall.OfferingID = offeringID
+		}
 	}
 	if len(event.SessionItems) > 0 {
 		session.SessionItems = event.SessionItems

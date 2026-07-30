@@ -188,8 +188,9 @@ func TestRicoConversations_ListJSON(t *testing.T) {
 }
 
 // astraTestServers stubs both the v2 API (draft creation) and the Astra
-// editor. offeringID == "" makes the stubs serve a standalone paywall
-// (offering_id null everywhere).
+// editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
+// The Astra stream always echoes offering_id as null, matching the live
+// service, which never returns it.
 func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string, editorInputs, createInputs *[]map[string]any) {
 	t.Helper()
 	offeringJSON := "null"
@@ -244,8 +245,8 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 		inputs = append(inputs, input)
 		w.Header().Set("Content-Type", "text/event-stream")
 		io.WriteString(w, "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n")
-		io.WriteString(w, "data: {\"type\":\"turn.snapshot\",\"session_id\":\"sess1\",\"turn_index\":0,\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":"+offeringJSON+",\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}}],\"__unstable_session_items\":[{\"k\":1}]}\n\n")
-		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":"+offeringJSON+",\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}},{\"id\":\"a2\",\"type\":\"assistant_message\",\"content\":\"Done — calm annual-first layout.\"}],\"__unstable_session_items\":[{\"k\":2}]}\n\n")
+		io.WriteString(w, "data: {\"type\":\"turn.snapshot\",\"session_id\":\"sess1\",\"turn_index\":0,\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}}],\"__unstable_session_items\":[{\"k\":1}]}\n\n")
+		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}},{\"id\":\"a2\",\"type\":\"assistant_message\",\"content\":\"Done — calm annual-first layout.\"}],\"__unstable_session_items\":[{\"k\":2}]}\n\n")
 	}))
 	t.Cleanup(astraServer.Close)
 	return apiServer.URL, astraServer.URL, &inputs, &created
@@ -323,6 +324,10 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	if items["k"] != 2.0 {
 		t.Fatalf("session items = %v", session["__unstable_session_items"])
 	}
+	// Astra echoes offering_id as null; the session keeps the attached offering.
+	if v := session["paywall"].(map[string]any)["offering_id"]; v != "ofrng_default" {
+		t.Fatalf("session paywall.offering_id = %v", v)
+	}
 
 	// Editing continues the same session with its saved state.
 	stdout, _, err = runAgentCmd(t,
@@ -345,6 +350,9 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	config := paywall["components_config"].(map[string]any)
 	if config["stack"] != true {
 		t.Fatalf("components_config not round-tripped: %v", paywall)
+	}
+	if paywall["offering_id"] != "ofrng_default" {
+		t.Fatalf("edit paywall.offering_id = %v", paywall["offering_id"])
 	}
 }
 
