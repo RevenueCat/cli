@@ -246,7 +246,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 // drop the offering and attach later. An offering can only have one paywall.
 func wrapOfferingPaywallExistsError(err error, offeringID string) error {
 	var apiErr *api.APIError
-	if errors.As(err, &apiErr) && apiErr.Status == 409 {
+	if offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
 		return fmt.Errorf("%w\noffering %s already has a paywall — an offering can only have one. Generate against another offering, delete the existing paywall (rc paywalls list, then rc paywalls delete <id>), or omit --offering-id to generate a standalone draft and attach it in the dashboard later", err, offeringID)
 	}
 	return err
