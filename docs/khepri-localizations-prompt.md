@@ -73,7 +73,7 @@ localization write).
 ## Verification
 
 From the RevenueCat CLI once deployed (paywall pw505aa79911c94808 in project
-proj9d48bef3 has real Astra-generated localizations to read):
+proj9d48bef3 has real Paywall AI-generated localizations to read):
 
 ```bash
 rc api get "/projects/proj9d48bef3/paywalls/pw505aa79911c94808/localizations"
