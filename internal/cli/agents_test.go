@@ -402,7 +402,7 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 }
 
 // An offering can only have one paywall; the server's bare 409 must come back
-// with the ways out, not as a raw API error.
+// as a one-line explanation, with the ways out hinted on stderr.
 func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -412,13 +412,16 @@ func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	t.Cleanup(server.Close)
 	t.Setenv("RC_BASE_URL", server.URL)
 
-	_, _, err := runAgentCmd(t,
+	_, stderr, err := runAgentCmd(t,
 		"paywalls", "generate", "--offering-id", "ofrng_default",
 		"--prompt", "A calm annual-first paywall",
 		"--project-id", "proj1", "--no-input", "--api-key", "sk_test",
 	)
-	if err == nil || !strings.Contains(err.Error(), "ofrng_default already has a paywall") || !strings.Contains(err.Error(), "omit --offering-id") {
+	if err == nil || !strings.Contains(err.Error(), "ofrng_default already has a paywall") {
 		t.Fatalf("err = %v", err)
+	}
+	if !strings.Contains(stderr, "omit --offering-id") {
+		t.Fatalf("stderr missing hint: %q", stderr)
 	}
 }
 

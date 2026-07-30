@@ -119,7 +119,15 @@ edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 				DefaultLocale:           "en_US",
 			})
 			if err != nil {
-				return fmt.Errorf("creating draft paywall: %w", wrapOfferingPaywallExistsError(err, opts.offeringID))
+				// An offering can only have one paywall; the server reports
+				// that as a bare 409.
+				var apiErr *api.APIError
+				if opts.offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
+					rt.Out.Hint("Generate against another offering, or omit --offering-id to create a standalone draft and attach it in the dashboard later")
+					rt.Out.Hint("Or delete the existing paywall:  rc paywalls list, then rc paywalls delete <id>")
+					return fmt.Errorf("creating draft paywall: offering %s already has a paywall (an offering can only have one): %w", opts.offeringID, err)
+				}
+				return fmt.Errorf("creating draft paywall: %w", err)
 			}
 			rt.Out.Info("Created draft paywall " + paywall.ID)
 

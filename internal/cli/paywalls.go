@@ -241,17 +241,6 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 	}
 }
 
-// wrapOfferingPaywallExistsError turns the server's bare "already exists" 409
-// into the three ways out: another offering, delete the existing paywall, or
-// drop the offering and attach later. An offering can only have one paywall.
-func wrapOfferingPaywallExistsError(err error, offeringID string) error {
-	var apiErr *api.APIError
-	if offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
-		return fmt.Errorf("%w\noffering %s already has a paywall — an offering can only have one. Generate against another offering, delete the existing paywall (rc paywalls list, then rc paywalls delete <id>), or omit --offering-id to generate a standalone draft and attach it in the dashboard later", err, offeringID)
-	}
-	return err
-}
-
 // wrapPaywallActionGateError explains the beta gate on the paywall
 // publish/unpublish v2 actions: they 404 with a bare "Resource not found"
 // for projects without beta API access (khepri #22939 proposes ungating).
