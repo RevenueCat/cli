@@ -273,7 +273,7 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "session.json")
 	stdout, _, err := runAgentCmd(t,
-		"paywalls", "generate", "--offering-id", "ofrng_default",
+		"paywalls", "generate", "--offering-id", "ofrng_default", "--name", "Annual push",
 		"--prompt", "A calm annual-first paywall",
 		"--session", sessionPath,
 		"--project-id", "proj1",
@@ -296,8 +296,12 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	if envelope.Data.PaywallID != "pw_new" || envelope.Data.SessionID != "sess1" || envelope.Data.TraceID != "tr1" {
 		t.Fatalf("data = %+v", envelope.Data)
 	}
-	if offeringID := (*createInputs)[0]["offering_id"]; offeringID != "ofrng_default" {
-		t.Fatalf("create offering_id = %v", offeringID)
+	create := (*createInputs)[0]
+	if create["offering_id"] != "ofrng_default" || create["name"] != "Annual push" {
+		t.Fatalf("create body = %v", create)
+	}
+	if _, ok := create["components_config"]; !ok {
+		t.Fatalf("create body missing components_config: %v", create)
 	}
 
 	// The editor request carried the project, paywall, prompt, and state.

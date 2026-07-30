@@ -111,20 +111,13 @@ edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 				return err
 			}
 
-			var paywall *api.Paywall
-			if opts.offeringID == "" {
-				paywall, err = client.Paywalls.CreateFromComponents(cmd.Context(), projectID, api.PaywallComponentsCreate{
-					Name:                    opts.name,
-					ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
-					ComponentsLocalizations: json.RawMessage(`{"en_US": {}}`),
-					DefaultLocale:           "en_US",
-				})
-			} else {
-				paywall, err = client.Paywalls.Create(cmd.Context(), projectID, api.PaywallCreate{
-					OfferingID:                 opts.offeringID,
-					AutomaticallyScaleFontSize: true,
-				})
-			}
+			paywall, err := client.Paywalls.CreateFromComponents(cmd.Context(), projectID, api.PaywallComponentsCreate{
+				OfferingID:              opts.offeringID,
+				Name:                    opts.name,
+				ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
+				ComponentsLocalizations: json.RawMessage(`{"en_US": {}}`),
+				DefaultLocale:           "en_US",
+			})
 			if err != nil {
 				return fmt.Errorf("creating draft paywall: %w", wrapOfferingPaywallExistsError(err, opts.offeringID))
 			}
@@ -156,7 +149,7 @@ edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 	}
 	addPaywallAIFlags(cmd, &opts)
 	cmd.Flags().StringVar(&opts.offeringID, "offering-id", opts.offeringID, "offering to attach (or RC_OFFERING_ID)")
-	cmd.Flags().StringVar(&opts.name, "name", "", "paywall name (standalone drafts)")
+	cmd.Flags().StringVar(&opts.name, "name", "", "paywall name")
 	return cmd
 }
 
