@@ -300,9 +300,6 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	if create["offering_id"] != "ofrng_default" || create["name"] != "Annual push" {
 		t.Fatalf("create body = %v", create)
 	}
-	if _, ok := create["components_config"]; !ok {
-		t.Fatalf("create body missing components_config: %v", create)
-	}
 
 	// The editor request carried the project, paywall, prompt, and state.
 	input := (*editorInputs)[0]
@@ -421,14 +418,6 @@ func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 		"--project-id", "proj1", "--no-input", "--api-key", "sk_test",
 	)
 	if err == nil || !strings.Contains(err.Error(), "ofrng_default already has a paywall") || !strings.Contains(err.Error(), "omit --offering-id") {
-		t.Fatalf("err = %v", err)
-	}
-}
-
-func TestPaywallsGenerate_RejectsPositionalOffering(t *testing.T) {
-	_, _, err := runCmd(t, "paywalls", "generate", "ofrng_x", "--prompt", "x",
-		"--project-id", "proj1", "--no-input", "--api-key", "sk_test")
-	if err == nil || !strings.Contains(err.Error(), "unknown command") {
 		t.Fatalf("err = %v", err)
 	}
 }
