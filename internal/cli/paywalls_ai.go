@@ -236,7 +236,7 @@ Using it well:
 				if perr != nil {
 					return perr
 				}
-				session, err = seedSessionFromServer(cmd.Context(), rt, paywallID)
+				session, err = seedSessionFromServer(cmd.Context(), rt, projectID, paywallID)
 				opts.sessionPath = paywallID + ".astra.json"
 			default:
 				return fmt.Errorf("pass a paywall ID or --session <file>")
@@ -277,16 +277,12 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSe
 		"run rc paywalls edit "+session.PaywallID+" to start fresh deliberately"); err != nil {
 		return nil, err
 	}
-	return seedSessionFromServer(ctx, rt, session.PaywallID)
+	return seedSessionFromServer(ctx, rt, session.ProjectID, session.PaywallID)
 }
 
 // seedSessionFromServer starts an editor session from the paywall's current
 // RevenueCat state (draft components, falling back to published).
-func seedSessionFromServer(ctx context.Context, rt *Runtime, paywallID string) (*astraSession, error) {
-	projectID, err := requireProject(rt)
-	if err != nil {
-		return nil, err
-	}
+func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, paywallID string) (*astraSession, error) {
 	client, err := rt.API()
 	if err != nil {
 		return nil, err
