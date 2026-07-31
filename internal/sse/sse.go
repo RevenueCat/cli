@@ -1,5 +1,5 @@
 // Package sse implements a streaming Server-Sent Events reader shared by the
-// Rico and Astra agent clients.
+// Rico and Paywall AI agent clients.
 package sse
 
 import (
