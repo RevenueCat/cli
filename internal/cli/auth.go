@@ -402,7 +402,7 @@ func newAuthStatusCmd() *cobra.Command {
 }
 
 func loginWithAPIKeyInteractive(ctx context.Context, rt *Runtime) error {
-	rt.Out.Info("Generate an API key at https://app.revenuecat.com/projects — open your project, then API keys")
+	rt.Out.Info("Generate an API key at https://app.revenuecat.com/projects/-/api-keys")
 	var key string
 	if err := tui.Form(rt.Globals.NoInput).
 		Field(huh.NewInput().
@@ -432,7 +432,7 @@ func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 	// Validate before clearing or saving: a bad key fails fast instead of a
 	// false "Logged in", and a failed login won't announce a project clear.
 	if _, err := client.Projects.List(ctx); err != nil {
-		rt.Out.Hint("Check your key at https://app.revenuecat.com/projects — open your project, then API keys")
+		rt.Out.Hint("Check your key at https://app.revenuecat.com/projects/-/api-keys")
 		return fmt.Errorf("that API key didn't work: %w", err)
 	}
 	clearProjectBinding(rt)
