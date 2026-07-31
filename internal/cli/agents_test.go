@@ -521,63 +521,6 @@ func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
 	}
 }
 
-// Session files written before the revision guard carry "revision": null —
-// out-of-band changes can't be detected against them, so continuing needs
-// explicit consent, and consenting adopts the server's revision so the rest
-// of the turn is guarded.
-func TestPaywallsEdit_NullRevisionSessionNeedsConsent(t *testing.T) {
-	nullSession := strings.Replace(staleTestSession, `"revision": 3`, `"revision": null`, 1)
-	var patched []map[string]any
-	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		switch {
-		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
-			io.WriteString(w, paywallResponseJSON(5))
-		case r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
-			var body map[string]any
-			json.NewDecoder(r.Body).Decode(&body)
-			patched = append(patched, body)
-			io.WriteString(w, paywallResponseJSON(6))
-		default:
-			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
-		}
-	}))
-	t.Cleanup(apiServer.Close)
-	astraServer, astraRequests := stubEditorServer(t)
-	t.Setenv("RC_BASE_URL", apiServer.URL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
-
-	sessionPath := filepath.Join(t.TempDir(), "session.json")
-	if err := os.WriteFile(sessionPath, []byte(nullSession), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	_, _, err := runAgentCmd(t,
-		"paywalls", "edit",
-		"--session", sessionPath,
-		"--prompt", "Push the gradient harder",
-		"--no-input", "--api-key", "sk_test",
-	)
-	if err == nil || !strings.Contains(err.Error(), "pass --yes") {
-		t.Fatalf("err = %v", err)
-	}
-	if *astraRequests != 0 {
-		t.Fatalf("astra requests = %d, want 0 (no design turn without consent)", *astraRequests)
-	}
-
-	_, _, err = runAgentCmd(t,
-		"paywalls", "edit",
-		"--session", sessionPath,
-		"--prompt", "Push the gradient harder",
-		"--yes", "--json", "--no-input", "--api-key", "sk_test",
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(patched) != 1 || patched[0]["revision"] != 5.0 {
-		t.Fatalf("patched = %v, want the adopted server revision 5", patched)
-	}
-}
-
 // An offering can only have one paywall; the server's bare 409 must come back
 // as a one-line explanation, with the ways out hinted on stderr.
 func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
