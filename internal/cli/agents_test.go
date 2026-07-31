@@ -187,9 +187,9 @@ func TestRicoConversations_ListJSON(t *testing.T) {
 	}
 }
 
-// astraTestServers stubs both the v2 API (draft creation) and the Astra
-// editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
-// The Astra stream always echoes offering_id as null, matching the live
+// astraTestServers stubs both the v2 API (draft creation) and the AI editor.
+// offeringID == "" makes the v2 API stubs serve a standalone paywall.
+// The editor stream always echoes offering_id as null, matching the live
 // service, which never returns it.
 func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string, editorInputs, createInputs *[]map[string]any) {
 	t.Helper()
@@ -324,7 +324,7 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	if items["k"] != 2.0 {
 		t.Fatalf("session items = %v", session["__unstable_session_items"])
 	}
-	// Astra echoes offering_id as null; the session keeps the attached offering.
+	// The editor echoes offering_id as null; the session keeps the attached offering.
 	if v := session["paywall"].(map[string]any)["offering_id"]; v != "ofrng_default" {
 		t.Fatalf("session paywall.offering_id = %v", v)
 	}
@@ -406,6 +406,55 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 	}
 	if v, ok := session["paywall"].(map[string]any)["offering_id"]; !ok || v != nil {
 		t.Fatalf("session paywall.offering_id = %v (present %v)", v, ok)
+	}
+}
+
+// Offering attachment can change out-of-band (dashboard). The API stub reports
+// the paywall attached even though generate ran standalone — the session must
+// pick up the server truth from the PATCH response, so the next editor turn
+// carries the offering (it drives the editor's package/price context).
+func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
+	apiURL, astraURL, editorInputs, _ := astraTestServers(t, "ofrng_default")
+	t.Setenv("RC_BASE_URL", apiURL)
+	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
+	t.Setenv("RC_OFFERING_ID", "")
+
+	sessionPath := filepath.Join(t.TempDir(), "session.json")
+	_, _, err := runAgentCmd(t,
+		"paywalls", "generate", "--name", "Summer sale",
+		"--prompt", "A calm annual-first paywall",
+		"--session", sessionPath,
+		"--project-id", "proj1",
+		"--json", "--no-input", "--api-key", "sk_test",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	payload, err := os.ReadFile(sessionPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var session map[string]any
+	if err := json.Unmarshal(payload, &session); err != nil {
+		t.Fatal(err)
+	}
+	if v := session["paywall"].(map[string]any)["offering_id"]; v != "ofrng_default" {
+		t.Fatalf("session paywall.offering_id = %v", v)
+	}
+
+	_, _, err = runAgentCmd(t,
+		"paywalls", "edit",
+		"--session", sessionPath,
+		"--prompt", "Make annual the visual default",
+		"--json", "--no-input", "--api-key", "sk_test",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	paywall := (*editorInputs)[1]["paywall"].(map[string]any)
+	if paywall["offering_id"] != "ofrng_default" {
+		t.Fatalf("edit paywall.offering_id = %v", paywall["offering_id"])
 	}
 }
 

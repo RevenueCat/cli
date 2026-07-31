@@ -401,8 +401,8 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	session.SessionID = event.SessionID
 	session.TraceID = event.TraceID
 	if event.Paywall != nil {
-		// Astra doesn't manage offering attachment and echoes offering_id as
-		// null — keep what the CLI established.
+		// The AI editor doesn't manage offering attachment and echoes
+		// offering_id as null — keep what the CLI established.
 		offeringID := session.Paywall.OfferingID
 		session.Paywall = *event.Paywall
 		if session.Paywall.OfferingID == nil {
@@ -424,6 +424,11 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		rt.Out.Hint("The design is safe in " + opts.sessionPath + " — re-run rc paywalls edit to retry saving.")
 	} else {
 		saved = true
+		// Persisting refreshed the revision and offering from the server;
+		// re-save so the next turn starts from them.
+		if err := saveAstraSession(opts.sessionPath, session); err != nil {
+			return err
+		}
 		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
 		if errored := countErroredActivity(event.Activity); errored > 0 {
 			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by Astra — the saved draft is the complete final state (nothing partial is ever saved).", errored))
@@ -480,6 +485,14 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *astraSessio
 		if err == nil {
 			if updated.Components != nil && updated.Components.Draft != nil && updated.Components.Draft.Revision != nil {
 				session.Revision = updated.Components.Draft.Revision
+			}
+			// Offering attachment can change out-of-band (dashboard); the PATCH
+			// response carries current server truth, so refresh it — it drives
+			// the attach/publish hint and the editor's product context next turn.
+			if updated.OfferingID != "" {
+				session.Paywall.OfferingID = &updated.OfferingID
+			} else {
+				session.Paywall.OfferingID = nil
 			}
 			return nil
 		}
