@@ -268,18 +268,6 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSe
 	if err != nil {
 		return nil, err
 	}
-	if session.Revision == nil {
-		// Files written by older CLIs carry no revision, so out-of-band
-		// changes are undetectable — overwriting needs consent. Adopting the
-		// server's revision keeps the conversation and guards this turn.
-		rt.Out.Warn(fmt.Sprintf("This session file has no draft revision, so changes made to %s outside this session can't be detected.", session.PaywallID))
-		if err := confirmOrAbort(rt, "Continue and overwrite the current draft?",
-			"run rc paywalls edit "+session.PaywallID+" to start fresh from the server's draft"); err != nil {
-			return nil, err
-		}
-		session.Revision = &revision
-		return session, nil
-	}
 	if revision == *session.Revision {
 		return session, nil
 	}
@@ -610,6 +598,11 @@ func loadAstraSession(path string) (*astraSession, error) {
 	}
 	if session.ProjectID == "" || session.PaywallID == "" {
 		return nil, fmt.Errorf("session file %s is missing project_id or paywall_id", path)
+	}
+	// The revision is what guards the draft against out-of-band changes;
+	// without one the session can't be continued safely.
+	if session.Revision == nil {
+		return nil, fmt.Errorf("session file %s has no draft revision; start fresh with rc paywalls edit %s", path, session.PaywallID)
 	}
 	return &session, nil
 }
