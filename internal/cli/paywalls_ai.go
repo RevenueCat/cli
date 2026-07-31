@@ -131,10 +131,9 @@ edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 			}
 			rt.Out.Info("Created draft paywall " + paywall.ID)
 
-			// The create response doesn't include the draft revision; fetch
-			// it now so the first persist is guarded by it — a draft edited
-			// elsewhere during the multi-minute turn 409s instead of being
-			// silently overwritten.
+			// The create response never carries the draft revision; fetch it
+			// so a draft edited elsewhere during the minutes-long turn 409s
+			// at persist instead of being overwritten.
 			revision, err := currentDraftRevision(cmd.Context(), client, projectID, paywall.ID)
 			if err != nil {
 				return err
@@ -256,11 +255,10 @@ Using it well:
 }
 
 // preflightSessionRevision guards a file-loaded session against a draft that
-// changed elsewhere (dashboard, its AI editor, API) since the file was
-// written. Turns take minutes, so the revisions are compared before anything
-// is streamed. A diverged session can't be continued — the prompt was written
-// against state that no longer exists — so the only way forward is consent to
-// start fresh from the server's current draft, losing the conversation.
+// changed elsewhere (dashboard, its AI editor, API), before a minutes-long
+// turn is spent on it. A diverged session can't continue — the prompt targets
+// state that no longer exists — so the only way forward is consent to start
+// fresh from the server's draft, losing the conversation.
 func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSession) (*astraSession, error) {
 	client, err := rt.API()
 	if err != nil {
@@ -272,9 +270,8 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSe
 	}
 	if session.Revision == nil {
 		// Files written by older CLIs carry no revision, so out-of-band
-		// changes since then are undetectable — overwriting the draft needs
-		// consent, not silence. Adopting the server's revision keeps the
-		// conversation and guards the rest of this turn.
+		// changes are undetectable — overwriting needs consent. Adopting the
+		// server's revision keeps the conversation and guards this turn.
 		rt.Out.Warn(fmt.Sprintf("This session file has no draft revision, so changes made to %s outside this session can't be detected.", session.PaywallID))
 		if err := confirmOrAbort(rt, "Continue and overwrite the current draft?",
 			"run rc paywalls edit "+session.PaywallID+" to start fresh from the server's draft"); err != nil {
@@ -332,9 +329,8 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, paywallID string) (
 	if paywall.OfferingID != "" {
 		offeringID = &paywall.OfferingID
 	}
-	// Sessions always carry a revision (persist relies on it to guard the
-	// PATCH); normalize a server response without one the same way
-	// currentDraftRevision does.
+	// Persist guards the PATCH with the session revision; normalize a server
+	// response without one, like currentDraftRevision does.
 	revision := 0
 	if version.Revision != nil {
 		revision = *version.Revision
@@ -461,7 +457,7 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	session.SessionID = event.SessionID
 	session.TraceID = event.TraceID
 	if event.Paywall != nil {
-		// The AI editor doesn't manage offering attachment and echoes
+		// The AI editor doesn't manage offering attachment and may echo
 		// offering_id as null — keep what the CLI established.
 		offeringID := session.Paywall.OfferingID
 		session.Paywall = *event.Paywall
@@ -541,10 +537,8 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *astraSessio
 		ComponentsLocalizations: session.Paywall.ComponentsLocalizations,
 		DefaultLocale:           session.Paywall.DefaultLocale,
 	}
-	// Every path that builds a session seeds the revision (generate fetches
-	// it after create; edit preflights or reseeds from the server) — fetching
-	// a fresh one here instead would let the PATCH sail past the conflict
-	// guard and clobber out-of-band changes.
+	// Always the session's own revision — refetching a fresh one here would
+	// sail past the conflict guard and clobber out-of-band changes.
 	update.Revision = *session.Revision
 	updated, err := client.Paywalls.UpdateDraft(ctx, session.ProjectID, session.PaywallID, update)
 	if err != nil {

@@ -188,9 +188,8 @@ func TestRicoConversations_ListJSON(t *testing.T) {
 	}
 }
 
-// paywallResponseJSON is the v2 API paywall body for pw_new — the one
-// template for every stub that serves it, whatever offering and draft
-// revision the test needs.
+// paywallResponseJSON is the v2 API paywall body for pw_new at a given
+// offering and draft revision.
 func paywallResponseJSON(offeringJSON string, revision int) string {
 	return fmt.Sprintf(`{"id":"pw_new","offering_id":%s,"created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":%d,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`, offeringJSON, revision)
 }
@@ -212,8 +211,8 @@ func stubEditorServer(t *testing.T) (*httptest.Server, *int) {
 
 // astraTestServers stubs both the v2 API (draft creation) and the Paywall AI
 // editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
-// The editor stream always echoes offering_id as null, matching the live
-// service, which never returns it.
+// The editor stream echoes offering_id as null, as the live service does
+// after a template load.
 func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string, editorInputs, createInputs *[]map[string]any) {
 	t.Helper()
 	offeringJSON := "null"
@@ -436,11 +435,9 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 	}
 }
 
-// Offering attachment can change out-of-band (dashboard). The API stub reports
-// the paywall attached even though generate ran standalone — the session must
-// pick up the server truth from the PATCH response so the next editor turn
-// carries it (session-to-editor propagation itself is covered by
-// TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession).
+// Offering attachment can change out-of-band (dashboard). The API stub
+// reports the paywall attached even though generate ran standalone — the
+// session must pick up the server truth from the PATCH response.
 func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
 	apiURL, astraURL, _, _ := astraTestServers(t, "ofrng_default")
 	t.Setenv("RC_BASE_URL", apiURL)
