@@ -188,6 +188,28 @@ func TestRicoConversations_ListJSON(t *testing.T) {
 	}
 }
 
+// paywallResponseJSON is the v2 API paywall body for pw_new — the one
+// template for every stub that serves it, whatever offering and draft
+// revision the test needs.
+func paywallResponseJSON(offeringJSON string, revision int) string {
+	return fmt.Sprintf(`{"id":"pw_new","offering_id":%s,"created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":%d,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`, offeringJSON, revision)
+}
+
+// stubEditorServer serves one minimal completed design turn and counts the
+// requests it received.
+func stubEditorServer(t *testing.T) (*httptest.Server, *int) {
+	t.Helper()
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		w.Header().Set("Content-Type", "text/event-stream")
+		io.WriteString(w, "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n")
+		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[],\"__unstable_session_items\":[{\"k\":3}]}\n\n")
+	}))
+	t.Cleanup(server.Close)
+	return server, &requests
+}
+
 // astraTestServers stubs both the v2 API (draft creation) and the Paywall AI
 // editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
 // The editor stream always echoes offering_id as null, matching the live
@@ -203,9 +225,7 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 	// The draft revision is stateful like khepri's: GET serves the current
 	// one, a PATCH must carry it (the conflict guard) and bumps it.
 	revision := 3
-	paywallJSON := func() string {
-		return fmt.Sprintf(`{"id":"pw_new","offering_id":%s,"created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":%d,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`, offeringJSON, revision)
-	}
+	paywallJSON := func() string { return paywallResponseJSON(offeringJSON, revision) }
 	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
@@ -483,7 +503,7 @@ func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
 			if gets > 1 {
 				revision = 7
 			}
-			io.WriteString(w, paywallResponseJSON(revision))
+			io.WriteString(w, paywallResponseJSON("null", revision))
 		case r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
@@ -545,27 +565,6 @@ func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	}
 }
 
-// paywallResponseJSON is the v2 API paywall body for pw_new at a given draft
-// revision, shared by the stubs that pit stored revisions against the server.
-func paywallResponseJSON(revision int) string {
-	return fmt.Sprintf(`{"id":"pw_new","offering_id":null,"created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":%d,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`, revision)
-}
-
-// stubEditorServer serves one minimal completed design turn and counts the
-// requests it received.
-func stubEditorServer(t *testing.T) (*httptest.Server, *int) {
-	t.Helper()
-	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		w.Header().Set("Content-Type", "text/event-stream")
-		io.WriteString(w, "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n")
-		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[],\"__unstable_session_items\":[{\"k\":3}]}\n\n")
-	}))
-	t.Cleanup(server.Close)
-	return server, &requests
-}
-
 // staleTestSession is a session file whose stored revision the tests pit
 // against the API stub's current draft revision.
 const staleTestSession = `{
@@ -590,7 +589,7 @@ func TestPaywallsEdit_StaleSessionStopsBeforeAstra(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, paywallResponseJSON(5))
+		io.WriteString(w, paywallResponseJSON("null", 5))
 	}))
 	t.Cleanup(apiServer.Close)
 	astraServer, astraRequests := stubEditorServer(t)
@@ -633,12 +632,12 @@ func TestPaywallsEdit_PatchCarriesSessionRevision(t *testing.T) {
 		switch {
 		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
 			gets++
-			io.WriteString(w, paywallResponseJSON(3))
+			io.WriteString(w, paywallResponseJSON("null", 3))
 		case r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			patched = append(patched, body)
-			io.WriteString(w, paywallResponseJSON(4))
+			io.WriteString(w, paywallResponseJSON("null", 4))
 		default:
 			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
 		}
