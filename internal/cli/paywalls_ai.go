@@ -217,7 +217,7 @@ Using it well:
 			var err error
 			switch {
 			case opts.sessionPath != "":
-				session, err = loadAstraSession(opts.sessionPath)
+				session, err = loadAstraSession(rt, opts.sessionPath)
 				if err == nil {
 					session, err = preflightSessionRevision(cmd.Context(), rt, session)
 				}
@@ -348,7 +348,7 @@ func newPaywallsRewindCmd() *cobra.Command {
 			if sessionPath == "" {
 				return fmt.Errorf("--session is required")
 			}
-			session, err := loadAstraSession(sessionPath)
+			session, err := loadAstraSession(rt, sessionPath)
 			if err != nil {
 				return err
 			}
@@ -583,7 +583,7 @@ func reportPaywallAIActivity(rt *Runtime, activity []astra.ToolActivity, already
 	return alreadyReported
 }
 
-func loadAstraSession(path string) (*astraSession, error) {
+func loadAstraSession(rt *Runtime, path string) (*astraSession, error) {
 	payload, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading session file: %w", err)
@@ -598,7 +598,8 @@ func loadAstraSession(path string) (*astraSession, error) {
 	// The revision is what guards the draft against out-of-band changes;
 	// without one the session can't be continued safely.
 	if session.Revision == nil {
-		return nil, fmt.Errorf("session file %s has no draft revision; start fresh with rc paywalls edit %s", path, session.PaywallID)
+		rt.Out.Hint("Start fresh session with rc paywalls edit " + session.PaywallID)
+		return nil, fmt.Errorf("session file %s has no draft revision", path)
 	}
 	return &session, nil
 }
