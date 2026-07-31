@@ -21,7 +21,7 @@ func confirmOrAbort(rt *Runtime, msg string, declineDetail ...string) error {
 	}
 	if !ok {
 		if len(declineDetail) > 0 && declineDetail[0] != "" {
-			return fmt.Errorf("aborted; %s", declineDetail[0])
+			rt.Out.Hint(declineDetail[0])
 		}
 		return fmt.Errorf("aborted")
 	}
