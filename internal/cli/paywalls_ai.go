@@ -209,6 +209,9 @@ Using it well:
 			switch {
 			case opts.sessionPath != "":
 				session, err = loadAstraSession(opts.sessionPath)
+				if err == nil {
+					session, err = preflightSessionRevision(cmd.Context(), rt, session)
+				}
 			case argAt(args, 0) != "" || (!rt.Globals.NoInput && tui.IsInteractive()):
 				client, cerr := rt.API()
 				if cerr != nil {
@@ -240,6 +243,36 @@ Using it well:
 	}
 	addPaywallAIFlags(cmd, &opts)
 	return cmd
+}
+
+// preflightSessionRevision guards a file-loaded session against a draft that
+// changed elsewhere (dashboard, its AI editor, API) since the file was
+// written. Turns take minutes, so the revisions are compared before anything
+// is streamed. A diverged session can't be continued — the prompt was written
+// against state that no longer exists — so the only way forward is consent to
+// start fresh from the server's current draft, losing the conversation.
+func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSession) (*astraSession, error) {
+	if session.Revision == nil {
+		return session, nil
+	}
+	client, err := rt.API()
+	if err != nil {
+		return nil, err
+	}
+	revision, err := currentDraftRevision(ctx, client, session.ProjectID, session.PaywallID)
+	if err != nil {
+		return nil, err
+	}
+	if revision == *session.Revision {
+		return session, nil
+	}
+	rt.Out.Warn(fmt.Sprintf("The draft for %s changed outside this session — the dashboard, its AI editor, or the API wrote revision %d, the session has %d.", session.PaywallID, revision, *session.Revision))
+	rt.Out.Info("A session can't continue against diverged state. Continuing starts fresh from the server's current draft; the conversation context in this session file is lost.")
+	if err := confirmOrAbort(rt, "Start fresh from the server's current draft?",
+		"run rc paywalls edit "+session.PaywallID+" to start fresh deliberately"); err != nil {
+		return nil, err
+	}
+	return seedSessionFromServer(ctx, rt, session.PaywallID)
 }
 
 // seedSessionFromServer starts an editor session from the paywall's current
@@ -420,8 +453,14 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	}
 	saved := false
 	if err := persistPaywallDesign(ctx, rt, session); err != nil {
-		rt.Out.Warn("Could not save the design to RevenueCat: " + err.Error())
-		rt.Out.Hint("The design is safe in " + opts.sessionPath + " — re-run rc paywalls edit to retry saving.")
+		var apiErr *api.APIError
+		if errors.As(err, &apiErr) && apiErr.Status == 409 {
+			rt.Out.Warn("Could not save the design: the draft changed during the run (dashboard, its AI editor, or API), and this session can't be saved over it.")
+			rt.Out.Hint("Start fresh from the current draft:  rc paywalls edit " + session.PaywallID)
+		} else {
+			rt.Out.Warn("Could not save the design to RevenueCat: " + err.Error())
+			rt.Out.Hint("The design is safe in " + opts.sessionPath + " — re-run rc paywalls edit to retry saving.")
+		}
 	} else {
 		saved = true
 		// Persisting refreshed the revision and offering from the server;
@@ -463,8 +502,8 @@ func paywallBuilderURL(projectID, paywallID string) string {
 }
 
 // persistPaywallDesign PATCHes the designed components onto the RevenueCat
-// paywall draft, using the server's current draft revision to avoid stale
-// writes (retried once on a revision conflict).
+// paywall draft, guarded by the session's own revision: a draft that changed
+// outside the session comes back as a 409 instead of being overwritten.
 func persistPaywallDesign(ctx context.Context, rt *Runtime, session *astraSession) error {
 	client, err := rt.API()
 	if err != nil {
@@ -475,33 +514,33 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *astraSessio
 		ComponentsLocalizations: session.Paywall.ComponentsLocalizations,
 		DefaultLocale:           session.Paywall.DefaultLocale,
 	}
-	for attempt := 0; ; attempt++ {
+	if session.Revision != nil {
+		update.Revision = *session.Revision
+	} else {
+		// First turn from rc paywalls generate: the session exists before any
+		// PATCH, and the paywall was created moments ago.
 		revision, err := currentDraftRevision(ctx, client, session.ProjectID, session.PaywallID)
 		if err != nil {
 			return err
 		}
 		update.Revision = revision
-		updated, err := client.Paywalls.UpdateDraft(ctx, session.ProjectID, session.PaywallID, update)
-		if err == nil {
-			if updated.Components != nil && updated.Components.Draft != nil && updated.Components.Draft.Revision != nil {
-				session.Revision = updated.Components.Draft.Revision
-			}
-			// Offering attachment can change out-of-band (dashboard); the PATCH
-			// response carries current server truth, so refresh it — it drives
-			// the attach/publish hint and the editor's product context next turn.
-			if updated.OfferingID != "" {
-				session.Paywall.OfferingID = &updated.OfferingID
-			} else {
-				session.Paywall.OfferingID = nil
-			}
-			return nil
-		}
-		var apiErr *api.APIError
-		if attempt == 0 && errors.As(err, &apiErr) && apiErr.Status == 409 {
-			continue // stale revision: refetch and retry once
-		}
+	}
+	updated, err := client.Paywalls.UpdateDraft(ctx, session.ProjectID, session.PaywallID, update)
+	if err != nil {
 		return err
 	}
+	if updated.Components != nil && updated.Components.Draft != nil && updated.Components.Draft.Revision != nil {
+		session.Revision = updated.Components.Draft.Revision
+	}
+	// Offering attachment can change out-of-band (dashboard); the PATCH
+	// response carries current server truth, so refresh it — it drives
+	// the attach/publish hint and the editor's product context next turn.
+	if updated.OfferingID != "" {
+		session.Paywall.OfferingID = &updated.OfferingID
+	} else {
+		session.Paywall.OfferingID = nil
+	}
+	return nil
 }
 
 func currentDraftRevision(ctx context.Context, client *api.Client, projectID, paywallID string) (int, error) {
