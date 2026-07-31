@@ -566,7 +566,7 @@ const staleTestSession = `{
 // A session whose revision diverged from the server must stop at preflight:
 // no design turn is spent, and without --yes the command errors instead of
 // silently starting over from the server's draft.
-func TestPaywallsEdit_StaleSessionStopsBeforeAstra(t *testing.T) {
+func TestPaywallsEdit_StaleSessionStopsBeforeDesignTurn(t *testing.T) {
 	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || !strings.HasSuffix(r.URL.Path, "/paywalls/pw_new") {
 			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
