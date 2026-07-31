@@ -332,11 +332,18 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, paywallID string) (
 	if paywall.OfferingID != "" {
 		offeringID = &paywall.OfferingID
 	}
+	// Sessions always carry a revision (persist relies on it to guard the
+	// PATCH); normalize a server response without one the same way
+	// currentDraftRevision does.
+	revision := 0
+	if version.Revision != nil {
+		revision = *version.Revision
+	}
 	return &astraSession{
 		Version:   1,
 		ProjectID: projectID,
 		PaywallID: paywall.ID,
-		Revision:  version.Revision,
+		Revision:  &revision,
 		Paywall: astra.PaywallData{
 			DefaultLocale:           locale,
 			OfferingID:              offeringID,
@@ -538,9 +545,6 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *astraSessio
 	// it after create; edit preflights or reseeds from the server) — fetching
 	// a fresh one here instead would let the PATCH sail past the conflict
 	// guard and clobber out-of-band changes.
-	if session.Revision == nil {
-		return fmt.Errorf("session has no draft revision; run rc paywalls edit %s to start fresh from the server's draft", session.PaywallID)
-	}
 	update.Revision = *session.Revision
 	updated, err := client.Paywalls.UpdateDraft(ctx, session.ProjectID, session.PaywallID, update)
 	if err != nil {
