@@ -594,7 +594,7 @@ func TestPaywallsEdit_StaleSessionStopsBeforeDesignTurn(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 	if *astraRequests != 0 {
-		t.Fatalf("astra requests = %d, want 0 (no design turn on a stale session)", *astraRequests)
+		t.Fatalf("editor requests = %d, want 0 (no design turn on a stale session)", *astraRequests)
 	}
 	payload, err := os.ReadFile(sessionPath)
 	if err != nil {
