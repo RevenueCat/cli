@@ -438,10 +438,11 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 
 // Offering attachment can change out-of-band (dashboard). The API stub reports
 // the paywall attached even though generate ran standalone — the session must
-// pick up the server truth from the PATCH response, so the next editor turn
-// carries the offering (it drives the editor's package/price context).
+// pick up the server truth from the PATCH response so the next editor turn
+// carries it (session-to-editor propagation itself is covered by
+// TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession).
 func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
-	apiURL, astraURL, editorInputs, _ := astraTestServers(t, "ofrng_default")
+	apiURL, astraURL, _, _ := astraTestServers(t, "ofrng_default")
 	t.Setenv("RC_BASE_URL", apiURL)
 	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
 	t.Setenv("RC_OFFERING_ID", "")
@@ -468,20 +469,6 @@ func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
 	}
 	if v := session["paywall"].(map[string]any)["offering_id"]; v != "ofrng_default" {
 		t.Fatalf("session paywall.offering_id = %v", v)
-	}
-
-	_, _, err = runAgentCmd(t,
-		"paywalls", "edit",
-		"--session", sessionPath,
-		"--prompt", "Make annual the visual default",
-		"--json", "--no-input", "--api-key", "sk_test",
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	paywall := (*editorInputs)[1]["paywall"].(map[string]any)
-	if paywall["offering_id"] != "ofrng_default" {
-		t.Fatalf("edit paywall.offering_id = %v", paywall["offering_id"])
 	}
 }
 
