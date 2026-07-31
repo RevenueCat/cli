@@ -131,6 +131,15 @@ edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 			}
 			rt.Out.Info("Created draft paywall " + paywall.ID)
 
+			// The create response doesn't include the draft revision; fetch
+			// it now so the first persist is guarded by it — a draft edited
+			// elsewhere during the multi-minute turn 409s instead of being
+			// silently overwritten.
+			revision, err := currentDraftRevision(cmd.Context(), client, projectID, paywall.ID)
+			if err != nil {
+				return err
+			}
+
 			var offeringID *string
 			if opts.offeringID != "" {
 				offeringID = &opts.offeringID
@@ -139,6 +148,7 @@ edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
 				Version:   1,
 				ProjectID: projectID,
 				PaywallID: paywall.ID,
+				Revision:  &revision,
 				Paywall: astra.PaywallData{
 					DefaultLocale:           "en_US",
 					OfferingID:              offeringID,
@@ -252,9 +262,6 @@ Using it well:
 // against state that no longer exists — so the only way forward is consent to
 // start fresh from the server's current draft, losing the conversation.
 func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSession) (*astraSession, error) {
-	if session.Revision == nil {
-		return session, nil
-	}
 	client, err := rt.API()
 	if err != nil {
 		return nil, err
@@ -262,6 +269,19 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSe
 	revision, err := currentDraftRevision(ctx, client, session.ProjectID, session.PaywallID)
 	if err != nil {
 		return nil, err
+	}
+	if session.Revision == nil {
+		// Files written by older CLIs carry no revision, so out-of-band
+		// changes since then are undetectable — overwriting the draft needs
+		// consent, not silence. Adopting the server's revision keeps the
+		// conversation and guards the rest of this turn.
+		rt.Out.Warn(fmt.Sprintf("This session file has no draft revision, so changes made to %s outside this session can't be detected.", session.PaywallID))
+		if err := confirmOrAbort(rt, "Continue and overwrite the current draft?",
+			"run rc paywalls edit "+session.PaywallID+" to start fresh from the server's draft"); err != nil {
+			return nil, err
+		}
+		session.Revision = &revision
+		return session, nil
 	}
 	if revision == *session.Revision {
 		return session, nil
@@ -514,17 +534,14 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *astraSessio
 		ComponentsLocalizations: session.Paywall.ComponentsLocalizations,
 		DefaultLocale:           session.Paywall.DefaultLocale,
 	}
-	if session.Revision != nil {
-		update.Revision = *session.Revision
-	} else {
-		// First turn from rc paywalls generate: the session exists before any
-		// PATCH, and the paywall was created moments ago.
-		revision, err := currentDraftRevision(ctx, client, session.ProjectID, session.PaywallID)
-		if err != nil {
-			return err
-		}
-		update.Revision = revision
+	// Every path that builds a session seeds the revision (generate fetches
+	// it after create; edit preflights or reseeds from the server) — fetching
+	// a fresh one here instead would let the PATCH sail past the conflict
+	// guard and clobber out-of-band changes.
+	if session.Revision == nil {
+		return fmt.Errorf("session has no draft revision; run rc paywalls edit %s to start fresh from the server's draft", session.PaywallID)
 	}
+	update.Revision = *session.Revision
 	updated, err := client.Paywalls.UpdateDraft(ctx, session.ProjectID, session.PaywallID, update)
 	if err != nil {
 		return err
