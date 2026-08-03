@@ -45,20 +45,18 @@ type InputAttachment struct {
 // EditorRequest is the POST /editor/v1/stream body. UIConfig, SessionItems,
 // and AppContext are opaque server round-trips.
 type EditorRequest struct {
-	ProjectID        string            `json:"project_id"`
-	PaywallID        string            `json:"paywall_id"`
-	Revision         *int              `json:"revision"`
-	SessionID        string            `json:"session_id,omitempty"`
-	Paywall          PaywallData       `json:"paywall"`
-	UIConfig         json.RawMessage   `json:"ui_config"`
-	ProductVariables map[string]string `json:"product_variables"`
-	Message          string            `json:"message"`
-	InputAttachments []InputAttachment `json:"input_attachments,omitempty"`
-	SessionItems     json.RawMessage   `json:"__unstable_session_items"`
-	AppContext       json.RawMessage   `json:"app_context,omitempty"`
-	// IncludeResultScreenshots attaches rendered previews of the final design
-	// to run.completed. Best-effort: a render failure never fails the turn.
-	IncludeResultScreenshots bool `json:"include_result_screenshots,omitempty"`
+	ProjectID                string            `json:"project_id"`
+	PaywallID                string            `json:"paywall_id"`
+	Revision                 *int              `json:"revision"`
+	SessionID                string            `json:"session_id,omitempty"`
+	Paywall                  PaywallData       `json:"paywall"`
+	UIConfig                 json.RawMessage   `json:"ui_config"`
+	ProductVariables         map[string]string `json:"product_variables"`
+	Message                  string            `json:"message"`
+	InputAttachments         []InputAttachment `json:"input_attachments,omitempty"`
+	SessionItems             json.RawMessage   `json:"__unstable_session_items"`
+	AppContext               json.RawMessage   `json:"app_context,omitempty"`
+	IncludeResultScreenshots bool              `json:"include_result_screenshots,omitempty"`
 }
 
 type ToolActivity struct {
