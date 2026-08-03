@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -187,10 +188,31 @@ func TestRicoConversations_ListJSON(t *testing.T) {
 	}
 }
 
+// paywallResponseJSON is the v2 API paywall body for pw_new at a given
+// offering and draft revision.
+func paywallResponseJSON(offeringJSON string, revision int) string {
+	return fmt.Sprintf(`{"id":"pw_new","offering_id":%s,"created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":%d,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`, offeringJSON, revision)
+}
+
+// stubEditorServer serves one minimal completed design turn and counts the
+// requests it received.
+func stubEditorServer(t *testing.T) (*httptest.Server, *int) {
+	t.Helper()
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		w.Header().Set("Content-Type", "text/event-stream")
+		io.WriteString(w, "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n")
+		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[],\"__unstable_session_items\":[{\"k\":3}]}\n\n")
+	}))
+	t.Cleanup(server.Close)
+	return server, &requests
+}
+
 // astraTestServers stubs both the v2 API (draft creation) and the Paywall AI
 // editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
-// The editor stream always echoes offering_id as null, matching the live
-// service, which never returns it.
+// The editor stream echoes offering_id as null, as the live service does
+// after a template load.
 func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string, editorInputs, createInputs *[]map[string]any) {
 	t.Helper()
 	offeringJSON := "null"
@@ -199,6 +221,10 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 	}
 	var created []map[string]any
 	var patched []map[string]any
+	// The draft revision is stateful like khepri's: GET serves the current
+	// one, a PATCH must carry it (the conflict guard) and bumps it.
+	revision := 3
+	paywallJSON := func() string { return paywallResponseJSON(offeringJSON, revision) }
 	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
@@ -208,12 +234,16 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 			created = append(created, body)
 			io.WriteString(w, `{"id":"pw_new","offering_id":`+offeringJSON+`,"created_at":1720000000000,"published_at":null}`)
 		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
-			io.WriteString(w, `{"id":"pw_new","offering_id":`+offeringJSON+`,"created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":3,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`)
+			io.WriteString(w, paywallJSON())
 		case r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
+			if body["revision"] != float64(revision) {
+				t.Errorf("PATCH revision = %v, server draft is at %d", body["revision"], revision)
+			}
 			patched = append(patched, body)
-			io.WriteString(w, `{"id":"pw_new","offering_id":`+offeringJSON+`,"created_at":1720000000000,"published_at":null,"components":{"published":null,"draft":{"revision":4,"components_config":{},"components_localizations":{},"default_locale":"en_US","automatically_scale_font_size":true}}}`)
+			revision++
+			io.WriteString(w, paywallJSON())
 		default:
 			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
 		}
@@ -223,13 +253,9 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 			t.Error("design was never PATCHed onto the RevenueCat draft")
 			return
 		}
-		last := patched[len(patched)-1]
-		if last["revision"] != 3.0 {
-			t.Errorf("PATCH revision = %v", last["revision"])
-		}
-		config, _ := last["components_config"].(map[string]any)
+		config, _ := patched[len(patched)-1]["components_config"].(map[string]any)
 		if config["stack"] != true {
-			t.Errorf("PATCH components_config = %v", last["components_config"])
+			t.Errorf("PATCH components_config = %v", patched[len(patched)-1]["components_config"])
 		}
 	})
 	t.Cleanup(apiServer.Close)
@@ -409,12 +435,11 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 	}
 }
 
-// Offering attachment can change out-of-band (dashboard). The API stub reports
-// the paywall attached even though generate ran standalone — the session must
-// pick up the server truth from the PATCH response, so the next editor turn
-// carries the offering (it drives the editor's package/price context).
+// Offering attachment can change out-of-band (dashboard). The API stub
+// reports the paywall attached even though generate ran standalone — the
+// session must pick up the server truth from the PATCH response.
 func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
-	apiURL, astraURL, editorInputs, _ := astraTestServers(t, "ofrng_default")
+	apiURL, astraURL, _, _ := astraTestServers(t, "ofrng_default")
 	t.Setenv("RC_BASE_URL", apiURL)
 	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
 	t.Setenv("RC_OFFERING_ID", "")
@@ -442,19 +467,61 @@ func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
 	if v := session["paywall"].(map[string]any)["offering_id"]; v != "ofrng_default" {
 		t.Fatalf("session paywall.offering_id = %v", v)
 	}
+}
 
-	_, _, err = runAgentCmd(t,
-		"paywalls", "edit",
-		"--session", sessionPath,
-		"--prompt", "Make annual the visual default",
+// A dashboard edit that lands during generate's multi-minute design turn must
+// surface as a conflict, not be clobbered: the PATCH carries the revision
+// fetched once at create time — refetching at persist would sail past
+// khepri's conflict guard.
+func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
+	gets := 0
+	var patched []map[string]any
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/paywalls"):
+			io.WriteString(w, `{"id":"pw_new","offering_id":null,"created_at":1720000000000,"published_at":null}`)
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
+			gets++
+			revision := 3 // at create time; 7 after the dashboard edit lands
+			if gets > 1 {
+				revision = 7
+			}
+			io.WriteString(w, paywallResponseJSON("null", revision))
+		case r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			patched = append(patched, body)
+			w.WriteHeader(http.StatusConflict)
+			io.WriteString(w, `{"object":"error","type":"resource_conflict","message":"draft revision is stale"}`)
+		default:
+			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	t.Cleanup(apiServer.Close)
+	astraServer, _ := stubEditorServer(t)
+	t.Setenv("RC_BASE_URL", apiServer.URL)
+	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+	t.Setenv("RC_OFFERING_ID", "")
+
+	stdout, _, err := runAgentCmd(t,
+		"paywalls", "generate", "--name", "Summer sale",
+		"--prompt", "A calm annual-first paywall",
+		"--session", filepath.Join(t.TempDir(), "session.json"),
+		"--project-id", "proj1",
 		"--json", "--no-input", "--api-key", "sk_test",
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	paywall := (*editorInputs)[1]["paywall"].(map[string]any)
-	if paywall["offering_id"] != "ofrng_default" {
-		t.Fatalf("edit paywall.offering_id = %v", paywall["offering_id"])
+	if gets != 1 {
+		t.Fatalf("GETs = %d, want 1 (create-time only; persist must not refetch)", gets)
+	}
+	if len(patched) != 1 || patched[0]["revision"] != 3.0 {
+		t.Fatalf("patched = %v, want one PATCH carrying the create-time revision 3", patched)
+	}
+	if !strings.Contains(stdout, `"saved_to_draft": false`) {
+		t.Fatalf("stdout = %s", stdout)
 	}
 }
 
@@ -479,6 +546,109 @@ func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "omit --offering-id") {
 		t.Fatalf("stderr missing hint: %q", stderr)
+	}
+}
+
+// staleTestSession is a session file whose stored revision the tests pit
+// against the API stub's current draft revision.
+const staleTestSession = `{
+  "version": 1,
+  "project_id": "proj1",
+  "paywall_id": "pw_new",
+  "session_id": "sess1",
+  "revision": 3,
+  "paywall": {"default_locale": "en_US", "offering_id": null, "components_config": {"stack": true}, "components_localizations": {"en_US": {}}},
+  "ui_config": {"fonts": {}, "presets": {"saved_colors": []}},
+  "product_variables": {},
+  "__unstable_session_items": [{"k": 2}]
+}`
+
+// A session whose revision diverged from the server must stop at preflight:
+// no design turn is spent, and without --yes the command errors instead of
+// silently starting over from the server's draft.
+func TestPaywallsEdit_StaleSessionStopsBeforeDesignTurn(t *testing.T) {
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || !strings.HasSuffix(r.URL.Path, "/paywalls/pw_new") {
+			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, paywallResponseJSON("null", 5))
+	}))
+	t.Cleanup(apiServer.Close)
+	astraServer, astraRequests := stubEditorServer(t)
+	t.Setenv("RC_BASE_URL", apiServer.URL)
+	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+
+	sessionPath := filepath.Join(t.TempDir(), "session.json")
+	if err := os.WriteFile(sessionPath, []byte(staleTestSession), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err := runAgentCmd(t,
+		"paywalls", "edit",
+		"--session", sessionPath,
+		"--prompt", "Push the gradient harder",
+		"--no-input", "--api-key", "sk_test",
+	)
+	if err == nil || !strings.Contains(err.Error(), "pass --yes") {
+		t.Fatalf("err = %v", err)
+	}
+	if *astraRequests != 0 {
+		t.Fatalf("editor requests = %d, want 0 (no design turn on a stale session)", *astraRequests)
+	}
+	payload, err := os.ReadFile(sessionPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(payload) != staleTestSession {
+		t.Fatalf("session file was modified:\n%s", payload)
+	}
+}
+
+// The PATCH must carry the session's own revision — not a freshly fetched
+// one — or khepri's conflict guard can never fire for a stale session. The
+// single GET is the preflight; persist itself must not refetch.
+func TestPaywallsEdit_PatchCarriesSessionRevision(t *testing.T) {
+	gets := 0
+	var patched []map[string]any
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
+			gets++
+			io.WriteString(w, paywallResponseJSON("null", 3))
+		case r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
+			var body map[string]any
+			json.NewDecoder(r.Body).Decode(&body)
+			patched = append(patched, body)
+			io.WriteString(w, paywallResponseJSON("null", 4))
+		default:
+			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	t.Cleanup(apiServer.Close)
+	astraServer, _ := stubEditorServer(t)
+	t.Setenv("RC_BASE_URL", apiServer.URL)
+	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+
+	sessionPath := filepath.Join(t.TempDir(), "session.json")
+	if err := os.WriteFile(sessionPath, []byte(staleTestSession), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err := runAgentCmd(t,
+		"paywalls", "edit",
+		"--session", sessionPath,
+		"--prompt", "Push the gradient harder",
+		"--json", "--no-input", "--api-key", "sk_test",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gets != 1 {
+		t.Fatalf("GETs = %d, want 1 (preflight only; persist must not refetch)", gets)
+	}
+	if len(patched) != 1 || patched[0]["revision"] != 3.0 {
+		t.Fatalf("patched = %v", patched)
 	}
 }
 
