@@ -45,17 +45,18 @@ type InputAttachment struct {
 // EditorRequest is the POST /editor/v1/stream body. UIConfig, SessionItems,
 // and AppContext are opaque server round-trips.
 type EditorRequest struct {
-	ProjectID        string            `json:"project_id"`
-	PaywallID        string            `json:"paywall_id"`
-	Revision         *int              `json:"revision"`
-	SessionID        string            `json:"session_id,omitempty"`
-	Paywall          PaywallData       `json:"paywall"`
-	UIConfig         json.RawMessage   `json:"ui_config"`
-	ProductVariables map[string]string `json:"product_variables"`
-	Message          string            `json:"message"`
-	InputAttachments []InputAttachment `json:"input_attachments,omitempty"`
-	SessionItems     json.RawMessage   `json:"__unstable_session_items"`
-	AppContext       json.RawMessage   `json:"app_context,omitempty"`
+	ProjectID                string            `json:"project_id"`
+	PaywallID                string            `json:"paywall_id"`
+	Revision                 *int              `json:"revision"`
+	SessionID                string            `json:"session_id,omitempty"`
+	Paywall                  PaywallData       `json:"paywall"`
+	UIConfig                 json.RawMessage   `json:"ui_config"`
+	ProductVariables         map[string]string `json:"product_variables"`
+	Message                  string            `json:"message"`
+	InputAttachments         []InputAttachment `json:"input_attachments,omitempty"`
+	SessionItems             json.RawMessage   `json:"__unstable_session_items"`
+	AppContext               json.RawMessage   `json:"app_context,omitempty"`
+	IncludeResultScreenshots bool              `json:"include_result_screenshots,omitempty"`
 }
 
 type ToolActivity struct {
@@ -70,6 +71,14 @@ type ToolActivity struct {
 	Content string `json:"content,omitempty"` // assistant_message
 }
 
+// ResultScreenshot is a rendered preview of the completed design. Light is
+// always present when requested; dark only when the paywall has a dark mode.
+type ResultScreenshot struct {
+	ColorScheme string `json:"color_scheme"` // "light" | "dark"
+	MimeType    string `json:"mime_type"`
+	DataBase64  string `json:"data_base64"`
+}
+
 type StreamError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -77,15 +86,16 @@ type StreamError struct {
 
 // Event is one editor stream event; fields are populated per Type.
 type Event struct {
-	Type         string          `json:"type"`
-	SessionID    string          `json:"session_id"`
-	TurnIndex    int             `json:"turn_index,omitempty"`
-	TraceID      string          `json:"trace_id,omitempty"`
-	Paywall      *PaywallData    `json:"paywall,omitempty"`
-	Activity     []ToolActivity  `json:"activity,omitempty"`
-	Error        *StreamError    `json:"error,omitempty"`
-	SessionItems json.RawMessage `json:"__unstable_session_items,omitempty"`
-	AppContext   json.RawMessage `json:"app_context,omitempty"`
+	Type              string             `json:"type"`
+	SessionID         string             `json:"session_id"`
+	TurnIndex         int                `json:"turn_index,omitempty"`
+	TraceID           string             `json:"trace_id,omitempty"`
+	Paywall           *PaywallData       `json:"paywall,omitempty"`
+	Activity          []ToolActivity     `json:"activity,omitempty"`
+	Error             *StreamError       `json:"error,omitempty"`
+	SessionItems      json.RawMessage    `json:"__unstable_session_items,omitempty"`
+	AppContext        json.RawMessage    `json:"app_context,omitempty"`
+	ResultScreenshots []ResultScreenshot `json:"result_screenshots,omitempty"`
 }
 
 func (e *Event) Terminal() bool {
