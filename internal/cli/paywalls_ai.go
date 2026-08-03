@@ -368,8 +368,7 @@ func newPaywallsRewindCmd() *cobra.Command {
 			if err := client.Rewind(cmd.Context(), session.SessionID, session.TraceID, true); err != nil {
 				return err
 			}
-			// The saved screenshots show the pre-rewind design; drop them so
-			// they don't lie about the rewound state.
+			// Drop saved screenshots — they show the pre-rewind design.
 			base := strings.TrimSuffix(sessionPath, ".astra.json")
 			os.Remove(base + ".light.png")
 			os.Remove(base + ".dark.png")
@@ -420,7 +419,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 		SessionItems:     session.SessionItems,
 		AppContext:       session.AppContext,
 
-		IncludeResultScreenshots: true, // rendered previews land on run.completed
+		IncludeResultScreenshots: true,
 	})
 	if err != nil {
 		return err
@@ -471,8 +470,8 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	if err := saveAstraSession(opts.sessionPath, session); err != nil {
 		return err
 	}
-	// Always, not only when the draft PATCH succeeds: the screenshot shows
-	// what the session file holds even when the draft changed elsewhere.
+	// Saved even when the draft PATCH below fails — the screenshot shows
+	// what the session file holds.
 	screenshots := savePaywallScreenshots(rt, opts.sessionPath, event.ResultScreenshots)
 	saved := false
 	if err := persistPaywallDesign(ctx, rt, session); err != nil {
@@ -526,9 +525,8 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 }
 
 // savePaywallScreenshots writes the run's rendered previews next to the
-// session file (<session base>.light.png, and .dark.png when the design has
-// dark mode) and returns the paths by color scheme. Best-effort, matching the
-// server's stance: a decode or write failure warns, never fails the turn.
+// session file (<base>.light.png / .dark.png) and returns the paths by color
+// scheme. Best-effort: a decode or write failure warns, never fails the turn.
 func savePaywallScreenshots(rt *Runtime, sessionPath string, shots []astra.ResultScreenshot) map[string]string {
 	paths := map[string]string{}
 	base := strings.TrimSuffix(sessionPath, ".astra.json")

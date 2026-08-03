@@ -56,9 +56,8 @@ type EditorRequest struct {
 	InputAttachments []InputAttachment `json:"input_attachments,omitempty"`
 	SessionItems     json.RawMessage   `json:"__unstable_session_items"`
 	AppContext       json.RawMessage   `json:"app_context,omitempty"`
-	// IncludeResultScreenshots asks the server to render the final design
-	// and attach it to run.completed. Best-effort server-side: a render
-	// failure never fails the turn.
+	// IncludeResultScreenshots attaches rendered previews of the final design
+	// to run.completed. Best-effort: a render failure never fails the turn.
 	IncludeResultScreenshots bool `json:"include_result_screenshots,omitempty"`
 }
 
