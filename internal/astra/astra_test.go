@@ -28,7 +28,7 @@ func TestStreamDecodesEvents(t *testing.T) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		io.WriteString(w, "event: run.started\ndata: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n")
 		io.WriteString(w, "data: {\"type\":\"turn.snapshot\",\"session_id\":\"sess1\",\"turn_index\":0,\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":\"ofrng1\",\"components_config\":{\"a\":1},\"components_localizations\":{}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_call_id\":\"tc1\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Edited hero\"}}]}\n\n")
-		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{},\"components_localizations\":{}},\"activity\":[]}\n\n")
+		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{},\"components_localizations\":{}},\"activity\":[],\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n")
 	}))
 	defer server.Close()
 
@@ -73,6 +73,9 @@ func TestStreamDecodesEvents(t *testing.T) {
 	}
 	if completed.Paywall.OfferingID != nil {
 		t.Fatalf("offering should be null, got %v", completed.Paywall.OfferingID)
+	}
+	if len(completed.ResultScreenshots) != 1 || completed.ResultScreenshots[0].ColorScheme != "light" || completed.ResultScreenshots[0].DataBase64 != "UE5H" {
+		t.Fatalf("result_screenshots = %+v", completed.ResultScreenshots)
 	}
 
 	if gotBody["project_id"] != "proj1" || gotBody["paywall_id"] != "pw1" || gotBody["revision"] != 3.0 {

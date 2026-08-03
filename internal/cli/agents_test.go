@@ -272,7 +272,7 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 		w.Header().Set("Content-Type", "text/event-stream")
 		io.WriteString(w, "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n")
 		io.WriteString(w, "data: {\"type\":\"turn.snapshot\",\"session_id\":\"sess1\",\"turn_index\":0,\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}}],\"__unstable_session_items\":[{\"k\":1}]}\n\n")
-		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}},{\"id\":\"a2\",\"type\":\"assistant_message\",\"content\":\"Done — calm annual-first layout.\"}],\"__unstable_session_items\":[{\"k\":2}]}\n\n")
+		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}},{\"id\":\"a2\",\"type\":\"assistant_message\",\"content\":\"Done — calm annual-first layout.\"}],\"__unstable_session_items\":[{\"k\":2}],\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n")
 	}))
 	t.Cleanup(astraServer.Close)
 	return apiServer.URL, astraServer.URL, &inputs, &created
@@ -311,10 +311,11 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	}
 	var envelope struct {
 		Data struct {
-			PaywallID   string `json:"paywall_id"`
-			SessionID   string `json:"session_id"`
-			TraceID     string `json:"trace_id"`
-			SessionFile string `json:"session_file"`
+			PaywallID       string            `json:"paywall_id"`
+			SessionID       string            `json:"session_id"`
+			TraceID         string            `json:"trace_id"`
+			SessionFile     string            `json:"session_file"`
+			ScreenshotPaths map[string]string `json:"screenshot_paths"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
@@ -328,10 +329,23 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 		t.Fatalf("create body = %v", create)
 	}
 
+	// The run's preview screenshot landed next to the session file and its
+	// path is in the envelope.
+	shotPath := envelope.Data.ScreenshotPaths["light"]
+	if shotPath == "" {
+		t.Fatalf("screenshot_paths = %v", envelope.Data.ScreenshotPaths)
+	}
+	if shot, err := os.ReadFile(shotPath); err != nil || string(shot) != "PNG" {
+		t.Fatalf("screenshot at %s = %q, err %v", shotPath, shot, err)
+	}
+
 	// The editor request carried the project, paywall, prompt, and state.
 	input := (*editorInputs)[0]
 	if input["project_id"] != "proj1" || input["paywall_id"] != "pw_new" || input["message"] != "A calm annual-first paywall" {
 		t.Fatalf("editor input = %v", input)
+	}
+	if input["include_result_screenshots"] != true {
+		t.Fatalf("include_result_screenshots = %v", input["include_result_screenshots"])
 	}
 
 	// Session file round-trips the completed paywall + opaque blobs.

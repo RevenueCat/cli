@@ -56,6 +56,10 @@ type EditorRequest struct {
 	InputAttachments []InputAttachment `json:"input_attachments,omitempty"`
 	SessionItems     json.RawMessage   `json:"__unstable_session_items"`
 	AppContext       json.RawMessage   `json:"app_context,omitempty"`
+	// IncludeResultScreenshots asks the server to render the final design
+	// and attach it to run.completed. Best-effort server-side: a render
+	// failure never fails the turn.
+	IncludeResultScreenshots bool `json:"include_result_screenshots,omitempty"`
 }
 
 type ToolActivity struct {
@@ -70,6 +74,14 @@ type ToolActivity struct {
 	Content string `json:"content,omitempty"` // assistant_message
 }
 
+// ResultScreenshot is a rendered preview of the completed design. Light is
+// always present when requested; dark only when the paywall has a dark mode.
+type ResultScreenshot struct {
+	ColorScheme string `json:"color_scheme"` // "light" | "dark"
+	MimeType    string `json:"mime_type"`
+	DataBase64  string `json:"data_base64"`
+}
+
 type StreamError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -77,15 +89,16 @@ type StreamError struct {
 
 // Event is one editor stream event; fields are populated per Type.
 type Event struct {
-	Type         string          `json:"type"`
-	SessionID    string          `json:"session_id"`
-	TurnIndex    int             `json:"turn_index,omitempty"`
-	TraceID      string          `json:"trace_id,omitempty"`
-	Paywall      *PaywallData    `json:"paywall,omitempty"`
-	Activity     []ToolActivity  `json:"activity,omitempty"`
-	Error        *StreamError    `json:"error,omitempty"`
-	SessionItems json.RawMessage `json:"__unstable_session_items,omitempty"`
-	AppContext   json.RawMessage `json:"app_context,omitempty"`
+	Type              string             `json:"type"`
+	SessionID         string             `json:"session_id"`
+	TurnIndex         int                `json:"turn_index,omitempty"`
+	TraceID           string             `json:"trace_id,omitempty"`
+	Paywall           *PaywallData       `json:"paywall,omitempty"`
+	Activity          []ToolActivity     `json:"activity,omitempty"`
+	Error             *StreamError       `json:"error,omitempty"`
+	SessionItems      json.RawMessage    `json:"__unstable_session_items,omitempty"`
+	AppContext        json.RawMessage    `json:"app_context,omitempty"`
+	ResultScreenshots []ResultScreenshot `json:"result_screenshots,omitempty"`
 }
 
 func (e *Event) Terminal() bool {

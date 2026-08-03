@@ -92,7 +92,10 @@ Each completed turn saves the design onto the RevenueCat paywall draft, and
 the editor state is also kept in a session file so follow-up edits retain the
 conversation: pass the same --session to rc paywalls edit. The editor may
 answer with a clarifying question instead of a design — reply with another
-edit turn. The draft stays unpublished; review it and run rc paywalls publish.`,
+edit turn. Each completed turn also writes a preview screenshot
+(<paywall-id>.light.png, plus .dark.png when the design has dark mode) next to
+the session file — look at it to verify the design. The draft stays
+unpublished; review it and run rc paywalls publish.`,
 		Example: `  rc paywalls generate
   rc paywalls generate --name "Summer sale" --prompt "A calm annual-first paywall"
   rc paywalls generate --offering-id ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
@@ -203,6 +206,9 @@ Using it well:
   - The Paywall AI editor may reply with a clarifying question instead of a design (it
     appears in the streamed activity / the --json activity array). Answer it
     with another edit turn on the same session.
+  - Each completed turn writes <paywall-id>.light.png (and .dark.png when
+    the design has dark mode) next to the session file — look at it to
+    verify the design before publishing.
   - Turns take one to several minutes and stream progress; run with an
     extended timeout (--timeout) or in the background rather than polling.
   - Undo the last turn:  rc paywalls rewind --session <file>`,
@@ -362,6 +368,11 @@ func newPaywallsRewindCmd() *cobra.Command {
 			if err := client.Rewind(cmd.Context(), session.SessionID, session.TraceID, true); err != nil {
 				return err
 			}
+			// The saved screenshots show the pre-rewind design; drop them so
+			// they don't lie about the rewound state.
+			base := strings.TrimSuffix(sessionPath, ".astra.json")
+			os.Remove(base + ".light.png")
+			os.Remove(base + ".dark.png")
 			rt.Out.Success("Rewound last editor action")
 			return rt.Out.Render(map[string]any{"ok": true, "session_id": session.SessionID})
 		},
@@ -408,6 +419,8 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 		InputAttachments: attachments,
 		SessionItems:     session.SessionItems,
 		AppContext:       session.AppContext,
+
+		IncludeResultScreenshots: true, // rendered previews land on run.completed
 	})
 	if err != nil {
 		return err
@@ -458,6 +471,9 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	if err := saveAstraSession(opts.sessionPath, session); err != nil {
 		return err
 	}
+	// Always, not only when the draft PATCH succeeds: the screenshot shows
+	// what the session file holds even when the draft changed elsewhere.
+	screenshots := savePaywallScreenshots(rt, opts.sessionPath, event.ResultScreenshots)
 	saved := false
 	if err := persistPaywallDesign(ctx, rt, session); err != nil {
 		var apiErr *api.APIError
@@ -480,6 +496,12 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywall AI editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
 		}
 		rt.Out.Blank()
+		if path, ok := screenshots["light"]; ok {
+			rt.Out.Field("Preview", path)
+		}
+		if path, ok := screenshots["dark"]; ok {
+			rt.Out.Field("Preview (dark)", path)
+		}
 		rt.Out.Field("View it", paywallBuilderURL(session.ProjectID, session.PaywallID))
 		rt.Out.Field("Keep designing", "rc paywalls edit --session "+opts.sessionPath)
 		if session.Paywall.OfferingID == nil {
@@ -490,16 +512,45 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	}
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(map[string]any{
-			"paywall_id":     session.PaywallID,
-			"dashboard_url":  paywallBuilderURL(session.ProjectID, session.PaywallID),
-			"session_id":     session.SessionID,
-			"trace_id":       session.TraceID,
-			"session_file":   opts.sessionPath,
-			"saved_to_draft": saved,
-			"activity":       event.Activity,
+			"paywall_id":       session.PaywallID,
+			"dashboard_url":    paywallBuilderURL(session.ProjectID, session.PaywallID),
+			"session_id":       session.SessionID,
+			"trace_id":         session.TraceID,
+			"session_file":     opts.sessionPath,
+			"saved_to_draft":   saved,
+			"screenshot_paths": screenshots,
+			"activity":         event.Activity,
 		})
 	}
 	return nil
+}
+
+// savePaywallScreenshots writes the run's rendered previews next to the
+// session file (<session base>.light.png, and .dark.png when the design has
+// dark mode) and returns the paths by color scheme. Best-effort, matching the
+// server's stance: a decode or write failure warns, never fails the turn.
+func savePaywallScreenshots(rt *Runtime, sessionPath string, shots []astra.ResultScreenshot) map[string]string {
+	paths := map[string]string{}
+	base := strings.TrimSuffix(sessionPath, ".astra.json")
+	for _, shot := range shots {
+		data, err := base64.StdEncoding.DecodeString(shot.DataBase64)
+		if err == nil {
+			path := base + "." + shot.ColorScheme + ".png"
+			if err = os.WriteFile(path, data, 0o600); err == nil {
+				paths[shot.ColorScheme] = path
+				continue
+			}
+		}
+		rt.Out.Warn("Could not save the " + shot.ColorScheme + " preview screenshot: " + err.Error())
+	}
+	// A light screenshot without a dark one means the design has no dark
+	// mode; drop a stale dark.png from an earlier turn so it doesn't lie.
+	if _, ok := paths["light"]; ok {
+		if _, ok := paths["dark"]; !ok {
+			os.Remove(base + ".dark.png")
+		}
+	}
+	return paths
 }
 
 // paywallBuilderURL is the dashboard's visual editor for a components
