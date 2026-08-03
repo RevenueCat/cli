@@ -94,8 +94,9 @@ conversation: pass the same --session to rc paywalls edit. The editor may
 answer with a clarifying question instead of a design — reply with another
 edit turn. Each completed turn also writes a preview screenshot
 (<paywall-id>.light.png, plus .dark.png when the design has dark mode) next to
-the session file — look at it to verify the design. The draft stays
-unpublished; review it and run rc paywalls publish.`,
+the session file — look at it after every turn and keep iterating with edit
+turns until the design is right. The draft stays unpublished; review it and
+run rc paywalls publish.`,
 		Example: `  rc paywalls generate
   rc paywalls generate --name "Summer sale" --prompt "A calm annual-first paywall"
   rc paywalls generate --offering-id ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
@@ -207,8 +208,9 @@ Using it well:
     appears in the streamed activity / the --json activity array). Answer it
     with another edit turn on the same session.
   - Each completed turn writes <paywall-id>.light.png (and .dark.png when
-    the design has dark mode) next to the session file — look at it to
-    verify the design before publishing.
+    the design has dark mode) next to the session file. Look at it after
+    every turn: judge the result against the direction, then follow up
+    with more edit turns until it looks right.
   - Turns take one to several minutes and stream progress; run with an
     extended timeout (--timeout) or in the background rather than polling.
   - Undo the last turn:  rc paywalls rewind --session <file>`,
