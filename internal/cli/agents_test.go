@@ -210,11 +210,11 @@ func stubEditorServer(t *testing.T) (*httptest.Server, *int) {
 	return server, &requests
 }
 
-// astraTestServers stubs both the v2 API (draft creation) and the Paywall AI
+// paywallAITestServers stubs both the v2 API (draft creation) and the Paywall AI
 // editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
 // The editor stream echoes offering_id as null, as the live service does
 // after a template load.
-func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string, editorInputs, createInputs *[]map[string]any) {
+func paywallAITestServers(t *testing.T, offeringID string) (apiURL, paywallAIURL string, editorInputs, createInputs *[]map[string]any) {
 	t.Helper()
 	offeringJSON := "null"
 	if offeringID != "" {
@@ -262,9 +262,9 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 	t.Cleanup(apiServer.Close)
 
 	var inputs []map[string]any
-	astraServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	paywallAIServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/editor/v1/stream" {
-			t.Errorf("astra path = %s", r.URL.Path)
+			t.Errorf("paywall AI path = %s", r.URL.Path)
 			return
 		}
 		var input map[string]any
@@ -275,12 +275,12 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 		io.WriteString(w, "data: {\"type\":\"turn.snapshot\",\"session_id\":\"sess1\",\"turn_index\":0,\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}}],\"__unstable_session_items\":[{\"k\":1}]}\n\n")
 		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}},{\"id\":\"a2\",\"type\":\"assistant_message\",\"content\":\"Done — calm annual-first layout.\"}],\"__unstable_session_items\":[{\"k\":2}],\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n")
 	}))
-	t.Cleanup(astraServer.Close)
-	return apiServer.URL, astraServer.URL, &inputs, &created
+	t.Cleanup(paywallAIServer.Close)
+	return apiServer.URL, paywallAIServer.URL, &inputs, &created
 }
 
 // runAgentCmd is runCmd without the env reset, so RC_BASE_URL /
-// RC_ASTRA_BASE_URL stubs set by the test survive.
+// RC_PAYWALL_AI_BASE_URL stubs set by the test survive.
 func runAgentCmd(t *testing.T, args ...string) (string, string, error) {
 	t.Helper()
 	t.Setenv("RC_CONFIG_DIR", t.TempDir())
@@ -294,9 +294,9 @@ func runAgentCmd(t *testing.T, args ...string) (string, string, error) {
 }
 
 func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
-	apiURL, astraURL, editorInputs, createInputs := astraTestServers(t, "ofrng_default")
+	apiURL, paywallAIURL, editorInputs, createInputs := paywallAITestServers(t, "ofrng_default")
 	t.Setenv("RC_BASE_URL", apiURL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIURL)
 
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "session.json")
@@ -398,9 +398,9 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 }
 
 func TestPaywallsGenerate_Standalone(t *testing.T) {
-	apiURL, astraURL, editorInputs, createInputs := astraTestServers(t, "")
+	apiURL, paywallAIURL, editorInputs, createInputs := paywallAITestServers(t, "")
 	t.Setenv("RC_BASE_URL", apiURL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIURL)
 	t.Setenv("RC_OFFERING_ID", "")
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
@@ -454,9 +454,9 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 // reports the paywall attached even though generate ran standalone — the
 // session must pick up the server truth from the PATCH response.
 func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
-	apiURL, astraURL, _, _ := astraTestServers(t, "ofrng_default")
+	apiURL, paywallAIURL, _, _ := paywallAITestServers(t, "ofrng_default")
 	t.Setenv("RC_BASE_URL", apiURL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIURL)
 	t.Setenv("RC_OFFERING_ID", "")
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
@@ -514,9 +514,9 @@ func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
 		}
 	}))
 	t.Cleanup(apiServer.Close)
-	astraServer, _ := stubEditorServer(t)
+	paywallAIServer, _ := stubEditorServer(t)
 	t.Setenv("RC_BASE_URL", apiServer.URL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIServer.URL)
 	t.Setenv("RC_OFFERING_ID", "")
 
 	stdout, _, err := runAgentCmd(t,
@@ -591,9 +591,9 @@ func TestPaywallsEdit_StaleSessionStopsBeforeDesignTurn(t *testing.T) {
 		io.WriteString(w, paywallResponseJSON("null", 5))
 	}))
 	t.Cleanup(apiServer.Close)
-	astraServer, astraRequests := stubEditorServer(t)
+	paywallAIServer, paywallAIRequests := stubEditorServer(t)
 	t.Setenv("RC_BASE_URL", apiServer.URL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIServer.URL)
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
 	if err := os.WriteFile(sessionPath, []byte(staleTestSession), 0o600); err != nil {
@@ -608,8 +608,8 @@ func TestPaywallsEdit_StaleSessionStopsBeforeDesignTurn(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "pass --yes") {
 		t.Fatalf("err = %v", err)
 	}
-	if *astraRequests != 0 {
-		t.Fatalf("editor requests = %d, want 0 (no design turn on a stale session)", *astraRequests)
+	if *paywallAIRequests != 0 {
+		t.Fatalf("editor requests = %d, want 0 (no design turn on a stale session)", *paywallAIRequests)
 	}
 	payload, err := os.ReadFile(sessionPath)
 	if err != nil {
@@ -642,9 +642,9 @@ func TestPaywallsEdit_PatchCarriesSessionRevision(t *testing.T) {
 		}
 	}))
 	t.Cleanup(apiServer.Close)
-	astraServer, _ := stubEditorServer(t)
+	paywallAIServer, _ := stubEditorServer(t)
 	t.Setenv("RC_BASE_URL", apiServer.URL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIServer.URL)
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
 	if err := os.WriteFile(sessionPath, []byte(staleTestSession), 0o600); err != nil {

@@ -1,7 +1,7 @@
-// Package astra is a client for the Paywall AI editor backend
+// Package paywallai is a client for the Paywall AI editor backend
 // (astra.revenuecat.com), speaking the same SSE contract as the dashboard
 // and mobile apps.
-package astra
+package paywallai
 
 import (
 	"bytes"
