@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/revenuecat/cli/internal/tui"
 	"strings"
 	"testing"
 
@@ -36,6 +35,11 @@ func NewRootCmd(version string) *cobra.Command {
 		Use:   "rc",
 		Short: "RevenueCat command line interface",
 		Long: `rc is the RevenueCat command line interface.
+
+Getting started:
+  rc auth login          log in (browser or an API key)
+  rc projects use        choose a default project
+  rc <command> --help    explore any command group
 
 Designed for humans and AI agents alike: every interactive prompt is also
 available as a flag or environment variable, and every command supports
@@ -89,7 +93,7 @@ Agent-friendly entrypoints:
 	pf.BoolVar(&g.JSON, "json", false, "emit machine-readable JSON output")
 	pf.BoolVar(&g.NoInput, "no-input", false, "disable interactive prompts; fail if input is required")
 	pf.BoolVarP(&g.Quiet, "quiet", "q", false, "suppress non-essential output")
-	pf.BoolVar(&g.ShowAll, "all", false, "show every command, not just the common ones")
+	pf.BoolVar(&g.ShowAll, "all", false, "also show experimental commands in --help")
 	pf.BoolVarP(&g.Verbose, "verbose", "v", false, "enable verbose logging")
 	_ = pf.MarkHidden("verbose")
 	pf.StringVar(&g.Profile, "profile", "", "configuration profile to use (default: active profile)")
@@ -108,14 +112,10 @@ Agent-friendly entrypoints:
 	whoamiAlias.Use = "whoami"
 	whoamiAlias.Hidden = true
 
-	// Bare `rc` (and bare `npx @revenuecat/cli`) in an interactive terminal is
-	// the acquisition path: land in the guided setup, which shows state and
-	// asks before doing anything. Everywhere else keeps cobra's help.
+	// Bare `rc` shows help, which leads with the getting-started intro. The
+	// guided setup orchestrator is still available explicitly as `rc setup`.
 	root.RunE = func(cmd *cobra.Command, args []string) error {
-		if g.JSON || g.NoInput || !tui.IsInteractive() {
-			return cmd.Help()
-		}
-		return runSetup(cmd)
+		return cmd.Help()
 	}
 
 	root.AddCommand(
@@ -164,7 +164,7 @@ Agent-friendly entrypoints:
 		applySurfaceProfile(root)
 		defaultHelp(c, args)
 		if c == root && !showAllSurface(root) && !testing.Testing() {
-			fmt.Fprintln(c.OutOrStdout(), "\nCommon commands shown. Run `rc --all` for every command, or `rc commands --schemas` for the full machine-readable surface.")
+			fmt.Fprintln(c.OutOrStdout(), "\nRun `rc --all` to include experimental commands, or `rc commands --schemas` for the full machine-readable surface.")
 		}
 	})
 	return root
