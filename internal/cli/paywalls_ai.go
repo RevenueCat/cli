@@ -40,6 +40,13 @@ type paywallAISession struct {
 
 const paywallSessionSuffix = ".paywall.json"
 
+func screenshotBase(sessionPath string) string {
+	if strings.HasSuffix(sessionPath, paywallSessionSuffix) {
+		return strings.TrimSuffix(sessionPath, paywallSessionSuffix)
+	}
+	return strings.TrimSuffix(sessionPath, filepath.Ext(sessionPath))
+}
+
 // Minimal valid editor state for a brand-new paywall, mirroring the
 // dashboard's buildMinimalPaywall test helper: an empty root stack on a
 // white background, no fonts or presets yet.
@@ -374,7 +381,7 @@ func newPaywallsRewindCmd() *cobra.Command {
 				return err
 			}
 			// Drop saved screenshots — they show the pre-rewind design.
-			base := strings.TrimSuffix(sessionPath, filepath.Ext(sessionPath))
+			base := screenshotBase(sessionPath)
 			os.Remove(base + ".light.png")
 			os.Remove(base + ".dark.png")
 			rt.Out.Success("Rewound last editor action")
@@ -534,7 +541,7 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 // scheme. Best-effort: a decode or write failure warns, never fails the turn.
 func savePaywallScreenshots(rt *Runtime, sessionPath string, shots []paywallai.ResultScreenshot) map[string]string {
 	paths := map[string]string{}
-	base := strings.TrimSuffix(sessionPath, filepath.Ext(sessionPath))
+	base := screenshotBase(sessionPath)
 	for _, shot := range shots {
 		data, err := base64.StdEncoding.DecodeString(shot.DataBase64)
 		if err == nil {
