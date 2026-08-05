@@ -117,8 +117,12 @@ func writeJSONError(w io.Writer, err error) {
 	}
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	_ = enc.Encode(map[string]any{
+	if encErr := enc.Encode(map[string]any{
 		"error":          env,
 		"schema_version": 1,
-	})
+	}); encErr != nil {
+		// Last resort: the envelope failed to encode, but the process is already
+		// exiting non-zero — emit a hand-built line so stderr isn't silent.
+		fmt.Fprintf(w, "{\"error\":{\"type\":\"cli_error\",\"message\":%q},\"schema_version\":1}\n", err.Error())
+	}
 }
