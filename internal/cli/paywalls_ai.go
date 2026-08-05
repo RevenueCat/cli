@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/paywallai"
 	"github.com/revenuecat/cli/internal/tui"
 )
@@ -45,6 +46,22 @@ func screenshotBase(sessionPath string) string {
 		return strings.TrimSuffix(sessionPath, paywallSessionSuffix)
 	}
 	return strings.TrimSuffix(sessionPath, filepath.Ext(sessionPath))
+}
+
+// defaultPaywallSessionPath centralizes session files (and, alongside them,
+// preview screenshots) under the CLI data dir in a folder per paywall, so they
+// don't clutter — and get committed from — whatever working directory the
+// command ran in.
+func defaultPaywallSessionPath(projectID, paywallID string) (string, error) {
+	dir, err := config.Dir()
+	if err != nil {
+		return "", err
+	}
+	sessionDir := filepath.Join(dir, "paywalls", projectID, paywallID)
+	if err := os.MkdirAll(sessionDir, 0o700); err != nil {
+		return "", err
+	}
+	return filepath.Join(sessionDir, "session"+paywallSessionSuffix), nil
 }
 
 // Minimal valid editor state for a brand-new paywall, mirroring the
@@ -101,9 +118,9 @@ Each completed turn saves the design onto the RevenueCat paywall draft, and
 the editor state is also kept in a session file so follow-up edits retain the
 conversation: pass the same --session to rc paywalls edit. The editor may
 answer with a clarifying question instead of a design — reply with another
-edit turn. Each completed turn also writes a preview screenshot
-(<paywall-id>.light.png, plus .dark.png when the design has dark mode) next to
-the session file — look at it after every turn and keep iterating with edit
+edit turn. Each completed turn also writes a preview screenshot next to the
+session file (plus a dark-mode one when the design has dark mode); its path is
+shown in the output — look at it after every turn and keep iterating with edit
 turns until the design is right. The draft stays unpublished; review it and
 run rc paywalls publish.`,
 		Example: `  rc paywalls generate
@@ -173,7 +190,10 @@ run rc paywalls publish.`,
 				SessionItems:     json.RawMessage(`{}`),
 			}
 			if opts.sessionPath == "" {
-				opts.sessionPath = paywall.ID + paywallSessionSuffix
+				opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywall.ID)
+				if err != nil {
+					return err
+				}
 			}
 			return runPaywallAI(cmd.Context(), rt, opts, session)
 		},
@@ -217,10 +237,10 @@ Using it well:
   - The Paywall AI editor may reply with a clarifying question instead of a design (it
     appears in the streamed activity / the --json activity array). Answer it
     with another edit turn on the same session.
-  - Each completed turn writes <paywall-id>.light.png (and .dark.png when
-    the design has dark mode) next to the session file. Look at it after
-    every turn: judge the result against the direction, then follow up
-    with more edit turns until it looks right.
+  - Each completed turn writes a preview screenshot next to the session file
+    (and a dark-mode one when the design has dark mode); its path is shown in
+    the output. Look at it after every turn: judge the result against the
+    direction, then follow up with more edit turns until it looks right.
   - Turns take one to several minutes and stream progress; run with an
     extended timeout (--timeout) or in the background rather than polling.
   - Undo the last turn:  rc paywalls rewind --session <file>`,
@@ -255,7 +275,9 @@ Using it well:
 					return perr
 				}
 				session, err = seedSessionFromServer(cmd.Context(), rt, projectID, paywallID)
-				opts.sessionPath = paywallID + paywallSessionSuffix
+				if err == nil {
+					opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywallID)
+				}
 			default:
 				return fmt.Errorf("pass a paywall ID or --session <file>")
 			}
@@ -397,7 +419,7 @@ func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "natural-language direction (or RC_PAYWALL_PROMPT)")
 	cmd.Flags().StringVar(&opts.context, "context", "", "product/audience/brand context sent alongside the direction")
 	cmd.Flags().StringArrayVar(&opts.attachments, "attachment", nil, "design reference file: images (png/jpeg/webp) attach visually, text files (DESIGN.md, style guides) travel with the direction")
-	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: <paywall-id>.paywall.json)")
+	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: in the CLI data dir, per project and paywall)")
 	cmd.Flags().StringArrayVar(&opts.images, "image", nil, "reference image to attach (png/jpeg/webp, max 3)")
 	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Paywall AI editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait")
@@ -405,6 +427,9 @@ func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 
 // runPaywallAI streams one editor turn and persists the updated session file.
 func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession) error {
+	if abs, err := filepath.Abs(opts.sessionPath); err == nil {
+		opts.sessionPath = abs
+	}
 	client, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
 		return err

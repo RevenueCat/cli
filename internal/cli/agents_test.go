@@ -540,6 +540,50 @@ func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
 	}
 }
 
+// With no --session, the session file and its screenshots land under the CLI
+// data dir (paywalls/<project>/<paywall>/), and every surfaced path is absolute.
+func TestPaywallsGenerate_DefaultsToDataDir(t *testing.T) {
+	apiURL, paywallAIURL, _, _ := paywallAITestServers(t, "ofrng_default")
+	t.Setenv("RC_BASE_URL", apiURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIURL)
+
+	stdout, _, err := runAgentCmd(t,
+		"paywalls", "generate", "--offering-id", "ofrng_default",
+		"--prompt", "A calm annual-first paywall",
+		"--project-id", "proj1",
+		"--json", "--no-input", "--api-key", "sk_test",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var envelope struct {
+		Data struct {
+			SessionFile     string            `json:"session_file"`
+			ScreenshotPaths map[string]string `json:"screenshot_paths"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
+		t.Fatalf("stdout not JSON: %v\n%s", err, stdout)
+	}
+	sf := envelope.Data.SessionFile
+	if !filepath.IsAbs(sf) {
+		t.Fatalf("session_file must be absolute, got %q", sf)
+	}
+	if !strings.Contains(sf, filepath.Join("paywalls", "proj1", "pw_new")) || filepath.Base(sf) != "session.paywall.json" {
+		t.Fatalf("session_file not centralized per project/paywall: %q", sf)
+	}
+	if _, err := os.Stat(sf); err != nil {
+		t.Fatalf("session file not written: %v", err)
+	}
+	shot := envelope.Data.ScreenshotPaths["light"]
+	if !filepath.IsAbs(shot) || filepath.Base(shot) != "session.light.png" {
+		t.Fatalf("screenshot must be absolute and beside the session, got %q", shot)
+	}
+	if _, err := os.Stat(shot); err != nil {
+		t.Fatalf("screenshot not written: %v", err)
+	}
+}
+
 // An offering can only have one paywall, which the server enforces with a 409.
 func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
