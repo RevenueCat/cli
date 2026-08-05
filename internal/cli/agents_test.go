@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -539,8 +540,7 @@ func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
 	}
 }
 
-// An offering can only have one paywall; the server's bare 409 must come back
-// as a one-line explanation, with the ways out hinted on stderr.
+// An offering can only have one paywall, which the server enforces with a 409.
 func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -550,7 +550,7 @@ func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	t.Cleanup(server.Close)
 	t.Setenv("RC_BASE_URL", server.URL)
 
-	_, stderr, err := runAgentCmd(t,
+	_, _, err := runAgentCmd(t,
 		"paywalls", "generate", "--offering-id", "ofrng_default",
 		"--prompt", "A calm annual-first paywall",
 		"--project-id", "proj1", "--no-input", "--api-key", "sk_test",
@@ -558,8 +558,9 @@ func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "ofrng_default already has a paywall") {
 		t.Fatalf("err = %v", err)
 	}
-	if !strings.Contains(stderr, "omit --offering-id") {
-		t.Fatalf("stderr missing hint: %q", stderr)
+	var hinted interface{ Hint() string }
+	if !errors.As(err, &hinted) || !strings.Contains(hinted.Hint(), "omit --offering-id") {
+		t.Fatalf("recovery hint not attached to error: %v", err)
 	}
 }
 

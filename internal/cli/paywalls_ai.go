@@ -127,9 +127,10 @@ run rc paywalls publish.`,
 				// that as a bare 409.
 				var apiErr *api.APIError
 				if opts.offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
-					rt.Out.Hint("Generate against another offering, or omit --offering-id to create a standalone draft and attach it in the dashboard later")
-					rt.Out.Hint("Or delete the existing paywall:  rc paywalls list, then rc paywalls delete <id>")
-					return fmt.Errorf("creating draft paywall: offering %s already has a paywall (an offering can only have one): %w", opts.offeringID, err)
+					return WithHint(
+						fmt.Errorf("creating draft paywall: offering %s already has a paywall (an offering can only have one): %w", opts.offeringID, err),
+						"Generate against another offering, omit --offering-id to create a standalone draft and attach it in the dashboard later, or delete the existing paywall (rc paywalls list, then rc paywalls delete <id>).",
+					)
 				}
 				return fmt.Errorf("creating draft paywall: %w", err)
 			}
