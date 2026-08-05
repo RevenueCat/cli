@@ -60,6 +60,21 @@ func defaultPaywallSessionPath(projectID, paywallID string) (string, error) {
 	return filepath.Join(sessionDir, "session"+paywallSessionSuffix), nil
 }
 
+func pickOfferingOrStandalone(ctx context.Context, rt *Runtime, client *api.Client, projectID string) (string, error) {
+	if rt.Globals.NoInput || !tui.IsInteractive() {
+		return "", nil
+	}
+	offerings, err := offeringPickerItems(ctx, client, projectID)
+	if err != nil {
+		return "", err
+	}
+	items := append([]PickerItem{{ID: "", Label: "Standalone (no offering)"}}, offerings...)
+	if len(items) == 1 {
+		return "", nil
+	}
+	return selectID(rt, "offering", items, "")
+}
+
 // Minimal valid editor state for a brand-new paywall, mirroring the
 // dashboard's buildMinimalPaywall test helper: an empty root stack on a
 // white background, no fonts or presets yet.
@@ -136,6 +151,12 @@ run rc paywalls publish.`,
 			if err := requirePaywallAIPrompt(rt, &opts.prompt, "Describe the paywall you want"); err != nil {
 				return err
 			}
+			if opts.offeringID == "" {
+				opts.offeringID, err = pickOfferingOrStandalone(cmd.Context(), rt, client, projectID)
+				if err != nil {
+					return err
+				}
+			}
 
 			paywall, err := client.Paywalls.CreateFromComponents(cmd.Context(), projectID, api.PaywallComponentsCreate{
 				OfferingID:              opts.offeringID,
@@ -195,7 +216,7 @@ run rc paywalls publish.`,
 		},
 	}
 	addPaywallAIFlags(cmd, &opts)
-	cmd.Flags().StringVar(&opts.offeringID, "offering-id", opts.offeringID, "offering to attach (or RC_OFFERING_ID)")
+	cmd.Flags().StringVar(&opts.offeringID, "offering-id", opts.offeringID, "offering to attach (or RC_OFFERING_ID); prompts if omitted in a TTY")
 	cmd.Flags().StringVar(&opts.name, "name", "", "paywall name")
 	return cmd
 }
