@@ -125,11 +125,11 @@ rc products store apply "$plan_id" --yes --json --no-input
 # Or: rc products store discard "$plan_id" --yes --json --no-input
 ```
 
-Do not rerun `plan` after reviewing it; apply the returned ID. Khepri, rather
-than the local filesystem, is the durable handoff. A future `.revenuecat`
+Do not rerun `plan` after reviewing it; apply the returned ID. The backend,
+rather than the local filesystem, is the durable handoff. A future `.revenuecat`
 workspace may provide optional defaults, but it is never required and desired
 state is never silently stored globally. `RC_STORE_STATE_FILE` can replace
-`--file`. A full canonical CSV exported by Khepri is accepted:
+`--file`. A full canonical CSV exported by the backend is accepted:
 
 ```csv
 row_type,store,store_identifier,product_type,display_name,title,duration,territory,amount,currency,start_date,available,available_in_new_territories,locale,localized_name,localized_description
@@ -137,8 +137,8 @@ price,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium Monthly
 localization,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium Monthly,P1M,,,,,,,en-US,Premium Monthly,Monthly premium access
 ```
 
-These v2 endpoints are still development-only and require Khepri's
-`PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag.
+These v2 endpoints are still development-only and require a backend feature
+flag.
 
 ### Apple credential setup (experimental)
 

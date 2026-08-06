@@ -222,7 +222,7 @@ func paywallAITestServers(t *testing.T, offeringID string) (apiURL, paywallAIURL
 	}
 	var created []map[string]any
 	var patched []map[string]any
-	// The draft revision is stateful like khepri's: GET serves the current
+	// The draft revision is stateful like the backend's: GET serves the current
 	// one, a PATCH must carry it (the conflict guard) and bumps it.
 	revision := 3
 	paywallJSON := func() string { return paywallResponseJSON(offeringJSON, revision) }
@@ -487,7 +487,7 @@ func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
 // A dashboard edit that lands during generate's multi-minute design turn must
 // surface as a conflict, not be clobbered: the PATCH carries the revision
 // fetched once at create time — refetching at persist would sail past
-// khepri's conflict guard.
+// the backend's conflict guard.
 func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
 	gets := 0
 	var patched []map[string]any
@@ -665,7 +665,7 @@ func TestPaywallsEdit_StaleSessionStopsBeforeDesignTurn(t *testing.T) {
 }
 
 // The PATCH must carry the session's own revision — not a freshly fetched
-// one — or khepri's conflict guard can never fire for a stale session. The
+// one — or the backend's conflict guard can never fire for a stale session. The
 // single GET is the preflight; persist itself must not refetch.
 func TestPaywallsEdit_PatchCarriesSessionRevision(t *testing.T) {
 	gets := 0
