@@ -20,7 +20,7 @@ func mediaAssetServer(t *testing.T) *httptest.Server {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		io.WriteString(w, `{"object":"media_asset","id":"medas_abc","object_name":"media/proj/tiny.png","original_name":"tiny.png","original_size":1,"original_width":null,"original_height":null,"formats":null,"alt_text":null,"is_decorative":false,"asset_base_url":null,"asset_type":"image","video_metadata":null,"transcoding_status":null}`)
+		io.WriteString(w, `{"object":"media_asset","id":"medas_abc","object_name":"media/proj/tiny.png","original_name":"tiny.png","original_size":1,"original_width":null,"original_height":null,"formats":null,"alt_text":null,"is_decorative":false,"asset_base_url":"https://assets.example.com","asset_type":"image","video_metadata":null,"transcoding_status":null}`)
 	}))
 	t.Cleanup(srv.Close)
 	return srv
@@ -76,8 +76,8 @@ func TestMediaAssetsUpload_Human(t *testing.T) {
 	if !strings.Contains(stderr, "Uploaded medas_abc (tiny.png, 1 KB)") {
 		t.Fatalf("stderr missing success line: %s", stderr)
 	}
-	if !strings.Contains(stderr, "media/proj/tiny.png") {
-		t.Fatalf("stderr missing object_name hint: %s", stderr)
+	if !strings.Contains(stderr, "https://assets.example.com/media/proj/tiny.png") {
+		t.Fatalf("stderr missing asset URL hint: %s", stderr)
 	}
 	if !strings.Contains(stdout, "medas_abc") {
 		t.Fatalf("stdout missing rendered asset: %s", stdout)

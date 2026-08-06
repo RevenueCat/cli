@@ -84,7 +84,10 @@ func newMediaAssetsUploadCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Uploaded %s (%s, %d KB)", asset.ID, asset.OriginalName, asset.OriginalSize))
-			rt.Out.Hint("Reference it from paywall components as " + asset.ObjectName)
+			// Paywall components store the full URL, not the bare object name.
+			if asset.AssetBaseURL != nil {
+				rt.Out.Hint("Reference it from paywall components as " + *asset.AssetBaseURL + "/" + asset.ObjectName)
+			}
 			return rt.Out.Render(asset)
 		},
 	}
