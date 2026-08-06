@@ -38,26 +38,3 @@ func newMetricsCmd() *cobra.Command {
 		},
 	}
 }
-
-func newBenchmarksCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "benchmarks",
-		Short: "Show project benchmarks",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			rt := RuntimeFrom(cmd.Context())
-			projectID, err := requireProject(rt)
-			if err != nil {
-				return err
-			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
-			b, err := client.Benchmarks.Get(cmd.Context(), projectID)
-			if err != nil {
-				return err
-			}
-			return rt.Out.Render(b)
-		},
-	}
-}
