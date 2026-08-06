@@ -49,9 +49,11 @@ jobs:
           run_diff() {
             local label="$1" old="$2" new="$3"
             shift 3
-            # exit 0 = identical, 1 = changes found, anything else = real error
-            section=$(python3 scripts/spec-diff.py "$old" "$new" --title "$label" "$@")
-            status=$?
+            # exit 0 = identical, 1 = changes found, anything else = real error.
+            # `|| status=$?` keeps the expected non-zero (changes found) from
+            # tripping the step's `set -e` before we can handle it.
+            local status=0
+            section=$(python3 scripts/spec-diff.py "$old" "$new" --title "$label" "$@") || status=$?
             if [ "$status" -eq 1 ]; then
               SUMMARY="${SUMMARY}${section}
 
