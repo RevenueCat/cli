@@ -42,9 +42,30 @@ func Run(version string) int {
 	return ExitCodeFor(err)
 }
 
+type hintError struct {
+	err  error
+	hint string
+}
+
+func (e *hintError) Error() string { return e.err.Error() }
+func (e *hintError) Unwrap() error { return e.err }
+func (e *hintError) Hint() string  { return e.hint }
+
+func WithHint(err error, hint string) error {
+	if err == nil {
+		return nil
+	}
+	return &hintError{err: err, hint: hint}
+}
+
 // hintFor surfaces the actionable next-step text for an error. Pulled out so
 // both human stderr and the JSON envelope use the same source of truth.
 func hintFor(err error) string {
+	// Precedence: an attached hint wins over the fallbacks below.
+	var hinted *hintError
+	if errors.As(err, &hinted) && hinted.hint != "" {
+		return hinted.hint
+	}
 	var apiErr *api.APIError
 	if errors.As(err, &apiErr) {
 		return apiErr.Hint()
@@ -96,8 +117,12 @@ func writeJSONError(w io.Writer, err error) {
 	}
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	_ = enc.Encode(map[string]any{
+	if encErr := enc.Encode(map[string]any{
 		"error":          env,
 		"schema_version": 1,
-	})
+	}); encErr != nil {
+		// Last resort: the envelope failed to encode, but the process is already
+		// exiting non-zero — emit a hand-built line so stderr isn't silent.
+		fmt.Fprintf(w, "{\"error\":{\"type\":\"cli_error\",\"message\":%q},\"schema_version\":1}\n", err.Error())
+	}
 }

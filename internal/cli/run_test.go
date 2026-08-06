@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -115,6 +116,39 @@ func TestWriteJSONError_RetryAfterPropagates(t *testing.T) {
 	}
 	if !strings.Contains(got.Error.Hint, "30 seconds") {
 		t.Errorf("hint should mention 30 seconds, got %q", got.Error.Hint)
+	}
+}
+
+func TestWriteJSONError_CarriesAttachedHint(t *testing.T) {
+	var buf bytes.Buffer
+	writeJSONError(&buf, WithHint(errors.New("offering already has a paywall"), "delete it first"))
+	var got struct {
+		Error struct {
+			Message string `json:"message"`
+			Hint    string `json:"hint"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, buf.String())
+	}
+	if got.Error.Message != "offering already has a paywall" {
+		t.Errorf("message should be the underlying error, got %q", got.Error.Message)
+	}
+	if got.Error.Hint != "delete it first" {
+		t.Errorf("attached hint should surface in envelope, got %q", got.Error.Hint)
+	}
+}
+
+func TestHintFor_AttachedHintBeatsAPIFallback(t *testing.T) {
+	wrapped := fmt.Errorf("creating draft: %w", &api.APIError{Status: 409, Type: "resource_already_exists", Message: "conflict"})
+	if got := hintFor(WithHint(wrapped, "omit --offering-id")); got != "omit --offering-id" {
+		t.Errorf("attached hint should win over APIError fallback, got %q", got)
+	}
+}
+
+func TestWithHint_NilPassesThrough(t *testing.T) {
+	if WithHint(nil, "unused") != nil {
+		t.Error("WithHint(nil, …) must return nil so it composes in a return position")
 	}
 }
 

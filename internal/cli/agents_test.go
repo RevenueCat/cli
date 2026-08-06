@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -209,11 +210,11 @@ func stubEditorServer(t *testing.T) (*httptest.Server, *int) {
 	return server, &requests
 }
 
-// astraTestServers stubs both the v2 API (draft creation) and the Paywall AI
+// paywallAITestServers stubs both the v2 API (draft creation) and the Paywall AI
 // editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
 // The editor stream echoes offering_id as null, as the live service does
 // after a template load.
-func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string, editorInputs, createInputs *[]map[string]any) {
+func paywallAITestServers(t *testing.T, offeringID string) (apiURL, paywallAIURL string, editorInputs, createInputs *[]map[string]any) {
 	t.Helper()
 	offeringJSON := "null"
 	if offeringID != "" {
@@ -261,9 +262,9 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 	t.Cleanup(apiServer.Close)
 
 	var inputs []map[string]any
-	astraServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	paywallAIServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/editor/v1/stream" {
-			t.Errorf("astra path = %s", r.URL.Path)
+			t.Errorf("paywall AI path = %s", r.URL.Path)
 			return
 		}
 		var input map[string]any
@@ -274,12 +275,12 @@ func astraTestServers(t *testing.T, offeringID string) (apiURL, astraURL string,
 		io.WriteString(w, "data: {\"type\":\"turn.snapshot\",\"session_id\":\"sess1\",\"turn_index\":0,\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}}],\"__unstable_session_items\":[{\"k\":1}]}\n\n")
 		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"trace_id\":\"tr1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero section\"}},{\"id\":\"a2\",\"type\":\"assistant_message\",\"content\":\"Done — calm annual-first layout.\"}],\"__unstable_session_items\":[{\"k\":2}],\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n")
 	}))
-	t.Cleanup(astraServer.Close)
-	return apiServer.URL, astraServer.URL, &inputs, &created
+	t.Cleanup(paywallAIServer.Close)
+	return apiServer.URL, paywallAIServer.URL, &inputs, &created
 }
 
 // runAgentCmd is runCmd without the env reset, so RC_BASE_URL /
-// RC_ASTRA_BASE_URL stubs set by the test survive.
+// RC_PAYWALL_AI_BASE_URL stubs set by the test survive.
 func runAgentCmd(t *testing.T, args ...string) (string, string, error) {
 	t.Helper()
 	t.Setenv("RC_CONFIG_DIR", t.TempDir())
@@ -293,9 +294,9 @@ func runAgentCmd(t *testing.T, args ...string) (string, string, error) {
 }
 
 func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
-	apiURL, astraURL, editorInputs, createInputs := astraTestServers(t, "ofrng_default")
+	apiURL, paywallAIURL, editorInputs, createInputs := paywallAITestServers(t, "ofrng_default")
 	t.Setenv("RC_BASE_URL", apiURL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIURL)
 
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "session.json")
@@ -397,9 +398,9 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 }
 
 func TestPaywallsGenerate_Standalone(t *testing.T) {
-	apiURL, astraURL, editorInputs, createInputs := astraTestServers(t, "")
+	apiURL, paywallAIURL, editorInputs, createInputs := paywallAITestServers(t, "")
 	t.Setenv("RC_BASE_URL", apiURL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIURL)
 	t.Setenv("RC_OFFERING_ID", "")
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
@@ -453,9 +454,9 @@ func TestPaywallsGenerate_Standalone(t *testing.T) {
 // reports the paywall attached even though generate ran standalone — the
 // session must pick up the server truth from the PATCH response.
 func TestPaywallsGenerate_RefreshesOfferingFromServer(t *testing.T) {
-	apiURL, astraURL, _, _ := astraTestServers(t, "ofrng_default")
+	apiURL, paywallAIURL, _, _ := paywallAITestServers(t, "ofrng_default")
 	t.Setenv("RC_BASE_URL", apiURL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIURL)
 	t.Setenv("RC_OFFERING_ID", "")
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
@@ -513,9 +514,9 @@ func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
 		}
 	}))
 	t.Cleanup(apiServer.Close)
-	astraServer, _ := stubEditorServer(t)
+	paywallAIServer, _ := stubEditorServer(t)
 	t.Setenv("RC_BASE_URL", apiServer.URL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIServer.URL)
 	t.Setenv("RC_OFFERING_ID", "")
 
 	stdout, _, err := runAgentCmd(t,
@@ -539,8 +540,51 @@ func TestPaywallsGenerate_DraftChangedDuringRun(t *testing.T) {
 	}
 }
 
-// An offering can only have one paywall; the server's bare 409 must come back
-// as a one-line explanation, with the ways out hinted on stderr.
+// With no --session, the session file and its screenshots land under the CLI
+// data dir (paywalls/<project>/<paywall>/), and every surfaced path is absolute.
+func TestPaywallsGenerate_DefaultsToDataDir(t *testing.T) {
+	apiURL, paywallAIURL, _, _ := paywallAITestServers(t, "ofrng_default")
+	t.Setenv("RC_BASE_URL", apiURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIURL)
+
+	stdout, _, err := runAgentCmd(t,
+		"paywalls", "generate", "--offering-id", "ofrng_default",
+		"--prompt", "A calm annual-first paywall",
+		"--project-id", "proj1",
+		"--json", "--no-input", "--api-key", "sk_test",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var envelope struct {
+		Data struct {
+			SessionFile     string            `json:"session_file"`
+			ScreenshotPaths map[string]string `json:"screenshot_paths"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
+		t.Fatalf("stdout not JSON: %v\n%s", err, stdout)
+	}
+	sf := envelope.Data.SessionFile
+	if !filepath.IsAbs(sf) {
+		t.Fatalf("session_file must be absolute, got %q", sf)
+	}
+	if !strings.Contains(sf, filepath.Join("paywalls", "proj1", "pw_new")) || filepath.Base(sf) != "session.paywall.json" {
+		t.Fatalf("session_file not centralized per project/paywall: %q", sf)
+	}
+	if _, err := os.Stat(sf); err != nil {
+		t.Fatalf("session file not written: %v", err)
+	}
+	shot := envelope.Data.ScreenshotPaths["light"]
+	if !filepath.IsAbs(shot) || filepath.Base(shot) != "session.light.png" {
+		t.Fatalf("screenshot must be absolute and beside the session, got %q", shot)
+	}
+	if _, err := os.Stat(shot); err != nil {
+		t.Fatalf("screenshot not written: %v", err)
+	}
+}
+
+// An offering can only have one paywall, which the server enforces with a 409.
 func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -550,7 +594,7 @@ func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	t.Cleanup(server.Close)
 	t.Setenv("RC_BASE_URL", server.URL)
 
-	_, stderr, err := runAgentCmd(t,
+	_, _, err := runAgentCmd(t,
 		"paywalls", "generate", "--offering-id", "ofrng_default",
 		"--prompt", "A calm annual-first paywall",
 		"--project-id", "proj1", "--no-input", "--api-key", "sk_test",
@@ -558,8 +602,9 @@ func TestPaywallsGenerate_OfferingAlreadyHasPaywall(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "ofrng_default already has a paywall") {
 		t.Fatalf("err = %v", err)
 	}
-	if !strings.Contains(stderr, "omit --offering-id") {
-		t.Fatalf("stderr missing hint: %q", stderr)
+	var hinted interface{ Hint() string }
+	if !errors.As(err, &hinted) || !strings.Contains(hinted.Hint(), "omit --offering-id") {
+		t.Fatalf("recovery hint not attached to error: %v", err)
 	}
 }
 
@@ -590,9 +635,9 @@ func TestPaywallsEdit_StaleSessionStopsBeforeDesignTurn(t *testing.T) {
 		io.WriteString(w, paywallResponseJSON("null", 5))
 	}))
 	t.Cleanup(apiServer.Close)
-	astraServer, astraRequests := stubEditorServer(t)
+	paywallAIServer, paywallAIRequests := stubEditorServer(t)
 	t.Setenv("RC_BASE_URL", apiServer.URL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIServer.URL)
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
 	if err := os.WriteFile(sessionPath, []byte(staleTestSession), 0o600); err != nil {
@@ -607,8 +652,8 @@ func TestPaywallsEdit_StaleSessionStopsBeforeDesignTurn(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "pass --yes") {
 		t.Fatalf("err = %v", err)
 	}
-	if *astraRequests != 0 {
-		t.Fatalf("editor requests = %d, want 0 (no design turn on a stale session)", *astraRequests)
+	if *paywallAIRequests != 0 {
+		t.Fatalf("editor requests = %d, want 0 (no design turn on a stale session)", *paywallAIRequests)
 	}
 	payload, err := os.ReadFile(sessionPath)
 	if err != nil {
@@ -641,9 +686,9 @@ func TestPaywallsEdit_PatchCarriesSessionRevision(t *testing.T) {
 		}
 	}))
 	t.Cleanup(apiServer.Close)
-	astraServer, _ := stubEditorServer(t)
+	paywallAIServer, _ := stubEditorServer(t)
 	t.Setenv("RC_BASE_URL", apiServer.URL)
-	t.Setenv("RC_ASTRA_BASE_URL", astraServer.URL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIServer.URL)
 
 	sessionPath := filepath.Join(t.TempDir(), "session.json")
 	if err := os.WriteFile(sessionPath, []byte(staleTestSession), 0o600); err != nil {
