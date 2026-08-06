@@ -85,7 +85,6 @@ func TestMediaAssetsUpload_Human(t *testing.T) {
 }
 
 func TestMediaAssetsUpload_ValidationErrors(t *testing.T) {
-	// No server: validation must fail before any network call.
 	cases := []struct {
 		name, file string
 		data       []byte
