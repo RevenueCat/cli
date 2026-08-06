@@ -47,7 +47,7 @@ gen: ## Regenerate API types from OpenAPI spec
 	else \
 		PYTHON=python3; \
 	fi; \
-	$$PYTHON scripts/preprocess-spec.py docs/specs/v2-developer.yaml /tmp/v2-clean.yaml
+	$$PYTHON scripts/preprocess-spec.py docs/specs/v2-developer.yaml /tmp/v2-clean.yaml docs/specs/v2-beta-overlay.yaml
 	go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen \
 		--config oapi-codegen.yaml /tmp/v2-clean.yaml
 
