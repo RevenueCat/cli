@@ -6,12 +6,8 @@ import (
 	"strings"
 )
 
-// ParseHeaders reads newline-separated "Name: Value" pairs — e.g. from the
-// RC_HEADERS env var — into an http.Header. Blank lines and lines without a
-// colon are skipped; names and values are trimmed. Later duplicates win.
-//
-// This lets an operator send arbitrary headers on every request without the
-// header name being baked into the binary (RC_HEADERS=$'X-Some-Header: value').
+// ParseHeaders parses newline-separated "Name: Value" pairs into an http.Header,
+// skipping blank or colon-less lines. Returns nil when none are found.
 func ParseHeaders(s string) http.Header {
 	h := http.Header{}
 	for _, line := range strings.Split(s, "\n") {
@@ -28,9 +24,7 @@ func ParseHeaders(s string) http.Header {
 	return h
 }
 
-// Apply sets every header in h onto req, overriding any existing value. Callers
-// invoke it after setting the standard headers so operator-supplied headers take
-// precedence.
+// Apply sets each header from h on req, overriding existing values.
 func Apply(req *http.Request, h http.Header) {
 	for name, values := range h {
 		for i, v := range values {

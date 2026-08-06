@@ -90,9 +90,6 @@ func (r *Runtime) API() (*api.Client, error) {
 	return r.client, nil
 }
 
-// customHeaders reads RC_HEADERS (newline-separated "Name: Value" pairs) into
-// headers sent on every RevenueCat request. Lets an operator route or tag
-// traffic without the header name being compiled into the binary.
 func customHeaders() http.Header {
 	return httpx.ParseHeaders(os.Getenv("RC_HEADERS"))
 }

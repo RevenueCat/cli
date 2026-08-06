@@ -9,8 +9,6 @@ import (
 	"github.com/revenuecat/cli/internal/api"
 )
 
-// ExtraHeaders (sourced from RC_HEADERS) must ride on every request, including
-// the Raw passthrough used by `rc api`.
 func TestExtraHeadersSentOnEveryRequest(t *testing.T) {
 	var got string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

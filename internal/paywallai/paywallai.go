@@ -117,8 +117,7 @@ type Options struct {
 	Token     string
 	UserAgent string
 	// HTTPClient overrides both REST and streaming transports (tests).
-	HTTPClient *http.Client
-	// ExtraHeaders are sent on every request (from RC_HEADERS).
+	HTTPClient   *http.Client
 	ExtraHeaders http.Header
 }
 

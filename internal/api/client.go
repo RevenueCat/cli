@@ -27,13 +27,10 @@ import (
 const DefaultBaseURL = "https://api.revenuecat.com/v2"
 
 type Options struct {
-	APIKey     string
-	BaseURL    string
-	HTTPClient *http.Client
-	UserAgent  string
-	// ExtraHeaders are sent on every request, overriding the defaults. Sourced
-	// from RC_HEADERS so operators can route or tag requests without the header
-	// name living in the binary.
+	APIKey       string
+	BaseURL      string
+	HTTPClient   *http.Client
+	UserAgent    string
 	ExtraHeaders http.Header
 }
 
