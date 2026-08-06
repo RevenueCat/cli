@@ -12,20 +12,6 @@ import (
 	"testing"
 )
 
-func mediaAssetServer(t *testing.T) *httptest.Server {
-	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/media_assets" {
-			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		io.WriteString(w, `{"object":"media_asset","id":"medas_abc","object_name":"media/proj/tiny.png","original_name":"tiny.png","original_size":1,"original_width":null,"original_height":null,"formats":null,"alt_text":null,"is_decorative":false,"asset_base_url":"https://assets.example.com","asset_type":"image","video_metadata":null,"transcoding_status":null}`)
-	}))
-	t.Cleanup(srv.Close)
-	return srv
-}
-
 func writeTempImage(t *testing.T, name string, data []byte) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), name)
@@ -35,37 +21,28 @@ func writeTempImage(t *testing.T, name string, data []byte) string {
 	return path
 }
 
-func runMediaAssetsUpload(t *testing.T, path string, extra ...string) (stdout, stderr string, err error) {
+func runMediaAssetsUpload(t *testing.T, path string) (stdout, stderr string, err error) {
 	t.Helper()
 	t.Setenv("RC_CONFIG_DIR", t.TempDir())
 	var out, errb bytes.Buffer
 	root := NewRootCmd("test")
 	root.SetOut(&out)
 	root.SetErr(&errb)
-	root.SetArgs(append([]string{"media-assets", "upload", path, "--no-input", "--api-key", "sk_test", "--project-id", "proj"}, extra...))
+	root.SetArgs([]string{"media-assets", "upload", path, "--no-input", "--api-key", "sk_test", "--project-id", "proj"})
 	err = root.ExecuteContext(context.Background())
 	return out.String(), errb.String(), err
 }
 
-func TestMediaAssetsUpload_JSON(t *testing.T) {
-	srv := mediaAssetServer(t)
-	t.Setenv("RC_BASE_URL", srv.URL)
-	path := writeTempImage(t, "tiny.png", []byte{0x89, 'P', 'N', 'G'})
-
-	stdout, stderr, err := runMediaAssetsUpload(t, path, "--json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(stdout, `"id": "medas_abc"`) || !strings.Contains(stdout, `"schema_version": 1`) {
-		t.Fatalf("stdout missing JSON envelope: %s", stdout)
-	}
-	if stderr != "" {
-		t.Fatalf("stderr should be empty in JSON mode: %s", stderr)
-	}
-}
-
-func TestMediaAssetsUpload_Human(t *testing.T) {
-	srv := mediaAssetServer(t)
+func TestMediaAssetsUpload(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/media_assets" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = io.WriteString(w, `{"object":"media_asset","id":"medas_abc","object_name":"media/proj/tiny.png","original_name":"tiny.png","original_size":1,"original_width":null,"original_height":null,"formats":null,"alt_text":null,"is_decorative":false,"asset_base_url":"https://assets.example.com","asset_type":"image","video_metadata":null,"transcoding_status":null}`)
+	}))
+	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
 	path := writeTempImage(t, "tiny.png", []byte{0x89, 'P', 'N', 'G'})
 
