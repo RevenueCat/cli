@@ -42,7 +42,7 @@ func TestMediaAssetsCreate(t *testing.T) {
 			"original_size": 1,
 			"original_width": 32,
 			"original_height": 16,
-			"formats": {"webp": {"object_name": "media/proj/logo.webp", "size": 512, "width": 32, "height": 16}},
+			"formats": {"webp": {"object": "media_asset_format", "object_name": "media/proj/logo.webp", "size": 512, "width": 32, "height": null}},
 			"alt_text": null,
 			"is_decorative": false,
 			"asset_base_url": "https://assets.example.com",
@@ -72,7 +72,10 @@ func TestMediaAssetsCreate(t *testing.T) {
 		t.Fatalf("nullable fields should be nil: %+v", asset)
 	}
 	f, ok := asset.Formats["webp"]
-	if !ok || f.ObjectName != "media/proj/logo.webp" || f.Size != 512 {
+	if !ok || f.ObjectName != "media/proj/logo.webp" || f.Size != 512 || f.Object != "media_asset_format" {
 		t.Fatalf("unexpected formats: %+v", asset.Formats)
+	}
+	if f.Width == nil || *f.Width != 32 || f.Height != nil {
+		t.Fatalf("format dimensions = %v/%v, want 32/nil", f.Width, f.Height)
 	}
 }
