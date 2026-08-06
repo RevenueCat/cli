@@ -14,11 +14,28 @@ Rewrites them as:
       allOf:
         - { $ref: '#/components/schemas/SomeSchema' }
 
-Usage: python3 scripts/preprocess-spec.py INPUT OUTPUT
+It also merges any beta overlay specs (see DX-880) on top of the base spec
+before the fix runs, so endpoints the CLI uses that are absent from the public
+spec (the store_state family) are present for codegen and diffing. The merge is
+additive — the public spec always wins on conflicts — so the overlay only fills
+gaps.
+
+Usage: python3 scripts/preprocess-spec.py INPUT OUTPUT [OVERLAY ...]
 """
 
 import sys
 import yaml
+
+
+def merge_overlay(base, overlay):
+    """Add overlay paths + components into base, without overwriting existing
+    keys (the public spec is authoritative)."""
+    for path, item in overlay.get("paths", {}).items():
+        base.setdefault("paths", {}).setdefault(path, item)
+    for ctype, entries in overlay.get("components", {}).items():
+        dest = base.setdefault("components", {}).setdefault(ctype, {})
+        for name, node in entries.items():
+            dest.setdefault(name, node)
 
 
 def fix_nullable_allof(obj):
@@ -51,14 +68,19 @@ def fix_nullable_allof(obj):
 
 
 def main():
-    if len(sys.argv) != 3:
-        print(f"Usage: {sys.argv[0]} INPUT OUTPUT", file=sys.stderr)
+    if len(sys.argv) < 3:
+        print(f"Usage: {sys.argv[0]} INPUT OUTPUT [OVERLAY ...]", file=sys.stderr)
         sys.exit(1)
 
     input_path, output_path = sys.argv[1], sys.argv[2]
+    overlay_paths = sys.argv[3:]
 
     with open(input_path) as f:
         spec = yaml.safe_load(f)
+
+    for overlay_path in overlay_paths:
+        with open(overlay_path) as f:
+            merge_overlay(spec, yaml.safe_load(f))
 
     spec = fix_nullable_allof(spec)
 

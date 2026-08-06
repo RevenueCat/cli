@@ -1017,28 +1017,28 @@ func (e Country) Valid() bool {
 
 // Defines values for CreateAppStoreConnectSubscriptionInputDuration.
 const (
-	ONEMONTH    CreateAppStoreConnectSubscriptionInputDuration = "ONE_MONTH"
-	ONEWEEK     CreateAppStoreConnectSubscriptionInputDuration = "ONE_WEEK"
-	ONEYEAR     CreateAppStoreConnectSubscriptionInputDuration = "ONE_YEAR"
-	SIXMONTHS   CreateAppStoreConnectSubscriptionInputDuration = "SIX_MONTHS"
-	THREEMONTHS CreateAppStoreConnectSubscriptionInputDuration = "THREE_MONTHS"
-	TWOMONTHS   CreateAppStoreConnectSubscriptionInputDuration = "TWO_MONTHS"
+	CreateAppStoreConnectSubscriptionInputDurationONEMONTH    CreateAppStoreConnectSubscriptionInputDuration = "ONE_MONTH"
+	CreateAppStoreConnectSubscriptionInputDurationONEWEEK     CreateAppStoreConnectSubscriptionInputDuration = "ONE_WEEK"
+	CreateAppStoreConnectSubscriptionInputDurationONEYEAR     CreateAppStoreConnectSubscriptionInputDuration = "ONE_YEAR"
+	CreateAppStoreConnectSubscriptionInputDurationSIXMONTHS   CreateAppStoreConnectSubscriptionInputDuration = "SIX_MONTHS"
+	CreateAppStoreConnectSubscriptionInputDurationTHREEMONTHS CreateAppStoreConnectSubscriptionInputDuration = "THREE_MONTHS"
+	CreateAppStoreConnectSubscriptionInputDurationTWOMONTHS   CreateAppStoreConnectSubscriptionInputDuration = "TWO_MONTHS"
 )
 
 // Valid indicates whether the value is a known member of the CreateAppStoreConnectSubscriptionInputDuration enum.
 func (e CreateAppStoreConnectSubscriptionInputDuration) Valid() bool {
 	switch e {
-	case ONEMONTH:
+	case CreateAppStoreConnectSubscriptionInputDurationONEMONTH:
 		return true
-	case ONEWEEK:
+	case CreateAppStoreConnectSubscriptionInputDurationONEWEEK:
 		return true
-	case ONEYEAR:
+	case CreateAppStoreConnectSubscriptionInputDurationONEYEAR:
 		return true
-	case SIXMONTHS:
+	case CreateAppStoreConnectSubscriptionInputDurationSIXMONTHS:
 		return true
-	case THREEMONTHS:
+	case CreateAppStoreConnectSubscriptionInputDurationTHREEMONTHS:
 		return true
-	case TWOMONTHS:
+	case CreateAppStoreConnectSubscriptionInputDurationTWOMONTHS:
 		return true
 	default:
 		return false
@@ -2064,28 +2064,28 @@ func (e DiscountPercentageVariantType) Valid() bool {
 
 // Defines values for Duration.
 const (
-	P1M Duration = "P1M"
-	P1W Duration = "P1W"
-	P1Y Duration = "P1Y"
-	P2M Duration = "P2M"
-	P3M Duration = "P3M"
-	P6M Duration = "P6M"
+	DurationP1M Duration = "P1M"
+	DurationP1W Duration = "P1W"
+	DurationP1Y Duration = "P1Y"
+	DurationP2M Duration = "P2M"
+	DurationP3M Duration = "P3M"
+	DurationP6M Duration = "P6M"
 )
 
 // Valid indicates whether the value is a known member of the Duration enum.
 func (e Duration) Valid() bool {
 	switch e {
-	case P1M:
+	case DurationP1M:
 		return true
-	case P1W:
+	case DurationP1W:
 		return true
-	case P1Y:
+	case DurationP1Y:
 		return true
-	case P2M:
+	case DurationP2M:
 		return true
-	case P3M:
+	case DurationP3M:
 		return true
-	case P6M:
+	case DurationP6M:
 		return true
 	default:
 		return false
@@ -2791,6 +2791,402 @@ func (e PlayStoreAppCreateType) Valid() bool {
 	}
 }
 
+// Defines values for PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode.
+const (
+	PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationModeLessThanNil                                         PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode = "<nil>"
+	PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODECHARGEFULLPRICEIMMEDIATELY PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode = "SUBSCRIPTION_PRORATION_MODE_CHARGE_FULL_PRICE_IMMEDIATELY"
+	PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODECHARGEONNEXTBILLINGDATE    PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode = "SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE"
+	PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODEUNSPECIFIED                PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode = "SUBSCRIPTION_PRORATION_MODE_UNSPECIFIED"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode enum.
+func (e PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode) Valid() bool {
+	switch e {
+	case PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationModeLessThanNil:
+		return true
+	case PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODECHARGEFULLPRICEIMMEDIATELY:
+		return true
+	case PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODECHARGEONNEXTBILLINGDATE:
+		return true
+	case PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODEUNSPECIFIED:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState.
+const (
+	PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeStateLessThanNil                 PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState = "<nil>"
+	PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeStateRESUBSCRIBESTATEACTIVE      PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState = "RESUBSCRIBE_STATE_ACTIVE"
+	PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeStateRESUBSCRIBESTATEINACTIVE    PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState = "RESUBSCRIBE_STATE_INACTIVE"
+	PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeStateRESUBSCRIBESTATEUNSPECIFIED PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState = "RESUBSCRIBE_STATE_UNSPECIFIED"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState enum.
+func (e PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState) Valid() bool {
+	switch e {
+	case PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeStateLessThanNil:
+		return true
+	case PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeStateRESUBSCRIBESTATEACTIVE:
+		return true
+	case PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeStateRESUBSCRIBESTATEINACTIVE:
+		return true
+	case PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeStateRESUBSCRIBESTATEUNSPECIFIED:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode.
+const (
+	PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationModeLessThanNil                                         PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode = "<nil>"
+	PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODECHARGEFULLPRICEIMMEDIATELY PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode = "SUBSCRIPTION_PRORATION_MODE_CHARGE_FULL_PRICE_IMMEDIATELY"
+	PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODECHARGEONNEXTBILLINGDATE    PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode = "SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE"
+	PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODEUNSPECIFIED                PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode = "SUBSCRIPTION_PRORATION_MODE_UNSPECIFIED"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode enum.
+func (e PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode) Valid() bool {
+	switch e {
+	case PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationModeLessThanNil:
+		return true
+	case PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODECHARGEFULLPRICEIMMEDIATELY:
+		return true
+	case PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODECHARGEONNEXTBILLINGDATE:
+		return true
+	case PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationModeSUBSCRIPTIONPRORATIONMODEUNSPECIFIED:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType.
+const (
+	RENEWALTYPERENEWSWITHCOMMITMENT    PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType = "RENEWAL_TYPE_RENEWS_WITH_COMMITMENT"
+	RENEWALTYPERENEWSWITHOUTCOMMITMENT PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType = "RENEWAL_TYPE_RENEWS_WITHOUT_COMMITMENT"
+	RENEWALTYPEUNSPECIFIED             PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType = "RENEWAL_TYPE_UNSPECIFIED"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType enum.
+func (e PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType) Valid() bool {
+	switch e {
+	case RENEWALTYPERENEWSWITHCOMMITMENT:
+		return true
+	case RENEWALTYPERENEWSWITHOUTCOMMITMENT:
+		return true
+	case RENEWALTYPEUNSPECIFIED:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState.
+const (
+	PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeStateLessThanNil                 PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState = "<nil>"
+	PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeStateRESUBSCRIBESTATEACTIVE      PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState = "RESUBSCRIBE_STATE_ACTIVE"
+	PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeStateRESUBSCRIBESTATEINACTIVE    PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState = "RESUBSCRIBE_STATE_INACTIVE"
+	PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeStateRESUBSCRIBESTATEUNSPECIFIED PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState = "RESUBSCRIBE_STATE_UNSPECIFIED"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState enum.
+func (e PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState) Valid() bool {
+	switch e {
+	case PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeStateLessThanNil:
+		return true
+	case PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeStateRESUBSCRIBESTATEACTIVE:
+		return true
+	case PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeStateRESUBSCRIBESTATEINACTIVE:
+		return true
+	case PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeStateRESUBSCRIBESTATEUNSPECIFIED:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension.
+const (
+	PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtensionLessThanNil              PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension = "<nil>"
+	PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtensionTIMEEXTENSIONACTIVE      PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension = "TIME_EXTENSION_ACTIVE"
+	PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtensionTIMEEXTENSIONINACTIVE    PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension = "TIME_EXTENSION_INACTIVE"
+	PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtensionTIMEEXTENSIONUNSPECIFIED PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension = "TIME_EXTENSION_UNSPECIFIED"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension enum.
+func (e PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension) Valid() bool {
+	switch e {
+	case PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtensionLessThanNil:
+		return true
+	case PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtensionTIMEEXTENSIONACTIVE:
+		return true
+	case PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtensionTIMEEXTENSIONINACTIVE:
+		return true
+	case PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtensionTIMEEXTENSIONUNSPECIFIED:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreBasePlanConfigState.
+const (
+	PlayStoreBasePlanConfigStateACTIVE      PlayStoreBasePlanConfigState = "ACTIVE"
+	PlayStoreBasePlanConfigStateDRAFT       PlayStoreBasePlanConfigState = "DRAFT"
+	PlayStoreBasePlanConfigStateINACTIVE    PlayStoreBasePlanConfigState = "INACTIVE"
+	PlayStoreBasePlanConfigStateLessThanNil PlayStoreBasePlanConfigState = "<nil>"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreBasePlanConfigState enum.
+func (e PlayStoreBasePlanConfigState) Valid() bool {
+	switch e {
+	case PlayStoreBasePlanConfigStateACTIVE:
+		return true
+	case PlayStoreBasePlanConfigStateDRAFT:
+		return true
+	case PlayStoreBasePlanConfigStateINACTIVE:
+		return true
+	case PlayStoreBasePlanConfigStateLessThanNil:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreOfferConfigState.
+const (
+	PlayStoreOfferConfigStateACTIVE      PlayStoreOfferConfigState = "ACTIVE"
+	PlayStoreOfferConfigStateDRAFT       PlayStoreOfferConfigState = "DRAFT"
+	PlayStoreOfferConfigStateINACTIVE    PlayStoreOfferConfigState = "INACTIVE"
+	PlayStoreOfferConfigStateLessThanNil PlayStoreOfferConfigState = "<nil>"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreOfferConfigState enum.
+func (e PlayStoreOfferConfigState) Valid() bool {
+	switch e {
+	case PlayStoreOfferConfigStateACTIVE:
+		return true
+	case PlayStoreOfferConfigStateDRAFT:
+		return true
+	case PlayStoreOfferConfigStateINACTIVE:
+		return true
+	case PlayStoreOfferConfigStateLessThanNil:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreOneTimeOfferConfigState.
+const (
+	PlayStoreOneTimeOfferConfigStateACTIVE      PlayStoreOneTimeOfferConfigState = "ACTIVE"
+	PlayStoreOneTimeOfferConfigStateCANCELLED   PlayStoreOneTimeOfferConfigState = "CANCELLED"
+	PlayStoreOneTimeOfferConfigStateDRAFT       PlayStoreOneTimeOfferConfigState = "DRAFT"
+	PlayStoreOneTimeOfferConfigStateINACTIVE    PlayStoreOneTimeOfferConfigState = "INACTIVE"
+	PlayStoreOneTimeOfferConfigStateLessThanNil PlayStoreOneTimeOfferConfigState = "<nil>"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreOneTimeOfferConfigState enum.
+func (e PlayStoreOneTimeOfferConfigState) Valid() bool {
+	switch e {
+	case PlayStoreOneTimeOfferConfigStateACTIVE:
+		return true
+	case PlayStoreOneTimeOfferConfigStateCANCELLED:
+		return true
+	case PlayStoreOneTimeOfferConfigStateDRAFT:
+		return true
+	case PlayStoreOneTimeOfferConfigStateINACTIVE:
+		return true
+	case PlayStoreOneTimeOfferConfigStateLessThanNil:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior.
+const (
+	PREORDERPRICECHANGEBEHAVIORNEWORDERSONLY  PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior = "PRE_ORDER_PRICE_CHANGE_BEHAVIOR_NEW_ORDERS_ONLY"
+	PREORDERPRICECHANGEBEHAVIORTWOPOINTLOWEST PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior = "PRE_ORDER_PRICE_CHANGE_BEHAVIOR_TWO_POINT_LOWEST"
+	PREORDERPRICECHANGEBEHAVIORUNSPECIFIED    PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior = "PRE_ORDER_PRICE_CHANGE_BEHAVIOR_UNSPECIFIED"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior enum.
+func (e PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior) Valid() bool {
+	switch e {
+	case PREORDERPRICECHANGEBEHAVIORNEWORDERSONLY:
+		return true
+	case PREORDERPRICECHANGEBEHAVIORTWOPOINTLOWEST:
+		return true
+	case PREORDERPRICECHANGEBEHAVIORUNSPECIFIED:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreOneTimeOfferRegionalConfigAvailability.
+const (
+	PlayStoreOneTimeOfferRegionalConfigAvailabilityAVAILABLE              PlayStoreOneTimeOfferRegionalConfigAvailability = "AVAILABLE"
+	PlayStoreOneTimeOfferRegionalConfigAvailabilityAVAILABLEFOROFFERSONLY PlayStoreOneTimeOfferRegionalConfigAvailability = "AVAILABLE_FOR_OFFERS_ONLY"
+	PlayStoreOneTimeOfferRegionalConfigAvailabilityAVAILABLEIFRELEASED    PlayStoreOneTimeOfferRegionalConfigAvailability = "AVAILABLE_IF_RELEASED"
+	PlayStoreOneTimeOfferRegionalConfigAvailabilityLessThanNil            PlayStoreOneTimeOfferRegionalConfigAvailability = "<nil>"
+	PlayStoreOneTimeOfferRegionalConfigAvailabilityNOLONGERAVAILABLE      PlayStoreOneTimeOfferRegionalConfigAvailability = "NO_LONGER_AVAILABLE"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreOneTimeOfferRegionalConfigAvailability enum.
+func (e PlayStoreOneTimeOfferRegionalConfigAvailability) Valid() bool {
+	switch e {
+	case PlayStoreOneTimeOfferRegionalConfigAvailabilityAVAILABLE:
+		return true
+	case PlayStoreOneTimeOfferRegionalConfigAvailabilityAVAILABLEFOROFFERSONLY:
+		return true
+	case PlayStoreOneTimeOfferRegionalConfigAvailabilityAVAILABLEIFRELEASED:
+		return true
+	case PlayStoreOneTimeOfferRegionalConfigAvailabilityLessThanNil:
+		return true
+	case PlayStoreOneTimeOfferRegionalConfigAvailabilityNOLONGERAVAILABLE:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStorePurchaseOptionConfigState.
+const (
+	PlayStorePurchaseOptionConfigStateACTIVE            PlayStorePurchaseOptionConfigState = "ACTIVE"
+	PlayStorePurchaseOptionConfigStateDRAFT             PlayStorePurchaseOptionConfigState = "DRAFT"
+	PlayStorePurchaseOptionConfigStateINACTIVE          PlayStorePurchaseOptionConfigState = "INACTIVE"
+	PlayStorePurchaseOptionConfigStateINACTIVEPUBLISHED PlayStorePurchaseOptionConfigState = "INACTIVE_PUBLISHED"
+	PlayStorePurchaseOptionConfigStateLessThanNil       PlayStorePurchaseOptionConfigState = "<nil>"
+)
+
+// Valid indicates whether the value is a known member of the PlayStorePurchaseOptionConfigState enum.
+func (e PlayStorePurchaseOptionConfigState) Valid() bool {
+	switch e {
+	case PlayStorePurchaseOptionConfigStateACTIVE:
+		return true
+	case PlayStorePurchaseOptionConfigStateDRAFT:
+		return true
+	case PlayStorePurchaseOptionConfigStateINACTIVE:
+		return true
+	case PlayStorePurchaseOptionConfigStateINACTIVEPUBLISHED:
+		return true
+	case PlayStorePurchaseOptionConfigStateLessThanNil:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStorePurchaseOptionNewRegionsConfigAvailability.
+const (
+	PlayStorePurchaseOptionNewRegionsConfigAvailabilityAVAILABLE              PlayStorePurchaseOptionNewRegionsConfigAvailability = "AVAILABLE"
+	PlayStorePurchaseOptionNewRegionsConfigAvailabilityAVAILABLEFOROFFERSONLY PlayStorePurchaseOptionNewRegionsConfigAvailability = "AVAILABLE_FOR_OFFERS_ONLY"
+	PlayStorePurchaseOptionNewRegionsConfigAvailabilityAVAILABLEIFRELEASED    PlayStorePurchaseOptionNewRegionsConfigAvailability = "AVAILABLE_IF_RELEASED"
+	PlayStorePurchaseOptionNewRegionsConfigAvailabilityLessThanNil            PlayStorePurchaseOptionNewRegionsConfigAvailability = "<nil>"
+	PlayStorePurchaseOptionNewRegionsConfigAvailabilityNOLONGERAVAILABLE      PlayStorePurchaseOptionNewRegionsConfigAvailability = "NO_LONGER_AVAILABLE"
+)
+
+// Valid indicates whether the value is a known member of the PlayStorePurchaseOptionNewRegionsConfigAvailability enum.
+func (e PlayStorePurchaseOptionNewRegionsConfigAvailability) Valid() bool {
+	switch e {
+	case PlayStorePurchaseOptionNewRegionsConfigAvailabilityAVAILABLE:
+		return true
+	case PlayStorePurchaseOptionNewRegionsConfigAvailabilityAVAILABLEFOROFFERSONLY:
+		return true
+	case PlayStorePurchaseOptionNewRegionsConfigAvailabilityAVAILABLEIFRELEASED:
+		return true
+	case PlayStorePurchaseOptionNewRegionsConfigAvailabilityLessThanNil:
+		return true
+	case PlayStorePurchaseOptionNewRegionsConfigAvailabilityNOLONGERAVAILABLE:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStorePurchaseOptionRegionalConfigAvailability.
+const (
+	PlayStorePurchaseOptionRegionalConfigAvailabilityAVAILABLE              PlayStorePurchaseOptionRegionalConfigAvailability = "AVAILABLE"
+	PlayStorePurchaseOptionRegionalConfigAvailabilityAVAILABLEFOROFFERSONLY PlayStorePurchaseOptionRegionalConfigAvailability = "AVAILABLE_FOR_OFFERS_ONLY"
+	PlayStorePurchaseOptionRegionalConfigAvailabilityAVAILABLEIFRELEASED    PlayStorePurchaseOptionRegionalConfigAvailability = "AVAILABLE_IF_RELEASED"
+	PlayStorePurchaseOptionRegionalConfigAvailabilityLessThanNil            PlayStorePurchaseOptionRegionalConfigAvailability = "<nil>"
+	PlayStorePurchaseOptionRegionalConfigAvailabilityNOLONGERAVAILABLE      PlayStorePurchaseOptionRegionalConfigAvailability = "NO_LONGER_AVAILABLE"
+)
+
+// Valid indicates whether the value is a known member of the PlayStorePurchaseOptionRegionalConfigAvailability enum.
+func (e PlayStorePurchaseOptionRegionalConfigAvailability) Valid() bool {
+	switch e {
+	case PlayStorePurchaseOptionRegionalConfigAvailabilityAVAILABLE:
+		return true
+	case PlayStorePurchaseOptionRegionalConfigAvailabilityAVAILABLEFOROFFERSONLY:
+		return true
+	case PlayStorePurchaseOptionRegionalConfigAvailabilityAVAILABLEIFRELEASED:
+		return true
+	case PlayStorePurchaseOptionRegionalConfigAvailabilityLessThanNil:
+		return true
+	case PlayStorePurchaseOptionRegionalConfigAvailabilityNOLONGERAVAILABLE:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType.
+const (
+	PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightTypeLessThanNil                    PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType = "<nil>"
+	PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightTypeWITHDRAWALRIGHTDIGITALCONTENT  PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType = "WITHDRAWAL_RIGHT_DIGITAL_CONTENT"
+	PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightTypeWITHDRAWALRIGHTSERVICE         PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType = "WITHDRAWAL_RIGHT_SERVICE"
+	PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightTypeWITHDRAWALRIGHTTYPEUNSPECIFIED PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType = "WITHDRAWAL_RIGHT_TYPE_UNSPECIFIED"
+)
+
+// Valid indicates whether the value is a known member of the PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType enum.
+func (e PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType) Valid() bool {
+	switch e {
+	case PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightTypeLessThanNil:
+		return true
+	case PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightTypeWITHDRAWALRIGHTDIGITALCONTENT:
+		return true
+	case PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightTypeWITHDRAWALRIGHTSERVICE:
+		return true
+	case PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightTypeWITHDRAWALRIGHTTYPEUNSPECIFIED:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier.
+const (
+	PRODUCTAGERATINGTIEREIGHTEENANDABOVE PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier = "PRODUCT_AGE_RATING_TIER_EIGHTEEN_AND_ABOVE"
+	PRODUCTAGERATINGTIEREVERYONE         PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier = "PRODUCT_AGE_RATING_TIER_EVERYONE"
+	PRODUCTAGERATINGTIERSIXTEENANDABOVE  PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier = "PRODUCT_AGE_RATING_TIER_SIXTEEN_AND_ABOVE"
+	PRODUCTAGERATINGTIERTHIRTEENANDABOVE PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier = "PRODUCT_AGE_RATING_TIER_THIRTEEN_AND_ABOVE"
+	PRODUCTAGERATINGTIERUNKNOWN          PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier = "PRODUCT_AGE_RATING_TIER_UNKNOWN"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier enum.
+func (e PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier) Valid() bool {
+	switch e {
+	case PRODUCTAGERATINGTIEREIGHTEENANDABOVE:
+		return true
+	case PRODUCTAGERATINGTIEREVERYONE:
+		return true
+	case PRODUCTAGERATINGTIERSIXTEENANDABOVE:
+		return true
+	case PRODUCTAGERATINGTIERTHIRTEENANDABOVE:
+		return true
+	case PRODUCTAGERATINGTIERUNKNOWN:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ProductObject.
 const (
 	ProductObjectProduct ProductObject = "product"
@@ -2818,6 +3214,111 @@ func (e ProductState) Valid() bool {
 	case ProductStateActive:
 		return true
 	case ProductStateInactive:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStateAppStoreStateTrialOfferDuration.
+const (
+	ProductStoreStateAppStoreStateTrialOfferDurationONEMONTH    ProductStoreStateAppStoreStateTrialOfferDuration = "ONE_MONTH"
+	ProductStoreStateAppStoreStateTrialOfferDurationONEWEEK     ProductStoreStateAppStoreStateTrialOfferDuration = "ONE_WEEK"
+	ProductStoreStateAppStoreStateTrialOfferDurationONEYEAR     ProductStoreStateAppStoreStateTrialOfferDuration = "ONE_YEAR"
+	ProductStoreStateAppStoreStateTrialOfferDurationSIXMONTHS   ProductStoreStateAppStoreStateTrialOfferDuration = "SIX_MONTHS"
+	ProductStoreStateAppStoreStateTrialOfferDurationTHREEDAYS   ProductStoreStateAppStoreStateTrialOfferDuration = "THREE_DAYS"
+	ProductStoreStateAppStoreStateTrialOfferDurationTHREEMONTHS ProductStoreStateAppStoreStateTrialOfferDuration = "THREE_MONTHS"
+	ProductStoreStateAppStoreStateTrialOfferDurationTWOMONTHS   ProductStoreStateAppStoreStateTrialOfferDuration = "TWO_MONTHS"
+	ProductStoreStateAppStoreStateTrialOfferDurationTWOWEEKS    ProductStoreStateAppStoreStateTrialOfferDuration = "TWO_WEEKS"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStateAppStoreStateTrialOfferDuration enum.
+func (e ProductStoreStateAppStoreStateTrialOfferDuration) Valid() bool {
+	switch e {
+	case ProductStoreStateAppStoreStateTrialOfferDurationONEMONTH:
+		return true
+	case ProductStoreStateAppStoreStateTrialOfferDurationONEWEEK:
+		return true
+	case ProductStoreStateAppStoreStateTrialOfferDurationONEYEAR:
+		return true
+	case ProductStoreStateAppStoreStateTrialOfferDurationSIXMONTHS:
+		return true
+	case ProductStoreStateAppStoreStateTrialOfferDurationTHREEDAYS:
+		return true
+	case ProductStoreStateAppStoreStateTrialOfferDurationTHREEMONTHS:
+		return true
+	case ProductStoreStateAppStoreStateTrialOfferDurationTWOMONTHS:
+		return true
+	case ProductStoreStateAppStoreStateTrialOfferDurationTWOWEEKS:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStateAppStoreStateResponseTrialOfferDuration.
+const (
+	ProductStoreStateAppStoreStateResponseTrialOfferDurationONEMONTH    ProductStoreStateAppStoreStateResponseTrialOfferDuration = "ONE_MONTH"
+	ProductStoreStateAppStoreStateResponseTrialOfferDurationONEWEEK     ProductStoreStateAppStoreStateResponseTrialOfferDuration = "ONE_WEEK"
+	ProductStoreStateAppStoreStateResponseTrialOfferDurationONEYEAR     ProductStoreStateAppStoreStateResponseTrialOfferDuration = "ONE_YEAR"
+	ProductStoreStateAppStoreStateResponseTrialOfferDurationSIXMONTHS   ProductStoreStateAppStoreStateResponseTrialOfferDuration = "SIX_MONTHS"
+	ProductStoreStateAppStoreStateResponseTrialOfferDurationTHREEDAYS   ProductStoreStateAppStoreStateResponseTrialOfferDuration = "THREE_DAYS"
+	ProductStoreStateAppStoreStateResponseTrialOfferDurationTHREEMONTHS ProductStoreStateAppStoreStateResponseTrialOfferDuration = "THREE_MONTHS"
+	ProductStoreStateAppStoreStateResponseTrialOfferDurationTWOMONTHS   ProductStoreStateAppStoreStateResponseTrialOfferDuration = "TWO_MONTHS"
+	ProductStoreStateAppStoreStateResponseTrialOfferDurationTWOWEEKS    ProductStoreStateAppStoreStateResponseTrialOfferDuration = "TWO_WEEKS"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStateAppStoreStateResponseTrialOfferDuration enum.
+func (e ProductStoreStateAppStoreStateResponseTrialOfferDuration) Valid() bool {
+	switch e {
+	case ProductStoreStateAppStoreStateResponseTrialOfferDurationONEMONTH:
+		return true
+	case ProductStoreStateAppStoreStateResponseTrialOfferDurationONEWEEK:
+		return true
+	case ProductStoreStateAppStoreStateResponseTrialOfferDurationONEYEAR:
+		return true
+	case ProductStoreStateAppStoreStateResponseTrialOfferDurationSIXMONTHS:
+		return true
+	case ProductStoreStateAppStoreStateResponseTrialOfferDurationTHREEDAYS:
+		return true
+	case ProductStoreStateAppStoreStateResponseTrialOfferDurationTHREEMONTHS:
+		return true
+	case ProductStoreStateAppStoreStateResponseTrialOfferDurationTWOMONTHS:
+		return true
+	case ProductStoreStateAppStoreStateResponseTrialOfferDurationTWOWEEKS:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStateCommonResponseDuration.
+const (
+	ProductStoreStateCommonResponseDurationLessThanNil ProductStoreStateCommonResponseDuration = "<nil>"
+	ProductStoreStateCommonResponseDurationONEMONTH    ProductStoreStateCommonResponseDuration = "ONE_MONTH"
+	ProductStoreStateCommonResponseDurationONEWEEK     ProductStoreStateCommonResponseDuration = "ONE_WEEK"
+	ProductStoreStateCommonResponseDurationONEYEAR     ProductStoreStateCommonResponseDuration = "ONE_YEAR"
+	ProductStoreStateCommonResponseDurationSIXMONTHS   ProductStoreStateCommonResponseDuration = "SIX_MONTHS"
+	ProductStoreStateCommonResponseDurationTHREEMONTHS ProductStoreStateCommonResponseDuration = "THREE_MONTHS"
+	ProductStoreStateCommonResponseDurationTWOMONTHS   ProductStoreStateCommonResponseDuration = "TWO_MONTHS"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStateCommonResponseDuration enum.
+func (e ProductStoreStateCommonResponseDuration) Valid() bool {
+	switch e {
+	case ProductStoreStateCommonResponseDurationLessThanNil:
+		return true
+	case ProductStoreStateCommonResponseDurationONEMONTH:
+		return true
+	case ProductStoreStateCommonResponseDurationONEWEEK:
+		return true
+	case ProductStoreStateCommonResponseDurationONEYEAR:
+		return true
+	case ProductStoreStateCommonResponseDurationSIXMONTHS:
+		return true
+	case ProductStoreStateCommonResponseDurationTHREEMONTHS:
+		return true
+	case ProductStoreStateCommonResponseDurationTWOMONTHS:
 		return true
 	default:
 		return false
@@ -30319,6 +30820,1740 @@ func (e CreateProductInStore503JSONResponseBodyType) Valid() bool {
 	}
 }
 
+// Defines values for GetProductStoreState200JSONResponseBodyCommonDuration.
+const (
+	GetProductStoreState200JSONResponseBodyCommonDurationLessThanNil GetProductStoreState200JSONResponseBodyCommonDuration = "<nil>"
+	GetProductStoreState200JSONResponseBodyCommonDurationONEMONTH    GetProductStoreState200JSONResponseBodyCommonDuration = "ONE_MONTH"
+	GetProductStoreState200JSONResponseBodyCommonDurationONEWEEK     GetProductStoreState200JSONResponseBodyCommonDuration = "ONE_WEEK"
+	GetProductStoreState200JSONResponseBodyCommonDurationONEYEAR     GetProductStoreState200JSONResponseBodyCommonDuration = "ONE_YEAR"
+	GetProductStoreState200JSONResponseBodyCommonDurationSIXMONTHS   GetProductStoreState200JSONResponseBodyCommonDuration = "SIX_MONTHS"
+	GetProductStoreState200JSONResponseBodyCommonDurationTHREEMONTHS GetProductStoreState200JSONResponseBodyCommonDuration = "THREE_MONTHS"
+	GetProductStoreState200JSONResponseBodyCommonDurationTWOMONTHS   GetProductStoreState200JSONResponseBodyCommonDuration = "TWO_MONTHS"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState200JSONResponseBodyCommonDuration enum.
+func (e GetProductStoreState200JSONResponseBodyCommonDuration) Valid() bool {
+	switch e {
+	case GetProductStoreState200JSONResponseBodyCommonDurationLessThanNil:
+		return true
+	case GetProductStoreState200JSONResponseBodyCommonDurationONEMONTH:
+		return true
+	case GetProductStoreState200JSONResponseBodyCommonDurationONEWEEK:
+		return true
+	case GetProductStoreState200JSONResponseBodyCommonDurationONEYEAR:
+		return true
+	case GetProductStoreState200JSONResponseBodyCommonDurationSIXMONTHS:
+		return true
+	case GetProductStoreState200JSONResponseBodyCommonDurationTHREEMONTHS:
+		return true
+	case GetProductStoreState200JSONResponseBodyCommonDurationTWOMONTHS:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState200JSONResponseBodyStore.
+const (
+	GetProductStoreState200JSONResponseBodyStoreAppStore  GetProductStoreState200JSONResponseBodyStore = "app_store"
+	GetProductStoreState200JSONResponseBodyStorePlayStore GetProductStoreState200JSONResponseBodyStore = "play_store"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState200JSONResponseBodyStore enum.
+func (e GetProductStoreState200JSONResponseBodyStore) Valid() bool {
+	switch e {
+	case GetProductStoreState200JSONResponseBodyStoreAppStore:
+		return true
+	case GetProductStoreState200JSONResponseBodyStorePlayStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState200JSONResponseBodyStoreStatusStatus.
+const (
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusActionInProgress GetProductStoreState200JSONResponseBodyStoreStatusStatus = "action_in_progress"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusCouldNotCheck    GetProductStoreState200JSONResponseBodyStoreStatusStatus = "could_not_check"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusDraft            GetProductStoreState200JSONResponseBodyStoreStatusStatus = "draft"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusInactiveInStore  GetProductStoreState200JSONResponseBodyStoreStatusStatus = "inactive_in_store"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusNeedsAction      GetProductStoreState200JSONResponseBodyStoreStatusStatus = "needs_action"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusNotFound         GetProductStoreState200JSONResponseBodyStoreStatusStatus = "not_found"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusOk               GetProductStoreState200JSONResponseBodyStoreStatusStatus = "ok"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusUnknown          GetProductStoreState200JSONResponseBodyStoreStatusStatus = "unknown"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusUnspecified      GetProductStoreState200JSONResponseBodyStoreStatusStatus = "unspecified"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState200JSONResponseBodyStoreStatusStatus enum.
+func (e GetProductStoreState200JSONResponseBodyStoreStatusStatus) Valid() bool {
+	switch e {
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusActionInProgress:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusCouldNotCheck:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusDraft:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusInactiveInStore:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusNeedsAction:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusNotFound:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusOk:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusUnknown:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusUnspecified:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState400JSONResponseBodyObject.
+const (
+	GetProductStoreState400JSONResponseBodyObjectError GetProductStoreState400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState400JSONResponseBodyObject enum.
+func (e GetProductStoreState400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState400JSONResponseBodyType.
+const (
+	GetProductStoreState400JSONResponseBodyTypeInvalidRequest GetProductStoreState400JSONResponseBodyType = "invalid_request"
+	GetProductStoreState400JSONResponseBodyTypeParameterError GetProductStoreState400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState400JSONResponseBodyType enum.
+func (e GetProductStoreState400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case GetProductStoreState400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState401JSONResponseBodyObject.
+const (
+	GetProductStoreState401JSONResponseBodyObjectError GetProductStoreState401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState401JSONResponseBodyObject enum.
+func (e GetProductStoreState401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState401JSONResponseBodyType.
+const (
+	GetProductStoreState401JSONResponseBodyTypeAuthenticationError GetProductStoreState401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState401JSONResponseBodyType enum.
+func (e GetProductStoreState401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState403JSONResponseBodyObject.
+const (
+	GetProductStoreState403JSONResponseBodyObjectError GetProductStoreState403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState403JSONResponseBodyObject enum.
+func (e GetProductStoreState403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState403JSONResponseBodyType.
+const (
+	GetProductStoreState403JSONResponseBodyTypeAuthorizationError GetProductStoreState403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState403JSONResponseBodyType enum.
+func (e GetProductStoreState403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState404JSONResponseBodyObject.
+const (
+	GetProductStoreState404JSONResponseBodyObjectError GetProductStoreState404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState404JSONResponseBodyObject enum.
+func (e GetProductStoreState404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState404JSONResponseBodyType.
+const (
+	GetProductStoreState404JSONResponseBodyTypeResourceMissing GetProductStoreState404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState404JSONResponseBodyType enum.
+func (e GetProductStoreState404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState422JSONResponseBodyObject.
+const (
+	GetProductStoreState422JSONResponseBodyObjectError GetProductStoreState422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState422JSONResponseBodyObject enum.
+func (e GetProductStoreState422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState422JSONResponseBodyType.
+const (
+	GetProductStoreState422JSONResponseBodyTypeEntityReferencesArchivedEntities GetProductStoreState422JSONResponseBodyType = "entity_references_archived_entities"
+	GetProductStoreState422JSONResponseBodyTypeParameterError                   GetProductStoreState422JSONResponseBodyType = "parameter_error"
+	GetProductStoreState422JSONResponseBodyTypeStoreError                       GetProductStoreState422JSONResponseBodyType = "store_error"
+	GetProductStoreState422JSONResponseBodyTypeUnprocessableEntityError         GetProductStoreState422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState422JSONResponseBodyType enum.
+func (e GetProductStoreState422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case GetProductStoreState422JSONResponseBodyTypeParameterError:
+		return true
+	case GetProductStoreState422JSONResponseBodyTypeStoreError:
+		return true
+	case GetProductStoreState422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState423JSONResponseBodyObject.
+const (
+	GetProductStoreState423JSONResponseBodyObjectError GetProductStoreState423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState423JSONResponseBodyObject enum.
+func (e GetProductStoreState423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState423JSONResponseBodyType.
+const (
+	GetProductStoreState423JSONResponseBodyTypeResourceLockedError GetProductStoreState423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState423JSONResponseBodyType enum.
+func (e GetProductStoreState423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState429JSONResponseBodyObject.
+const (
+	GetProductStoreState429JSONResponseBodyObjectError GetProductStoreState429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState429JSONResponseBodyObject enum.
+func (e GetProductStoreState429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState429JSONResponseBodyType.
+const (
+	GetProductStoreState429JSONResponseBodyTypeRateLimitError GetProductStoreState429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState429JSONResponseBodyType enum.
+func (e GetProductStoreState429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState500JSONResponseBodyObject.
+const (
+	GetProductStoreState500JSONResponseBodyObjectError GetProductStoreState500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState500JSONResponseBodyObject enum.
+func (e GetProductStoreState500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState500JSONResponseBodyType.
+const (
+	GetProductStoreState500JSONResponseBodyTypeServerError GetProductStoreState500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState500JSONResponseBodyType enum.
+func (e GetProductStoreState500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState503JSONResponseBodyObject.
+const (
+	GetProductStoreState503JSONResponseBodyObjectError GetProductStoreState503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState503JSONResponseBodyObject enum.
+func (e GetProductStoreState503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreState503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState503JSONResponseBodyType.
+const (
+	GetProductStoreState503JSONResponseBodyTypeServerError GetProductStoreState503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState503JSONResponseBodyType enum.
+func (e GetProductStoreState503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreState503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreStateJSONBodyCommonDuration.
+const (
+	SetProductStoreStateJSONBodyCommonDurationONEMONTH    SetProductStoreStateJSONBodyCommonDuration = "ONE_MONTH"
+	SetProductStoreStateJSONBodyCommonDurationONEWEEK     SetProductStoreStateJSONBodyCommonDuration = "ONE_WEEK"
+	SetProductStoreStateJSONBodyCommonDurationONEYEAR     SetProductStoreStateJSONBodyCommonDuration = "ONE_YEAR"
+	SetProductStoreStateJSONBodyCommonDurationP1M         SetProductStoreStateJSONBodyCommonDuration = "P1M"
+	SetProductStoreStateJSONBodyCommonDurationP1W         SetProductStoreStateJSONBodyCommonDuration = "P1W"
+	SetProductStoreStateJSONBodyCommonDurationP1Y         SetProductStoreStateJSONBodyCommonDuration = "P1Y"
+	SetProductStoreStateJSONBodyCommonDurationP2M         SetProductStoreStateJSONBodyCommonDuration = "P2M"
+	SetProductStoreStateJSONBodyCommonDurationP3M         SetProductStoreStateJSONBodyCommonDuration = "P3M"
+	SetProductStoreStateJSONBodyCommonDurationP6M         SetProductStoreStateJSONBodyCommonDuration = "P6M"
+	SetProductStoreStateJSONBodyCommonDurationSIXMONTHS   SetProductStoreStateJSONBodyCommonDuration = "SIX_MONTHS"
+	SetProductStoreStateJSONBodyCommonDurationTHREEMONTHS SetProductStoreStateJSONBodyCommonDuration = "THREE_MONTHS"
+	SetProductStoreStateJSONBodyCommonDurationTWOMONTHS   SetProductStoreStateJSONBodyCommonDuration = "TWO_MONTHS"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreStateJSONBodyCommonDuration enum.
+func (e SetProductStoreStateJSONBodyCommonDuration) Valid() bool {
+	switch e {
+	case SetProductStoreStateJSONBodyCommonDurationONEMONTH:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationONEWEEK:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationONEYEAR:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationP1M:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationP1W:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationP1Y:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationP2M:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationP3M:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationP6M:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationSIXMONTHS:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationTHREEMONTHS:
+		return true
+	case SetProductStoreStateJSONBodyCommonDurationTWOMONTHS:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreStateJSONBodyStore.
+const (
+	SetProductStoreStateJSONBodyStoreAppStore  SetProductStoreStateJSONBodyStore = "app_store"
+	SetProductStoreStateJSONBodyStorePlayStore SetProductStoreStateJSONBodyStore = "play_store"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreStateJSONBodyStore enum.
+func (e SetProductStoreStateJSONBodyStore) Valid() bool {
+	switch e {
+	case SetProductStoreStateJSONBodyStoreAppStore:
+		return true
+	case SetProductStoreStateJSONBodyStorePlayStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState202JSONResponseBodyStatus.
+const (
+	SetProductStoreState202JSONResponseBodyStatusPending SetProductStoreState202JSONResponseBodyStatus = "pending"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState202JSONResponseBodyStatus enum.
+func (e SetProductStoreState202JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case SetProductStoreState202JSONResponseBodyStatusPending:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState400JSONResponseBodyObject.
+const (
+	SetProductStoreState400JSONResponseBodyObjectError SetProductStoreState400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState400JSONResponseBodyObject enum.
+func (e SetProductStoreState400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState400JSONResponseBodyType.
+const (
+	SetProductStoreState400JSONResponseBodyTypeInvalidRequest SetProductStoreState400JSONResponseBodyType = "invalid_request"
+	SetProductStoreState400JSONResponseBodyTypeParameterError SetProductStoreState400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState400JSONResponseBodyType enum.
+func (e SetProductStoreState400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case SetProductStoreState400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState401JSONResponseBodyObject.
+const (
+	SetProductStoreState401JSONResponseBodyObjectError SetProductStoreState401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState401JSONResponseBodyObject enum.
+func (e SetProductStoreState401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState401JSONResponseBodyType.
+const (
+	SetProductStoreState401JSONResponseBodyTypeAuthenticationError SetProductStoreState401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState401JSONResponseBodyType enum.
+func (e SetProductStoreState401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState403JSONResponseBodyObject.
+const (
+	SetProductStoreState403JSONResponseBodyObjectError SetProductStoreState403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState403JSONResponseBodyObject enum.
+func (e SetProductStoreState403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState403JSONResponseBodyType.
+const (
+	SetProductStoreState403JSONResponseBodyTypeAuthorizationError SetProductStoreState403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState403JSONResponseBodyType enum.
+func (e SetProductStoreState403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState404JSONResponseBodyObject.
+const (
+	SetProductStoreState404JSONResponseBodyObjectError SetProductStoreState404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState404JSONResponseBodyObject enum.
+func (e SetProductStoreState404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState404JSONResponseBodyType.
+const (
+	SetProductStoreState404JSONResponseBodyTypeResourceMissing SetProductStoreState404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState404JSONResponseBodyType enum.
+func (e SetProductStoreState404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState409JSONResponseBodyObject.
+const (
+	SetProductStoreState409JSONResponseBodyObjectError SetProductStoreState409JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState409JSONResponseBodyObject enum.
+func (e SetProductStoreState409JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState409JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState409JSONResponseBodyType.
+const (
+	SetProductStoreState409JSONResponseBodyTypeIdempotencyError      SetProductStoreState409JSONResponseBodyType = "idempotency_error"
+	SetProductStoreState409JSONResponseBodyTypeResourceAlreadyExists SetProductStoreState409JSONResponseBodyType = "resource_already_exists"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState409JSONResponseBodyType enum.
+func (e SetProductStoreState409JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case SetProductStoreState409JSONResponseBodyTypeResourceAlreadyExists:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState422JSONResponseBodyObject.
+const (
+	SetProductStoreState422JSONResponseBodyObjectError SetProductStoreState422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState422JSONResponseBodyObject enum.
+func (e SetProductStoreState422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState422JSONResponseBodyType.
+const (
+	SetProductStoreState422JSONResponseBodyTypeEntityReferencesArchivedEntities SetProductStoreState422JSONResponseBodyType = "entity_references_archived_entities"
+	SetProductStoreState422JSONResponseBodyTypeParameterError                   SetProductStoreState422JSONResponseBodyType = "parameter_error"
+	SetProductStoreState422JSONResponseBodyTypeStoreError                       SetProductStoreState422JSONResponseBodyType = "store_error"
+	SetProductStoreState422JSONResponseBodyTypeUnprocessableEntityError         SetProductStoreState422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState422JSONResponseBodyType enum.
+func (e SetProductStoreState422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case SetProductStoreState422JSONResponseBodyTypeParameterError:
+		return true
+	case SetProductStoreState422JSONResponseBodyTypeStoreError:
+		return true
+	case SetProductStoreState422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState423JSONResponseBodyObject.
+const (
+	SetProductStoreState423JSONResponseBodyObjectError SetProductStoreState423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState423JSONResponseBodyObject enum.
+func (e SetProductStoreState423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState423JSONResponseBodyType.
+const (
+	SetProductStoreState423JSONResponseBodyTypeResourceLockedError SetProductStoreState423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState423JSONResponseBodyType enum.
+func (e SetProductStoreState423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState429JSONResponseBodyObject.
+const (
+	SetProductStoreState429JSONResponseBodyObjectError SetProductStoreState429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState429JSONResponseBodyObject enum.
+func (e SetProductStoreState429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState429JSONResponseBodyType.
+const (
+	SetProductStoreState429JSONResponseBodyTypeRateLimitError SetProductStoreState429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState429JSONResponseBodyType enum.
+func (e SetProductStoreState429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState500JSONResponseBodyObject.
+const (
+	SetProductStoreState500JSONResponseBodyObjectError SetProductStoreState500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState500JSONResponseBodyObject enum.
+func (e SetProductStoreState500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState500JSONResponseBodyType.
+const (
+	SetProductStoreState500JSONResponseBodyTypeServerError SetProductStoreState500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState500JSONResponseBodyType enum.
+func (e SetProductStoreState500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState503JSONResponseBodyObject.
+const (
+	SetProductStoreState503JSONResponseBodyObjectError SetProductStoreState503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState503JSONResponseBodyObject enum.
+func (e SetProductStoreState503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case SetProductStoreState503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SetProductStoreState503JSONResponseBodyType.
+const (
+	SetProductStoreState503JSONResponseBodyTypeServerError SetProductStoreState503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the SetProductStoreState503JSONResponseBodyType enum.
+func (e SetProductStoreState503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case SetProductStoreState503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPricesJSONBodyStore.
+const (
+	EqualizeSubscriptionPricesJSONBodyStoreAppStore EqualizeSubscriptionPricesJSONBodyStore = "app_store"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPricesJSONBodyStore enum.
+func (e EqualizeSubscriptionPricesJSONBodyStore) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPricesJSONBodyStoreAppStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices202JSONResponseBodyStatus.
+const (
+	EqualizeSubscriptionPrices202JSONResponseBodyStatusPending EqualizeSubscriptionPrices202JSONResponseBodyStatus = "pending"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices202JSONResponseBodyStatus enum.
+func (e EqualizeSubscriptionPrices202JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices202JSONResponseBodyStatusPending:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices400JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices400JSONResponseBodyObjectError EqualizeSubscriptionPrices400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices400JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices400JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices400JSONResponseBodyTypeInvalidRequest EqualizeSubscriptionPrices400JSONResponseBodyType = "invalid_request"
+	EqualizeSubscriptionPrices400JSONResponseBodyTypeParameterError EqualizeSubscriptionPrices400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices400JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case EqualizeSubscriptionPrices400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices401JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices401JSONResponseBodyObjectError EqualizeSubscriptionPrices401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices401JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices401JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices401JSONResponseBodyTypeAuthenticationError EqualizeSubscriptionPrices401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices401JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices403JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices403JSONResponseBodyObjectError EqualizeSubscriptionPrices403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices403JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices403JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices403JSONResponseBodyTypeAuthorizationError EqualizeSubscriptionPrices403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices403JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices404JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices404JSONResponseBodyObjectError EqualizeSubscriptionPrices404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices404JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices404JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices404JSONResponseBodyTypeResourceMissing EqualizeSubscriptionPrices404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices404JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices409JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices409JSONResponseBodyObjectError EqualizeSubscriptionPrices409JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices409JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices409JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices409JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices409JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices409JSONResponseBodyTypeIdempotencyError      EqualizeSubscriptionPrices409JSONResponseBodyType = "idempotency_error"
+	EqualizeSubscriptionPrices409JSONResponseBodyTypeResourceAlreadyExists EqualizeSubscriptionPrices409JSONResponseBodyType = "resource_already_exists"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices409JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices409JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case EqualizeSubscriptionPrices409JSONResponseBodyTypeResourceAlreadyExists:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices422JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices422JSONResponseBodyObjectError EqualizeSubscriptionPrices422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices422JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices422JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices422JSONResponseBodyTypeEntityReferencesArchivedEntities EqualizeSubscriptionPrices422JSONResponseBodyType = "entity_references_archived_entities"
+	EqualizeSubscriptionPrices422JSONResponseBodyTypeParameterError                   EqualizeSubscriptionPrices422JSONResponseBodyType = "parameter_error"
+	EqualizeSubscriptionPrices422JSONResponseBodyTypeStoreError                       EqualizeSubscriptionPrices422JSONResponseBodyType = "store_error"
+	EqualizeSubscriptionPrices422JSONResponseBodyTypeUnprocessableEntityError         EqualizeSubscriptionPrices422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices422JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case EqualizeSubscriptionPrices422JSONResponseBodyTypeParameterError:
+		return true
+	case EqualizeSubscriptionPrices422JSONResponseBodyTypeStoreError:
+		return true
+	case EqualizeSubscriptionPrices422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices423JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices423JSONResponseBodyObjectError EqualizeSubscriptionPrices423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices423JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices423JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices423JSONResponseBodyTypeResourceLockedError EqualizeSubscriptionPrices423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices423JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices429JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices429JSONResponseBodyObjectError EqualizeSubscriptionPrices429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices429JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices429JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices429JSONResponseBodyTypeRateLimitError EqualizeSubscriptionPrices429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices429JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices500JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices500JSONResponseBodyObjectError EqualizeSubscriptionPrices500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices500JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices500JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices500JSONResponseBodyTypeServerError EqualizeSubscriptionPrices500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices500JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices503JSONResponseBodyObject.
+const (
+	EqualizeSubscriptionPrices503JSONResponseBodyObjectError EqualizeSubscriptionPrices503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices503JSONResponseBodyObject enum.
+func (e EqualizeSubscriptionPrices503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EqualizeSubscriptionPrices503JSONResponseBodyType.
+const (
+	EqualizeSubscriptionPrices503JSONResponseBodyTypeServerError EqualizeSubscriptionPrices503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices503JSONResponseBodyType enum.
+func (e EqualizeSubscriptionPrices503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case EqualizeSubscriptionPrices503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot400JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot400JSONResponseBodyObjectError UploadProductStoreStateScreenshot400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot400JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot400JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot400JSONResponseBodyTypeInvalidRequest UploadProductStoreStateScreenshot400JSONResponseBodyType = "invalid_request"
+	UploadProductStoreStateScreenshot400JSONResponseBodyTypeParameterError UploadProductStoreStateScreenshot400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot400JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case UploadProductStoreStateScreenshot400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot401JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot401JSONResponseBodyObjectError UploadProductStoreStateScreenshot401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot401JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot401JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot401JSONResponseBodyTypeAuthenticationError UploadProductStoreStateScreenshot401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot401JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot403JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot403JSONResponseBodyObjectError UploadProductStoreStateScreenshot403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot403JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot403JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot403JSONResponseBodyTypeAuthorizationError UploadProductStoreStateScreenshot403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot403JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot404JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot404JSONResponseBodyObjectError UploadProductStoreStateScreenshot404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot404JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot404JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot404JSONResponseBodyTypeResourceMissing UploadProductStoreStateScreenshot404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot404JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot409JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot409JSONResponseBodyObjectError UploadProductStoreStateScreenshot409JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot409JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot409JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot409JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot409JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot409JSONResponseBodyTypeIdempotencyError      UploadProductStoreStateScreenshot409JSONResponseBodyType = "idempotency_error"
+	UploadProductStoreStateScreenshot409JSONResponseBodyTypeResourceAlreadyExists UploadProductStoreStateScreenshot409JSONResponseBodyType = "resource_already_exists"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot409JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot409JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UploadProductStoreStateScreenshot409JSONResponseBodyTypeResourceAlreadyExists:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot422JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot422JSONResponseBodyObjectError UploadProductStoreStateScreenshot422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot422JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot422JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot422JSONResponseBodyTypeEntityReferencesArchivedEntities UploadProductStoreStateScreenshot422JSONResponseBodyType = "entity_references_archived_entities"
+	UploadProductStoreStateScreenshot422JSONResponseBodyTypeParameterError                   UploadProductStoreStateScreenshot422JSONResponseBodyType = "parameter_error"
+	UploadProductStoreStateScreenshot422JSONResponseBodyTypeStoreError                       UploadProductStoreStateScreenshot422JSONResponseBodyType = "store_error"
+	UploadProductStoreStateScreenshot422JSONResponseBodyTypeUnprocessableEntityError         UploadProductStoreStateScreenshot422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot422JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case UploadProductStoreStateScreenshot422JSONResponseBodyTypeParameterError:
+		return true
+	case UploadProductStoreStateScreenshot422JSONResponseBodyTypeStoreError:
+		return true
+	case UploadProductStoreStateScreenshot422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot423JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot423JSONResponseBodyObjectError UploadProductStoreStateScreenshot423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot423JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot423JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot423JSONResponseBodyTypeResourceLockedError UploadProductStoreStateScreenshot423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot423JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot429JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot429JSONResponseBodyObjectError UploadProductStoreStateScreenshot429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot429JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot429JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot429JSONResponseBodyTypeRateLimitError UploadProductStoreStateScreenshot429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot429JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot500JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot500JSONResponseBodyObjectError UploadProductStoreStateScreenshot500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot500JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot500JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot500JSONResponseBodyTypeServerError UploadProductStoreStateScreenshot500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot500JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot503JSONResponseBodyObject.
+const (
+	UploadProductStoreStateScreenshot503JSONResponseBodyObjectError UploadProductStoreStateScreenshot503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot503JSONResponseBodyObject enum.
+func (e UploadProductStoreStateScreenshot503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UploadProductStoreStateScreenshot503JSONResponseBodyType.
+const (
+	UploadProductStoreStateScreenshot503JSONResponseBodyTypeServerError UploadProductStoreStateScreenshot503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot503JSONResponseBodyType enum.
+func (e UploadProductStoreStateScreenshot503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UploadProductStoreStateScreenshot503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation200JSONResponseBodyStatus.
+const (
+	GetProductStoreStateOperation200JSONResponseBodyStatusFailed    GetProductStoreStateOperation200JSONResponseBodyStatus = "failed"
+	GetProductStoreStateOperation200JSONResponseBodyStatusPending   GetProductStoreStateOperation200JSONResponseBodyStatus = "pending"
+	GetProductStoreStateOperation200JSONResponseBodyStatusRunning   GetProductStoreStateOperation200JSONResponseBodyStatus = "running"
+	GetProductStoreStateOperation200JSONResponseBodyStatusSucceeded GetProductStoreStateOperation200JSONResponseBodyStatus = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation200JSONResponseBodyStatus enum.
+func (e GetProductStoreStateOperation200JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation200JSONResponseBodyStatusFailed:
+		return true
+	case GetProductStoreStateOperation200JSONResponseBodyStatusPending:
+		return true
+	case GetProductStoreStateOperation200JSONResponseBodyStatusRunning:
+		return true
+	case GetProductStoreStateOperation200JSONResponseBodyStatusSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation400JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation400JSONResponseBodyObjectError GetProductStoreStateOperation400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation400JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation400JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation400JSONResponseBodyTypeInvalidRequest GetProductStoreStateOperation400JSONResponseBodyType = "invalid_request"
+	GetProductStoreStateOperation400JSONResponseBodyTypeParameterError GetProductStoreStateOperation400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation400JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case GetProductStoreStateOperation400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation401JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation401JSONResponseBodyObjectError GetProductStoreStateOperation401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation401JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation401JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation401JSONResponseBodyTypeAuthenticationError GetProductStoreStateOperation401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation401JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation403JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation403JSONResponseBodyObjectError GetProductStoreStateOperation403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation403JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation403JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation403JSONResponseBodyTypeAuthorizationError GetProductStoreStateOperation403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation403JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation404JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation404JSONResponseBodyObjectError GetProductStoreStateOperation404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation404JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation404JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation404JSONResponseBodyTypeResourceMissing GetProductStoreStateOperation404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation404JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation422JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation422JSONResponseBodyObjectError GetProductStoreStateOperation422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation422JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation422JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation422JSONResponseBodyTypeEntityReferencesArchivedEntities GetProductStoreStateOperation422JSONResponseBodyType = "entity_references_archived_entities"
+	GetProductStoreStateOperation422JSONResponseBodyTypeParameterError                   GetProductStoreStateOperation422JSONResponseBodyType = "parameter_error"
+	GetProductStoreStateOperation422JSONResponseBodyTypeStoreError                       GetProductStoreStateOperation422JSONResponseBodyType = "store_error"
+	GetProductStoreStateOperation422JSONResponseBodyTypeUnprocessableEntityError         GetProductStoreStateOperation422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation422JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case GetProductStoreStateOperation422JSONResponseBodyTypeParameterError:
+		return true
+	case GetProductStoreStateOperation422JSONResponseBodyTypeStoreError:
+		return true
+	case GetProductStoreStateOperation422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation423JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation423JSONResponseBodyObjectError GetProductStoreStateOperation423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation423JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation423JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation423JSONResponseBodyTypeResourceLockedError GetProductStoreStateOperation423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation423JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation429JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation429JSONResponseBodyObjectError GetProductStoreStateOperation429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation429JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation429JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation429JSONResponseBodyTypeRateLimitError GetProductStoreStateOperation429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation429JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation500JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation500JSONResponseBodyObjectError GetProductStoreStateOperation500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation500JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation500JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation500JSONResponseBodyTypeServerError GetProductStoreStateOperation500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation500JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation503JSONResponseBodyObject.
+const (
+	GetProductStoreStateOperation503JSONResponseBodyObjectError GetProductStoreStateOperation503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation503JSONResponseBodyObject enum.
+func (e GetProductStoreStateOperation503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStateOperation503JSONResponseBodyType.
+const (
+	GetProductStoreStateOperation503JSONResponseBodyTypeServerError GetProductStoreStateOperation503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStateOperation503JSONResponseBodyType enum.
+func (e GetProductStoreStateOperation503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetProductStoreStateOperation503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SearchPurchases400JSONResponseBodyObject.
 const (
 	SearchPurchases400JSONResponseBodyObjectError SearchPurchases400JSONResponseBodyObject = "error"
@@ -37921,6 +40156,563 @@ type PlayStoreAppCreate struct {
 // Mac App Store is disabled by default. See [Legacy Mac Apps](https://www.revenuecat.com/docs/legacy-mac-apps) for more details.
 type PlayStoreAppCreateType string
 
+// PlayStoreBasePlanConfig Configuration for a single Play subscription base plan. Mirrors Google's `BasePlan`. At most one of `auto_renewing_base_plan_type`, `prepaid_base_plan_type`, or `installments_base_plan_type` may be set; setting more than one is rejected at plan creation. Plan items that only modify regional/state/offer fields may omit all three.
+type PlayStoreBasePlanConfig struct {
+	// AutoRenewingBasePlanType Auto-renewing variant of the base plan.
+	AutoRenewingBasePlanType *struct {
+		// AccountHoldDuration Example: P30D
+		AccountHoldDuration *string `json:"account_hold_duration,omitempty"`
+
+		// BillingPeriodDuration ISO-8601 duration string (e.g. `P1M`).
+		//
+		// Example: P1M
+		BillingPeriodDuration string `json:"billing_period_duration"`
+
+		// GracePeriodDuration Example: P3D
+		GracePeriodDuration *string `json:"grace_period_duration,omitempty"`
+
+		// LegacyCompatible Example: false
+		LegacyCompatible *bool `json:"legacy_compatible,omitempty"`
+
+		// LegacyCompatibleSubscriptionOfferID Example: legacy-offer
+		LegacyCompatibleSubscriptionOfferID *string `json:"legacy_compatible_subscription_offer_id,omitempty"`
+
+		// ProrationMode Example: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
+		ProrationMode *PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode `json:"proration_mode,omitempty"`
+
+		// ResubscribeState Example: RESUBSCRIBE_STATE_ACTIVE
+		ResubscribeState *PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState `json:"resubscribe_state,omitempty"`
+	} `json:"auto_renewing_base_plan_type,omitempty"`
+
+	// InstallmentsBasePlanType Installments variant of the base plan.
+	InstallmentsBasePlanType *struct {
+		// AccountHoldDuration Example: P30D
+		AccountHoldDuration *string `json:"account_hold_duration,omitempty"`
+
+		// BillingPeriodDuration Example: P1M
+		BillingPeriodDuration string `json:"billing_period_duration"`
+
+		// CommittedPaymentsCount Example: 12
+		CommittedPaymentsCount int `json:"committed_payments_count"`
+
+		// GracePeriodDuration Example: P3D
+		GracePeriodDuration *string `json:"grace_period_duration,omitempty"`
+
+		// ProrationMode Example: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
+		ProrationMode *PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode `json:"proration_mode,omitempty"`
+
+		// RenewalType Example: RENEWAL_TYPE_RENEWS_WITHOUT_COMMITMENT
+		RenewalType PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType `json:"renewal_type"`
+
+		// ResubscribeState Example: RESUBSCRIBE_STATE_ACTIVE
+		ResubscribeState *PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState `json:"resubscribe_state,omitempty"`
+	} `json:"installments_base_plan_type,omitempty"`
+
+	// OfferTags Free-form tags attached to the base plan.
+	OfferTags *[]string `json:"offer_tags,omitempty"`
+
+	// Offers Subscription offers attached to this base plan, keyed by `offer_id` (1-63 lowercase alphanumerics or hyphens). Each value is a `PlayStoreOfferConfig`:
+	//
+	// - `state`: `DRAFT` | `ACTIVE` | `INACTIVE` (defaults to `DRAFT`; an
+	//   `ACTIVE` offer must define at least one phase).
+	//
+	// - `phases`: ordered list of `{ recurrence_count (int >= 1),
+	//   duration (ISO-8601, e.g. P1W), regional_configs{ <region>: { EXACTLY
+	//   ONE of `price` (`{ amount_micros, currency }`) / `free: true` /
+	//   `absolute_discount` (`{ amount_micros, currency }`) /
+	//   `relative_discount` (fraction in `[0, 1]`) } }, other_regions_config? }`.
+	//
+	// - `regional_configs`: per-region `{ new_subscriber_availability }`
+	//   overrides keyed by region code.
+	//
+	// - `other_regions_config`, `targeting`
+	//   (`{ acquisition_rule?, upgrade_rule? }`, at most one), and
+	//   `offer_tags` (array of strings) are all optional.
+	//
+	// Example: {"welcome-offer":{"offer_tags":["launch-promo"],"phases":[{"duration":"P1W","recurrence_count":1,"regional_configs":{"US":{"free":true}}}],"state":"ACTIVE"}}
+	Offers *map[string]PlayStoreOfferConfig `json:"offers,omitempty"`
+
+	// OtherRegionsConfig Default availability and pricing for regions without an explicit `regional_configs` entry.
+	OtherRegionsConfig *struct {
+		// EurPrice Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		EurPrice *PlayStoreTerritoryPrice `json:"eur_price,omitempty"`
+
+		// NewSubscriberAvailability Example: true
+		NewSubscriberAvailability *bool `json:"new_subscriber_availability,omitempty"`
+
+		// UsdPrice Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		UsdPrice *PlayStoreTerritoryPrice `json:"usd_price,omitempty"`
+	} `json:"other_regions_config,omitempty"`
+
+	// PrepaidBasePlanType Prepaid variant of the base plan.
+	PrepaidBasePlanType *struct {
+		// BillingPeriodDuration Example: P1M
+		BillingPeriodDuration string `json:"billing_period_duration"`
+
+		// TimeExtension Example: TIME_EXTENSION_ACTIVE
+		TimeExtension *PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension `json:"time_extension,omitempty"`
+	} `json:"prepaid_base_plan_type,omitempty"`
+
+	// RegionalConfigs Per-region availability and price overrides keyed by region code.
+	RegionalConfigs *map[string]struct {
+		// NewSubscriberAvailability Example: true
+		NewSubscriberAvailability *bool `json:"new_subscriber_availability,omitempty"`
+
+		// Price Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		Price *PlayStoreTerritoryPrice `json:"price,omitempty"`
+	} `json:"regional_configs,omitempty"`
+
+	// State Lifecycle state of the base plan.
+	//
+	// Example: ACTIVE
+	State *PlayStoreBasePlanConfigState `json:"state,omitempty"`
+}
+
+// PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode Example: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
+type PlayStoreBasePlanConfigAutoRenewingBasePlanTypeProrationMode string
+
+// PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState Example: RESUBSCRIBE_STATE_ACTIVE
+type PlayStoreBasePlanConfigAutoRenewingBasePlanTypeResubscribeState string
+
+// PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode Example: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
+type PlayStoreBasePlanConfigInstallmentsBasePlanTypeProrationMode string
+
+// PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType Example: RENEWAL_TYPE_RENEWS_WITHOUT_COMMITMENT
+type PlayStoreBasePlanConfigInstallmentsBasePlanTypeRenewalType string
+
+// PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState Example: RESUBSCRIBE_STATE_ACTIVE
+type PlayStoreBasePlanConfigInstallmentsBasePlanTypeResubscribeState string
+
+// PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension Example: TIME_EXTENSION_ACTIVE
+type PlayStoreBasePlanConfigPrepaidBasePlanTypeTimeExtension string
+
+// PlayStoreBasePlanConfigState Lifecycle state of the base plan.
+//
+// Example: ACTIVE
+type PlayStoreBasePlanConfigState string
+
+// PlayStoreOfferConfig A single subscription offer attached to a base plan (keyed by `offer_id` on the parent base plan's `offers` map). Fields:
+//
+//   - `state`: `DRAFT` | `ACTIVE` | `INACTIVE` (defaults to `ACTIVE` on create).
+//     An offer created with `state: ACTIVE` must define at least one phase.
+//
+//   - `phases`: ordered list of phases (see `PlayStorePhaseConfig`). Each phase
+//     is `{ recurrence_count (int >= 1), duration (ISO-8601, e.g. P1W),
+//     regional_configs{ <region>: { one of price / free / absolute_discount /
+//     relative_discount } }, other_regions_config? }`.
+//
+//   - `regional_configs`: per-region availability overrides keyed by region
+//     code, each `{ new_subscriber_availability: bool }`.
+//
+//   - `other_regions_config`: availability fallback for regions without an
+//     explicit `regional_configs` entry.
+//
+//   - `targeting`: optional `{ acquisition_rule? , upgrade_rule? }`; at most one
+//     of the two.
+//
+// - `offer_tags`: optional array of strings.
+type PlayStoreOfferConfig struct {
+	// OfferTags Free-form tags attached to the offer.
+	OfferTags *[]string `json:"offer_tags,omitempty"`
+
+	// OtherRegionsConfig Default availability for regions without an explicit `regional_configs` entry.
+	OtherRegionsConfig *struct {
+		// OtherRegionsNewSubscriberAvailability Example: true
+		OtherRegionsNewSubscriberAvailability *bool `json:"other_regions_new_subscriber_availability,omitempty"`
+	} `json:"other_regions_config,omitempty"`
+
+	// Phases Ordered list of offer phases. Each item is a `PlayStorePhaseConfig`: `{ recurrence_count (int >= 1), duration (ISO-8601 string, e.g. `P1W`), regional_configs{ <region_code>: { EXACTLY ONE of price / relative_discount / absolute_discount / free: true } }, other_regions_config? }`. A phase must define at least one `regional_configs` entry or `other_regions_config`. Example: a free trial phase followed by a discounted introductory phase.
+	//
+	// Example: [{"duration":"P1W","recurrence_count":1,"regional_configs":{"US":{"free":true}}},{"duration":"P1M","recurrence_count":3,"regional_configs":{"US":{"price":{"amount_micros":4990000,"currency":"USD"}}}}]
+	Phases *[]PlayStorePhaseConfig `json:"phases,omitempty"`
+
+	// RegionalConfigs Per-region availability overrides keyed by region code.
+	RegionalConfigs *map[string]struct {
+		// NewSubscriberAvailability Example: true
+		NewSubscriberAvailability *bool `json:"new_subscriber_availability,omitempty"`
+	} `json:"regional_configs,omitempty"`
+
+	// State Lifecycle state of the offer.
+	//
+	// Example: ACTIVE
+	State *PlayStoreOfferConfigState `json:"state,omitempty"`
+
+	// Targeting Targeting rule. At most one of `acquisition_rule` or `upgrade_rule` should be set; leaving both unset means developer-determined offer eligibility.
+	Targeting *struct {
+		AcquisitionRule *map[string]interface{} `json:"acquisition_rule,omitempty"`
+		UpgradeRule     *map[string]interface{} `json:"upgrade_rule,omitempty"`
+	} `json:"targeting,omitempty"`
+}
+
+// PlayStoreOfferConfigState Lifecycle state of the offer.
+//
+// Example: ACTIVE
+type PlayStoreOfferConfigState string
+
+// PlayStoreOneTimeOfferConfig A pre-order or discounted offer attached to a Play one-time product purchase option. At most one of `pre_order_offer` or `discounted_offer` may be set in one payload; create flows require one offer type.
+type PlayStoreOneTimeOfferConfig struct {
+	// DiscountedOffer Discounted variant of a Play one-time product offer.
+	DiscountedOffer *PlayStoreOneTimeOfferDiscountedConfig `json:"discounted_offer,omitempty"`
+
+	// OfferTags Free-form tags attached to the one-time product offer.
+	OfferTags *[]string `json:"offer_tags,omitempty"`
+
+	// PreOrderOffer Pre-order variant of a Play one-time product offer.
+	PreOrderOffer *PlayStoreOneTimeOfferPreOrderConfig `json:"pre_order_offer,omitempty"`
+
+	// RegionalConfigs Per-region availability and price overrides keyed by region code.
+	//
+	// Example: {"US":{"availability":"AVAILABLE","relative_discount":0.5}}
+	RegionalConfigs *map[string]PlayStoreOneTimeOfferRegionalConfig `json:"regional_configs,omitempty"`
+
+	// State Lifecycle state of the one-time product offer.
+	//
+	// Example: DRAFT
+	State *PlayStoreOneTimeOfferConfigState `json:"state,omitempty"`
+}
+
+// PlayStoreOneTimeOfferConfigState Lifecycle state of the one-time product offer.
+//
+// Example: DRAFT
+type PlayStoreOneTimeOfferConfigState string
+
+// PlayStoreOneTimeOfferDiscountedConfig Discounted variant of a Play one-time product offer.
+type PlayStoreOneTimeOfferDiscountedConfig struct {
+	// EndTime Optional date-time when the discounted offer ends.
+	//
+	// Example: 2026-01-31T00:00:00Z
+	EndTime *time.Time `json:"end_time,omitempty"`
+
+	// RedemptionLimit Maximum redemptions per user. Omit or set 0 for unlimited.
+	//
+	// Example: 10
+	RedemptionLimit *int `json:"redemption_limit,omitempty"`
+
+	// StartTime Optional date-time when the discounted offer starts.
+	//
+	// Example: 2026-01-01T00:00:00Z
+	StartTime *time.Time `json:"start_time,omitempty"`
+}
+
+// PlayStoreOneTimeOfferPreOrderConfig Pre-order variant of a Play one-time product offer.
+type PlayStoreOneTimeOfferPreOrderConfig struct {
+	// EndTime Date-time when the pre-order offer ends.
+	//
+	// Example: 2026-01-31T00:00:00Z
+	EndTime time.Time `json:"end_time"`
+
+	// PriceChangeBehavior How Play handles pre-order price changes before release.
+	//
+	// Example: PRE_ORDER_PRICE_CHANGE_BEHAVIOR_NEW_ORDERS_ONLY
+	PriceChangeBehavior PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior `json:"price_change_behavior"`
+
+	// ReleaseTime Date-time when the product is released.
+	//
+	// Example: 2026-02-01T00:00:00Z
+	ReleaseTime time.Time `json:"release_time"`
+
+	// StartTime Date-time when the pre-order offer starts.
+	//
+	// Example: 2026-01-01T00:00:00Z
+	StartTime time.Time `json:"start_time"`
+}
+
+// PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior How Play handles pre-order price changes before release.
+//
+// Example: PRE_ORDER_PRICE_CHANGE_BEHAVIOR_NEW_ORDERS_ONLY
+type PlayStoreOneTimeOfferPreOrderConfigPriceChangeBehavior string
+
+// PlayStoreOneTimeOfferRegionalConfig Per-region availability and price override for a Play one-time product offer.
+type PlayStoreOneTimeOfferRegionalConfig struct {
+	// AbsoluteDiscount Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+	AbsoluteDiscount *PlayStoreTerritoryPrice `json:"absolute_discount,omitempty"`
+
+	// Availability Offer availability in this region.
+	//
+	// Example: AVAILABLE
+	Availability *PlayStoreOneTimeOfferRegionalConfigAvailability `json:"availability,omitempty"`
+
+	// NoOverride Set to `true` to use the purchase option price without a regional offer override. Omit the field to leave the override unspecified; `false` is rejected.
+	//
+	// Example: true
+	NoOverride *bool `json:"no_override,omitempty"`
+
+	// RelativeDiscount Relative discount fraction, strictly between 0 and 1, following Google Play's `relativeDiscount` semantics.
+	//
+	// Example: 0.5
+	RelativeDiscount *float32 `json:"relative_discount,omitempty"`
+}
+
+// PlayStoreOneTimeOfferRegionalConfigAvailability Offer availability in this region.
+//
+// Example: AVAILABLE
+type PlayStoreOneTimeOfferRegionalConfigAvailability string
+
+// PlayStorePhaseConfig A single phase within a subscription offer (e.g. a 1-week free trial, or a 3-month introductory price). Phases are ordered; `recurrence_count` and `duration` are required. Pricing is set per region in `regional_configs` and/or as a fallback in `other_regions_config`; a phase must define at least one of the two.
+type PlayStorePhaseConfig struct {
+	// Duration ISO-8601 duration string (e.g. `P1W`).
+	//
+	// Example: P1W
+	Duration string `json:"duration"`
+
+	// OtherRegionsConfig Default price override for regions without an explicit `regional_configs` entry. Set EXACTLY ONE pricing option: both `other_regions_usd_price` and `other_regions_eur_price` together, OR `relative_discount`, OR both `absolute_discount_usd` and `absolute_discount_eur` together, OR `free: true`.
+	OtherRegionsConfig *struct {
+		// AbsoluteDiscountEur Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		AbsoluteDiscountEur *PlayStoreTerritoryPrice `json:"absolute_discount_eur,omitempty"`
+
+		// AbsoluteDiscountUsd Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		AbsoluteDiscountUsd *PlayStoreTerritoryPrice `json:"absolute_discount_usd,omitempty"`
+
+		// Free Set to `true` to make this phase free in fallback regions. Boolean literal, not an object.
+		//
+		// Example: true
+		Free *bool `json:"free,omitempty"`
+
+		// OtherRegionsEurPrice Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		OtherRegionsEurPrice *PlayStoreTerritoryPrice `json:"other_regions_eur_price,omitempty"`
+
+		// OtherRegionsUsdPrice Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		OtherRegionsUsdPrice *PlayStoreTerritoryPrice `json:"other_regions_usd_price,omitempty"`
+
+		// RelativeDiscount Example: 0.5
+		RelativeDiscount *float32 `json:"relative_discount,omitempty"`
+	} `json:"other_regions_config,omitempty"`
+
+	// RecurrenceCount Number of times this phase repeats.
+	//
+	// Example: 1
+	RecurrenceCount int `json:"recurrence_count"`
+
+	// RegionalConfigs Per-region price override, keyed by region code (e.g. `US`, `GB`). Each value is a regional config object that sets EXACTLY ONE of the following mutually exclusive pricing fields (a discriminated union — setting zero or more than one is rejected with a 400):
+	//
+	// - `price`: absolute price, a `{ amount_micros, currency }` object
+	//   (e.g. `{ "amount_micros": 9990000, "currency": "GBP" }`).
+	//
+	// - `free`: the boolean literal `true` for a free phase. NOTE: this is a
+	//   boolean, not an object — use `"free": true`, never `{}` or a price
+	//   object.
+	//
+	// - `absolute_discount`: a fixed amount off, as a
+	//   `{ amount_micros, currency }` object.
+	//
+	// - `relative_discount`: a fraction off in `[0, 1]`
+	//   (e.g. `0.5` = 50% off).
+	//
+	// Example: {"GB":{"price":{"amount_micros":9990000,"currency":"GBP"}},"US":{"free":true}}
+	RegionalConfigs *map[string]struct {
+		// AbsoluteDiscount Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		AbsoluteDiscount *PlayStoreTerritoryPrice `json:"absolute_discount,omitempty"`
+
+		// Free Set to `true` to make this phase free in the region. Boolean literal, not an object.
+		//
+		// Example: true
+		Free *bool `json:"free,omitempty"`
+
+		// Price Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+		Price *PlayStoreTerritoryPrice `json:"price,omitempty"`
+
+		// RelativeDiscount Relative discount expressed as a fraction (e.g. `0.5` = 50% off).
+		//
+		// Example: 0.5
+		RelativeDiscount *float32 `json:"relative_discount,omitempty"`
+	} `json:"regional_configs,omitempty"`
+}
+
+// PlayStorePurchaseOptionBuyOptionConfig Buy variant of a Play one-time product purchase option.
+type PlayStorePurchaseOptionBuyOptionConfig struct {
+	// LegacyCompatible Whether this buy option is visible to legacy Play Billing Library clients.
+	//
+	// Example: true
+	LegacyCompatible *bool `json:"legacy_compatible,omitempty"`
+
+	// MultiQuantityEnabled Whether users can buy multiple quantities of this purchase option.
+	//
+	// Example: false
+	MultiQuantityEnabled *bool `json:"multi_quantity_enabled,omitempty"`
+}
+
+// PlayStorePurchaseOptionConfig Configuration for a single Play one-time product purchase option. At most one of `buy_option` or `rent_option` may be set in one payload; create flows require one purchase option type.
+type PlayStorePurchaseOptionConfig struct {
+	// BuyOption Buy variant of a Play one-time product purchase option.
+	BuyOption *PlayStorePurchaseOptionBuyOptionConfig `json:"buy_option,omitempty"`
+
+	// NewRegionsConfig Default availability and pricing for new Play regions on a one-time purchase option.
+	NewRegionsConfig *PlayStorePurchaseOptionNewRegionsConfig `json:"new_regions_config,omitempty"`
+
+	// OfferTags Free-form tags attached to the purchase option.
+	OfferTags *[]string `json:"offer_tags,omitempty"`
+
+	// Offers One-time product offers keyed by `offer_id`.
+	//
+	// Example: {"launch-offer":{"discounted_offer":{"redemption_limit":10},"offer_tags":["launch-promo"],"regional_configs":{"US":{"availability":"AVAILABLE","relative_discount":0.5}},"state":"DRAFT"}}
+	Offers *map[string]PlayStoreOneTimeOfferConfig `json:"offers,omitempty"`
+
+	// RegionalConfigs Per-region availability and price keyed by region code.
+	//
+	// Example: {"US":{"availability":"AVAILABLE","price":{"amount_micros":4990000,"currency":"USD"}}}
+	RegionalConfigs *map[string]PlayStorePurchaseOptionRegionalConfig `json:"regional_configs,omitempty"`
+
+	// RentOption Rent variant of a Play one-time product purchase option.
+	RentOption *PlayStorePurchaseOptionRentOptionConfig `json:"rent_option,omitempty"`
+
+	// State Lifecycle state of the purchase option.
+	//
+	// Example: ACTIVE
+	State *PlayStorePurchaseOptionConfigState `json:"state,omitempty"`
+
+	// TaxAndCompliance Purchase-option-level tax and compliance settings.
+	TaxAndCompliance *PlayStorePurchaseOptionTaxAndComplianceConfig `json:"tax_and_compliance,omitempty"`
+}
+
+// PlayStorePurchaseOptionConfigState Lifecycle state of the purchase option.
+//
+// Example: ACTIVE
+type PlayStorePurchaseOptionConfigState string
+
+// PlayStorePurchaseOptionNewRegionsConfig Default availability and pricing for new Play regions on a one-time purchase option.
+type PlayStorePurchaseOptionNewRegionsConfig struct {
+	// Availability Availability applied to new regions.
+	//
+	// Example: AVAILABLE
+	Availability *PlayStorePurchaseOptionNewRegionsConfigAvailability `json:"availability,omitempty"`
+
+	// EurPrice Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+	EurPrice *PlayStoreTerritoryPrice `json:"eur_price,omitempty"`
+
+	// UsdPrice Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+	UsdPrice *PlayStoreTerritoryPrice `json:"usd_price,omitempty"`
+}
+
+// PlayStorePurchaseOptionNewRegionsConfigAvailability Availability applied to new regions.
+//
+// Example: AVAILABLE
+type PlayStorePurchaseOptionNewRegionsConfigAvailability string
+
+// PlayStorePurchaseOptionRegionalConfig Per-region availability and price for a Play one-time product purchase option.
+type PlayStorePurchaseOptionRegionalConfig struct {
+	// Availability Availability of the purchase option in this region.
+	//
+	// Example: AVAILABLE
+	Availability *PlayStorePurchaseOptionRegionalConfigAvailability `json:"availability,omitempty"`
+
+	// Price Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+	Price *PlayStoreTerritoryPrice `json:"price,omitempty"`
+}
+
+// PlayStorePurchaseOptionRegionalConfigAvailability Availability of the purchase option in this region.
+//
+// Example: AVAILABLE
+type PlayStorePurchaseOptionRegionalConfigAvailability string
+
+// PlayStorePurchaseOptionRentOptionConfig Rent variant of a Play one-time product purchase option.
+type PlayStorePurchaseOptionRentOptionConfig struct {
+	// ExpirationPeriod Optional ISO-8601 duration after which the rental expires.
+	//
+	// Example: P7D
+	ExpirationPeriod *string `json:"expiration_period,omitempty"`
+
+	// RentalPeriod ISO-8601 duration for the rental period.
+	//
+	// Example: P30D
+	RentalPeriod string `json:"rental_period"`
+}
+
+// PlayStorePurchaseOptionTaxAndComplianceConfig Purchase-option-level tax and compliance settings.
+type PlayStorePurchaseOptionTaxAndComplianceConfig struct {
+	// WithdrawalRightType Withdrawal right type for this purchase option.
+	//
+	// Example: WITHDRAWAL_RIGHT_DIGITAL_CONTENT
+	WithdrawalRightType *PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType `json:"withdrawal_right_type,omitempty"`
+}
+
+// PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType Withdrawal right type for this purchase option.
+//
+// Example: WITHDRAWAL_RIGHT_DIGITAL_CONTENT
+type PlayStorePurchaseOptionTaxAndComplianceConfigWithdrawalRightType string
+
+// PlayStoreRegionalProductAgeRatingInfo Per-region age-rating override.
+type PlayStoreRegionalProductAgeRatingInfo struct {
+	// ProductAgeRatingTier Age-rating tier for the region. Values come from Google's `ProductAgeRatingTier` enum.
+	//
+	// Example: PRODUCT_AGE_RATING_TIER_EVERYONE
+	ProductAgeRatingTier PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier `json:"product_age_rating_tier"`
+
+	// RegionCode ISO region code.
+	//
+	// Example: US
+	RegionCode string `json:"region_code"`
+}
+
+// PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier Age-rating tier for the region. Values come from Google's `ProductAgeRatingTier` enum.
+//
+// Example: PRODUCT_AGE_RATING_TIER_EVERYONE
+type PlayStoreRegionalProductAgeRatingInfoProductAgeRatingTier string
+
+// PlayStoreRegionalTaxRateInfo Per-region tax-rate hint used by Google's tax calculation. All fields are optional; an absent field means "no override for this region".
+type PlayStoreRegionalTaxRateInfo struct {
+	// EligibleForStreamingServiceTaxRate Whether the region is eligible for the streaming-service tax rate.
+	//
+	// Example: false
+	EligibleForStreamingServiceTaxRate *bool `json:"eligible_for_streaming_service_tax_rate,omitempty"`
+
+	// StreamingTaxType Streaming-tax-type code.
+	//
+	// Example: STREAMING_TAX_TYPE_AUDIO_VIDEO
+	StreamingTaxType *string `json:"streaming_tax_type,omitempty"`
+
+	// TaxTier Tax-tier code.
+	//
+	// Example: TIER_1
+	TaxTier *string `json:"tax_tier,omitempty"`
+}
+
+// PlayStoreRestrictedPaymentCountriesConfig Subscription-level list of region codes where payment is restricted. Lives on the parent subscription; must agree across plan items targeting the same `subscription_id`. Shared by request and response shapes.
+type PlayStoreRestrictedPaymentCountriesConfig struct {
+	// RegionCodes ISO region codes where payment is restricted.
+	RegionCodes []string `json:"region_codes"`
+}
+
+// PlayStoreTaxAndComplianceConfig Product-level tax and compliance settings. For subscriptions this lives on the parent subscription in Google's API and must agree across plan items targeting the same `subscription_id`. Shared by request and response shapes.
+type PlayStoreTaxAndComplianceConfig struct {
+	// EeaWithdrawalRightType EEA withdrawal-right type code. Only supported for subscriptions; one-time products configure withdrawal rights per purchase option via `tax_and_compliance.withdrawal_right_type`.
+	//
+	// Example: WITHDRAWAL_RIGHT_DIGITAL_CONTENT
+	EeaWithdrawalRightType *string `json:"eea_withdrawal_right_type,omitempty"`
+
+	// IsTokenizedDigitalAsset Whether the product represents a tokenized digital asset.
+	//
+	// Example: false
+	IsTokenizedDigitalAsset *bool `json:"is_tokenized_digital_asset,omitempty"`
+
+	// ProductTaxCategoryCode Product tax-category code.
+	//
+	// Example: DIGITAL_GOODS
+	ProductTaxCategoryCode *string `json:"product_tax_category_code,omitempty"`
+
+	// RegionalProductAgeRatingInfos Per-region age-rating overrides.
+	//
+	// Example: [{"product_age_rating_tier":"PRODUCT_AGE_RATING_TIER_EVERYONE","region_code":"US"}]
+	RegionalProductAgeRatingInfos *[]PlayStoreRegionalProductAgeRatingInfo `json:"regional_product_age_rating_infos,omitempty"`
+
+	// TaxRateInfoByRegionCode Per-region tax-rate hints used by Google's tax calculation.
+	//
+	// Example: {"US":{"tax_tier":"TIER_1"}}
+	TaxRateInfoByRegionCode *map[string]PlayStoreRegionalTaxRateInfo `json:"tax_rate_info_by_region_code,omitempty"`
+}
+
+// PlayStoreTerritoryPrice Territory price expressed in micros, mirroring App Store inputs. The Play driver converts to/from Google's `Money{units, nanos, currencyCode}` at the API boundary.
+type PlayStoreTerritoryPrice struct {
+	// AmountMicros Price amount in micros (1 unit = 1_000_000 micros).
+	//
+	// Example: 9990000
+	AmountMicros int64 `json:"amount_micros"`
+
+	// Currency ISO-4217 currency code.
+	//
+	// Example: USD
+	Currency *string `json:"currency,omitempty"`
+}
+
 // Product defines model for Product.
 type Product struct {
 	App *App `json:"app,omitempty"`
@@ -37969,6 +40761,309 @@ type ProductObject string
 //
 // Example: active
 type ProductState string
+
+// ProductStoreStateAppStoreState defines model for ProductStoreStateAppStoreState.
+type ProductStoreStateAppStoreState struct {
+	// PreserveCurrentSubscriptionPrice When true, existing App Store subscription subscribers keep their current price when a new subscription price is scheduled.
+	//
+	// Example: true
+	PreserveCurrentSubscriptionPrice *bool `json:"preserve_current_subscription_price,omitempty"`
+
+	// PrivacyPolicyURL Privacy policy URL shown in App Store metadata.
+	//
+	// Example: https://example.com/privacy
+	PrivacyPolicyURL  *string `json:"privacy_policy_url,omitempty"`
+	ReviewInformation *struct {
+		// Notes App review notes for this product.
+		//
+		// Example: Screenshot uploaded through screenshot_upload endpoint.
+		Notes *string `json:"notes,omitempty"`
+
+		// Screenshot Review screenshot configuration. If omitted or null, a placeholder screenshot is uploaded automatically so the product can reach READY_TO_SUBMIT state.
+		Screenshot *struct {
+			// FileSize Screenshot size in bytes.
+			//
+			// Example: 125000
+			FileSize *int64 `json:"file_size,omitempty"`
+
+			// Filename Original screenshot filename.
+			//
+			// Example: review.png
+			Filename *string `json:"filename,omitempty"`
+
+			// ScreenshotID App Store Connect screenshot identifier.
+			//
+			// Example: asc_screenshot_123
+			ScreenshotID *string `json:"screenshot_id,omitempty"`
+
+			// SourceFileChecksum MD5 checksum of the uploaded source file.
+			//
+			// Example: d41d8cd98f00b204e9800998ecf8427e
+			SourceFileChecksum *string `json:"source_file_checksum,omitempty"`
+		} `json:"screenshot,omitempty"`
+	} `json:"review_information,omitempty"`
+	SubscriptionGroupLocalizations *map[string]*struct {
+		// CustomAppName Custom app name shown in App Store subscription UI.
+		//
+		// Example: MagicWeather
+		CustomAppName *string `json:"custom_app_name,omitempty"`
+
+		// Name Localized subscription group name.
+		//
+		// Example: Premium Subscriptions
+		Name string `json:"name"`
+	} `json:"subscription_group_localizations,omitempty"`
+
+	// SubscriptionGroupName Optional subscription group name used when creating a missing App Store subscription. If omitted, defaults to `Default`.
+	//
+	// Example: Premium Subscriptions
+	SubscriptionGroupName *string `json:"subscription_group_name,omitempty"`
+
+	// TrialOffer Free trial introductory offer for the subscription. Applied uniformly to all territories.
+	TrialOffer *struct {
+		// Duration Trial offer duration.
+		//
+		// Example: ONE_WEEK
+		Duration ProductStoreStateAppStoreStateTrialOfferDuration `json:"duration"`
+
+		// StartDate Optional start date for newly created introductory offers.
+		//
+		// Example: 2026-05-01
+		StartDate *openapi_types.Date `json:"start_date,omitempty"`
+	} `json:"trial_offer,omitempty"`
+}
+
+// ProductStoreStateAppStoreStateTrialOfferDuration Trial offer duration.
+//
+// Example: ONE_WEEK
+type ProductStoreStateAppStoreStateTrialOfferDuration string
+
+// ProductStoreStateAppStoreStateResponse defines model for ProductStoreStateAppStoreStateResponse.
+type ProductStoreStateAppStoreStateResponse struct {
+	// PreserveCurrentSubscriptionPrice Whether App Store Connect returns any preserved subscription price for existing subscribers.
+	//
+	// Example: true
+	PreserveCurrentSubscriptionPrice *bool `json:"preserve_current_subscription_price,omitempty"`
+
+	// PrivacyPolicyURL Privacy policy URL shown in App Store metadata.
+	//
+	// Example: https://example.com/privacy
+	PrivacyPolicyURL  *string `json:"privacy_policy_url,omitempty"`
+	ReviewInformation *struct {
+		// Notes App review notes for this product.
+		//
+		// Example: Screenshot uploaded through screenshot_upload endpoint.
+		Notes *string `json:"notes,omitempty"`
+
+		// Screenshot Review screenshot configuration. If omitted or null, a placeholder screenshot is uploaded automatically so the product can reach READY_TO_SUBMIT state.
+		Screenshot *struct {
+			// FileSize Screenshot size in bytes.
+			//
+			// Example: 125000
+			FileSize *int64 `json:"file_size,omitempty"`
+
+			// Filename Original screenshot filename.
+			//
+			// Example: review.png
+			Filename *string `json:"filename,omitempty"`
+
+			// ScreenshotID App Store Connect screenshot identifier.
+			//
+			// Example: asc_screenshot_123
+			ScreenshotID *string `json:"screenshot_id,omitempty"`
+
+			// SourceFileChecksum MD5 checksum of the uploaded source file.
+			//
+			// Example: d41d8cd98f00b204e9800998ecf8427e
+			SourceFileChecksum *string `json:"source_file_checksum,omitempty"`
+		} `json:"screenshot,omitempty"`
+	} `json:"review_information,omitempty"`
+	SubscriptionGroupLocalizations *map[string]*struct {
+		// CustomAppName Custom app name shown in App Store subscription UI.
+		//
+		// Example: MagicWeather
+		CustomAppName *string `json:"custom_app_name,omitempty"`
+
+		// Name Localized subscription group name.
+		//
+		// Example: Premium Subscriptions
+		Name string `json:"name"`
+	} `json:"subscription_group_localizations,omitempty"`
+
+	// SubscriptionGroupName Optional subscription group name used when creating a missing App Store subscription. If omitted, defaults to `Default`.
+	//
+	// Example: Premium Subscriptions
+	SubscriptionGroupName *string `json:"subscription_group_name,omitempty"`
+
+	// TrialOffer Free trial introductory offer for the subscription. Applied uniformly to all territories.
+	TrialOffer *struct {
+		// Duration Trial offer duration.
+		//
+		// Example: ONE_WEEK
+		Duration ProductStoreStateAppStoreStateResponseTrialOfferDuration `json:"duration"`
+	} `json:"trial_offer,omitempty"`
+}
+
+// ProductStoreStateAppStoreStateResponseTrialOfferDuration Trial offer duration.
+//
+// Example: ONE_WEEK
+type ProductStoreStateAppStoreStateResponseTrialOfferDuration string
+
+// ProductStoreStateCommonResponse defines model for ProductStoreStateCommonResponse.
+type ProductStoreStateCommonResponse struct {
+	Availability *struct {
+		// AvailableInNewTerritories Availability default for newly added territories. Optional; when omitted, the current App Store Connect value is preserved.
+		//
+		// Example: true
+		AvailableInNewTerritories *bool `json:"available_in_new_territories,omitempty"`
+
+		// Territories Territories where the product is available. True = available, false = remove.
+		Territories *map[string]bool `json:"territories,omitempty"`
+	} `json:"availability,omitempty"`
+
+	// Duration Subscription duration. App Store product store state operations return this value using App Store Connect period names for backwards compatibility.
+	//
+	// Example: ONE_MONTH
+	Duration      *ProductStoreStateCommonResponseDuration `json:"duration,omitempty"`
+	Localizations *map[string]*struct {
+		// Description Localized product description.
+		//
+		// Example: Access premium content every month.
+		Description *string `json:"description"`
+
+		// Name Localized product display name.
+		//
+		// Example: Premium Monthly
+		Name string `json:"name"`
+	} `json:"localizations,omitempty"`
+	Pricing *struct {
+		TerritoryPrices *map[string]struct {
+			// AmountMicros Territory price amount in micros.
+			//
+			// Example: 9990000
+			AmountMicros int64 `json:"amount_micros"`
+
+			// Currency ISO currency code for this territory price.
+			//
+			// Example: USD
+			Currency *string `json:"currency,omitempty"`
+
+			// StartDate ISO-8601 date (YYYY-MM-DD) when this price takes effect. Present when the next effective price for the territory is scheduled in the future.
+			//
+			// Example: 2026-05-01
+			StartDate *openapi_types.Date `json:"start_date,omitempty"`
+
+			// SubscriptionPricePointID Optional App Store Connect price point identifier.
+			SubscriptionPricePointID *string `json:"subscription_price_point_id,omitempty"`
+		} `json:"territory_prices,omitempty"`
+	} `json:"pricing,omitempty"`
+
+	// Title Optional product title used by create-if-missing flows.
+	//
+	// Example: Premium Monthly
+	Title *string `json:"title,omitempty"`
+}
+
+// ProductStoreStateCommonResponseDuration Subscription duration. App Store product store state operations return this value using App Store Connect period names for backwards compatibility.
+//
+// Example: ONE_MONTH
+type ProductStoreStateCommonResponseDuration string
+
+// ProductStoreStatePlayStoreState Play Store specific desired state for a single plan item. Subscriptions use `base_plans` keyed by `base_plan_id`; one-time products use `purchase_options` keyed by `purchase_option_id`. Do not combine both maps in a single desired state.
+type ProductStoreStatePlayStoreState struct {
+	// Archived Whether the parent subscription is archived in Play Console. Must agree across plan items targeting the same `subscription_id`. Not supported for one-time products.
+	//
+	// Example: false
+	Archived *bool `json:"archived,omitempty"`
+
+	// BasePlans Configuration for each base plan keyed by `base_plan_id`. Only applies to subscriptions; one-time products use `purchase_options` instead. Plan-item granularity is `(subscription_id, base_plan_id)`, so this typically contains a single entry — the targeted base plan. May be omitted for plan items that only touch `common.*` or top-level fields (`tax_and_compliance`, `restricted_payment_countries`, `archived`, `regions_version`).
+	// Each value follows `PlayStoreBasePlanConfig`. The most important inner fields when creating a subscription are:
+	// - `state` (`ACTIVE` | `DRAFT` | `INACTIVE`, default `ACTIVE` on
+	//   create).
+	// - Exactly one billing plan type: `auto_renewing_base_plan_type`
+	//   (most common — requires `billing_period_duration`; optional
+	//   `grace_period_duration`, `account_hold_duration`,
+	//   `proration_mode`, `resubscribe_state`, `legacy_compatible`,
+	//   `legacy_compatible_subscription_offer_id`),
+	//   `prepaid_base_plan_type`, or `installments_base_plan_type`.
+	// - `regional_configs[<region>]` with
+	//   `new_subscriber_availability` and/or `price`
+	//   (`{ amount_micros, currency }`).
+	// - Optional `offer_tags` (array of strings) and `offers` (keyed by
+	//   `offer_id`). Each offer is `{ state (DRAFT|ACTIVE|INACTIVE),
+	//   phases: [ { recurrence_count, duration, regional_configs{ <region>:
+	//   { EXACTLY ONE of price / free: true / absolute_discount /
+	//   relative_discount } } } ], targeting?, offer_tags? }`. See the
+	//   `offers` field on `PlayStoreBasePlanConfig` for the full shape.
+	//
+	// Example: {"monthly":{"auto_renewing_base_plan_type":{"account_hold_duration":"P30D","billing_period_duration":"P1M","grace_period_duration":"P3D","legacy_compatible":false,"legacy_compatible_subscription_offer_id":null,"proration_mode":"SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE","resubscribe_state":"RESUBSCRIBE_STATE_ACTIVE"},"offer_tags":[],"offers":{},"regional_configs":{"US":{"new_subscriber_availability":true,"price":{"amount_micros":9990000,"currency":"USD"}}},"state":"ACTIVE"}}
+	BasePlans *map[string]PlayStoreBasePlanConfig `json:"base_plans,omitempty"`
+
+	// LatencyTolerance Latency tolerance hint for Google's monetization API (e.g. `LATENCY_TOLERANT_FRESHNESS` / `LATENCY_TOLERANT_LOW_LATENCY`).
+	//
+	// Example: PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_TOLERANT
+	LatencyTolerance *string `json:"latency_tolerance,omitempty"`
+
+	// PurchaseOptions Configuration for each one-time product purchase option keyed by `purchase_option_id`. Only applies to one-time products; subscriptions use `base_plans` instead. One-time product plan-item granularity is the product itself, so purchase options are managed inline on the product.
+	// Each value follows `PlayStorePurchaseOptionConfig`. Notable inner fields are:
+	// - `state` (`DRAFT` | `ACTIVE` | `INACTIVE` |
+	//   `INACTIVE_PUBLISHED`).
+	// - At most one of `buy_option` or `rent_option`; Google requires one
+	//   when creating a purchase option.
+	// - `regional_configs[<region>]` with `availability` and/or `price`
+	//   (`{ amount_micros, currency }`).
+	// - Optional `offer_tags`, purchase-option `tax_and_compliance`, and
+	//   `offers` keyed by `offer_id`.
+	//
+	// Example: {"buy":{"buy_option":{"legacy_compatible":true,"multi_quantity_enabled":false},"offer_tags":["one-time"],"offers":{},"regional_configs":{"US":{"availability":"AVAILABLE","price":{"amount_micros":4990000,"currency":"USD"}}},"state":"ACTIVE"}}
+	PurchaseOptions *map[string]PlayStorePurchaseOptionConfig `json:"purchase_options,omitempty"`
+
+	// RegionsVersion Google Play regions version used to interpret region codes. Optional; when omitted, the driver applies a sensible default.
+	//
+	// Example: 2025/03
+	RegionsVersion *string `json:"regions_version,omitempty"`
+
+	// RestrictedPaymentCountries Subscription-level list of region codes where payment is restricted. Lives on the parent subscription; must agree across plan items targeting the same `subscription_id`. Shared by request and response shapes.
+	RestrictedPaymentCountries *PlayStoreRestrictedPaymentCountriesConfig `json:"restricted_payment_countries,omitempty"`
+
+	// TaxAndCompliance Product-level tax and compliance settings. For subscriptions this lives on the parent subscription in Google's API and must agree across plan items targeting the same `subscription_id`. Shared by request and response shapes.
+	TaxAndCompliance *PlayStoreTaxAndComplianceConfig `json:"tax_and_compliance,omitempty"`
+}
+
+// ProductStoreStatePlayStoreStateResponse Play Store specific desired state as returned by the plan endpoints. Same shape as the request schema with relaxed required-field constraints; in particular the response may omit `base_plans`, `purchase_options`, or any store-level field if the plan item didn't touch it.
+type ProductStoreStatePlayStoreStateResponse struct {
+	// Archived Whether the parent subscription is archived in Play Console. Not supported for one-time products.
+	//
+	// Example: false
+	Archived *bool `json:"archived,omitempty"`
+
+	// BasePlans Configuration for each base plan keyed by `base_plan_id`. Only present for subscriptions; one-time products use `purchase_options` instead. May be empty or omitted in responses for plan items that only touch `common.*` fields.
+	// Each value follows `PlayStoreBasePlanConfig` — see that schema for the full inner shape. Notable inner fields: `state` (`ACTIVE` | `DRAFT` | `INACTIVE`), one of `auto_renewing_base_plan_type` (with `billing_period_duration` plus optional `grace_period_duration`, `account_hold_duration`, `proration_mode`, `resubscribe_state`, `legacy_compatible`, `legacy_compatible_subscription_offer_id`), `prepaid_base_plan_type`, or `installments_base_plan_type`, plus `regional_configs[<region>]`, `offer_tags`, and `offers`.
+	//
+	// Example: {"monthly":{"auto_renewing_base_plan_type":{"account_hold_duration":"P30D","billing_period_duration":"P1M","grace_period_duration":"P3D","legacy_compatible":false,"legacy_compatible_subscription_offer_id":null,"proration_mode":"SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE","resubscribe_state":"RESUBSCRIBE_STATE_ACTIVE"},"offer_tags":[],"offers":{},"regional_configs":{"US":{"new_subscriber_availability":true,"price":{"amount_micros":9990000,"currency":"USD"}}},"state":"ACTIVE"}}
+	BasePlans *map[string]PlayStoreBasePlanConfig `json:"base_plans,omitempty"`
+
+	// LatencyTolerance Latency tolerance hint for Google's monetization API.
+	//
+	// Example: PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_TOLERANT
+	LatencyTolerance *string `json:"latency_tolerance,omitempty"`
+
+	// PurchaseOptions Configuration for each one-time product purchase option keyed by `purchase_option_id`. Only present for one-time products; subscriptions use `base_plans` instead. May be empty or omitted in responses for plan items that only touch `common.*` fields.
+	//
+	// Example: {"buy":{"buy_option":{"legacy_compatible":true,"multi_quantity_enabled":false},"offer_tags":["one-time"],"offers":{},"regional_configs":{"US":{"availability":"AVAILABLE","price":{"amount_micros":4990000,"currency":"USD"}}},"state":"ACTIVE"}}
+	PurchaseOptions *map[string]PlayStorePurchaseOptionConfig `json:"purchase_options,omitempty"`
+
+	// RegionsVersion Google Play regions version used to interpret region codes.
+	//
+	// Example: 2025/03
+	RegionsVersion *string `json:"regions_version,omitempty"`
+
+	// RestrictedPaymentCountries Subscription-level list of region codes where payment is restricted. Lives on the parent subscription; must agree across plan items targeting the same `subscription_id`. Shared by request and response shapes.
+	RestrictedPaymentCountries *PlayStoreRestrictedPaymentCountriesConfig `json:"restricted_payment_countries,omitempty"`
+
+	// TaxAndCompliance Product-level tax and compliance settings. For subscriptions this lives on the parent subscription in Google's API and must agree across plan items targeting the same `subscription_id`. Shared by request and response shapes.
+	TaxAndCompliance *PlayStoreTaxAndComplianceConfig `json:"tax_and_compliance,omitempty"`
+}
 
 // ProductSubscriptionInput Subscription parameters for product creation. Only supported for simulated store products.
 type ProductSubscriptionInput struct {
@@ -45070,6 +48165,421 @@ type CreateProductInStore503JSONResponseBodyObject string
 // CreateProductInStore503JSONResponseBodyType defines parameters for CreateProductInStore.
 type CreateProductInStore503JSONResponseBodyType string
 
+// GetProductStoreState200JSONResponseBodyCommonDuration defines parameters for GetProductStoreState.
+type GetProductStoreState200JSONResponseBodyCommonDuration string
+
+// GetProductStoreState200JSONResponseBodyStore defines parameters for GetProductStoreState.
+type GetProductStoreState200JSONResponseBodyStore string
+
+// GetProductStoreState200JSONResponseBody_StoreState defines parameters for GetProductStoreState.
+type GetProductStoreState200JSONResponseBody_StoreState struct {
+	union json.RawMessage
+}
+
+// GetProductStoreState200JSONResponseBodyStoreStatusStatus defines parameters for GetProductStoreState.
+type GetProductStoreState200JSONResponseBodyStoreStatusStatus string
+
+// GetProductStoreState400JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState400JSONResponseBodyObject string
+
+// GetProductStoreState400JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState400JSONResponseBodyType string
+
+// GetProductStoreState401JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState401JSONResponseBodyObject string
+
+// GetProductStoreState401JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState401JSONResponseBodyType string
+
+// GetProductStoreState403JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState403JSONResponseBodyObject string
+
+// GetProductStoreState403JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState403JSONResponseBodyType string
+
+// GetProductStoreState404JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState404JSONResponseBodyObject string
+
+// GetProductStoreState404JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState404JSONResponseBodyType string
+
+// GetProductStoreState422JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState422JSONResponseBodyObject string
+
+// GetProductStoreState422JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState422JSONResponseBodyType string
+
+// GetProductStoreState423JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState423JSONResponseBodyObject string
+
+// GetProductStoreState423JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState423JSONResponseBodyType string
+
+// GetProductStoreState429JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState429JSONResponseBodyObject string
+
+// GetProductStoreState429JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState429JSONResponseBodyType string
+
+// GetProductStoreState500JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState500JSONResponseBodyObject string
+
+// GetProductStoreState500JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState500JSONResponseBodyType string
+
+// GetProductStoreState503JSONResponseBodyObject defines parameters for GetProductStoreState.
+type GetProductStoreState503JSONResponseBodyObject string
+
+// GetProductStoreState503JSONResponseBodyType defines parameters for GetProductStoreState.
+type GetProductStoreState503JSONResponseBodyType string
+
+// SetProductStoreStateJSONBody defines parameters for SetProductStoreState.
+type SetProductStoreStateJSONBody struct {
+	Common *struct {
+		Availability *struct {
+			// AvailableInNewTerritories Availability default for newly added territories. Optional; when omitted, the current App Store Connect value is preserved.
+			//
+			// Example: true
+			AvailableInNewTerritories *bool `json:"available_in_new_territories,omitempty"`
+
+			// Territories Territories where the product is available. True = available, false = remove.
+			Territories *map[string]bool `json:"territories,omitempty"`
+		} `json:"availability,omitempty"`
+
+		// Duration Subscription duration. Required for subscription creation in create-if-missing flows. Canonical ISO-like durations are preferred, but legacy App Store Connect period values are accepted for backwards compatibility.
+		//
+		// Example: ONE_MONTH
+		Duration      *SetProductStoreStateJSONBodyCommonDuration `json:"duration,omitempty"`
+		Localizations *map[string]*struct {
+			// Description Localized product description. App Store Connect limits: 45 characters for both subscriptions and in-app purchases.
+			//
+			// Example: Access premium content every month.
+			Description string `json:"description"`
+
+			// Name Localized product display name. App Store Connect limits: 30 characters for both subscriptions and in-app purchases.
+			//
+			// Example: Premium Monthly
+			Name string `json:"name"`
+		} `json:"localizations,omitempty"`
+		Pricing *struct {
+			TerritoryPrices *map[string]struct {
+				// AmountMicros Territory price amount in micros.
+				//
+				// Example: 9990000
+				AmountMicros int64 `json:"amount_micros"`
+
+				// Currency ISO currency code for this territory price.
+				//
+				// Example: USD
+				Currency *string `json:"currency,omitempty"`
+
+				// StartDate ISO-8601 date (YYYY-MM-DD) for a scheduled price change. Required for approved subscriptions — Apple does not allow modifying the current price of an approved subscription directly; a future start date must be provided to schedule the change. Omit for initial pricing of unapproved products. For in-app purchases, sets the start date on the price schedule entry.
+				//
+				// Example: 2026-04-01
+				StartDate *openapi_types.Date `json:"start_date,omitempty"`
+			} `json:"territory_prices,omitempty"`
+		} `json:"pricing,omitempty"`
+
+		// Title Optional product title used by create-if-missing flows.
+		//
+		// Example: Premium Monthly
+		Title *string `json:"title,omitempty"`
+	} `json:"common,omitempty"`
+
+	// Store The target store for this desired state.
+	//
+	// Example: app_store
+	Store SetProductStoreStateJSONBodyStore `json:"store"`
+
+	// StoreState Store-specific desired state. Must match the `store` discriminator.
+	StoreState *SetProductStoreStateJSONBody_StoreState `json:"store_state,omitempty"`
+}
+
+// SetProductStoreStateJSONBodyCommonDuration defines parameters for SetProductStoreState.
+type SetProductStoreStateJSONBodyCommonDuration string
+
+// SetProductStoreStateJSONBodyStore defines parameters for SetProductStoreState.
+type SetProductStoreStateJSONBodyStore string
+
+// SetProductStoreStateJSONBody_StoreState defines parameters for SetProductStoreState.
+type SetProductStoreStateJSONBody_StoreState struct {
+	union json.RawMessage
+}
+
+// SetProductStoreState202JSONResponseBodyStatus defines parameters for SetProductStoreState.
+type SetProductStoreState202JSONResponseBodyStatus string
+
+// SetProductStoreState400JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState400JSONResponseBodyObject string
+
+// SetProductStoreState400JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState400JSONResponseBodyType string
+
+// SetProductStoreState401JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState401JSONResponseBodyObject string
+
+// SetProductStoreState401JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState401JSONResponseBodyType string
+
+// SetProductStoreState403JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState403JSONResponseBodyObject string
+
+// SetProductStoreState403JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState403JSONResponseBodyType string
+
+// SetProductStoreState404JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState404JSONResponseBodyObject string
+
+// SetProductStoreState404JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState404JSONResponseBodyType string
+
+// SetProductStoreState409JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState409JSONResponseBodyObject string
+
+// SetProductStoreState409JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState409JSONResponseBodyType string
+
+// SetProductStoreState422JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState422JSONResponseBodyObject string
+
+// SetProductStoreState422JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState422JSONResponseBodyType string
+
+// SetProductStoreState423JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState423JSONResponseBodyObject string
+
+// SetProductStoreState423JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState423JSONResponseBodyType string
+
+// SetProductStoreState429JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState429JSONResponseBodyObject string
+
+// SetProductStoreState429JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState429JSONResponseBodyType string
+
+// SetProductStoreState500JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState500JSONResponseBodyObject string
+
+// SetProductStoreState500JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState500JSONResponseBodyType string
+
+// SetProductStoreState503JSONResponseBodyObject defines parameters for SetProductStoreState.
+type SetProductStoreState503JSONResponseBodyObject string
+
+// SetProductStoreState503JSONResponseBodyType defines parameters for SetProductStoreState.
+type SetProductStoreState503JSONResponseBodyType string
+
+// EqualizeSubscriptionPricesJSONBody defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPricesJSONBody struct {
+	// BaseTerritory Base territory used to resolve the source price point from the
+	// territory's current App Store price (alpha-2 or alpha-3 code).
+	//
+	//
+	// Example: US
+	BaseTerritory string `json:"base_territory"`
+
+	// Store The target store for this operation.
+	//
+	// Example: app_store
+	Store EqualizeSubscriptionPricesJSONBodyStore `json:"store"`
+}
+
+// EqualizeSubscriptionPricesJSONBodyStore defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPricesJSONBodyStore string
+
+// EqualizeSubscriptionPrices202JSONResponseBodyStatus defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices202JSONResponseBodyStatus string
+
+// EqualizeSubscriptionPrices400JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices400JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices400JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices400JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices401JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices401JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices401JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices401JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices403JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices403JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices403JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices403JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices404JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices404JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices404JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices404JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices409JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices409JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices409JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices409JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices422JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices422JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices422JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices422JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices423JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices423JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices423JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices423JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices429JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices429JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices429JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices429JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices500JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices500JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices500JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices500JSONResponseBodyType string
+
+// EqualizeSubscriptionPrices503JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices503JSONResponseBodyObject string
+
+// EqualizeSubscriptionPrices503JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
+type EqualizeSubscriptionPrices503JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshotJSONBody defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshotJSONBody struct {
+	// FileSize Screenshot file size in bytes.
+	//
+	// Example: 125000
+	FileSize int64 `json:"file_size"`
+
+	// Filename Screenshot filename to reserve in App Store Connect.
+	//
+	// Example: review.png
+	Filename string `json:"filename"`
+}
+
+// UploadProductStoreStateScreenshot400JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot400JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot400JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot400JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot401JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot401JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot401JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot401JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot403JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot403JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot403JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot403JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot404JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot404JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot404JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot404JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot409JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot409JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot409JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot409JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot422JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot422JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot422JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot422JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot423JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot423JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot423JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot423JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot429JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot429JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot429JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot429JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot500JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot500JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot500JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot500JSONResponseBodyType string
+
+// UploadProductStoreStateScreenshot503JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot503JSONResponseBodyObject string
+
+// UploadProductStoreStateScreenshot503JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
+type UploadProductStoreStateScreenshot503JSONResponseBodyType string
+
+// GetProductStoreStateOperation200JSONResponseBodyStatus defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation200JSONResponseBodyStatus string
+
+// GetProductStoreStateOperation400JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation400JSONResponseBodyObject string
+
+// GetProductStoreStateOperation400JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation400JSONResponseBodyType string
+
+// GetProductStoreStateOperation401JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation401JSONResponseBodyObject string
+
+// GetProductStoreStateOperation401JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation401JSONResponseBodyType string
+
+// GetProductStoreStateOperation403JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation403JSONResponseBodyObject string
+
+// GetProductStoreStateOperation403JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation403JSONResponseBodyType string
+
+// GetProductStoreStateOperation404JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation404JSONResponseBodyObject string
+
+// GetProductStoreStateOperation404JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation404JSONResponseBodyType string
+
+// GetProductStoreStateOperation422JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation422JSONResponseBodyObject string
+
+// GetProductStoreStateOperation422JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation422JSONResponseBodyType string
+
+// GetProductStoreStateOperation423JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation423JSONResponseBodyObject string
+
+// GetProductStoreStateOperation423JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation423JSONResponseBodyType string
+
+// GetProductStoreStateOperation429JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation429JSONResponseBodyObject string
+
+// GetProductStoreStateOperation429JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation429JSONResponseBodyType string
+
+// GetProductStoreStateOperation500JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation500JSONResponseBodyObject string
+
+// GetProductStoreStateOperation500JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation500JSONResponseBodyType string
+
+// GetProductStoreStateOperation503JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation503JSONResponseBodyObject string
+
+// GetProductStoreStateOperation503JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
+type GetProductStoreStateOperation503JSONResponseBodyType string
+
 // SearchPurchasesParams defines parameters for SearchPurchases.
 type SearchPurchasesParams struct {
 	// StorePurchaseIdentifier Store ID associated with the one-time purchase.
@@ -46342,6 +49852,15 @@ type UpdateProductJSONRequestBody UpdateProductJSONBody
 // CreateProductInStoreJSONRequestBody defines body for CreateProductInStore for application/json ContentType.
 type CreateProductInStoreJSONRequestBody CreateProductInStoreJSONBody
 
+// SetProductStoreStateJSONRequestBody defines body for SetProductStoreState for application/json ContentType.
+type SetProductStoreStateJSONRequestBody SetProductStoreStateJSONBody
+
+// EqualizeSubscriptionPricesJSONRequestBody defines body for EqualizeSubscriptionPrices for application/json ContentType.
+type EqualizeSubscriptionPricesJSONRequestBody EqualizeSubscriptionPricesJSONBody
+
+// UploadProductStoreStateScreenshotJSONRequestBody defines body for UploadProductStoreStateScreenshot for application/json ContentType.
+type UploadProductStoreStateScreenshotJSONRequestBody UploadProductStoreStateScreenshotJSONBody
+
 // ExtendSubscriptionJSONRequestBody defines body for ExtendSubscription for application/json ContentType.
 type ExtendSubscriptionJSONRequestBody ExtendSubscriptionJSONBody
 
@@ -47307,6 +50826,130 @@ func (t CreateProductInStoreJSONBody_StoreInformation) MarshalJSON() ([]byte, er
 }
 
 func (t *CreateProductInStoreJSONBody_StoreInformation) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsProductStoreStateAppStoreStateResponse returns the union data inside the GetProductStoreState200JSONResponseBody_StoreState as a ProductStoreStateAppStoreStateResponse
+func (t GetProductStoreState200JSONResponseBody_StoreState) AsProductStoreStateAppStoreStateResponse() (ProductStoreStateAppStoreStateResponse, error) {
+	var body ProductStoreStateAppStoreStateResponse
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStateAppStoreStateResponse overwrites any union data inside the GetProductStoreState200JSONResponseBody_StoreState as the provided ProductStoreStateAppStoreStateResponse
+func (t *GetProductStoreState200JSONResponseBody_StoreState) FromProductStoreStateAppStoreStateResponse(v ProductStoreStateAppStoreStateResponse) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStateAppStoreStateResponse performs a merge with any union data inside the GetProductStoreState200JSONResponseBody_StoreState, using the provided ProductStoreStateAppStoreStateResponse
+func (t *GetProductStoreState200JSONResponseBody_StoreState) MergeProductStoreStateAppStoreStateResponse(v ProductStoreStateAppStoreStateResponse) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsProductStoreStatePlayStoreStateResponse returns the union data inside the GetProductStoreState200JSONResponseBody_StoreState as a ProductStoreStatePlayStoreStateResponse
+func (t GetProductStoreState200JSONResponseBody_StoreState) AsProductStoreStatePlayStoreStateResponse() (ProductStoreStatePlayStoreStateResponse, error) {
+	var body ProductStoreStatePlayStoreStateResponse
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStatePlayStoreStateResponse overwrites any union data inside the GetProductStoreState200JSONResponseBody_StoreState as the provided ProductStoreStatePlayStoreStateResponse
+func (t *GetProductStoreState200JSONResponseBody_StoreState) FromProductStoreStatePlayStoreStateResponse(v ProductStoreStatePlayStoreStateResponse) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStatePlayStoreStateResponse performs a merge with any union data inside the GetProductStoreState200JSONResponseBody_StoreState, using the provided ProductStoreStatePlayStoreStateResponse
+func (t *GetProductStoreState200JSONResponseBody_StoreState) MergeProductStoreStatePlayStoreStateResponse(v ProductStoreStatePlayStoreStateResponse) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t GetProductStoreState200JSONResponseBody_StoreState) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *GetProductStoreState200JSONResponseBody_StoreState) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsProductStoreStateAppStoreState returns the union data inside the SetProductStoreStateJSONBody_StoreState as a ProductStoreStateAppStoreState
+func (t SetProductStoreStateJSONBody_StoreState) AsProductStoreStateAppStoreState() (ProductStoreStateAppStoreState, error) {
+	var body ProductStoreStateAppStoreState
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStateAppStoreState overwrites any union data inside the SetProductStoreStateJSONBody_StoreState as the provided ProductStoreStateAppStoreState
+func (t *SetProductStoreStateJSONBody_StoreState) FromProductStoreStateAppStoreState(v ProductStoreStateAppStoreState) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStateAppStoreState performs a merge with any union data inside the SetProductStoreStateJSONBody_StoreState, using the provided ProductStoreStateAppStoreState
+func (t *SetProductStoreStateJSONBody_StoreState) MergeProductStoreStateAppStoreState(v ProductStoreStateAppStoreState) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsProductStoreStatePlayStoreState returns the union data inside the SetProductStoreStateJSONBody_StoreState as a ProductStoreStatePlayStoreState
+func (t SetProductStoreStateJSONBody_StoreState) AsProductStoreStatePlayStoreState() (ProductStoreStatePlayStoreState, error) {
+	var body ProductStoreStatePlayStoreState
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStatePlayStoreState overwrites any union data inside the SetProductStoreStateJSONBody_StoreState as the provided ProductStoreStatePlayStoreState
+func (t *SetProductStoreStateJSONBody_StoreState) FromProductStoreStatePlayStoreState(v ProductStoreStatePlayStoreState) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStatePlayStoreState performs a merge with any union data inside the SetProductStoreStateJSONBody_StoreState, using the provided ProductStoreStatePlayStoreState
+func (t *SetProductStoreStateJSONBody_StoreState) MergeProductStoreStatePlayStoreState(v ProductStoreStatePlayStoreState) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SetProductStoreStateJSONBody_StoreState) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SetProductStoreStateJSONBody_StoreState) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
