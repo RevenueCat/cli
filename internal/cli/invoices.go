@@ -10,7 +10,12 @@ func newInvoicesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "invoices",
 		Aliases: []string{"invoice"},
-		Short:   "Inspect invoices",
+		Short:   "Inspect Web Billing invoices",
+		Long: `Inspect RevenueCat Billing (Web Billing) invoices — the billing records for
+web purchases, with payment status and a downloadable PDF. These are
+RevenueCat Billing records, not App Store or Play Store purchases.`,
+		Example: `  rc invoices for cus_abc
+  rc invoices show inv_abc`,
 	}
 	cmd.AddCommand(
 		newInvoicesShowCmd(),
@@ -21,9 +26,11 @@ func newInvoicesCmd() *cobra.Command {
 
 func newInvoicesShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
-		Short: "Show an invoice",
-		Args:  cobra.ExactArgs(1),
+		Use:     "show <id>",
+		Short:   "Show a Web Billing invoice",
+		Long:    `Shows a RevenueCat Billing invoice: its payment status, amount, issue date, and the URL to the downloadable PDF.`,
+		Example: "  rc invoices show inv_abc\n  rc invoices show inv_abc --json | jq -r '.pdf_url'",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -48,9 +55,11 @@ func newInvoicesShowCmd() *cobra.Command {
 // first and only narrow by customer if needed.
 func newInvoicesForCustomerCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "for <customer-id>",
-		Short: "List invoices for a customer",
-		Args:  cobra.ExactArgs(1),
+		Use:     "for <customer-id>",
+		Short:   "List a Customer's Web Billing invoices",
+		Long:    `Lists the RevenueCat Billing invoices for a Customer by App User ID, with each invoice's payment status and issue date.`,
+		Example: "  rc invoices for cus_abc\n  rc invoices for cus_abc --json | jq '.data.items[] | select(.status==\"paid\")'",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

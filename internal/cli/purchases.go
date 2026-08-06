@@ -15,7 +15,12 @@ func newPurchasesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "purchases",
 		Aliases: []string{"purchase"},
-		Short:   "Inspect and refund one-time purchases",
+		Short:   "Inspect and refund Non-Subscription Purchases",
+		Long: `Inspect and refund Non-Subscription Purchases — one-time, consumable,
+non-consumable, and lifetime purchases. View a purchase, list the Entitlements
+it grants, or refund it. For recurring subscriptions use 'rc subscriptions'.`,
+		Example: `  rc purchases show pur_abc
+  rc purchases refund pur_abc --yes`,
 	}
 	cmd.AddCommand(
 		newPurchasesShowCmd(),
@@ -27,9 +32,11 @@ func newPurchasesCmd() *cobra.Command {
 
 func newPurchasesShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
-		Short: "Show a purchase",
-		Args:  cobra.ExactArgs(1),
+		Use:     "show <id>",
+		Short:   "Show a purchase",
+		Long:    `Shows a Non-Subscription Purchase: its Product, store, purchase time, and the Customer (App User ID) it belongs to. In a terminal this opens the interactive browser.`,
+		Example: "  rc purchases show pur_abc\n  rc purchases show pur_abc --json | jq '.store'",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -55,9 +62,11 @@ func newPurchasesShowCmd() *cobra.Command {
 
 func newPurchasesEntitlementsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "entitlements <id>",
-		Short: "List entitlements granted by a purchase",
-		Args:  cobra.ExactArgs(1),
+		Use:     "entitlements <id>",
+		Short:   "List Entitlements granted by a purchase",
+		Long:    `Lists the Entitlements a Non-Subscription Purchase grants the Customer — lifetime access, for example.`,
+		Example: "  rc purchases entitlements pur_abc\n  rc purchases entitlements pur_abc --json | jq '.data.items[].lookup_key'",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -88,11 +97,13 @@ func newPurchasesEntitlementsCmd() *cobra.Command {
 func newPurchasesRefundCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "refund <id>",
-		Short: "Refund a Web Billing purchase",
-		Long: `Refunds a one-time purchase. Web Billing only — store-side refunds
-must be issued through the store.
+		Short: "Refund a Non-Subscription Purchase",
+		Long: `Refunds a Non-Subscription Purchase and emits a CANCELLATION, removing any
+Entitlement access it granted. Only Google Play and RevenueCat Billing
+purchases can be refunded directly; App Store refunds must be issued through
+Apple.
 
-Reversibility: irreversible. Money is returned to the customer's payment
+Reversibility: irreversible. Money is returned to the Customer's payment
 method.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,

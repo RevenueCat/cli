@@ -18,7 +18,12 @@ func newOfferingsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "offerings",
 		Aliases: []string{"offering", "offer"},
-		Short:   "Manage offerings (and their packages)",
+		Short:   "Manage Offerings and their Packages",
+		Long: `An Offering groups the Packages shown on a paywall. Each project has one
+"current" Offering that SDKs fetch by default. Use these commands to build
+Offerings, arrange their Packages, and set which one is current.`,
+		Example: `  rc offerings list
+  rc offerings set-current ofrng_default`,
 	}
 	cmd.AddCommand(
 		newOfferingsListCmd(),
@@ -64,12 +69,14 @@ type verifiedEntitlement struct {
 func newOfferingsVerifyCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "verify [id]",
-		Short: "Verify the complete configuration served by an offering",
-		Long: `Builds one read-only graph containing the offering, its packages, attached
-products and prices, matching entitlements, and attached paywall publication state.
-The issues array calls out missing links that would prevent a working purchase flow.`,
-		Example: `  rc offerings verify ofrng_default --json --no-input`,
-		Args:    cobra.MaximumNArgs(1),
+		Short: "Verify the full configuration served by an Offering",
+		Long: `Builds one read-only graph of an Offering: its Packages, attached Products
+and prices, matching Entitlements, and attached paywall publication state. The
+issues array calls out missing links that would break a purchase flow. Omit the
+ID in a terminal to pick from a list.`,
+		Example: `  rc offerings verify ofrng_default --json --no-input
+  rc offerings verify ofrng_default --json | jq '.data.issues'`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -186,11 +193,12 @@ func newOfferingsPreviewCmd() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "preview [app-id]",
-		Short: "Fetch the offerings payload exactly as an SDK sees it",
+		Short: "Fetch the Offerings payload exactly as an SDK sees it",
 		Long: `Calls the RevenueCat v1 SDK offerings endpoint with an app's public SDK key.
-Use this to verify the current offering, package-product mapping, and published
-paywall components. A null paywall_components value means the SDK is receiving
-the fallback rather than a published dashboard paywall.`,
+Use this to verify the current Offering, Package-to-Product mapping, and
+published paywall components. A null paywall_components value means the SDK is
+receiving the fallback rather than a published dashboard paywall. Omit the app
+ID in a terminal to pick from a list.`,
 		Example: `  rc offerings preview app_test --json --no-input
   rc offerings preview app_ios --public-api-key appl_... --app-user-id preview-user --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
@@ -248,13 +256,15 @@ the fallback rather than a published dashboard paywall.`,
 func newOfferingsSetCurrentCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "set-current [id]",
-		Short: "Make an offering the current SDK offering",
-		Long: `Makes this offering the project's current offering. Apps that request the
-current offering from a RevenueCat SDK will receive this offering.
+		Short: "Make an Offering the current Offering",
+		Long: `Makes this the project's current Offering. Apps that request the current
+Offering from a RevenueCat SDK receive it. Omit the ID in a terminal to pick
+from a list.
 
-Confirmation is required because this changes the catalog served to customers.
-Pass --yes for agents and non-interactive use. The change can be reversed by
-setting a different offering as current.`,
+Confirmation: required because this changes the catalog served to Customers.
+Pass --yes for agents and non-interactive use.
+
+Reversibility: set a different Offering as current to change it back.`,
 		Example: `  rc offerings set-current ofrng_default
   rc offerings set-current ofrng_default --yes --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
@@ -291,14 +301,15 @@ setting a different offering as current.`,
 func newOfferingsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "archive [id]",
-		Short: "Archive an offering",
-		Long: `Archives an offering so it stops being served to new customers while
-existing subscribers keep their access.
+		Short: "Archive an Offering",
+		Long: `Archives an Offering so it stops being served to new Customers while
+existing subscribers keep their access. Omit the ID in a terminal to pick from
+a list.
 
 Reversibility: use ` + "`rc offerings restore <id>`" + ` to undo.
 
 Confirmation: no prompt — soft, reversible state change.`,
-		Example: `  rc offerings archive ofrng_q1_promo`,
+		Example: `  rc offerings archive ofrng_default`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -329,14 +340,14 @@ Confirmation: no prompt — soft, reversible state change.`,
 func newOfferingsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "restore [id]",
-		Short: "Restore an archived offering (= unarchive)",
-		Long: `Restores a previously-archived offering. Inverse of
-` + "`rc offerings archive`" + `.
+		Short: "Restore an archived Offering",
+		Long: `Restores a previously-archived Offering. Inverse of
+` + "`rc offerings archive`" + `. Omit the ID in a terminal to pick from a list.
 
 Reversibility: re-archive with ` + "`rc offerings archive <id>`" + `.
 
 Confirmation: no prompt.`,
-		Example: `  rc offerings restore ofrng_q1_promo`,
+		Example: `  rc offerings restore ofrng_default`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -367,7 +378,10 @@ Confirmation: no prompt.`,
 func newOfferingsListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
-		Short: "List offerings",
+		Short: "List Offerings",
+		Long:  `Lists the Offerings in the active project. The current Offering is marked with an asterisk.`,
+		Example: `  rc offerings list
+  rc offerings list --json | jq '.data.items[] | select(.is_current)'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -411,9 +425,11 @@ func newOfferingsListCmd() *cobra.Command {
 
 func newOfferingsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show [id]",
-		Short: "Show an offering",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "show [id]",
+		Short:   "Show an Offering",
+		Long:    `Shows an Offering's lookup key, display name, state, and whether it is current. Omit the ID in a terminal to pick from a list.`,
+		Example: "  rc offerings show ofrng_default\n  rc offerings show                  # pick interactively",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -447,7 +463,11 @@ func newOfferingsCreateCmd() *cobra.Command {
 	var lookupKey, displayName string
 	cmd := &cobra.Command{
 		Use:   "create",
-		Short: "Create an offering",
+		Short: "Create an Offering",
+		Long: `Creates an Offering in the active project. Add Packages afterward with
+` + "`rc packages create`" + `. Prompts for the lookup key and display name when run
+interactively.`,
+		Example: `  rc offerings create --lookup-key default --display-name "Default"`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -482,9 +502,11 @@ func newOfferingsCreateCmd() *cobra.Command {
 func newOfferingsUpdateCmd() *cobra.Command {
 	var displayName string
 	cmd := &cobra.Command{
-		Use:   "update [id]",
-		Short: "Update an offering",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "update [id]",
+		Short:   "Update an Offering",
+		Long:    `Updates an Offering's display name. Omit the ID in a terminal to pick from a list. To make an Offering current, use ` + "`rc offerings set-current`" + `.`,
+		Example: `  rc offerings update ofrng_default --display-name "Default"`,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -520,14 +542,15 @@ func newOfferingsUpdateCmd() *cobra.Command {
 func newOfferingsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [id]",
-		Short: "Delete an offering",
-		Long: `Permanently deletes an offering from the project.
+		Short: "Delete an Offering",
+		Long: `Permanently deletes an Offering from the project. Omit the ID in a
+terminal to pick from a list.
 
 Reversibility: irreversible. Prefer ` + "`rc offerings archive`" + ` for
 reversible removal.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc offerings delete ofrng_old --yes`,
+		Example: `  rc offerings delete ofrng_default --yes`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -697,8 +720,12 @@ func paywallToItem(projectID string, pw api.Paywall) tui.BrowserItem {
 func newOfferingsPackagesCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "packages [offering-id]",
-		Short: "List packages in an offering",
-		Args:  cobra.MaximumNArgs(1),
+		Short: "List Packages in an Offering",
+		Long: `Lists the Packages that belong to an Offering. Omit the Offering ID in a
+terminal to pick from a list.`,
+		Example: `  rc offerings packages ofrng_default
+  rc offerings packages ofrng_default --json | jq '.data.items[].lookup_key'`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

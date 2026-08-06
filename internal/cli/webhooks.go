@@ -21,6 +21,12 @@ func newWebhooksCmd() *cobra.Command {
 		Use:     "webhooks",
 		Aliases: []string{"webhook"},
 		Short:   "Manage webhook integrations",
+		Long: `Webhooks send RevenueCat server-to-server notifications whenever a subscription
+or purchase event happens — initial purchases, renewals, cancellations, billing
+issues — so your backend can stay in sync and trigger automations. Each webhook
+has a name and a delivery URL, scoped to the project.`,
+		Example: `  rc webhooks list
+  rc webhooks create --name "Backend sync" --url https://api.example.com/revenuecat`,
 	}
 	cmd.AddCommand(
 		newWebhooksListCmd(),
@@ -36,6 +42,9 @@ func newWebhooksListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List webhooks",
+		Long:  `Lists the webhook integrations configured for the project, with each delivery URL and environment.`,
+		Example: `  rc webhooks list
+  rc webhooks list --json | jq '.data.items[].url'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -93,9 +102,11 @@ func webhookToItem(projectID string, w api.Webhook) tui.BrowserItem {
 
 func newWebhooksShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show [id]",
-		Short: "Show a webhook",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "show [id]",
+		Short:   "Show a webhook",
+		Long:    `Shows a webhook's name, delivery URL, and environment. Omit the ID in a terminal to pick from a list.`,
+		Example: "  rc webhooks show wh_abc\n  rc webhooks show                 # pick interactively",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -128,8 +139,10 @@ func newWebhooksShowCmd() *cobra.Command {
 func newWebhooksCreateCmd() *cobra.Command {
 	var name, urlStr string
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "Create a webhook",
+		Use:     "create",
+		Short:   "Create a webhook",
+		Long:    `Creates a webhook: RevenueCat POSTs event notifications to the given URL as subscription and purchase events occur. Prompts for the name and URL when run interactively.`,
+		Example: `  rc webhooks create --name "Backend sync" --url https://api.example.com/revenuecat`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -162,9 +175,11 @@ func newWebhooksCreateCmd() *cobra.Command {
 func newWebhooksUpdateCmd() *cobra.Command {
 	var name, urlStr string
 	cmd := &cobra.Command{
-		Use:   "update [id]",
-		Short: "Update a webhook",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "update [id]",
+		Short:   "Update a webhook",
+		Long:    `Updates a webhook's name or delivery URL. Only the flags you pass change; omit the ID in a terminal to pick from a list.`,
+		Example: "  rc webhooks update wh_abc --url https://api.example.com/rc/v2\n  rc webhooks update wh_abc --name \"Prod events\"",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
