@@ -16,9 +16,10 @@ type MediaAssetCreate struct {
 
 type MediaAssetFormat struct {
 	ObjectName string `json:"object_name"`
-	Size       int64  `json:"size"`
-	Width      int    `json:"width"`
-	Height     int    `json:"height"`
+	Size       int64  `json:"size"` // KB
+	Width      *int   `json:"width"`
+	Height     *int   `json:"height"`
+	Object     string `json:"object,omitempty"`
 }
 
 type MediaAsset struct {
