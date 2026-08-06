@@ -206,8 +206,6 @@ endpoints:
   - method: GET
     path: /projects/{project_id}/metrics/overview
 
-  # Audit & Benchmarks
+  # Audit
   - method: GET
     path: /projects/{project_id}/audit_logs
-  - method: GET
-    path: /projects/{project_id}/benchmarks

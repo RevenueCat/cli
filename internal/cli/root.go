@@ -141,7 +141,6 @@ Agent-friendly entrypoints:
 		newChartsCmd(),
 		newMetricsCmd(),
 		newAuditCmd(),
-		newBenchmarksCmd(),
 		newAppsCmd(),
 		newPackagesCmd(),
 		newAPICmd(),
