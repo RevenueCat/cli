@@ -23,10 +23,15 @@ import re
 import sys
 import yaml
 
-# Only pull paths whose key contains one of these — the direct per-product
-# store_state endpoints the CLI's StoreStateService calls. (The store_state_plans
-# tree is intentionally left out for now; add it here if the CLI needs it.)
-PATH_SUBSTRINGS = ["/products/{product_id}/store_state"]
+# Only pull paths whose key contains one of these — the development-status
+# endpoints the CLI depends on: per-product store_state, the store_state plans
+# tree, and product price management. Keep this to paths the CLI actually calls.
+PATH_SUBSTRINGS = [
+    "/products/{product_id}/store_state",
+    "/store_state/plans",
+    "/products/{product_id}/prices",
+    "/products/{product_id}/test_store_prices",
+]
 
 REF_RE = re.compile(r"#/components/([A-Za-z0-9]+)/([A-Za-z0-9_.-]+)")
 
@@ -63,6 +68,22 @@ def main():
     if not paths:
         print("no matching paths found — check PATH_SUBSTRINGS", file=sys.stderr)
         sys.exit(1)
+
+    # Drop non-2xx responses. The CLI decodes errors at runtime (parseError), so
+    # typing every 4xx/5xx body just floods types_gen.go with dead
+    # <op><code>JSONResponseBody types. Keeping 2xx preserves the real shapes.
+    methods = {"get", "put", "post", "delete", "patch", "options", "head", "trace"}
+    for item in paths.values():
+        for method, op in item.items():
+            if method not in methods or not isinstance(op, dict):
+                continue
+            responses = op.get("responses")
+            if isinstance(responses, dict):
+                op["responses"] = {
+                    code: body
+                    for code, body in responses.items()
+                    if str(code).startswith("2")
+                }
 
     # Walk component refs transitively, starting from the selected paths.
     dev_components = dev.get("components", {})

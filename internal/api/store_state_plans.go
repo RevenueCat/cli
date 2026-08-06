@@ -80,13 +80,13 @@ type StoreStatePlanWarning struct {
 
 func (s *StoreStatePlansService) Create(ctx context.Context, projectID string, body StoreStatePlanCreate) (*StoreStatePlanActionResponse, error) {
 	var out StoreStatePlanActionResponse
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "store_state", "plans"), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathStoreStatePlans(projectID), body, &out)
 	return &out, err
 }
 
 func (s *StoreStatePlansService) List(ctx context.Context, projectID, status string) (*Page[StoreStatePlan], error) {
 	var out Page[StoreStatePlan]
-	path := encodePath("projects", projectID, "store_state", "plans")
+	path := pathStoreStatePlans(projectID)
 	if status != "" {
 		path += "?status=" + url.QueryEscape(status)
 	}
@@ -96,7 +96,7 @@ func (s *StoreStatePlansService) List(ctx context.Context, projectID, status str
 
 func (s *StoreStatePlansService) Get(ctx context.Context, projectID, planID string) (*StoreStatePlan, error) {
 	var out StoreStatePlan
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "store_state", "plans", planID), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathStoreStatePlan(projectID, planID), nil, &out)
 	return &out, err
 }
 
@@ -114,6 +114,8 @@ func (s *StoreStatePlansService) Discard(ctx context.Context, projectID, planID 
 
 func (s *StoreStatePlansService) action(ctx context.Context, projectID, planID, action string) (*StoreStatePlanActionResponse, error) {
 	var out StoreStatePlanActionResponse
+	// Inline path: the spec models each action as a fixed path; this dispatches a
+	// dynamic action, so there's no single generated builder to use.
 	path := encodePath("projects", projectID, "store_state", "plans", planID, "actions", action)
 	err := s.c.do(ctx, http.MethodPost, path, struct{}{}, &out)
 	return &out, err

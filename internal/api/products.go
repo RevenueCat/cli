@@ -47,7 +47,7 @@ type ProductPriceUpdate struct {
 }
 
 func (s *ProductsService) List(ctx context.Context, projectID string, opts *ProductListOptions) (*Page[Product], error) {
-	path := encodePath("projects", projectID, "products")
+	path := pathProducts(projectID)
 	if opts != nil && opts.AppID != "" {
 		path += "?app_id=" + url.QueryEscape(opts.AppID)
 	}
@@ -58,57 +58,57 @@ func (s *ProductsService) List(ctx context.Context, projectID string, opts *Prod
 
 func (s *ProductsService) Create(ctx context.Context, projectID string, body ProductCreate) (*Product, error) {
 	var out Product
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "products"), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathProducts(projectID), body, &out)
 	return &out, err
 }
 
 func (s *ProductsService) Get(ctx context.Context, projectID, id string) (*Product, error) {
 	var out Product
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "products", id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathProduct(projectID, id), nil, &out)
 	return &out, err
 }
 
 func (s *ProductsService) Update(ctx context.Context, projectID, id string, body ProductUpdate) (*Product, error) {
 	var out Product
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "products", id), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathProduct(projectID, id), body, &out)
 	return &out, err
 }
 
 func (s *ProductsService) ListPrices(ctx context.Context, projectID, productID string) ([]ProductPrice, error) {
 	var out []ProductPrice
-	path := encodePath("projects", projectID, "products", productID, "prices")
+	path := pathProductPrices(projectID, productID)
 	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
 	return out, err
 }
 
 func (s *ProductsService) CreateTestStorePrices(ctx context.Context, projectID, productID string, body ProductPricesCreate) ([]ProductPrice, error) {
 	var out []ProductPrice
-	path := encodePath("projects", projectID, "products", productID, "test_store_prices")
+	path := pathProductTestStorePrices(projectID, productID)
 	err := s.c.do(ctx, http.MethodPost, path, body, &out)
 	return out, err
 }
 
 func (s *ProductsService) UpdatePrice(ctx context.Context, projectID, productID, currency string, body ProductPriceUpdate) (*ProductPrice, error) {
 	var out ProductPrice
-	path := encodePath("projects", projectID, "products", productID, "prices", currency)
+	path := pathProductPrice(projectID, productID, currency)
 	err := s.c.do(ctx, http.MethodPatch, path, body, &out)
 	return &out, err
 }
 
 func (s *ProductsService) Delete(ctx context.Context, projectID, id string) error {
-	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "products", id), nil, nil)
+	return s.c.do(ctx, http.MethodDelete, pathProduct(projectID, id), nil, nil)
 }
 
 func (s *ProductsService) Archive(ctx context.Context, projectID, id string) (*Product, error) {
 	var out Product
-	path := encodePath("projects", projectID, "products", id, "actions") + "/archive"
+	path := pathProductActionsArchive(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
 
 func (s *ProductsService) Restore(ctx context.Context, projectID, id string) (*Product, error) {
 	var out Product
-	path := encodePath("projects", projectID, "products", id, "actions") + "/unarchive"
+	path := pathProductActionsUnarchive(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
@@ -117,6 +117,6 @@ func (s *ProductsService) Restore(ctx context.Context, projectID, id string) (*P
 //
 // Push the product configuration to the underlying store.
 func (s *ProductsService) Push(ctx context.Context, projectID, id string) error {
-	path := encodePath("projects", projectID, "products", id) + "/create_in_store"
+	path := pathProductCreateInStore(projectID, id)
 	return s.c.do(ctx, http.MethodPost, path, nil, nil)
 }

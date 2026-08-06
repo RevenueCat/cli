@@ -3414,6 +3414,183 @@ func (e ProductStoreStateCommonResponseDuration) Valid() bool {
 	}
 }
 
+// Defines values for ProductStoreStatePlanCommonDuration.
+const (
+	ProductStoreStatePlanCommonDurationLessThanNil ProductStoreStatePlanCommonDuration = "<nil>"
+	ProductStoreStatePlanCommonDurationP1M         ProductStoreStatePlanCommonDuration = "P1M"
+	ProductStoreStatePlanCommonDurationP1W         ProductStoreStatePlanCommonDuration = "P1W"
+	ProductStoreStatePlanCommonDurationP1Y         ProductStoreStatePlanCommonDuration = "P1Y"
+	ProductStoreStatePlanCommonDurationP2M         ProductStoreStatePlanCommonDuration = "P2M"
+	ProductStoreStatePlanCommonDurationP3M         ProductStoreStatePlanCommonDuration = "P3M"
+	ProductStoreStatePlanCommonDurationP6M         ProductStoreStatePlanCommonDuration = "P6M"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStatePlanCommonDuration enum.
+func (e ProductStoreStatePlanCommonDuration) Valid() bool {
+	switch e {
+	case ProductStoreStatePlanCommonDurationLessThanNil:
+		return true
+	case ProductStoreStatePlanCommonDurationP1M:
+		return true
+	case ProductStoreStatePlanCommonDurationP1W:
+		return true
+	case ProductStoreStatePlanCommonDurationP1Y:
+		return true
+	case ProductStoreStatePlanCommonDurationP2M:
+		return true
+	case ProductStoreStatePlanCommonDurationP3M:
+		return true
+	case ProductStoreStatePlanCommonDurationP6M:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStatePlanCommonResponseDuration.
+const (
+	ProductStoreStatePlanCommonResponseDurationLessThanNil ProductStoreStatePlanCommonResponseDuration = "<nil>"
+	ProductStoreStatePlanCommonResponseDurationP1M         ProductStoreStatePlanCommonResponseDuration = "P1M"
+	ProductStoreStatePlanCommonResponseDurationP1W         ProductStoreStatePlanCommonResponseDuration = "P1W"
+	ProductStoreStatePlanCommonResponseDurationP1Y         ProductStoreStatePlanCommonResponseDuration = "P1Y"
+	ProductStoreStatePlanCommonResponseDurationP2M         ProductStoreStatePlanCommonResponseDuration = "P2M"
+	ProductStoreStatePlanCommonResponseDurationP3M         ProductStoreStatePlanCommonResponseDuration = "P3M"
+	ProductStoreStatePlanCommonResponseDurationP6M         ProductStoreStatePlanCommonResponseDuration = "P6M"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStatePlanCommonResponseDuration enum.
+func (e ProductStoreStatePlanCommonResponseDuration) Valid() bool {
+	switch e {
+	case ProductStoreStatePlanCommonResponseDurationLessThanNil:
+		return true
+	case ProductStoreStatePlanCommonResponseDurationP1M:
+		return true
+	case ProductStoreStatePlanCommonResponseDurationP1W:
+		return true
+	case ProductStoreStatePlanCommonResponseDurationP1Y:
+		return true
+	case ProductStoreStatePlanCommonResponseDurationP2M:
+		return true
+	case ProductStoreStatePlanCommonResponseDurationP3M:
+		return true
+	case ProductStoreStatePlanCommonResponseDurationP6M:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStatePlanCreateRevenueCatProductType.
+const (
+	ProductStoreStatePlanCreateRevenueCatProductTypeConsumable              ProductStoreStatePlanCreateRevenueCatProductType = "consumable"
+	ProductStoreStatePlanCreateRevenueCatProductTypeNonConsumable           ProductStoreStatePlanCreateRevenueCatProductType = "non_consumable"
+	ProductStoreStatePlanCreateRevenueCatProductTypeNonRenewingSubscription ProductStoreStatePlanCreateRevenueCatProductType = "non_renewing_subscription"
+	ProductStoreStatePlanCreateRevenueCatProductTypeOneTime                 ProductStoreStatePlanCreateRevenueCatProductType = "one_time"
+	ProductStoreStatePlanCreateRevenueCatProductTypeSubscription            ProductStoreStatePlanCreateRevenueCatProductType = "subscription"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStatePlanCreateRevenueCatProductType enum.
+func (e ProductStoreStatePlanCreateRevenueCatProductType) Valid() bool {
+	switch e {
+	case ProductStoreStatePlanCreateRevenueCatProductTypeConsumable:
+		return true
+	case ProductStoreStatePlanCreateRevenueCatProductTypeNonConsumable:
+		return true
+	case ProductStoreStatePlanCreateRevenueCatProductTypeNonRenewingSubscription:
+		return true
+	case ProductStoreStatePlanCreateRevenueCatProductTypeOneTime:
+		return true
+	case ProductStoreStatePlanCreateRevenueCatProductTypeSubscription:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStatePlanCreateRevenueCatProductResponseType.
+const (
+	ProductStoreStatePlanCreateRevenueCatProductResponseTypeConsumable              ProductStoreStatePlanCreateRevenueCatProductResponseType = "consumable"
+	ProductStoreStatePlanCreateRevenueCatProductResponseTypeNonConsumable           ProductStoreStatePlanCreateRevenueCatProductResponseType = "non_consumable"
+	ProductStoreStatePlanCreateRevenueCatProductResponseTypeNonRenewingSubscription ProductStoreStatePlanCreateRevenueCatProductResponseType = "non_renewing_subscription"
+	ProductStoreStatePlanCreateRevenueCatProductResponseTypeOneTime                 ProductStoreStatePlanCreateRevenueCatProductResponseType = "one_time"
+	ProductStoreStatePlanCreateRevenueCatProductResponseTypeSubscription            ProductStoreStatePlanCreateRevenueCatProductResponseType = "subscription"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStatePlanCreateRevenueCatProductResponseType enum.
+func (e ProductStoreStatePlanCreateRevenueCatProductResponseType) Valid() bool {
+	switch e {
+	case ProductStoreStatePlanCreateRevenueCatProductResponseTypeConsumable:
+		return true
+	case ProductStoreStatePlanCreateRevenueCatProductResponseTypeNonConsumable:
+		return true
+	case ProductStoreStatePlanCreateRevenueCatProductResponseTypeNonRenewingSubscription:
+		return true
+	case ProductStoreStatePlanCreateRevenueCatProductResponseTypeOneTime:
+		return true
+	case ProductStoreStatePlanCreateRevenueCatProductResponseTypeSubscription:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStatePlanDesiredStateStore.
+const (
+	ProductStoreStatePlanDesiredStateStoreAppStore  ProductStoreStatePlanDesiredStateStore = "app_store"
+	ProductStoreStatePlanDesiredStateStorePlayStore ProductStoreStatePlanDesiredStateStore = "play_store"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStatePlanDesiredStateStore enum.
+func (e ProductStoreStatePlanDesiredStateStore) Valid() bool {
+	switch e {
+	case ProductStoreStatePlanDesiredStateStoreAppStore:
+		return true
+	case ProductStoreStatePlanDesiredStateStorePlayStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStatePlanDesiredStateResponseStore.
+const (
+	ProductStoreStatePlanDesiredStateResponseStoreAppStore  ProductStoreStatePlanDesiredStateResponseStore = "app_store"
+	ProductStoreStatePlanDesiredStateResponseStorePlayStore ProductStoreStatePlanDesiredStateResponseStore = "play_store"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStatePlanDesiredStateResponseStore enum.
+func (e ProductStoreStatePlanDesiredStateResponseStore) Valid() bool {
+	switch e {
+	case ProductStoreStatePlanDesiredStateResponseStoreAppStore:
+		return true
+	case ProductStoreStatePlanDesiredStateResponseStorePlayStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProductStoreStatePlanWarningSeverity.
+const (
+	ProductStoreStatePlanWarningSeverityBlocker ProductStoreStatePlanWarningSeverity = "blocker"
+	ProductStoreStatePlanWarningSeverityInfo    ProductStoreStatePlanWarningSeverity = "info"
+	ProductStoreStatePlanWarningSeverityWarning ProductStoreStatePlanWarningSeverity = "warning"
+)
+
+// Valid indicates whether the value is a known member of the ProductStoreStatePlanWarningSeverity enum.
+func (e ProductStoreStatePlanWarningSeverity) Valid() bool {
+	switch e {
+	case ProductStoreStatePlanWarningSeverityBlocker:
+		return true
+	case ProductStoreStatePlanWarningSeverityInfo:
+		return true
+	case ProductStoreStatePlanWarningSeverityWarning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ProductType.
 const (
 	ProductTypeConsumable              ProductType = "consumable"
@@ -29646,288 +29823,6 @@ func (e GetProductStoreState200JSONResponseBodyStoreStatusStatus) Valid() bool {
 	}
 }
 
-// Defines values for GetProductStoreState400JSONResponseBodyObject.
-const (
-	GetProductStoreState400JSONResponseBodyObjectError GetProductStoreState400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState400JSONResponseBodyObject enum.
-func (e GetProductStoreState400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState400JSONResponseBodyType.
-const (
-	GetProductStoreState400JSONResponseBodyTypeInvalidRequest GetProductStoreState400JSONResponseBodyType = "invalid_request"
-	GetProductStoreState400JSONResponseBodyTypeParameterError GetProductStoreState400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState400JSONResponseBodyType enum.
-func (e GetProductStoreState400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case GetProductStoreState400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState401JSONResponseBodyObject.
-const (
-	GetProductStoreState401JSONResponseBodyObjectError GetProductStoreState401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState401JSONResponseBodyObject enum.
-func (e GetProductStoreState401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState401JSONResponseBodyType.
-const (
-	GetProductStoreState401JSONResponseBodyTypeAuthenticationError GetProductStoreState401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState401JSONResponseBodyType enum.
-func (e GetProductStoreState401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState403JSONResponseBodyObject.
-const (
-	GetProductStoreState403JSONResponseBodyObjectError GetProductStoreState403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState403JSONResponseBodyObject enum.
-func (e GetProductStoreState403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState403JSONResponseBodyType.
-const (
-	GetProductStoreState403JSONResponseBodyTypeAuthorizationError GetProductStoreState403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState403JSONResponseBodyType enum.
-func (e GetProductStoreState403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState404JSONResponseBodyObject.
-const (
-	GetProductStoreState404JSONResponseBodyObjectError GetProductStoreState404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState404JSONResponseBodyObject enum.
-func (e GetProductStoreState404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState404JSONResponseBodyType.
-const (
-	GetProductStoreState404JSONResponseBodyTypeResourceMissing GetProductStoreState404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState404JSONResponseBodyType enum.
-func (e GetProductStoreState404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState422JSONResponseBodyObject.
-const (
-	GetProductStoreState422JSONResponseBodyObjectError GetProductStoreState422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState422JSONResponseBodyObject enum.
-func (e GetProductStoreState422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState422JSONResponseBodyType.
-const (
-	GetProductStoreState422JSONResponseBodyTypeEntityReferencesArchivedEntities GetProductStoreState422JSONResponseBodyType = "entity_references_archived_entities"
-	GetProductStoreState422JSONResponseBodyTypeParameterError                   GetProductStoreState422JSONResponseBodyType = "parameter_error"
-	GetProductStoreState422JSONResponseBodyTypeStoreError                       GetProductStoreState422JSONResponseBodyType = "store_error"
-	GetProductStoreState422JSONResponseBodyTypeUnprocessableEntityError         GetProductStoreState422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState422JSONResponseBodyType enum.
-func (e GetProductStoreState422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case GetProductStoreState422JSONResponseBodyTypeParameterError:
-		return true
-	case GetProductStoreState422JSONResponseBodyTypeStoreError:
-		return true
-	case GetProductStoreState422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState423JSONResponseBodyObject.
-const (
-	GetProductStoreState423JSONResponseBodyObjectError GetProductStoreState423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState423JSONResponseBodyObject enum.
-func (e GetProductStoreState423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState423JSONResponseBodyType.
-const (
-	GetProductStoreState423JSONResponseBodyTypeResourceLockedError GetProductStoreState423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState423JSONResponseBodyType enum.
-func (e GetProductStoreState423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState429JSONResponseBodyObject.
-const (
-	GetProductStoreState429JSONResponseBodyObjectError GetProductStoreState429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState429JSONResponseBodyObject enum.
-func (e GetProductStoreState429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState429JSONResponseBodyType.
-const (
-	GetProductStoreState429JSONResponseBodyTypeRateLimitError GetProductStoreState429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState429JSONResponseBodyType enum.
-func (e GetProductStoreState429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState500JSONResponseBodyObject.
-const (
-	GetProductStoreState500JSONResponseBodyObjectError GetProductStoreState500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState500JSONResponseBodyObject enum.
-func (e GetProductStoreState500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState500JSONResponseBodyType.
-const (
-	GetProductStoreState500JSONResponseBodyTypeServerError GetProductStoreState500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState500JSONResponseBodyType enum.
-func (e GetProductStoreState500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState503JSONResponseBodyObject.
-const (
-	GetProductStoreState503JSONResponseBodyObjectError GetProductStoreState503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState503JSONResponseBodyObject enum.
-func (e GetProductStoreState503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreState503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreState503JSONResponseBodyType.
-const (
-	GetProductStoreState503JSONResponseBodyTypeServerError GetProductStoreState503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreState503JSONResponseBodyType enum.
-func (e GetProductStoreState503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreState503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for SetProductStoreStateJSONBodyCommonDuration.
 const (
 	SetProductStoreStateJSONBodyCommonDurationONEMONTH    SetProductStoreStateJSONBodyCommonDuration = "ONE_MONTH"
@@ -30009,324 +29904,6 @@ func (e SetProductStoreState202JSONResponseBodyStatus) Valid() bool {
 	}
 }
 
-// Defines values for SetProductStoreState400JSONResponseBodyObject.
-const (
-	SetProductStoreState400JSONResponseBodyObjectError SetProductStoreState400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState400JSONResponseBodyObject enum.
-func (e SetProductStoreState400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState400JSONResponseBodyType.
-const (
-	SetProductStoreState400JSONResponseBodyTypeInvalidRequest SetProductStoreState400JSONResponseBodyType = "invalid_request"
-	SetProductStoreState400JSONResponseBodyTypeParameterError SetProductStoreState400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState400JSONResponseBodyType enum.
-func (e SetProductStoreState400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case SetProductStoreState400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState401JSONResponseBodyObject.
-const (
-	SetProductStoreState401JSONResponseBodyObjectError SetProductStoreState401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState401JSONResponseBodyObject enum.
-func (e SetProductStoreState401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState401JSONResponseBodyType.
-const (
-	SetProductStoreState401JSONResponseBodyTypeAuthenticationError SetProductStoreState401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState401JSONResponseBodyType enum.
-func (e SetProductStoreState401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState403JSONResponseBodyObject.
-const (
-	SetProductStoreState403JSONResponseBodyObjectError SetProductStoreState403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState403JSONResponseBodyObject enum.
-func (e SetProductStoreState403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState403JSONResponseBodyType.
-const (
-	SetProductStoreState403JSONResponseBodyTypeAuthorizationError SetProductStoreState403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState403JSONResponseBodyType enum.
-func (e SetProductStoreState403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState404JSONResponseBodyObject.
-const (
-	SetProductStoreState404JSONResponseBodyObjectError SetProductStoreState404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState404JSONResponseBodyObject enum.
-func (e SetProductStoreState404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState404JSONResponseBodyType.
-const (
-	SetProductStoreState404JSONResponseBodyTypeResourceMissing SetProductStoreState404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState404JSONResponseBodyType enum.
-func (e SetProductStoreState404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState409JSONResponseBodyObject.
-const (
-	SetProductStoreState409JSONResponseBodyObjectError SetProductStoreState409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState409JSONResponseBodyObject enum.
-func (e SetProductStoreState409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState409JSONResponseBodyType.
-const (
-	SetProductStoreState409JSONResponseBodyTypeIdempotencyError      SetProductStoreState409JSONResponseBodyType = "idempotency_error"
-	SetProductStoreState409JSONResponseBodyTypeInvalidRequest        SetProductStoreState409JSONResponseBodyType = "invalid_request"
-	SetProductStoreState409JSONResponseBodyTypeResourceAlreadyExists SetProductStoreState409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState409JSONResponseBodyType enum.
-func (e SetProductStoreState409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case SetProductStoreState409JSONResponseBodyTypeInvalidRequest:
-		return true
-	case SetProductStoreState409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState422JSONResponseBodyObject.
-const (
-	SetProductStoreState422JSONResponseBodyObjectError SetProductStoreState422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState422JSONResponseBodyObject enum.
-func (e SetProductStoreState422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState422JSONResponseBodyType.
-const (
-	SetProductStoreState422JSONResponseBodyTypeEntityReferencesArchivedEntities SetProductStoreState422JSONResponseBodyType = "entity_references_archived_entities"
-	SetProductStoreState422JSONResponseBodyTypeParameterError                   SetProductStoreState422JSONResponseBodyType = "parameter_error"
-	SetProductStoreState422JSONResponseBodyTypeStoreError                       SetProductStoreState422JSONResponseBodyType = "store_error"
-	SetProductStoreState422JSONResponseBodyTypeUnprocessableEntityError         SetProductStoreState422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState422JSONResponseBodyType enum.
-func (e SetProductStoreState422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case SetProductStoreState422JSONResponseBodyTypeParameterError:
-		return true
-	case SetProductStoreState422JSONResponseBodyTypeStoreError:
-		return true
-	case SetProductStoreState422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState423JSONResponseBodyObject.
-const (
-	SetProductStoreState423JSONResponseBodyObjectError SetProductStoreState423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState423JSONResponseBodyObject enum.
-func (e SetProductStoreState423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState423JSONResponseBodyType.
-const (
-	SetProductStoreState423JSONResponseBodyTypeResourceLockedError SetProductStoreState423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState423JSONResponseBodyType enum.
-func (e SetProductStoreState423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState429JSONResponseBodyObject.
-const (
-	SetProductStoreState429JSONResponseBodyObjectError SetProductStoreState429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState429JSONResponseBodyObject enum.
-func (e SetProductStoreState429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState429JSONResponseBodyType.
-const (
-	SetProductStoreState429JSONResponseBodyTypeRateLimitError SetProductStoreState429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState429JSONResponseBodyType enum.
-func (e SetProductStoreState429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState500JSONResponseBodyObject.
-const (
-	SetProductStoreState500JSONResponseBodyObjectError SetProductStoreState500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState500JSONResponseBodyObject enum.
-func (e SetProductStoreState500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState500JSONResponseBodyType.
-const (
-	SetProductStoreState500JSONResponseBodyTypeServerError SetProductStoreState500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState500JSONResponseBodyType enum.
-func (e SetProductStoreState500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState503JSONResponseBodyObject.
-const (
-	SetProductStoreState503JSONResponseBodyObjectError SetProductStoreState503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState503JSONResponseBodyObject enum.
-func (e SetProductStoreState503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case SetProductStoreState503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for SetProductStoreState503JSONResponseBodyType.
-const (
-	SetProductStoreState503JSONResponseBodyTypeServerError SetProductStoreState503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the SetProductStoreState503JSONResponseBodyType enum.
-func (e SetProductStoreState503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case SetProductStoreState503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for EqualizeSubscriptionPricesJSONBodyStore.
 const (
 	EqualizeSubscriptionPricesJSONBodyStoreAppStore EqualizeSubscriptionPricesJSONBodyStore = "app_store"
@@ -30357,642 +29934,6 @@ func (e EqualizeSubscriptionPrices202JSONResponseBodyStatus) Valid() bool {
 	}
 }
 
-// Defines values for EqualizeSubscriptionPrices400JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices400JSONResponseBodyObjectError EqualizeSubscriptionPrices400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices400JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices400JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices400JSONResponseBodyTypeInvalidRequest EqualizeSubscriptionPrices400JSONResponseBodyType = "invalid_request"
-	EqualizeSubscriptionPrices400JSONResponseBodyTypeParameterError EqualizeSubscriptionPrices400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices400JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case EqualizeSubscriptionPrices400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices401JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices401JSONResponseBodyObjectError EqualizeSubscriptionPrices401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices401JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices401JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices401JSONResponseBodyTypeAuthenticationError EqualizeSubscriptionPrices401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices401JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices403JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices403JSONResponseBodyObjectError EqualizeSubscriptionPrices403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices403JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices403JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices403JSONResponseBodyTypeAuthorizationError EqualizeSubscriptionPrices403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices403JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices404JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices404JSONResponseBodyObjectError EqualizeSubscriptionPrices404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices404JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices404JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices404JSONResponseBodyTypeResourceMissing EqualizeSubscriptionPrices404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices404JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices409JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices409JSONResponseBodyObjectError EqualizeSubscriptionPrices409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices409JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices409JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices409JSONResponseBodyTypeIdempotencyError      EqualizeSubscriptionPrices409JSONResponseBodyType = "idempotency_error"
-	EqualizeSubscriptionPrices409JSONResponseBodyTypeInvalidRequest        EqualizeSubscriptionPrices409JSONResponseBodyType = "invalid_request"
-	EqualizeSubscriptionPrices409JSONResponseBodyTypeResourceAlreadyExists EqualizeSubscriptionPrices409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices409JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case EqualizeSubscriptionPrices409JSONResponseBodyTypeInvalidRequest:
-		return true
-	case EqualizeSubscriptionPrices409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices422JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices422JSONResponseBodyObjectError EqualizeSubscriptionPrices422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices422JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices422JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices422JSONResponseBodyTypeEntityReferencesArchivedEntities EqualizeSubscriptionPrices422JSONResponseBodyType = "entity_references_archived_entities"
-	EqualizeSubscriptionPrices422JSONResponseBodyTypeParameterError                   EqualizeSubscriptionPrices422JSONResponseBodyType = "parameter_error"
-	EqualizeSubscriptionPrices422JSONResponseBodyTypeStoreError                       EqualizeSubscriptionPrices422JSONResponseBodyType = "store_error"
-	EqualizeSubscriptionPrices422JSONResponseBodyTypeUnprocessableEntityError         EqualizeSubscriptionPrices422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices422JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case EqualizeSubscriptionPrices422JSONResponseBodyTypeParameterError:
-		return true
-	case EqualizeSubscriptionPrices422JSONResponseBodyTypeStoreError:
-		return true
-	case EqualizeSubscriptionPrices422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices423JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices423JSONResponseBodyObjectError EqualizeSubscriptionPrices423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices423JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices423JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices423JSONResponseBodyTypeResourceLockedError EqualizeSubscriptionPrices423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices423JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices429JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices429JSONResponseBodyObjectError EqualizeSubscriptionPrices429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices429JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices429JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices429JSONResponseBodyTypeRateLimitError EqualizeSubscriptionPrices429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices429JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices500JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices500JSONResponseBodyObjectError EqualizeSubscriptionPrices500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices500JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices500JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices500JSONResponseBodyTypeServerError EqualizeSubscriptionPrices500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices500JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices503JSONResponseBodyObject.
-const (
-	EqualizeSubscriptionPrices503JSONResponseBodyObjectError EqualizeSubscriptionPrices503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices503JSONResponseBodyObject enum.
-func (e EqualizeSubscriptionPrices503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EqualizeSubscriptionPrices503JSONResponseBodyType.
-const (
-	EqualizeSubscriptionPrices503JSONResponseBodyTypeServerError EqualizeSubscriptionPrices503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the EqualizeSubscriptionPrices503JSONResponseBodyType enum.
-func (e EqualizeSubscriptionPrices503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EqualizeSubscriptionPrices503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot400JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot400JSONResponseBodyObjectError UploadProductStoreStateScreenshot400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot400JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot400JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot400JSONResponseBodyTypeInvalidRequest UploadProductStoreStateScreenshot400JSONResponseBodyType = "invalid_request"
-	UploadProductStoreStateScreenshot400JSONResponseBodyTypeParameterError UploadProductStoreStateScreenshot400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot400JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case UploadProductStoreStateScreenshot400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot401JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot401JSONResponseBodyObjectError UploadProductStoreStateScreenshot401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot401JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot401JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot401JSONResponseBodyTypeAuthenticationError UploadProductStoreStateScreenshot401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot401JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot403JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot403JSONResponseBodyObjectError UploadProductStoreStateScreenshot403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot403JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot403JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot403JSONResponseBodyTypeAuthorizationError UploadProductStoreStateScreenshot403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot403JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot404JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot404JSONResponseBodyObjectError UploadProductStoreStateScreenshot404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot404JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot404JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot404JSONResponseBodyTypeResourceMissing UploadProductStoreStateScreenshot404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot404JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot409JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot409JSONResponseBodyObjectError UploadProductStoreStateScreenshot409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot409JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot409JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot409JSONResponseBodyTypeIdempotencyError      UploadProductStoreStateScreenshot409JSONResponseBodyType = "idempotency_error"
-	UploadProductStoreStateScreenshot409JSONResponseBodyTypeInvalidRequest        UploadProductStoreStateScreenshot409JSONResponseBodyType = "invalid_request"
-	UploadProductStoreStateScreenshot409JSONResponseBodyTypeResourceAlreadyExists UploadProductStoreStateScreenshot409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot409JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case UploadProductStoreStateScreenshot409JSONResponseBodyTypeInvalidRequest:
-		return true
-	case UploadProductStoreStateScreenshot409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot422JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot422JSONResponseBodyObjectError UploadProductStoreStateScreenshot422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot422JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot422JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot422JSONResponseBodyTypeEntityReferencesArchivedEntities UploadProductStoreStateScreenshot422JSONResponseBodyType = "entity_references_archived_entities"
-	UploadProductStoreStateScreenshot422JSONResponseBodyTypeParameterError                   UploadProductStoreStateScreenshot422JSONResponseBodyType = "parameter_error"
-	UploadProductStoreStateScreenshot422JSONResponseBodyTypeStoreError                       UploadProductStoreStateScreenshot422JSONResponseBodyType = "store_error"
-	UploadProductStoreStateScreenshot422JSONResponseBodyTypeUnprocessableEntityError         UploadProductStoreStateScreenshot422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot422JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case UploadProductStoreStateScreenshot422JSONResponseBodyTypeParameterError:
-		return true
-	case UploadProductStoreStateScreenshot422JSONResponseBodyTypeStoreError:
-		return true
-	case UploadProductStoreStateScreenshot422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot423JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot423JSONResponseBodyObjectError UploadProductStoreStateScreenshot423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot423JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot423JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot423JSONResponseBodyTypeResourceLockedError UploadProductStoreStateScreenshot423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot423JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot429JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot429JSONResponseBodyObjectError UploadProductStoreStateScreenshot429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot429JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot429JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot429JSONResponseBodyTypeRateLimitError UploadProductStoreStateScreenshot429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot429JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot500JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot500JSONResponseBodyObjectError UploadProductStoreStateScreenshot500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot500JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot500JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot500JSONResponseBodyTypeServerError UploadProductStoreStateScreenshot500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot500JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot503JSONResponseBodyObject.
-const (
-	UploadProductStoreStateScreenshot503JSONResponseBodyObjectError UploadProductStoreStateScreenshot503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot503JSONResponseBodyObject enum.
-func (e UploadProductStoreStateScreenshot503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UploadProductStoreStateScreenshot503JSONResponseBodyType.
-const (
-	UploadProductStoreStateScreenshot503JSONResponseBodyTypeServerError UploadProductStoreStateScreenshot503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the UploadProductStoreStateScreenshot503JSONResponseBodyType enum.
-func (e UploadProductStoreStateScreenshot503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UploadProductStoreStateScreenshot503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for GetProductStoreStateOperation200JSONResponseBodyStatus.
 const (
 	GetProductStoreStateOperation200JSONResponseBodyStatusFailed    GetProductStoreStateOperation200JSONResponseBodyStatus = "failed"
@@ -31011,288 +29952,6 @@ func (e GetProductStoreStateOperation200JSONResponseBodyStatus) Valid() bool {
 	case GetProductStoreStateOperation200JSONResponseBodyStatusRunning:
 		return true
 	case GetProductStoreStateOperation200JSONResponseBodyStatusSucceeded:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation400JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation400JSONResponseBodyObjectError GetProductStoreStateOperation400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation400JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation400JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation400JSONResponseBodyTypeInvalidRequest GetProductStoreStateOperation400JSONResponseBodyType = "invalid_request"
-	GetProductStoreStateOperation400JSONResponseBodyTypeParameterError GetProductStoreStateOperation400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation400JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case GetProductStoreStateOperation400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation401JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation401JSONResponseBodyObjectError GetProductStoreStateOperation401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation401JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation401JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation401JSONResponseBodyTypeAuthenticationError GetProductStoreStateOperation401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation401JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation403JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation403JSONResponseBodyObjectError GetProductStoreStateOperation403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation403JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation403JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation403JSONResponseBodyTypeAuthorizationError GetProductStoreStateOperation403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation403JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation404JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation404JSONResponseBodyObjectError GetProductStoreStateOperation404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation404JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation404JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation404JSONResponseBodyTypeResourceMissing GetProductStoreStateOperation404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation404JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation422JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation422JSONResponseBodyObjectError GetProductStoreStateOperation422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation422JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation422JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation422JSONResponseBodyTypeEntityReferencesArchivedEntities GetProductStoreStateOperation422JSONResponseBodyType = "entity_references_archived_entities"
-	GetProductStoreStateOperation422JSONResponseBodyTypeParameterError                   GetProductStoreStateOperation422JSONResponseBodyType = "parameter_error"
-	GetProductStoreStateOperation422JSONResponseBodyTypeStoreError                       GetProductStoreStateOperation422JSONResponseBodyType = "store_error"
-	GetProductStoreStateOperation422JSONResponseBodyTypeUnprocessableEntityError         GetProductStoreStateOperation422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation422JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case GetProductStoreStateOperation422JSONResponseBodyTypeParameterError:
-		return true
-	case GetProductStoreStateOperation422JSONResponseBodyTypeStoreError:
-		return true
-	case GetProductStoreStateOperation422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation423JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation423JSONResponseBodyObjectError GetProductStoreStateOperation423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation423JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation423JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation423JSONResponseBodyTypeResourceLockedError GetProductStoreStateOperation423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation423JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation429JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation429JSONResponseBodyObjectError GetProductStoreStateOperation429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation429JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation429JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation429JSONResponseBodyTypeRateLimitError GetProductStoreStateOperation429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation429JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation500JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation500JSONResponseBodyObjectError GetProductStoreStateOperation500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation500JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation500JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation500JSONResponseBodyTypeServerError GetProductStoreStateOperation500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation500JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation503JSONResponseBodyObject.
-const (
-	GetProductStoreStateOperation503JSONResponseBodyObjectError GetProductStoreStateOperation503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation503JSONResponseBodyObject enum.
-func (e GetProductStoreStateOperation503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProductStoreStateOperation503JSONResponseBodyType.
-const (
-	GetProductStoreStateOperation503JSONResponseBodyTypeServerError GetProductStoreStateOperation503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the GetProductStoreStateOperation503JSONResponseBodyType enum.
-func (e GetProductStoreStateOperation503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetProductStoreStateOperation503JSONResponseBodyTypeServerError:
 		return true
 	default:
 		return false
@@ -32340,6 +30999,450 @@ const (
 func (e ListPurchaseEntitlements503JSONResponseBodyType) Valid() bool {
 	switch e {
 	case ListPurchaseEntitlements503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListProductStoreStatePlansParamsStatus.
+const (
+	ListProductStoreStatePlansParamsStatusApplied            ListProductStoreStatePlansParamsStatus = "applied"
+	ListProductStoreStatePlansParamsStatusApplyErrored       ListProductStoreStatePlansParamsStatus = "apply_errored"
+	ListProductStoreStatePlansParamsStatusApplyQueued        ListProductStoreStatePlansParamsStatus = "apply_queued"
+	ListProductStoreStatePlansParamsStatusApplying           ListProductStoreStatePlansParamsStatus = "applying"
+	ListProductStoreStatePlansParamsStatusCancelled          ListProductStoreStatePlansParamsStatus = "cancelled"
+	ListProductStoreStatePlansParamsStatusDiscarded          ListProductStoreStatePlansParamsStatus = "discarded"
+	ListProductStoreStatePlansParamsStatusDraft              ListProductStoreStatePlansParamsStatus = "draft"
+	ListProductStoreStatePlansParamsStatusExpired            ListProductStoreStatePlansParamsStatus = "expired"
+	ListProductStoreStatePlansParamsStatusPlanErrored        ListProductStoreStatePlansParamsStatus = "plan_errored"
+	ListProductStoreStatePlansParamsStatusPlanQueued         ListProductStoreStatePlansParamsStatus = "plan_queued"
+	ListProductStoreStatePlansParamsStatusPlanned            ListProductStoreStatePlansParamsStatus = "planned"
+	ListProductStoreStatePlansParamsStatusPlannedAndFinished ListProductStoreStatePlansParamsStatus = "planned_and_finished"
+	ListProductStoreStatePlansParamsStatusPlanning           ListProductStoreStatePlansParamsStatus = "planning"
+)
+
+// Valid indicates whether the value is a known member of the ListProductStoreStatePlansParamsStatus enum.
+func (e ListProductStoreStatePlansParamsStatus) Valid() bool {
+	switch e {
+	case ListProductStoreStatePlansParamsStatusApplied:
+		return true
+	case ListProductStoreStatePlansParamsStatusApplyErrored:
+		return true
+	case ListProductStoreStatePlansParamsStatusApplyQueued:
+		return true
+	case ListProductStoreStatePlansParamsStatusApplying:
+		return true
+	case ListProductStoreStatePlansParamsStatusCancelled:
+		return true
+	case ListProductStoreStatePlansParamsStatusDiscarded:
+		return true
+	case ListProductStoreStatePlansParamsStatusDraft:
+		return true
+	case ListProductStoreStatePlansParamsStatusExpired:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlanErrored:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlanQueued:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlanned:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlannedAndFinished:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlanning:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListProductStoreStatePlans200JSONResponseBodyItemsObject.
+const (
+	ListProductStoreStatePlans200JSONResponseBodyItemsObjectProductStoreStatePlan ListProductStoreStatePlans200JSONResponseBodyItemsObject = "product_store_state_plan"
+)
+
+// Valid indicates whether the value is a known member of the ListProductStoreStatePlans200JSONResponseBodyItemsObject enum.
+func (e ListProductStoreStatePlans200JSONResponseBodyItemsObject) Valid() bool {
+	switch e {
+	case ListProductStoreStatePlans200JSONResponseBodyItemsObjectProductStoreStatePlan:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListProductStoreStatePlans200JSONResponseBodyItemsStatus.
+const (
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusApplied            ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "applied"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusApplyErrored       ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "apply_errored"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusApplyQueued        ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "apply_queued"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusApplying           ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "applying"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusCancelled          ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "cancelled"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusDiscarded          ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "discarded"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusDraft              ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "draft"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusExpired            ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "expired"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlanErrored        ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "plan_errored"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlanQueued         ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "plan_queued"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlanned            ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "planned"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlannedAndFinished ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "planned_and_finished"
+	ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlanning           ListProductStoreStatePlans200JSONResponseBodyItemsStatus = "planning"
+)
+
+// Valid indicates whether the value is a known member of the ListProductStoreStatePlans200JSONResponseBodyItemsStatus enum.
+func (e ListProductStoreStatePlans200JSONResponseBodyItemsStatus) Valid() bool {
+	switch e {
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusApplied:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusApplyErrored:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusApplyQueued:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusApplying:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusCancelled:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusDiscarded:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusDraft:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusExpired:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlanErrored:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlanQueued:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlanned:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlannedAndFinished:
+		return true
+	case ListProductStoreStatePlans200JSONResponseBodyItemsStatusPlanning:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListProductStoreStatePlans200JSONResponseBodyObject.
+const (
+	ListProductStoreStatePlans200JSONResponseBodyObjectList ListProductStoreStatePlans200JSONResponseBodyObject = "list"
+)
+
+// Valid indicates whether the value is a known member of the ListProductStoreStatePlans200JSONResponseBodyObject enum.
+func (e ListProductStoreStatePlans200JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case ListProductStoreStatePlans200JSONResponseBodyObjectList:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateProductStoreStatePlan201JSONResponseBodyObject.
+const (
+	CreateProductStoreStatePlan201JSONResponseBodyObjectProductStoreStatePlan CreateProductStoreStatePlan201JSONResponseBodyObject = "product_store_state_plan"
+)
+
+// Valid indicates whether the value is a known member of the CreateProductStoreStatePlan201JSONResponseBodyObject enum.
+func (e CreateProductStoreStatePlan201JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateProductStoreStatePlan201JSONResponseBodyObjectProductStoreStatePlan:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateProductStoreStatePlan201JSONResponseBodyStatus.
+const (
+	CreateProductStoreStatePlan201JSONResponseBodyStatusDraft CreateProductStoreStatePlan201JSONResponseBodyStatus = "draft"
+)
+
+// Valid indicates whether the value is a known member of the CreateProductStoreStatePlan201JSONResponseBodyStatus enum.
+func (e CreateProductStoreStatePlan201JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case CreateProductStoreStatePlan201JSONResponseBodyStatusDraft:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStatePlan200JSONResponseBodyActions.
+const (
+	Apply   GetProductStoreStatePlan200JSONResponseBodyActions = "apply"
+	Discard GetProductStoreStatePlan200JSONResponseBodyActions = "discard"
+	Edit    GetProductStoreStatePlan200JSONResponseBodyActions = "edit"
+	Plan    GetProductStoreStatePlan200JSONResponseBodyActions = "plan"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStatePlan200JSONResponseBodyActions enum.
+func (e GetProductStoreStatePlan200JSONResponseBodyActions) Valid() bool {
+	switch e {
+	case Apply:
+		return true
+	case Discard:
+		return true
+	case Edit:
+		return true
+	case Plan:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStatePlan200JSONResponseBodyObject.
+const (
+	GetProductStoreStatePlan200JSONResponseBodyObjectProductStoreStatePlan GetProductStoreStatePlan200JSONResponseBodyObject = "product_store_state_plan"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStatePlan200JSONResponseBodyObject enum.
+func (e GetProductStoreStatePlan200JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetProductStoreStatePlan200JSONResponseBodyObjectProductStoreStatePlan:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStatePlan200JSONResponseBodyPlanItemsAction.
+const (
+	Create    GetProductStoreStatePlan200JSONResponseBodyPlanItemsAction = "create"
+	Modify    GetProductStoreStatePlan200JSONResponseBodyPlanItemsAction = "modify"
+	Unchanged GetProductStoreStatePlan200JSONResponseBodyPlanItemsAction = "unchanged"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStatePlan200JSONResponseBodyPlanItemsAction enum.
+func (e GetProductStoreStatePlan200JSONResponseBodyPlanItemsAction) Valid() bool {
+	switch e {
+	case Create:
+		return true
+	case Modify:
+		return true
+	case Unchanged:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus.
+const (
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusApplied     GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus = "applied"
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusFailed      GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus = "failed"
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusLessThanNil GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus = "<nil>"
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusPending     GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus = "pending"
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusRunning     GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus = "running"
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusSkipped     GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus = "skipped"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus enum.
+func (e GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus) Valid() bool {
+	switch e {
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusApplied:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusFailed:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusLessThanNil:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusPending:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusRunning:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatusSkipped:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverity.
+const (
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverityBlocker GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverity = "blocker"
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverityInfo    GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverity = "info"
+	GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverityWarning GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverity = "warning"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverity enum.
+func (e GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverity) Valid() bool {
+	switch e {
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverityBlocker:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverityInfo:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverityWarning:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreStatePlan200JSONResponseBodyStatus.
+const (
+	GetProductStoreStatePlan200JSONResponseBodyStatusApplied            GetProductStoreStatePlan200JSONResponseBodyStatus = "applied"
+	GetProductStoreStatePlan200JSONResponseBodyStatusApplyErrored       GetProductStoreStatePlan200JSONResponseBodyStatus = "apply_errored"
+	GetProductStoreStatePlan200JSONResponseBodyStatusApplyQueued        GetProductStoreStatePlan200JSONResponseBodyStatus = "apply_queued"
+	GetProductStoreStatePlan200JSONResponseBodyStatusApplying           GetProductStoreStatePlan200JSONResponseBodyStatus = "applying"
+	GetProductStoreStatePlan200JSONResponseBodyStatusCancelled          GetProductStoreStatePlan200JSONResponseBodyStatus = "cancelled"
+	GetProductStoreStatePlan200JSONResponseBodyStatusDiscarded          GetProductStoreStatePlan200JSONResponseBodyStatus = "discarded"
+	GetProductStoreStatePlan200JSONResponseBodyStatusDraft              GetProductStoreStatePlan200JSONResponseBodyStatus = "draft"
+	GetProductStoreStatePlan200JSONResponseBodyStatusExpired            GetProductStoreStatePlan200JSONResponseBodyStatus = "expired"
+	GetProductStoreStatePlan200JSONResponseBodyStatusPlanErrored        GetProductStoreStatePlan200JSONResponseBodyStatus = "plan_errored"
+	GetProductStoreStatePlan200JSONResponseBodyStatusPlanQueued         GetProductStoreStatePlan200JSONResponseBodyStatus = "plan_queued"
+	GetProductStoreStatePlan200JSONResponseBodyStatusPlanned            GetProductStoreStatePlan200JSONResponseBodyStatus = "planned"
+	GetProductStoreStatePlan200JSONResponseBodyStatusPlannedAndFinished GetProductStoreStatePlan200JSONResponseBodyStatus = "planned_and_finished"
+	GetProductStoreStatePlan200JSONResponseBodyStatusPlanning           GetProductStoreStatePlan200JSONResponseBodyStatus = "planning"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreStatePlan200JSONResponseBodyStatus enum.
+func (e GetProductStoreStatePlan200JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case GetProductStoreStatePlan200JSONResponseBodyStatusApplied:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusApplyErrored:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusApplyQueued:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusApplying:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusCancelled:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusDiscarded:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusDraft:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusExpired:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusPlanErrored:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusPlanQueued:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusPlanned:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusPlannedAndFinished:
+		return true
+	case GetProductStoreStatePlan200JSONResponseBodyStatusPlanning:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateProductStoreStatePlan200JSONResponseBodyObject.
+const (
+	UpdateProductStoreStatePlan200JSONResponseBodyObjectProductStoreStatePlan UpdateProductStoreStatePlan200JSONResponseBodyObject = "product_store_state_plan"
+)
+
+// Valid indicates whether the value is a known member of the UpdateProductStoreStatePlan200JSONResponseBodyObject enum.
+func (e UpdateProductStoreStatePlan200JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdateProductStoreStatePlan200JSONResponseBodyObjectProductStoreStatePlan:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateProductStoreStatePlan200JSONResponseBodyStatus.
+const (
+	UpdateProductStoreStatePlan200JSONResponseBodyStatusDraft UpdateProductStoreStatePlan200JSONResponseBodyStatus = "draft"
+)
+
+// Valid indicates whether the value is a known member of the UpdateProductStoreStatePlan200JSONResponseBodyStatus enum.
+func (e UpdateProductStoreStatePlan200JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case UpdateProductStoreStatePlan200JSONResponseBodyStatusDraft:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ApplyProductStoreStatePlan202JSONResponseBodyObject.
+const (
+	ApplyProductStoreStatePlan202JSONResponseBodyObjectProductStoreStatePlan ApplyProductStoreStatePlan202JSONResponseBodyObject = "product_store_state_plan"
+)
+
+// Valid indicates whether the value is a known member of the ApplyProductStoreStatePlan202JSONResponseBodyObject enum.
+func (e ApplyProductStoreStatePlan202JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case ApplyProductStoreStatePlan202JSONResponseBodyObjectProductStoreStatePlan:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ApplyProductStoreStatePlan202JSONResponseBodyStatus.
+const (
+	ApplyProductStoreStatePlan202JSONResponseBodyStatusApplyQueued ApplyProductStoreStatePlan202JSONResponseBodyStatus = "apply_queued"
+)
+
+// Valid indicates whether the value is a known member of the ApplyProductStoreStatePlan202JSONResponseBodyStatus enum.
+func (e ApplyProductStoreStatePlan202JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case ApplyProductStoreStatePlan202JSONResponseBodyStatusApplyQueued:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DiscardProductStoreStatePlan200JSONResponseBodyObject.
+const (
+	DiscardProductStoreStatePlan200JSONResponseBodyObjectProductStoreStatePlan DiscardProductStoreStatePlan200JSONResponseBodyObject = "product_store_state_plan"
+)
+
+// Valid indicates whether the value is a known member of the DiscardProductStoreStatePlan200JSONResponseBodyObject enum.
+func (e DiscardProductStoreStatePlan200JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case DiscardProductStoreStatePlan200JSONResponseBodyObjectProductStoreStatePlan:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DiscardProductStoreStatePlan200JSONResponseBodyStatus.
+const (
+	DiscardProductStoreStatePlan200JSONResponseBodyStatusDiscarded DiscardProductStoreStatePlan200JSONResponseBodyStatus = "discarded"
+)
+
+// Valid indicates whether the value is a known member of the DiscardProductStoreStatePlan200JSONResponseBodyStatus enum.
+func (e DiscardProductStoreStatePlan200JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case DiscardProductStoreStatePlan200JSONResponseBodyStatusDiscarded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlanProductStoreStatePlan202JSONResponseBodyObject.
+const (
+	PlanProductStoreStatePlan202JSONResponseBodyObjectProductStoreStatePlan PlanProductStoreStatePlan202JSONResponseBodyObject = "product_store_state_plan"
+)
+
+// Valid indicates whether the value is a known member of the PlanProductStoreStatePlan202JSONResponseBodyObject enum.
+func (e PlanProductStoreStatePlan202JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PlanProductStoreStatePlan202JSONResponseBodyObjectProductStoreStatePlan:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlanProductStoreStatePlan202JSONResponseBodyStatus.
+const (
+	PlanProductStoreStatePlan202JSONResponseBodyStatusPlanQueued PlanProductStoreStatePlan202JSONResponseBodyStatus = "plan_queued"
+)
+
+// Valid indicates whether the value is a known member of the PlanProductStoreStatePlan202JSONResponseBodyStatus enum.
+func (e PlanProductStoreStatePlan202JSONResponseBodyStatus) Valid() bool {
+	switch e {
+	case PlanProductStoreStatePlan202JSONResponseBodyStatusPlanQueued:
 		return true
 	default:
 		return false
@@ -39902,6 +39005,297 @@ type ProductStoreStateCommonResponse struct {
 // Example: ONE_MONTH
 type ProductStoreStateCommonResponseDuration string
 
+// ProductStoreStateEqualizeMissingSubscriptionPrices Optional directive that fills missing App Store subscription territory prices using Apple's equalized price points derived from `base_territory` at apply time.
+type ProductStoreStateEqualizeMissingSubscriptionPrices struct {
+	// BaseTerritory Territory whose price should be used as the source for equalization. Planned pricing uses the requested price in this territory when provided; otherwise it falls back to the current App Store Connect price.
+	//
+	// Example: US
+	BaseTerritory string `json:"base_territory"`
+}
+
+// ProductStoreStatePlanCommon defines model for ProductStoreStatePlanCommon.
+type ProductStoreStatePlanCommon struct {
+	Availability *struct {
+		// AvailableInNewTerritories Availability default for newly added territories. Optional; when omitted, the current App Store Connect value is preserved.
+		//
+		// Example: true
+		AvailableInNewTerritories *bool `json:"available_in_new_territories,omitempty"`
+
+		// Territories Territories where the product is available. True = available, false = remove.
+		Territories *map[string]bool `json:"territories,omitempty"`
+	} `json:"availability,omitempty"`
+
+	// Duration Subscription duration. Required for subscription creation in create-if-missing flows. Plan APIs use canonical ISO-like durations.
+	//
+	// Example: P1M
+	Duration      *ProductStoreStatePlanCommonDuration `json:"duration,omitempty"`
+	Localizations *map[string]*struct {
+		// Description Localized product description.
+		//
+		// Example: Access premium content every month.
+		Description *string `json:"description"`
+
+		// Name Localized product display name.
+		//
+		// Example: Premium Monthly
+		Name string `json:"name"`
+	} `json:"localizations,omitempty"`
+	Pricing *struct {
+		// EqualizeMissingSubscriptionPrices Optional directive that fills missing App Store subscription territory prices using Apple's equalized price points derived from `base_territory` at apply time.
+		EqualizeMissingSubscriptionPrices *ProductStoreStateEqualizeMissingSubscriptionPrices `json:"equalize_missing_subscription_prices,omitempty"`
+		TerritoryPrices                   *map[string]struct {
+			// AmountMicros Territory price amount in micros.
+			//
+			// Example: 9990000
+			AmountMicros int64 `json:"amount_micros"`
+
+			// Currency ISO currency code for this territory price.
+			//
+			// Example: USD
+			Currency *string `json:"currency,omitempty"`
+
+			// StartDate ISO-8601 date (YYYY-MM-DD) for a scheduled price change. Required for approved subscriptions — Apple does not allow modifying the current price of an approved subscription directly; a future start date must be provided to schedule the change. Omit for initial pricing of unapproved products. For in-app purchases, sets the start date on the price schedule entry.
+			//
+			// Example: 2026-04-01
+			StartDate *openapi_types.Date `json:"start_date,omitempty"`
+
+			// SubscriptionPricePointID Optional App Store Connect price point identifier.
+			SubscriptionPricePointID *string `json:"subscription_price_point_id,omitempty"`
+		} `json:"territory_prices,omitempty"`
+	} `json:"pricing,omitempty"`
+
+	// Title Optional product title used by create-if-missing flows.
+	//
+	// Example: Premium Monthly
+	Title *string `json:"title,omitempty"`
+}
+
+// ProductStoreStatePlanCommonDuration Subscription duration. Required for subscription creation in create-if-missing flows. Plan APIs use canonical ISO-like durations.
+//
+// Example: P1M
+type ProductStoreStatePlanCommonDuration string
+
+// ProductStoreStatePlanCommonResponse defines model for ProductStoreStatePlanCommonResponse.
+type ProductStoreStatePlanCommonResponse struct {
+	Availability *struct {
+		// AvailableInNewTerritories Availability default for newly added territories. Optional; when omitted, the current App Store Connect value is preserved.
+		//
+		// Example: true
+		AvailableInNewTerritories *bool `json:"available_in_new_territories,omitempty"`
+
+		// Territories Territories where the product is available. True = available, false = remove.
+		Territories *map[string]bool `json:"territories,omitempty"`
+	} `json:"availability,omitempty"`
+
+	// Duration Subscription duration. Plan APIs return this value using canonical ISO-like durations.
+	//
+	// Example: P1M
+	Duration      *ProductStoreStatePlanCommonResponseDuration `json:"duration,omitempty"`
+	Localizations *map[string]*struct {
+		// Description Localized product description.
+		//
+		// Example: Access premium content every month.
+		Description *string `json:"description"`
+
+		// Name Localized product display name.
+		//
+		// Example: Premium Monthly
+		Name string `json:"name"`
+	} `json:"localizations,omitempty"`
+	Pricing *struct {
+		// EqualizeMissingSubscriptionPrices Optional directive that fills missing App Store subscription territory prices using Apple's equalized price points derived from `base_territory` at apply time.
+		EqualizeMissingSubscriptionPrices *ProductStoreStateEqualizeMissingSubscriptionPrices `json:"equalize_missing_subscription_prices,omitempty"`
+		TerritoryPrices                   *map[string]struct {
+			// AmountMicros Territory price amount in micros.
+			//
+			// Example: 9990000
+			AmountMicros int64 `json:"amount_micros"`
+
+			// Currency ISO currency code for this territory price.
+			//
+			// Example: USD
+			Currency *string `json:"currency,omitempty"`
+
+			// StartDate ISO-8601 date (YYYY-MM-DD) for a scheduled price change. Required for approved subscriptions — Apple does not allow modifying the current price of an approved subscription directly; a future start date must be provided to schedule the change. Omit for initial pricing of unapproved products. For in-app purchases, sets the start date on the price schedule entry.
+			//
+			// Example: 2026-04-01
+			StartDate *openapi_types.Date `json:"start_date,omitempty"`
+
+			// SubscriptionPricePointID Optional App Store Connect price point identifier.
+			SubscriptionPricePointID *string `json:"subscription_price_point_id,omitempty"`
+		} `json:"territory_prices,omitempty"`
+	} `json:"pricing,omitempty"`
+
+	// Title Optional product title used by create-if-missing flows.
+	//
+	// Example: Premium Monthly
+	Title *string `json:"title,omitempty"`
+}
+
+// ProductStoreStatePlanCommonResponseDuration Subscription duration. Plan APIs return this value using canonical ISO-like durations.
+//
+// Example: P1M
+type ProductStoreStatePlanCommonResponseDuration string
+
+// ProductStoreStatePlanCreateRevenueCatProduct defines model for ProductStoreStatePlanCreateRevenueCatProduct.
+type ProductStoreStatePlanCreateRevenueCatProduct struct {
+	// AppID The ID of the app within the project that the product belongs to.
+	//
+	// Example: app1a2b3c4
+	AppID string `json:"app_id"`
+
+	// DisplayName The RevenueCat display name to use if the product is created.
+	//
+	// Example: Pro Monthly
+	DisplayName string `json:"display_name"`
+
+	// StoreIdentifier The store identifier for the RevenueCat product to target or create. App Store products use the iOS bundle product ID (e.g. `com.example.app.pro_monthly`). Play Store subscriptions use the compound form `<subscription_id>:<base_plan_id>` (e.g. `premium:monthly`), while Play Store one-time products use the plain product ID / SKU.
+	//
+	// Example: com.example.app.pro_monthly
+	StoreIdentifier string `json:"store_identifier"`
+
+	// Title The RevenueCat title to use if the product is created.
+	//
+	// Example: Pro Monthly
+	Title string `json:"title"`
+
+	// Type The product type to create in RevenueCat. `one_time` is only supported for `play_store` products; App Store one-time purchases use `consumable`, `non_consumable`, or `non_renewing_subscription`.
+	//
+	// Example: subscription
+	Type ProductStoreStatePlanCreateRevenueCatProductType `json:"type"`
+}
+
+// ProductStoreStatePlanCreateRevenueCatProductType The product type to create in RevenueCat. `one_time` is only supported for `play_store` products; App Store one-time purchases use `consumable`, `non_consumable`, or `non_renewing_subscription`.
+//
+// Example: subscription
+type ProductStoreStatePlanCreateRevenueCatProductType string
+
+// ProductStoreStatePlanCreateRevenueCatProductResponse defines model for ProductStoreStatePlanCreateRevenueCatProductResponse.
+type ProductStoreStatePlanCreateRevenueCatProductResponse struct {
+	// AppID The ID of the app within the project that the product belongs to.
+	//
+	// Example: app1a2b3c4
+	AppID string `json:"app_id"`
+
+	// DisplayName The RevenueCat display name to use when the product is created.
+	//
+	// Example: Pro Monthly
+	DisplayName string `json:"display_name"`
+
+	// StoreIdentifier The store identifier for the RevenueCat product to create. App Store products use the iOS bundle product ID (e.g. `com.example.app.pro_monthly`). Play Store subscriptions use the compound form `<subscription_id>:<base_plan_id>` (e.g. `premium:monthly`). Play Store one-time products use the plain product ID / SKU.
+	//
+	// Example: com.example.app.pro_monthly
+	StoreIdentifier string `json:"store_identifier"`
+
+	// Title The RevenueCat title to use when the product is created.
+	//
+	// Example: Pro Monthly
+	Title string `json:"title"`
+
+	// Type The product type to create in RevenueCat. `one_time` is only supported for `play_store` products.
+	//
+	// Example: subscription
+	Type ProductStoreStatePlanCreateRevenueCatProductResponseType `json:"type"`
+}
+
+// ProductStoreStatePlanCreateRevenueCatProductResponseType The product type to create in RevenueCat. `one_time` is only supported for `play_store` products.
+//
+// Example: subscription
+type ProductStoreStatePlanCreateRevenueCatProductResponseType string
+
+// ProductStoreStatePlanDesiredState defines model for ProductStoreStatePlanDesiredState.
+type ProductStoreStatePlanDesiredState struct {
+	Common                  *ProductStoreStatePlanCommon                  `json:"common,omitempty"`
+	CreateRevenuecatProduct *ProductStoreStatePlanCreateRevenueCatProduct `json:"create_revenuecat_product,omitempty"`
+
+	// ProductID The ID of the product.
+	//
+	// Example: prod1a2b3c4
+	ProductID *string `json:"product_id,omitempty"`
+
+	// Store The target store for this desired state.
+	//
+	// Example: app_store
+	Store ProductStoreStatePlanDesiredStateStore `json:"store"`
+
+	// StoreState Store-specific desired state. Must match the `store` discriminator.
+	StoreState *ProductStoreStatePlanDesiredState_StoreState `json:"store_state,omitempty"`
+	union      json.RawMessage
+}
+
+// ProductStoreStatePlanDesiredStateStore The target store for this desired state.
+//
+// Example: app_store
+type ProductStoreStatePlanDesiredStateStore string
+
+// ProductStoreStatePlanDesiredState_StoreState Store-specific desired state. Must match the `store` discriminator.
+type ProductStoreStatePlanDesiredState_StoreState struct {
+	union json.RawMessage
+}
+
+// ProductStoreStatePlanDesiredState0 defines model for ProductStoreStatePlanDesiredState.0.
+type ProductStoreStatePlanDesiredState0 = interface{}
+
+// ProductStoreStatePlanDesiredState1 defines model for ProductStoreStatePlanDesiredState.1.
+type ProductStoreStatePlanDesiredState1 = interface{}
+
+// ProductStoreStatePlanDesiredStateResponse defines model for ProductStoreStatePlanDesiredStateResponse.
+type ProductStoreStatePlanDesiredStateResponse struct {
+	Common                  *ProductStoreStatePlanCommonResponse                  `json:"common"`
+	CreateRevenuecatProduct *ProductStoreStatePlanCreateRevenueCatProductResponse `json:"create_revenuecat_product"`
+
+	// ProductID The ID of the product.
+	//
+	// Example: prod1a2b3c4
+	ProductID *string `json:"product_id"`
+
+	// ProjectID The ID of the project. Must match the path parameter.
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
+	// Store The target store for this desired state.
+	//
+	// Example: app_store
+	Store ProductStoreStatePlanDesiredStateResponseStore `json:"store"`
+
+	// StoreState Store-specific desired state. Matches the `store` discriminator: App Store metadata when `store=app_store`, Play Store metadata when `store=play_store`. May be `null` for plan items that only touch `common.*` fields.
+	StoreState *ProductStoreStatePlanDesiredStateResponse_StoreState `json:"store_state"`
+}
+
+// ProductStoreStatePlanDesiredStateResponseStore The target store for this desired state.
+//
+// Example: app_store
+type ProductStoreStatePlanDesiredStateResponseStore string
+
+// ProductStoreStatePlanDesiredStateResponse_StoreState Store-specific desired state. Matches the `store` discriminator: App Store metadata when `store=app_store`, Play Store metadata when `store=play_store`. May be `null` for plan items that only touch `common.*` fields.
+type ProductStoreStatePlanDesiredStateResponse_StoreState struct {
+	union json.RawMessage
+}
+
+// ProductStoreStatePlanWarning defines model for ProductStoreStatePlanWarning.
+type ProductStoreStatePlanWarning struct {
+	// Field Plan field the warning relates to.
+	//
+	// Example: plan_items
+	Field string `json:"field"`
+
+	// Message Human-readable explanation of the warning.
+	//
+	// Example: This App Store plan has 5 items. Applying many items at once can hit Apple's rate limits. Apply may take longer and some items may need to be retried.
+	Message string `json:"message"`
+
+	// Severity Severity level of the warning.
+	//
+	// Example: warning
+	Severity ProductStoreStatePlanWarningSeverity `json:"severity"`
+}
+
+// ProductStoreStatePlanWarningSeverity Severity level of the warning.
+//
+// Example: warning
+type ProductStoreStatePlanWarningSeverity string
+
 // ProductStoreStatePlayStoreState Play Store specific desired state for a single plan item. Subscriptions use `base_plans` keyed by `base_plan_id`; one-time products use `purchase_options` keyed by `purchase_option_id`. Do not combine both maps in a single desired state.
 type ProductStoreStatePlayStoreState struct {
 	// Archived Whether the parent subscription is archived in Play Console. Must agree across plan items targeting the same `subscription_id`. Not supported for one-time products.
@@ -47048,6 +46442,14 @@ type CreateProductInStore503JSONResponseBodyObject string
 // CreateProductInStore503JSONResponseBodyType defines parameters for CreateProductInStore.
 type CreateProductInStore503JSONResponseBodyType string
 
+// UpdateProductPriceJSONBody defines parameters for UpdateProductPrice.
+type UpdateProductPriceJSONBody struct {
+	// AmountMicros The price in micros. For example, USD 1 would be represented as 1000000
+	//
+	// Example: For 99.99, the value should be 99990000
+	AmountMicros AmountMicros `json:"amount_micros"`
+}
+
 // GetProductStoreState200JSONResponseBodyCommonDuration defines parameters for GetProductStoreState.
 type GetProductStoreState200JSONResponseBodyCommonDuration string
 
@@ -47061,60 +46463,6 @@ type GetProductStoreState200JSONResponseBody_StoreState struct {
 
 // GetProductStoreState200JSONResponseBodyStoreStatusStatus defines parameters for GetProductStoreState.
 type GetProductStoreState200JSONResponseBodyStoreStatusStatus string
-
-// GetProductStoreState400JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState400JSONResponseBodyObject string
-
-// GetProductStoreState400JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState400JSONResponseBodyType string
-
-// GetProductStoreState401JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState401JSONResponseBodyObject string
-
-// GetProductStoreState401JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState401JSONResponseBodyType string
-
-// GetProductStoreState403JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState403JSONResponseBodyObject string
-
-// GetProductStoreState403JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState403JSONResponseBodyType string
-
-// GetProductStoreState404JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState404JSONResponseBodyObject string
-
-// GetProductStoreState404JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState404JSONResponseBodyType string
-
-// GetProductStoreState422JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState422JSONResponseBodyObject string
-
-// GetProductStoreState422JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState422JSONResponseBodyType string
-
-// GetProductStoreState423JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState423JSONResponseBodyObject string
-
-// GetProductStoreState423JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState423JSONResponseBodyType string
-
-// GetProductStoreState429JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState429JSONResponseBodyObject string
-
-// GetProductStoreState429JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState429JSONResponseBodyType string
-
-// GetProductStoreState500JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState500JSONResponseBodyObject string
-
-// GetProductStoreState500JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState500JSONResponseBodyType string
-
-// GetProductStoreState503JSONResponseBodyObject defines parameters for GetProductStoreState.
-type GetProductStoreState503JSONResponseBodyObject string
-
-// GetProductStoreState503JSONResponseBodyType defines parameters for GetProductStoreState.
-type GetProductStoreState503JSONResponseBodyType string
 
 // SetProductStoreStateJSONBody defines parameters for SetProductStoreState.
 type SetProductStoreStateJSONBody struct {
@@ -47192,66 +46540,6 @@ type SetProductStoreStateJSONBody_StoreState struct {
 // SetProductStoreState202JSONResponseBodyStatus defines parameters for SetProductStoreState.
 type SetProductStoreState202JSONResponseBodyStatus string
 
-// SetProductStoreState400JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState400JSONResponseBodyObject string
-
-// SetProductStoreState400JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState400JSONResponseBodyType string
-
-// SetProductStoreState401JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState401JSONResponseBodyObject string
-
-// SetProductStoreState401JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState401JSONResponseBodyType string
-
-// SetProductStoreState403JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState403JSONResponseBodyObject string
-
-// SetProductStoreState403JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState403JSONResponseBodyType string
-
-// SetProductStoreState404JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState404JSONResponseBodyObject string
-
-// SetProductStoreState404JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState404JSONResponseBodyType string
-
-// SetProductStoreState409JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState409JSONResponseBodyObject string
-
-// SetProductStoreState409JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState409JSONResponseBodyType string
-
-// SetProductStoreState422JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState422JSONResponseBodyObject string
-
-// SetProductStoreState422JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState422JSONResponseBodyType string
-
-// SetProductStoreState423JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState423JSONResponseBodyObject string
-
-// SetProductStoreState423JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState423JSONResponseBodyType string
-
-// SetProductStoreState429JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState429JSONResponseBodyObject string
-
-// SetProductStoreState429JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState429JSONResponseBodyType string
-
-// SetProductStoreState500JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState500JSONResponseBodyObject string
-
-// SetProductStoreState500JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState500JSONResponseBodyType string
-
-// SetProductStoreState503JSONResponseBodyObject defines parameters for SetProductStoreState.
-type SetProductStoreState503JSONResponseBodyObject string
-
-// SetProductStoreState503JSONResponseBodyType defines parameters for SetProductStoreState.
-type SetProductStoreState503JSONResponseBodyType string
-
 // EqualizeSubscriptionPricesJSONBody defines parameters for EqualizeSubscriptionPrices.
 type EqualizeSubscriptionPricesJSONBody struct {
 	// BaseTerritory Base territory used to resolve the source price point from the
@@ -47273,66 +46561,6 @@ type EqualizeSubscriptionPricesJSONBodyStore string
 // EqualizeSubscriptionPrices202JSONResponseBodyStatus defines parameters for EqualizeSubscriptionPrices.
 type EqualizeSubscriptionPrices202JSONResponseBodyStatus string
 
-// EqualizeSubscriptionPrices400JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices400JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices400JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices400JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices401JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices401JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices401JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices401JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices403JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices403JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices403JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices403JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices404JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices404JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices404JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices404JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices409JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices409JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices409JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices409JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices422JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices422JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices422JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices422JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices423JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices423JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices423JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices423JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices429JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices429JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices429JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices429JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices500JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices500JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices500JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices500JSONResponseBodyType string
-
-// EqualizeSubscriptionPrices503JSONResponseBodyObject defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices503JSONResponseBodyObject string
-
-// EqualizeSubscriptionPrices503JSONResponseBodyType defines parameters for EqualizeSubscriptionPrices.
-type EqualizeSubscriptionPrices503JSONResponseBodyType string
-
 // UploadProductStoreStateScreenshotJSONBody defines parameters for UploadProductStoreStateScreenshot.
 type UploadProductStoreStateScreenshotJSONBody struct {
 	// FileSize Screenshot file size in bytes.
@@ -47346,122 +46574,23 @@ type UploadProductStoreStateScreenshotJSONBody struct {
 	Filename string `json:"filename"`
 }
 
-// UploadProductStoreStateScreenshot400JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot400JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot400JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot400JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot401JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot401JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot401JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot401JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot403JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot403JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot403JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot403JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot404JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot404JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot404JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot404JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot409JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot409JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot409JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot409JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot422JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot422JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot422JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot422JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot423JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot423JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot423JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot423JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot429JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot429JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot429JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot429JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot500JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot500JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot500JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot500JSONResponseBodyType string
-
-// UploadProductStoreStateScreenshot503JSONResponseBodyObject defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot503JSONResponseBodyObject string
-
-// UploadProductStoreStateScreenshot503JSONResponseBodyType defines parameters for UploadProductStoreStateScreenshot.
-type UploadProductStoreStateScreenshot503JSONResponseBodyType string
-
 // GetProductStoreStateOperation200JSONResponseBodyStatus defines parameters for GetProductStoreStateOperation.
 type GetProductStoreStateOperation200JSONResponseBodyStatus string
 
-// GetProductStoreStateOperation400JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation400JSONResponseBodyObject string
+// CreateProductPricesJSONBody defines parameters for CreateProductPrices.
+type CreateProductPricesJSONBody struct {
+	Prices *[]struct {
+		// AmountMicros The price in micros. For example, USD 1 would be represented as 1000000
+		//
+		// Example: For 99.99, the value should be 99990000
+		AmountMicros *AmountMicros `json:"amount_micros,omitempty"`
 
-// GetProductStoreStateOperation400JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation400JSONResponseBodyType string
-
-// GetProductStoreStateOperation401JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation401JSONResponseBodyObject string
-
-// GetProductStoreStateOperation401JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation401JSONResponseBodyType string
-
-// GetProductStoreStateOperation403JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation403JSONResponseBodyObject string
-
-// GetProductStoreStateOperation403JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation403JSONResponseBodyType string
-
-// GetProductStoreStateOperation404JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation404JSONResponseBodyObject string
-
-// GetProductStoreStateOperation404JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation404JSONResponseBodyType string
-
-// GetProductStoreStateOperation422JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation422JSONResponseBodyObject string
-
-// GetProductStoreStateOperation422JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation422JSONResponseBodyType string
-
-// GetProductStoreStateOperation423JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation423JSONResponseBodyObject string
-
-// GetProductStoreStateOperation423JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation423JSONResponseBodyType string
-
-// GetProductStoreStateOperation429JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation429JSONResponseBodyObject string
-
-// GetProductStoreStateOperation429JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation429JSONResponseBodyType string
-
-// GetProductStoreStateOperation500JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation500JSONResponseBodyObject string
-
-// GetProductStoreStateOperation500JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation500JSONResponseBodyType string
-
-// GetProductStoreStateOperation503JSONResponseBodyObject defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation503JSONResponseBodyObject string
-
-// GetProductStoreStateOperation503JSONResponseBodyType defines parameters for GetProductStoreStateOperation.
-type GetProductStoreStateOperation503JSONResponseBodyType string
+		// Currency ISO 4217 currency code
+		//
+		// Example: USD
+		Currency *Currency `json:"currency,omitempty"`
+	} `json:"prices,omitempty"`
+}
 
 // SearchPurchasesParams defines parameters for SearchPurchases.
 type SearchPurchasesParams struct {
@@ -47681,6 +46810,121 @@ type ListPurchaseEntitlements503JSONResponseBodyObject string
 
 // ListPurchaseEntitlements503JSONResponseBodyType defines parameters for ListPurchaseEntitlements.
 type ListPurchaseEntitlements503JSONResponseBodyType string
+
+// ListProductStoreStatePlansParams defines parameters for ListProductStoreStatePlans.
+type ListProductStoreStatePlansParams struct {
+	// Status Filter plans by status
+	Status        *ListProductStoreStatePlansParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+	StartingAfter *string                                 `form:"starting_after,omitempty" json:"starting_after,omitempty"`
+	Limit         *int                                    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListProductStoreStatePlansParamsStatus defines parameters for ListProductStoreStatePlans.
+type ListProductStoreStatePlansParamsStatus string
+
+// ListProductStoreStatePlans200JSONResponseBodyItemsObject defines parameters for ListProductStoreStatePlans.
+type ListProductStoreStatePlans200JSONResponseBodyItemsObject string
+
+// ListProductStoreStatePlans200JSONResponseBodyItemsStatus defines parameters for ListProductStoreStatePlans.
+type ListProductStoreStatePlans200JSONResponseBodyItemsStatus string
+
+// ListProductStoreStatePlans200JSONResponseBodyObject defines parameters for ListProductStoreStatePlans.
+type ListProductStoreStatePlans200JSONResponseBodyObject string
+
+// CreateProductStoreStatePlanJSONBody defines parameters for CreateProductStoreStatePlan.
+type CreateProductStoreStatePlanJSONBody struct {
+	DesiredStates []ProductStoreStatePlanDesiredState `json:"desired_states"`
+}
+
+// CreateProductStoreStatePlan201JSONResponseBodyObject defines parameters for CreateProductStoreStatePlan.
+type CreateProductStoreStatePlan201JSONResponseBodyObject string
+
+// CreateProductStoreStatePlan201JSONResponseBodyStatus defines parameters for CreateProductStoreStatePlan.
+type CreateProductStoreStatePlan201JSONResponseBodyStatus string
+
+// GetProductStoreStatePlan200JSONResponseBodyActions defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyActions string
+
+// GetProductStoreStatePlan200JSONResponseBodyObject defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyObject string
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsAction defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsAction string
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsApplyStatus string
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0 defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0 = string
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1 defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1 = float32
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2 defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2 = bool
+
+// GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue struct {
+	union json.RawMessage
+}
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0 defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0 = string
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1 defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1 = float32
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2 defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2 = bool
+
+// GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue struct {
+	union json.RawMessage
+}
+
+// GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverity defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyPlanItemsWarningsSeverity string
+
+// GetProductStoreStatePlan200JSONResponseBodyStatus defines parameters for GetProductStoreStatePlan.
+type GetProductStoreStatePlan200JSONResponseBodyStatus string
+
+// UpdateProductStoreStatePlanJSONBody defines parameters for UpdateProductStoreStatePlan.
+type UpdateProductStoreStatePlanJSONBody struct {
+	DesiredStates []ProductStoreStatePlanDesiredState `json:"desired_states"`
+}
+
+// UpdateProductStoreStatePlan200JSONResponseBodyObject defines parameters for UpdateProductStoreStatePlan.
+type UpdateProductStoreStatePlan200JSONResponseBodyObject string
+
+// UpdateProductStoreStatePlan200JSONResponseBodyStatus defines parameters for UpdateProductStoreStatePlan.
+type UpdateProductStoreStatePlan200JSONResponseBodyStatus string
+
+// ApplyProductStoreStatePlanJSONBody defines parameters for ApplyProductStoreStatePlan.
+type ApplyProductStoreStatePlanJSONBody = map[string]interface{}
+
+// ApplyProductStoreStatePlan202JSONResponseBodyObject defines parameters for ApplyProductStoreStatePlan.
+type ApplyProductStoreStatePlan202JSONResponseBodyObject string
+
+// ApplyProductStoreStatePlan202JSONResponseBodyStatus defines parameters for ApplyProductStoreStatePlan.
+type ApplyProductStoreStatePlan202JSONResponseBodyStatus string
+
+// DiscardProductStoreStatePlanJSONBody defines parameters for DiscardProductStoreStatePlan.
+type DiscardProductStoreStatePlanJSONBody = map[string]interface{}
+
+// DiscardProductStoreStatePlan200JSONResponseBodyObject defines parameters for DiscardProductStoreStatePlan.
+type DiscardProductStoreStatePlan200JSONResponseBodyObject string
+
+// DiscardProductStoreStatePlan200JSONResponseBodyStatus defines parameters for DiscardProductStoreStatePlan.
+type DiscardProductStoreStatePlan200JSONResponseBodyStatus string
+
+// PlanProductStoreStatePlanJSONBody defines parameters for PlanProductStoreStatePlan.
+type PlanProductStoreStatePlanJSONBody = map[string]interface{}
+
+// PlanProductStoreStatePlan202JSONResponseBodyObject defines parameters for PlanProductStoreStatePlan.
+type PlanProductStoreStatePlan202JSONResponseBodyObject string
+
+// PlanProductStoreStatePlan202JSONResponseBodyStatus defines parameters for PlanProductStoreStatePlan.
+type PlanProductStoreStatePlan202JSONResponseBodyStatus string
 
 // SearchSubscriptionsParams defines parameters for SearchSubscriptions.
 type SearchSubscriptionsParams struct {
@@ -48750,6 +47994,9 @@ type UpdateProductJSONRequestBody UpdateProductJSONBody
 // CreateProductInStoreJSONRequestBody defines body for CreateProductInStore for application/json ContentType.
 type CreateProductInStoreJSONRequestBody CreateProductInStoreJSONBody
 
+// UpdateProductPriceJSONRequestBody defines body for UpdateProductPrice for application/json ContentType.
+type UpdateProductPriceJSONRequestBody UpdateProductPriceJSONBody
+
 // SetProductStoreStateJSONRequestBody defines body for SetProductStoreState for application/json ContentType.
 type SetProductStoreStateJSONRequestBody SetProductStoreStateJSONBody
 
@@ -48758,6 +48005,24 @@ type EqualizeSubscriptionPricesJSONRequestBody EqualizeSubscriptionPricesJSONBod
 
 // UploadProductStoreStateScreenshotJSONRequestBody defines body for UploadProductStoreStateScreenshot for application/json ContentType.
 type UploadProductStoreStateScreenshotJSONRequestBody UploadProductStoreStateScreenshotJSONBody
+
+// CreateProductPricesJSONRequestBody defines body for CreateProductPrices for application/json ContentType.
+type CreateProductPricesJSONRequestBody CreateProductPricesJSONBody
+
+// CreateProductStoreStatePlanJSONRequestBody defines body for CreateProductStoreStatePlan for application/json ContentType.
+type CreateProductStoreStatePlanJSONRequestBody CreateProductStoreStatePlanJSONBody
+
+// UpdateProductStoreStatePlanJSONRequestBody defines body for UpdateProductStoreStatePlan for application/json ContentType.
+type UpdateProductStoreStatePlanJSONRequestBody UpdateProductStoreStatePlanJSONBody
+
+// ApplyProductStoreStatePlanJSONRequestBody defines body for ApplyProductStoreStatePlan for application/json ContentType.
+type ApplyProductStoreStatePlanJSONRequestBody = ApplyProductStoreStatePlanJSONBody
+
+// DiscardProductStoreStatePlanJSONRequestBody defines body for DiscardProductStoreStatePlan for application/json ContentType.
+type DiscardProductStoreStatePlanJSONRequestBody = DiscardProductStoreStatePlanJSONBody
+
+// PlanProductStoreStatePlanJSONRequestBody defines body for PlanProductStoreStatePlan for application/json ContentType.
+type PlanProductStoreStatePlanJSONRequestBody = PlanProductStoreStatePlanJSONBody
 
 // ExtendSubscriptionJSONRequestBody defines body for ExtendSubscription for application/json ContentType.
 type ExtendSubscriptionJSONRequestBody ExtendSubscriptionJSONBody
@@ -52228,6 +51493,280 @@ func (a Transfer) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
+// AsProductStoreStatePlanDesiredState0 returns the union data inside the ProductStoreStatePlanDesiredState as a ProductStoreStatePlanDesiredState0
+func (t ProductStoreStatePlanDesiredState) AsProductStoreStatePlanDesiredState0() (ProductStoreStatePlanDesiredState0, error) {
+	var body ProductStoreStatePlanDesiredState0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStatePlanDesiredState0 overwrites any union data inside the ProductStoreStatePlanDesiredState as the provided ProductStoreStatePlanDesiredState0
+func (t *ProductStoreStatePlanDesiredState) FromProductStoreStatePlanDesiredState0(v ProductStoreStatePlanDesiredState0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStatePlanDesiredState0 performs a merge with any union data inside the ProductStoreStatePlanDesiredState, using the provided ProductStoreStatePlanDesiredState0
+func (t *ProductStoreStatePlanDesiredState) MergeProductStoreStatePlanDesiredState0(v ProductStoreStatePlanDesiredState0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsProductStoreStatePlanDesiredState1 returns the union data inside the ProductStoreStatePlanDesiredState as a ProductStoreStatePlanDesiredState1
+func (t ProductStoreStatePlanDesiredState) AsProductStoreStatePlanDesiredState1() (ProductStoreStatePlanDesiredState1, error) {
+	var body ProductStoreStatePlanDesiredState1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStatePlanDesiredState1 overwrites any union data inside the ProductStoreStatePlanDesiredState as the provided ProductStoreStatePlanDesiredState1
+func (t *ProductStoreStatePlanDesiredState) FromProductStoreStatePlanDesiredState1(v ProductStoreStatePlanDesiredState1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStatePlanDesiredState1 performs a merge with any union data inside the ProductStoreStatePlanDesiredState, using the provided ProductStoreStatePlanDesiredState1
+func (t *ProductStoreStatePlanDesiredState) MergeProductStoreStatePlanDesiredState1(v ProductStoreStatePlanDesiredState1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ProductStoreStatePlanDesiredState) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	object := make(map[string]json.RawMessage)
+	if t.union != nil {
+		err = json.Unmarshal(b, &object)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if t.Common != nil {
+		object["common"], err = json.Marshal(t.Common)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'common': %w", err)
+		}
+	}
+
+	if t.CreateRevenuecatProduct != nil {
+		object["create_revenuecat_product"], err = json.Marshal(t.CreateRevenuecatProduct)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'create_revenuecat_product': %w", err)
+		}
+	}
+
+	if t.ProductID != nil {
+		object["product_id"], err = json.Marshal(t.ProductID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'product_id': %w", err)
+		}
+	}
+
+	object["store"], err = json.Marshal(t.Store)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'store': %w", err)
+	}
+
+	if t.StoreState != nil {
+		object["store_state"], err = json.Marshal(t.StoreState)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'store_state': %w", err)
+		}
+	}
+	b, err = json.Marshal(object)
+	return b, err
+}
+
+func (t *ProductStoreStatePlanDesiredState) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+	object := make(map[string]json.RawMessage)
+	err = json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["common"]; found {
+		err = json.Unmarshal(raw, &t.Common)
+		if err != nil {
+			return fmt.Errorf("error reading 'common': %w", err)
+		}
+	}
+
+	if raw, found := object["create_revenuecat_product"]; found {
+		err = json.Unmarshal(raw, &t.CreateRevenuecatProduct)
+		if err != nil {
+			return fmt.Errorf("error reading 'create_revenuecat_product': %w", err)
+		}
+	}
+
+	if raw, found := object["product_id"]; found {
+		err = json.Unmarshal(raw, &t.ProductID)
+		if err != nil {
+			return fmt.Errorf("error reading 'product_id': %w", err)
+		}
+	}
+
+	if raw, found := object["store"]; found {
+		err = json.Unmarshal(raw, &t.Store)
+		if err != nil {
+			return fmt.Errorf("error reading 'store': %w", err)
+		}
+	}
+
+	if raw, found := object["store_state"]; found {
+		err = json.Unmarshal(raw, &t.StoreState)
+		if err != nil {
+			return fmt.Errorf("error reading 'store_state': %w", err)
+		}
+	}
+
+	return err
+}
+
+// AsProductStoreStateAppStoreState returns the union data inside the ProductStoreStatePlanDesiredState_StoreState as a ProductStoreStateAppStoreState
+func (t ProductStoreStatePlanDesiredState_StoreState) AsProductStoreStateAppStoreState() (ProductStoreStateAppStoreState, error) {
+	var body ProductStoreStateAppStoreState
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStateAppStoreState overwrites any union data inside the ProductStoreStatePlanDesiredState_StoreState as the provided ProductStoreStateAppStoreState
+func (t *ProductStoreStatePlanDesiredState_StoreState) FromProductStoreStateAppStoreState(v ProductStoreStateAppStoreState) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStateAppStoreState performs a merge with any union data inside the ProductStoreStatePlanDesiredState_StoreState, using the provided ProductStoreStateAppStoreState
+func (t *ProductStoreStatePlanDesiredState_StoreState) MergeProductStoreStateAppStoreState(v ProductStoreStateAppStoreState) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsProductStoreStatePlayStoreState returns the union data inside the ProductStoreStatePlanDesiredState_StoreState as a ProductStoreStatePlayStoreState
+func (t ProductStoreStatePlanDesiredState_StoreState) AsProductStoreStatePlayStoreState() (ProductStoreStatePlayStoreState, error) {
+	var body ProductStoreStatePlayStoreState
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStatePlayStoreState overwrites any union data inside the ProductStoreStatePlanDesiredState_StoreState as the provided ProductStoreStatePlayStoreState
+func (t *ProductStoreStatePlanDesiredState_StoreState) FromProductStoreStatePlayStoreState(v ProductStoreStatePlayStoreState) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStatePlayStoreState performs a merge with any union data inside the ProductStoreStatePlanDesiredState_StoreState, using the provided ProductStoreStatePlayStoreState
+func (t *ProductStoreStatePlanDesiredState_StoreState) MergeProductStoreStatePlayStoreState(v ProductStoreStatePlayStoreState) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ProductStoreStatePlanDesiredState_StoreState) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ProductStoreStatePlanDesiredState_StoreState) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsProductStoreStateAppStoreStateResponse returns the union data inside the ProductStoreStatePlanDesiredStateResponse_StoreState as a ProductStoreStateAppStoreStateResponse
+func (t ProductStoreStatePlanDesiredStateResponse_StoreState) AsProductStoreStateAppStoreStateResponse() (ProductStoreStateAppStoreStateResponse, error) {
+	var body ProductStoreStateAppStoreStateResponse
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStateAppStoreStateResponse overwrites any union data inside the ProductStoreStatePlanDesiredStateResponse_StoreState as the provided ProductStoreStateAppStoreStateResponse
+func (t *ProductStoreStatePlanDesiredStateResponse_StoreState) FromProductStoreStateAppStoreStateResponse(v ProductStoreStateAppStoreStateResponse) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStateAppStoreStateResponse performs a merge with any union data inside the ProductStoreStatePlanDesiredStateResponse_StoreState, using the provided ProductStoreStateAppStoreStateResponse
+func (t *ProductStoreStatePlanDesiredStateResponse_StoreState) MergeProductStoreStateAppStoreStateResponse(v ProductStoreStateAppStoreStateResponse) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsProductStoreStatePlayStoreStateResponse returns the union data inside the ProductStoreStatePlanDesiredStateResponse_StoreState as a ProductStoreStatePlayStoreStateResponse
+func (t ProductStoreStatePlanDesiredStateResponse_StoreState) AsProductStoreStatePlayStoreStateResponse() (ProductStoreStatePlayStoreStateResponse, error) {
+	var body ProductStoreStatePlayStoreStateResponse
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProductStoreStatePlayStoreStateResponse overwrites any union data inside the ProductStoreStatePlanDesiredStateResponse_StoreState as the provided ProductStoreStatePlayStoreStateResponse
+func (t *ProductStoreStatePlanDesiredStateResponse_StoreState) FromProductStoreStatePlayStoreStateResponse(v ProductStoreStatePlayStoreStateResponse) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProductStoreStatePlayStoreStateResponse performs a merge with any union data inside the ProductStoreStatePlanDesiredStateResponse_StoreState, using the provided ProductStoreStatePlayStoreStateResponse
+func (t *ProductStoreStatePlanDesiredStateResponse_StoreState) MergeProductStoreStatePlayStoreStateResponse(v ProductStoreStatePlayStoreStateResponse) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ProductStoreStatePlanDesiredStateResponse_StoreState) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ProductStoreStatePlanDesiredStateResponse_StoreState) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsOwnership returns the union data inside the Purchase_Ownership as a Ownership
 func (t Purchase_Ownership) AsOwnership() (Ownership, error) {
 	var body Ownership
@@ -52848,6 +52387,182 @@ func (t SetProductStoreStateJSONBody_StoreState) MarshalJSON() ([]byte, error) {
 }
 
 func (t *SetProductStoreStateJSONBody_StoreState) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0 returns the union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue as a GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0
+func (t GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0() (GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0, error) {
+	var body GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0 overwrites any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue as the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0 performs a merge with any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue, using the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1 returns the union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue as a GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1
+func (t GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1() (GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1, error) {
+	var body GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1 overwrites any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue as the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1 performs a merge with any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue, using the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2 returns the union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue as a GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2
+func (t GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2() (GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2, error) {
+	var body GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2 overwrites any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue as the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2 performs a merge with any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue, using the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffFromValue2) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_FromValue) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0 returns the union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue as a GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0
+func (t GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0() (GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0, error) {
+	var body GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0 overwrites any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue as the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0 performs a merge with any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue, using the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1 returns the union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue as a GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1
+func (t GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1() (GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1, error) {
+	var body GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1 overwrites any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue as the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1 performs a merge with any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue, using the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2 returns the union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue as a GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2
+func (t GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) AsGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2() (GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2, error) {
+	var body GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2 overwrites any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue as the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) FromGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2 performs a merge with any union data inside the GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue, using the provided GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) MergeGetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2(v GetProductStoreStatePlan200JSONResponseBodyPlanItemsDiffToValue2) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *GetProductStoreStatePlan200JSONResponseBody_PlanItems_Diff_ToValue) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
