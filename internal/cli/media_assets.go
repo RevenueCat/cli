@@ -12,9 +12,6 @@ import (
 	"github.com/revenuecat/cli/internal/api"
 )
 
-// Accepted upload types per the v2 media_assets endpoint's content_type enum.
-// Deliberately not paywallAIImageTypes: that map is editor-specific and lacks
-// avif/heic/heif.
 var mediaAssetContentTypes = map[string]string{
 	".jpg":  "image/jpeg",
 	".jpeg": "image/jpeg",
@@ -25,8 +22,6 @@ var mediaAssetContentTypes = map[string]string{
 	".heif": "image/heif",
 }
 
-// mediaAssetMaxBytes mirrors the endpoint's file_data_base64 maxLength of
-// 2,796,204 chars, which is base64.EncodedLen of exactly 2 MiB.
 const mediaAssetMaxBytes = 2 << 20
 
 func loadMediaAsset(path string) (api.MediaAssetCreate, error) {
@@ -84,7 +79,6 @@ func newMediaAssetsUploadCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Uploaded %s (%s, %d KB)", asset.ID, asset.OriginalName, asset.OriginalSize))
-			// Paywall components store the full URL, not the bare object name.
 			if asset.AssetBaseURL != nil {
 				rt.Out.Hint("Reference it from paywall components as " + *asset.AssetBaseURL + "/" + asset.ObjectName)
 			}
