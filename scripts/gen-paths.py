@@ -42,6 +42,10 @@ def camel_words(segment, upper_first):
 
 
 def singularize(word):
+    # Naive: only handles the regular plurals in today's paths. Irregulars
+    # (aliases -> aliase) or a singular that ends in "s" would be mangled; add a
+    # case here if the API grows such an item path. Collisions are caught at
+    # generation time regardless.
     if word.endswith("ies"):
         return word[:-3] + "y"
     if word.endswith("s") and not word.endswith("ss"):
