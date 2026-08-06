@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Seed docs/specs/v2-beta-overlay.yaml from khepri's full dev OpenAPI spec.
+"""Seed docs/specs/v2-beta-overlay.yaml from the backend's full dev OpenAPI spec.
 
 The public spec we fetch from docs is release-filtered and omits endpoints the
-CLI uses but that khepri marks `x-release-status: development` (the store_state
-family). This extracts just those path keys — with request/response bodies
-stripped — into a small overlay that preprocess-spec.py merges on top of the
-public spec at codegen/diff time. The overlay declares that the paths exist so
-gen-paths builds path helpers and spec-diff tracks coverage; the CLI hand-writes
-the types, so oapi-codegen generates nothing from it.
+CLI uses but that the backend marks `x-release-status: development` (the
+store_state family). This extracts just those path keys — with request/response
+bodies stripped — into a small overlay that preprocess-spec.py merges on top of
+the public spec at codegen/diff time. The overlay declares that the paths exist
+so gen-paths builds path helpers and spec-diff tracks coverage; the CLI
+hand-writes the types, so oapi-codegen generates nothing from it.
 
 This is a *seeding* tool, not part of CI: run it once against a local checkout
-of khepri's dev spec, then hand-maintain the result. Re-run to reseed when the
+of the dev spec, then hand-maintain the result. Re-run to reseed when the
 upstream store_state schema changes.
 
     python3 scripts/seed-beta-overlay.py \
-        ../khepri/khepri/api/developer_api_v2/spec/public/openapi-dev.yaml \
+        path/to/openapi-dev.yaml \
         docs/specs/v2-beta-overlay.yaml
 
 Which paths to pull is controlled by PATH_SUBSTRINGS below — keep it to the
@@ -108,10 +108,11 @@ def main():
 
     overlay = {
         "# NOTE": (
-            "Hand-maintained beta overlay — see DX-880. Seeded from khepri's "
-            "openapi-dev.yaml (x-release-status: development endpoints the CLI "
-            "uses). Merged onto the public spec by scripts/preprocess-spec.py. "
-            "Remove entries here once they graduate into the public spec."
+            "Hand-maintained beta overlay — see DX-880. Seeded from the "
+            "backend's openapi-dev.yaml (x-release-status: development endpoints "
+            "the CLI uses). Merged onto the public spec by "
+            "scripts/preprocess-spec.py. Remove entries here once they graduate "
+            "into the public spec."
         ),
         "openapi": dev.get("openapi", "3.0.0"),
         "info": {"title": "RevenueCat v2 — beta overlay", "version": "overlay"},
