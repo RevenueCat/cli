@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,6 +25,8 @@ var mediaAssetContentTypes = map[string]string{
 
 const mediaAssetMaxBytes = 2 << 20
 
+var errMediaAssetTooLarge = errors.New("the upload limit is 2 MiB")
+
 func loadMediaAsset(path string) (api.MediaAssetCreate, error) {
 	contentType, ok := mediaAssetContentTypes[strings.ToLower(filepath.Ext(path))]
 	if !ok {
@@ -37,7 +40,7 @@ func loadMediaAsset(path string) (api.MediaAssetCreate, error) {
 		return api.MediaAssetCreate{}, fmt.Errorf("image %s is empty", path)
 	}
 	if len(data) > mediaAssetMaxBytes {
-		return api.MediaAssetCreate{}, fmt.Errorf("image %s is %.1f MiB; the upload limit is 2 MiB — resize or compress it first", path, float64(len(data))/(1<<20))
+		return api.MediaAssetCreate{}, fmt.Errorf("image %s is %d KB: %w", path, len(data)/1024, errMediaAssetTooLarge)
 	}
 	return api.MediaAssetCreate{
 		Filename:       filepath.Base(path),
@@ -68,6 +71,9 @@ func newMediaAssetsUploadCmd() *cobra.Command {
 			}
 			body, err := loadMediaAsset(args[0])
 			if err != nil {
+				if errors.Is(err, errMediaAssetTooLarge) {
+					rt.Out.Hint("Resize or compress the image to 2 MiB or less, then retry")
+				}
 				return err
 			}
 			client, err := rt.API()
