@@ -214,15 +214,16 @@ endpoints:
   - method: GET
     path: /projects/{project_id}/audit_logs
 
-  # Store state (development-status; provided by the beta overlay). The
-  # screenshot_upload path and the dynamic plans/{plan_id}/actions/{action} call
-  # are intentionally omitted — see internal/api/store_state_*.go.
+  # Store state (development-status; provided by the beta overlay). The dynamic
+  # plans/{plan_id}/actions/{action} call is omitted — see store_state_plans.go.
   - method: GET
     path: /projects/{project_id}/products/{product_id}/store_state
   - method: POST
     path: /projects/{project_id}/products/{product_id}/store_state
   - method: GET
     path: /projects/{project_id}/products/{product_id}/store_state/{operation_id}
+  - method: POST
+    path: /projects/{project_id}/products/{product_id}/store_state/screenshot_upload
   - method: POST
     path: /projects/{project_id}/store_state/plans
   - method: GET

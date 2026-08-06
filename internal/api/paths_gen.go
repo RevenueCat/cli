@@ -218,6 +218,10 @@ func pathProductStoreStateOperation(projectID string, productID string, operatio
 	return encodePath("projects", projectID, "products", productID, "store_state", operationID)
 }
 
+func pathProductStoreStateScreenshotUpload(projectID string, productID string) string {
+	return encodePath("projects", projectID, "products", productID, "store_state", "screenshot_upload")
+}
+
 func pathProductTestStorePrices(projectID string, productID string) string {
 	return encodePath("projects", projectID, "products", productID, "test_store_prices")
 }
