@@ -189,7 +189,16 @@ func newAppsAppleCmd() *cobra.Command {
 func newAppsAppleCmdWithFactory(factory appleConnectFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apple",
-		Short: "Configure Apple credentials for an App Store app",
+		Short: "Set up Apple credentials for an App Store app",
+		Long: `Signs in to App Store Connect and configures the Apple credentials RevenueCat
+needs for an App Store app — the in-app purchase key (validates purchases), the
+App Store Connect API key (manages Products and prices), and your vendor number.
+
+Requires an interactive terminal and Apple 2FA: a human must run it. Apple
+credentials go straight to Apple and are never saved or sent to RevenueCat. Use
+check for a read-only dry run before setup.`,
+		Example: `  rc apps apple check app_x     # read-only: verify sign-in and key access
+  rc apps apple setup app_x     # create keys and configure the app`,
 	}
 	cmd.AddCommand(
 		newAppsAppleWorkflowCmd(true, factory),
@@ -204,16 +213,19 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 	var sms, skipInAppKey, skipAPIKey, force bool
 	use, short, long := "setup [app-id]", "Create Apple keys and configure an App Store app", appleSetupInstructions
 	privacy := applePrivacyNotice
+	example := "  rc apps apple setup app_x\n  rc apps apple setup app_x --sms --phone-number +15551234567"
 	if checkOnly {
 		use, short, long = "check [app-id]", "Check Apple authentication and key access", appleCheckInstructions
 		privacy = appleCheckPrivacyNotice
+		example = "  rc apps apple check app_x"
 	}
 
 	cmd := &cobra.Command{
-		Use:   use,
-		Short: short,
-		Long:  short + ".\n\n" + long + "\n\n" + privacy,
-		Args:  cobra.MaximumNArgs(1),
+		Use:     use,
+		Short:   short,
+		Long:    short + ".\n\n" + long + "\n\n" + privacy,
+		Example: example,
+		Args:    cobra.MaximumNArgs(1),
 		Annotations: map[string]string{
 			"requires_human":        "true",
 			"requires_human_reason": "Signs in to Apple with an Apple ID, password, and two-factor code; the user must run it in a local interactive terminal. Never collect Apple credentials in chat.",

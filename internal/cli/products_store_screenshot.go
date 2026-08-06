@@ -24,9 +24,10 @@ func newProductsStoreScreenshotCmd() *cobra.Command {
 	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:   "screenshot [product-id]",
-		Short: "Upload a real App Review screenshot for a product",
+		Short: "Upload a real App Review screenshot for a Product",
 		Long: `Uploads a paywall screenshot to App Store Connect for App Review and
-attaches it to the product, replacing the automatic placeholder.
+attaches it to the Product, replacing the automatic placeholder. Omit the
+product-id in a terminal to pick from a list.
 
 The image bytes upload directly to Apple through presigned URLs; RevenueCat
 only stores the resulting screenshot reference. Attaching is asynchronous —

@@ -20,7 +20,13 @@ func newProductsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "products",
 		Aliases: []string{"product"},
-		Short:   "Inspect products in the project catalog",
+		Short:   "Manage Products in the project catalog",
+		Long: `A Product is a store SKU a Customer buys — its identifier must match the
+store (App Store, Play, Stripe, Test Store). Attach Products to Packages and
+Entitlements so a purchase grants access. These commands inspect, create,
+price, and push Products.`,
+		Example: `  rc products list
+  rc products show prod_x`,
 	}
 	cmd.AddCommand(
 		newProductsListCmd(),
@@ -40,14 +46,14 @@ func newProductsCmd() *cobra.Command {
 func newProductsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "archive [id]",
-		Short: "Archive a product",
-		Long: `Archives a product. Existing subscribers keep their access; new
-attaches are blocked.
+		Short: "Archive a Product",
+		Long: `Archives a Product. Existing subscribers keep their access; new attaches
+are blocked. Omit the ID in a terminal to pick from a list.
 
 Reversibility: use ` + "`rc products restore <id>`" + ` to undo.
 
 Confirmation: no prompt — soft, reversible state change.`,
-		Example: `  rc products archive prod_legacy`,
+		Example: `  rc products archive prod_x`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -78,14 +84,14 @@ Confirmation: no prompt — soft, reversible state change.`,
 func newProductsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "restore [id]",
-		Short: "Restore an archived product",
-		Long: `Restores a previously-archived product. Inverse of
-` + "`rc products archive`" + `.
+		Short: "Restore an archived Product",
+		Long: `Restores a previously-archived Product. Inverse of
+` + "`rc products archive`" + `. Omit the ID in a terminal to pick from a list.
 
 Reversibility: re-archive with ` + "`rc products archive <id>`" + `.
 
 Confirmation: no prompt.`,
-		Example: `  rc products restore prod_legacy`,
+		Example: `  rc products restore prod_x`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -116,16 +122,17 @@ Confirmation: no prompt.`,
 func newProductsPushCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "push [id]",
-		Short: "Push a product configuration to its underlying store",
-		Long: `Pushes a product's current configuration up to the underlying store
+		Short: "Push a Product's configuration to its store",
+		Long: `Pushes a Product's current configuration up to the underlying store
 (App Store, Play Store, Stripe, etc.). Required after editing pricing or
-metadata on platforms where RC manages the store-side config.
+metadata on platforms where RevenueCat manages the store-side config. Omit the
+ID in a terminal to pick from a list.
 
 Reversibility: external side effect — once written to the store, undoing
 requires a follow-up push with the previous configuration.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc products push prod_abc --yes`,
+		Example: `  rc products push prod_x --yes`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -159,9 +166,10 @@ func newProductsListCmd() *cobra.Command {
 	var appID string
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List products",
+		Short: "List Products",
+		Long:  `Lists the Products in the active project, with each store identifier, type, and state. Filter to one app with --app-id.`,
 		Example: `  rc products list
-  rc products list --app-id app_abc
+  rc products list --app-id app_x
   rc products list --json | jq '.data.items[] | select(.type == "subscription")'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -213,16 +221,18 @@ func newProductsCreateCmd() *cobra.Command {
 	var storeID, productType, appID, displayName, title, duration string
 	cmd := &cobra.Command{
 		Use:   "create",
-		Short: "Create a product",
-		Long: `Create a new product in the project catalog.
+		Short: "Create a Product",
+		Long: `Creates a Product in the project catalog.
 
---store-id is the product identifier on the platform store (required).
---type must be "subscription" or "one_time" (required; picker shown in TTY).
---app-id is the RevenueCat app ID (required; picker shown in TTY).
---title is the user-facing product title required by Test Store products.
---duration (optional, subscriptions only) is an ISO 8601 duration, e.g. P1M, P1Y.`,
-		Example: `  rc products create --store-id premium_monthly --type subscription --app-id app_test --title "Premium Monthly" --duration P1M
-  rc products create --store-id com.example.once --type one_time --app-id app_abc --display-name "Unlock Everything"`,
+--store-id is the Product identifier on the platform store; it must match the
+store exactly (required).
+--type must be "subscription" or "one_time" (Non-Subscription Purchases)
+(required; picker shown in a terminal).
+--app-id is the RevenueCat app ID (required; picker shown in a terminal).
+--title is the Customer-facing Product title required by Test Store Products.
+--duration (subscriptions only) is an ISO 8601 duration, e.g. P1M, P1Y.`,
+		Example: `  rc products create --store-id premium_monthly --type subscription --app-id app_x --title "Premium Monthly" --duration P1M
+  rc products create --store-id com.example.once --type one_time --app-id app_x --display-name "Unlock Everything"`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -295,13 +305,14 @@ func newProductsCreateCmd() *cobra.Command {
 func newProductsPricesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "prices [product-id]",
-		Short: "List Test Store or Web Billing product prices",
-		Long: `Lists configured prices for a Test Store or Web Billing product.
+		Short: "List Test Store or Web Billing Product prices",
+		Long: `Lists configured prices for a Test Store or Web Billing Product. Omit the
+ID in a terminal to pick from a list.
 
-Use prices set to idempotently create missing currencies or update existing
-Test Store prices. Amounts are entered as decimal major units, not micros.`,
-		Example: `  rc products prices prod_abc --json --no-input
-  rc products prices set prod_abc --price USD=9.99 --price EUR=8.99 --json --no-input`,
+Use ` + "`rc products prices set`" + ` to idempotently create missing currencies or
+update existing Test Store prices. Amounts are decimal major units, not micros.`,
+		Example: `  rc products prices prod_x --json --no-input
+  rc products prices set prod_x --price USD=9.99 --price EUR=8.99 --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -324,14 +335,15 @@ func newProductsPricesSetCmd() *cobra.Command {
 	var rawPrices []string
 	cmd := &cobra.Command{
 		Use:   "set [product-id]",
-		Short: "Create or update Test Store product prices",
-		Long: `Sets exact Test Store product prices by currency. Missing currencies are
+		Short: "Create or update Test Store Product prices",
+		Long: `Sets exact Test Store Product prices by currency. Missing currencies are
 created through the Test Store price API; existing currencies are updated.
-Running the same command again is safe and makes no unnecessary writes.
+Running the same command again is safe and makes no unnecessary writes. Omit the
+ID in a terminal to pick from a list.
 
 Values use ISO 4217 currency and decimal major units: --price USD=9.99.`,
-		Example: `  rc products prices set prod_abc --price USD=9.99
-  rc products prices set prod_abc --price USD=9.99 --price EUR=8.99 --json --no-input`,
+		Example: `  rc products prices set prod_x --price USD=9.99
+  rc products prices set prod_x --price USD=9.99 --price EUR=8.99 --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -447,17 +459,17 @@ func newProductsShowCmd() *cobra.Command {
 	var withStoreState bool
 	cmd := &cobra.Command{
 		Use:   "show [id]",
-		Short: "Show a product",
-		Long: `Shows a RevenueCat product.
+		Short: "Show a Product",
+		Long: `Shows a RevenueCat Product. Omit the ID in a terminal to pick from a list.
 
-Pass --store-state to also read the product's live state from its store:
+Pass --store-state to also read the Product's live state from its store:
 next effective territory prices (scheduled changes include a start date),
 availability, localizations, and App Review metadata. The live read requires
 configured store credentials and reaches the store directly, so it takes a
 few seconds.`,
-		Example: `  rc products show prod_abc
-  rc products show prod_abc --store-state
-  rc products show prod_abc --store-state --json --no-input`,
+		Example: `  rc products show prod_x
+  rc products show prod_x --store-state
+  rc products show prod_x --store-state --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -508,9 +520,11 @@ few seconds.`,
 func newProductsUpdateCmd() *cobra.Command {
 	var displayName string
 	cmd := &cobra.Command{
-		Use:   "update [id]",
-		Short: "Update a product",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "update [id]",
+		Short:   "Update a Product",
+		Long:    `Updates a Product's display name. Omit the ID in a terminal to pick from a list.`,
+		Example: `  rc products update prod_x --display-name "Premium Monthly"`,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -546,14 +560,15 @@ func newProductsUpdateCmd() *cobra.Command {
 func newProductsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [id]",
-		Short: "Delete a product",
-		Long: `Permanently deletes a product from the project.
+		Short: "Delete a Product",
+		Long: `Permanently deletes a Product from the project. Omit the ID in a terminal
+to pick from a list.
 
 Reversibility: irreversible. Prefer ` + "`rc products archive`" + ` for
 reversible removal.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc products delete prod_old --yes`,
+		Example: `  rc products delete prod_x --yes`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())

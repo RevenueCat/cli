@@ -16,7 +16,7 @@ import (
 func newProductsStoreCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "store",
-		Short: "Plan and sync product configuration with an app store",
+		Short: "Plan and sync Product state with the App Store or Google Play",
 		Long: `Product store-state plans are persisted by RevenueCat, not by the rc
 process. Humans can use sync for an in-memory plan/review/apply flow. Agents can
 create a plan, inspect its plan ID in a later process, then apply or discard
@@ -38,7 +38,7 @@ func newProductsStoreListCmd() *cobra.Command {
 	var status string
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List product store-state plans",
+		Short: "List Product store-state plans",
 		Long: `Lists the project's persisted store-state plans so a lost plan ID can be
 recovered in a later session. Filter with --status (draft, planned, applied,
 apply_errored, discarded, ...).`,
@@ -87,7 +87,8 @@ func newProductsStoreSyncCmd() *cobra.Command {
 		Short: "Gather desired state, review its plan, and optionally apply it",
 		Long: `Runs the complete human workflow in one rc process: gather desired state
 interactively or from CSV/JSON, persist it as a RevenueCat plan, wait for its
-diff, display warnings, and ask before applying the exact plan.
+diff, display warnings, and ask before applying the exact plan to the App Store
+or Google Play.
 
 No local file is required. Without --file, interactive terminals prompt for
 product fields and keep the answers only in process memory. For automation,
@@ -138,7 +139,7 @@ func newProductsStorePlanCmd() *cobra.Command {
 	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:   "plan [app-id]",
-		Short: "Create and review a persisted product store-state plan",
+		Short: "Create and review a persisted Product store-state plan",
 		Long: `Creates a server-side RevenueCat plan containing the complete desired
 state and computed diff. The returned plan ID remains usable after this rc
 process exits. Apply that exact reviewed plan with:
@@ -188,7 +189,8 @@ screenshot is uploaded automatically; replace it before submitting to Apple.`,
 func newProductsStoreShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "show <plan-id>",
-		Short:   "Show a persisted product store-state plan",
+		Short:   "Show a persisted Product store-state plan",
+		Long:    `Fetches a persisted plan by ID and prints its diff, warnings, and per-Product apply status. Read-only; makes no changes.`,
 		Example: `  rc products store show plan_123 --json --no-input`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -215,10 +217,16 @@ func newProductsStoreApplyCmd() *cobra.Command {
 	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:   "apply <plan-id>",
-		Short: "Apply an already-reviewed product store-state plan",
+		Short: "Apply an already-reviewed Product store-state plan",
 		Long: `Fetches the persisted plan, displays its exact diff and warnings, and
-applies it after confirmation. Automation must pass --yes. This command never
-reconstructs desired state from a local file; it applies the plan ID supplied.`,
+applies it to the App Store or Google Play after confirmation. Automation must
+pass --yes. This command never reconstructs desired state from a local file; it
+applies the plan ID supplied.
+
+Reversibility: writes to the connected store — undo by planning and applying
+the reverse state.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc products store apply plan_123 --yes --json --no-input`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -248,9 +256,14 @@ reconstructs desired state from a local file; it applies the plan ID supplied.`,
 
 func newProductsStoreDiscardCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:     "discard <plan-id>",
-		Short:   "Discard a product store-state plan without applying it",
-		Long:    "Discards a persisted plan. Automation must pass --yes.",
+		Use:   "discard <plan-id>",
+		Short: "Discard a Product store-state plan without applying it",
+		Long: `Discards a persisted plan so it can no longer be applied. Nothing is
+written to the App Store or Google Play.
+
+Reversibility: irreversible — re-plan to review the changes again.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc products store discard plan_123 --yes --json --no-input`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

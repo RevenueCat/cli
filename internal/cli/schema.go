@@ -24,6 +24,8 @@ func newSchemaCmd(root *cobra.Command) *cobra.Command {
 
 Always emits JSON regardless of --json (the command is purely informational).
 Use this from an agent rather than scraping the human --help output.`,
+		Example: `  rc schema apps create
+  rc schema rico chat`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -44,6 +46,8 @@ func newCommandsCmd(root *cobra.Command) *cobra.Command {
 		Long: `Prints the command tree as JSON. Pass --schemas to include every command's
 full schema (flags, args, examples) in one call — cheaper for an agent than
 running rc schema per command.`,
+		Example: `  rc commands
+  rc commands --schemas`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if schemas {

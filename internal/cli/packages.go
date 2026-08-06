@@ -18,7 +18,13 @@ func newPackagesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "packages",
 		Aliases: []string{"package", "pkg"},
-		Short:   "Manage packages within offerings",
+		Short:   "Manage Packages within Offerings",
+		Long: `A Package groups equivalent Products across platforms under one identifier
+(such as $rc_monthly or $rc_annual) so a paywall can offer the right Product on
+each store. Packages live inside an Offering. Run bare to list every Package in
+the project.`,
+		Example: `  rc packages list
+  rc packages create ofrng_default --lookup-key '$rc_monthly' --display-name "Monthly"`,
 		// Bare `rc packages` runs list for discovery.
 		RunE: runPackagesList,
 	}
@@ -38,12 +44,12 @@ func newPackagesCmd() *cobra.Command {
 func newPackagesListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
-		Short: "List all packages across all offerings",
-		Long: `Lists every package in the active project, grouped across all offerings.
-Each row includes the offering ID so you know where to find the package.
+		Short: "List all Packages across all Offerings",
+		Long: `Lists every Package in the active project, grouped across all Offerings.
+Each row includes the Offering ID so you know where the Package lives.
 
-To create, update, or delete a package you need both the offering ID and
-the package ID. This command is the fastest way to discover them.`,
+To create, update, or delete a Package you need both the Offering ID and
+the Package ID. This command is the fastest way to discover them.`,
 		Example: `  rc packages list
   rc packages list --json | jq '.data.items[] | select(.lookup_key == "$rc_monthly")'`,
 		RunE: runPackagesList,
@@ -132,11 +138,11 @@ func runPackagesList(cmd *cobra.Command, _ []string) error {
 func newPackagesShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show [package-id]",
-		Short: "Show a package",
-		Long: `Show details for a specific package. Omit the ID under a TTY to pick
-interactively.`,
-		Example: `  rc packages show          # TTY: pick a package
-  rc packages show pkg_xyz  # explicit`,
+		Short: "Show a Package",
+		Long: `Shows a Package's lookup key and display name. Omit the ID in a terminal
+to pick from a list.`,
+		Example: `  rc packages show pkg_x
+  rc packages show          # pick interactively`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -167,8 +173,13 @@ func newPackagesCreateCmd() *cobra.Command {
 	var lookupKey, displayName string
 	cmd := &cobra.Command{
 		Use:   "create [offering-id]",
-		Short: "Create a package in an offering",
-		Args:  cobra.MaximumNArgs(1),
+		Short: "Create a Package in an Offering",
+		Long: `Creates a Package inside an Offering. Use a standard lookup key such as
+$rc_monthly or $rc_annual so SDKs and paywalls resolve it automatically. Omit
+the Offering ID in a terminal to pick from a list. Attach Products afterward
+with ` + "`rc packages attach`" + `.`,
+		Example: `  rc packages create ofrng_default --lookup-key '$rc_monthly' --display-name "Monthly"`,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -209,9 +220,11 @@ func newPackagesCreateCmd() *cobra.Command {
 func newPackagesUpdateCmd() *cobra.Command {
 	var displayName string
 	cmd := &cobra.Command{
-		Use:   "update [package-id]",
-		Short: "Update a package",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "update [package-id]",
+		Short:   "Update a Package",
+		Long:    `Updates a Package's display name. Omit the ID in a terminal to pick from a list.`,
+		Example: `  rc packages update pkg_x --display-name "Monthly"`,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -247,13 +260,14 @@ func newPackagesUpdateCmd() *cobra.Command {
 func newPackagesDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [package-id]",
-		Short: "Delete a package",
-		Long: `Permanently deletes a package from its offering.
+		Short: "Delete a Package",
+		Long: `Permanently deletes a Package from its Offering. Omit the ID in a terminal
+to pick from a list.
 
 Reversibility: irreversible.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc packages delete pkg_legacy --yes`,
+		Example: `  rc packages delete pkg_x --yes`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -286,8 +300,12 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 func newPackagesProductsCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "products [package-id]",
-		Short: "List products attached to a package",
-		Args:  cobra.MaximumNArgs(1),
+		Short: "List Products attached to a Package",
+		Long: `Lists the Products attached to a Package, with each store identifier and
+eligibility criteria. Omit the ID in a terminal to pick from a list.`,
+		Example: `  rc packages products pkg_x
+  rc packages products pkg_x --json | jq '.data.items[].store_identifier'`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -353,12 +371,12 @@ func allPackagePickerItems(ctx context.Context, client *api.Client, projectID st
 func newPackagesAttachCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "attach <package-id> <product-id> [product-id...]",
-		Short: "Attach products to a package",
-		Long: `Attach one or more products to a package. Positional arguments are the
-package ID followed by every product ID to attach. Products default to the
+		Short: "Attach Products to a Package",
+		Long: `Attaches one or more Products to a Package. Positional arguments are the
+Package ID followed by every Product ID to attach. Products default to the
 "all" eligibility criteria, which applies to every supported SDK version.`,
-		Example: `  rc packages attach pkg_monthly prod_test_monthly
-  rc packages attach pkg_monthly prod_ios_monthly prod_android_monthly --json --no-input`,
+		Example: `  rc packages attach pkg_x prod_monthly
+  rc packages attach pkg_x prod_ios_monthly prod_android_monthly --json --no-input`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -382,10 +400,10 @@ package ID followed by every product ID to attach. Products default to the
 func newPackagesDetachCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "detach <package-id> <product-id> [product-id...]",
-		Short: "Detach products from a package",
-		Long: `Detach one or more products from a package. Positional arguments are the
-package ID followed by every product ID to detach.`,
-		Example: `  rc packages detach pkg_monthly prod_legacy --json --no-input`,
+		Short: "Detach Products from a Package",
+		Long: `Detaches one or more Products from a Package. Positional arguments are the
+Package ID followed by every Product ID to detach.`,
+		Example: `  rc packages detach pkg_x prod_legacy --json --no-input`,
 		Args:    cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())

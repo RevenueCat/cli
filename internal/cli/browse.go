@@ -14,11 +14,12 @@ import (
 func newBrowseCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "browse",
-		Short: "Interactive project browser hub",
-		Long: `Opens a full-screen interactive hub for the active project.
-Navigate to customers, entitlements, offerings, apps, webhooks, and more.
+		Short: "Browse the active project in an interactive hub",
+		Long: `Opens a full-screen interactive hub for the active Project. Navigate Customers,
+Entitlements, Offerings, Products, apps, webhooks, and charts, and drill into
+records without leaving the terminal.
 
-Requires a TTY. Pass --json or --no-input to disable.`,
+Requires an interactive terminal. Pass --json or --no-input to disable.`,
 		Example: `  rc browse`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
