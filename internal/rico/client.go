@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/revenuecat/cli/internal/httpx"
 	"github.com/revenuecat/cli/internal/sse"
 )
 
@@ -24,11 +25,12 @@ const DefaultBaseURL = "https://rico.revenuecat.com"
 const conversationAlphabet = "6789BCDFGHJKLMNPQRTWbcdfghjkmnpqrtwz"
 
 type Client struct {
-	baseURL   string
-	token     string
-	userAgent string
-	rest      *http.Client
-	stream    *http.Client
+	baseURL      string
+	token        string
+	userAgent    string
+	extraHeaders http.Header
+	rest         *http.Client
+	stream       *http.Client
 }
 
 type Options struct {
@@ -37,6 +39,8 @@ type Options struct {
 	UserAgent string
 	// HTTPClient overrides both REST and streaming transports (tests).
 	HTTPClient *http.Client
+	// ExtraHeaders are sent on every request (from RC_HEADERS).
+	ExtraHeaders http.Header
 }
 
 func NewClient(opts Options) *Client {
@@ -55,11 +59,12 @@ func NewClient(opts Options) *Client {
 		stream = &http.Client{}
 	}
 	return &Client{
-		baseURL:   baseURL,
-		token:     opts.Token,
-		userAgent: opts.UserAgent,
-		rest:      rest,
-		stream:    stream,
+		baseURL:      baseURL,
+		token:        opts.Token,
+		userAgent:    opts.UserAgent,
+		extraHeaders: opts.ExtraHeaders,
+		rest:         rest,
+		stream:       stream,
 	}
 }
 
@@ -115,6 +120,7 @@ func (c *Client) newRequest(ctx context.Context, method, path string, body any) 
 	if c.userAgent != "" {
 		req.Header.Set("User-Agent", c.userAgent)
 	}
+	httpx.Apply(req, c.extraHeaders)
 	return req, nil
 }
 

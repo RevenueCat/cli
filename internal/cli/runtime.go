@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"runtime"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/config"
+	"github.com/revenuecat/cli/internal/httpx"
 	"github.com/revenuecat/cli/internal/output"
 )
 
@@ -80,11 +82,19 @@ func (r *Runtime) API() (*api.Client, error) {
 		}
 	}
 	r.client = api.NewClient(api.Options{
-		APIKey:    r.Config.BearerToken(), // works for both API keys and OAuth tokens
-		BaseURL:   r.Config.BaseURL,
-		UserAgent: userAgent(r.Globals.Version),
+		APIKey:       r.Config.BearerToken(), // works for both API keys and OAuth tokens
+		BaseURL:      r.Config.BaseURL,
+		UserAgent:    userAgent(r.Globals.Version),
+		ExtraHeaders: customHeaders(),
 	})
 	return r.client, nil
+}
+
+// customHeaders reads RC_HEADERS (newline-separated "Name: Value" pairs) into
+// headers sent on every RevenueCat request. Lets an operator route or tag
+// traffic without the header name being compiled into the binary.
+func customHeaders() http.Header {
+	return httpx.ParseHeaders(os.Getenv("RC_HEADERS"))
 }
 
 // silentRefresh attempts to refresh the OAuth token without surfacing errors —

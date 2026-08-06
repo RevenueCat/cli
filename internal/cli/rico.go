@@ -664,9 +664,10 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 		return nil, err
 	}
 	return rico.NewClient(rico.Options{
-		BaseURL:   baseURL,
-		Token:     agentAuthToken(rt),
-		UserAgent: userAgent(rt.Globals.Version),
+		BaseURL:      baseURL,
+		Token:        agentAuthToken(rt),
+		UserAgent:    userAgent(rt.Globals.Version),
+		ExtraHeaders: customHeaders(),
 	}), nil
 }
 
