@@ -9,9 +9,9 @@ import (
 )
 
 func TestParseHeaders(t *testing.T) {
-	got := httpx.ParseHeaders("X-RC-Route: canary-1\n  X-Trace : abc \n\nnot-a-header\nX-Empty:")
-	if v := got.Get("X-Rc-Route"); v != "canary-1" {
-		t.Errorf("X-RC-Route = %q, want canary-1", v)
+	got := httpx.ParseHeaders("X-Example-Header: example-value\n  X-Trace : abc \n\nnot-a-header\nX-Empty:")
+	if v := got.Get("X-Example-Header"); v != "example-value" {
+		t.Errorf("X-Example-Header = %q, want example-value", v)
 	}
 	if v := got.Get("X-Trace"); v != "abc" {
 		t.Errorf("X-Trace = %q, want abc (trimmed)", v)
@@ -33,24 +33,24 @@ func TestParseHeadersEmptyIsNil(t *testing.T) {
 }
 
 func TestApplyOverridesAndSendsOnRequest(t *testing.T) {
-	var gotRoute, gotAuth string
+	var gotHeader, gotAuth string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotRoute = r.Header.Get("X-RC-Route")
+		gotHeader = r.Header.Get("X-Example-Header")
 		gotAuth = r.Header.Get("Authorization")
 	}))
 	t.Cleanup(srv.Close)
 
 	req, _ := http.NewRequest(http.MethodGet, srv.URL, nil)
 	req.Header.Set("Authorization", "Bearer default")
-	httpx.Apply(req, httpx.ParseHeaders("X-RC-Route: canary-1\nAuthorization: Bearer override"))
+	httpx.Apply(req, httpx.ParseHeaders("X-Example-Header: example-value\nAuthorization: Bearer override"))
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
 
-	if gotRoute != "canary-1" {
-		t.Errorf("X-RC-Route = %q, want canary-1", gotRoute)
+	if gotHeader != "example-value" {
+		t.Errorf("X-Example-Header = %q, want example-value", gotHeader)
 	}
 	if gotAuth != "Bearer override" {
 		t.Errorf("Authorization = %q, want the applied header to override the default", gotAuth)
