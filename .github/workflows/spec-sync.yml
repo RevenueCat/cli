@@ -28,14 +28,17 @@ jobs:
       - name: Install pyyaml
         run: pip install pyyaml
 
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: stable
+          cache: true
+
       - name: Fetch latest specs
         run: |
-          curl -fsSL "https://www.revenuecat.com/docs/redocusaurus/plugin-redoc-3.yaml" \
+          curl -fsSL "https://www.revenuecat.com/docs/redocusaurus/openapi-v1.yaml" \
             -o /tmp/v1-subscribers.yaml
-          curl -fsSL "https://www.revenuecat.com/docs/redocusaurus/plugin-redoc-1.yaml" \
+          curl -fsSL "https://www.revenuecat.com/docs/redocusaurus/openapi-v2.yaml" \
             -o /tmp/v2-developer.yaml
-          curl -fsSL "https://www.revenuecat.com/docs/redocusaurus/plugin-redoc-2.yaml" \
-            -o /tmp/v2-external.yaml
 
       - name: Diff specs
         id: diff
@@ -46,9 +49,11 @@ jobs:
           run_diff() {
             local label="$1" old="$2" new="$3"
             shift 3
-            # exit 0 = identical, 1 = changes found, anything else = real error
-            section=$(python3 scripts/spec-diff.py "$old" "$new" --title "$label" "$@")
-            status=$?
+            # exit 0 = identical, 1 = changes found, anything else = real error.
+            # `|| status=$?` keeps the expected non-zero (changes found) from
+            # tripping the step's `set -e` before we can handle it.
+            local status=0
+            section=$(python3 scripts/spec-diff.py "$old" "$new" --title "$label" "$@") || status=$?
             if [ "$status" -eq 1 ]; then
               SUMMARY="${SUMMARY}${section}
 
@@ -62,7 +67,6 @@ jobs:
 
           run_diff "v1 Subscribers API"  docs/specs/v1-subscribers.yaml /tmp/v1-subscribers.yaml
           run_diff "v2 Developer API"    docs/specs/v2-developer.yaml   /tmp/v2-developer.yaml   --coverage docs/specs/cli-coverage.yaml
-          run_diff "v2 External API"     docs/specs/v2-external.yaml    /tmp/v2-external.yaml
 
           if [ "$CHANGED" = "false" ]; then
             SUMMARY="_No changes detected in any spec._"
@@ -77,12 +81,14 @@ jobs:
             echo "changed=$CHANGED"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Update snapshots
+      - name: Update snapshots and regenerate API types
         if: steps.diff.outputs.changed == 'true'
         run: |
           cp /tmp/v1-subscribers.yaml docs/specs/v1-subscribers.yaml
           cp /tmp/v2-developer.yaml   docs/specs/v2-developer.yaml
-          cp /tmp/v2-external.yaml    docs/specs/v2-external.yaml
+          # Regenerate the Go types from the new v2 spec so the PR is complete
+          # and passes CI's codegen-drift check (was previously left stale).
+          make gen
 
       - name: Open PR
         if: steps.diff.outputs.changed == 'true' && inputs.dry_run != 'true'
@@ -95,15 +101,15 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add docs/specs/
-          git commit -m "chore(specs): sync OpenAPI snapshots $(date +%Y-%m-%d)"
+          git add docs/specs/ internal/api/types_gen.go
+          git commit -m "chore(specs): sync OpenAPI snapshots + regenerate types $(date +%Y-%m-%d)"
           git push origin "$BRANCH"
 
           # Write PR body to a file so ${SUMMARY} expands correctly
           cat > /tmp/pr-body.md <<PREOF
 ## OpenAPI spec changes
 
-The weekly spec-sync job detected the following changes. Review them and update any CLI commands, API client code, or documentation that depends on the changed endpoints.
+The weekly spec-sync job detected the following changes and regenerated \`internal/api/types_gen.go\` from the new v2 spec. Review them and update any CLI commands, API client code, or hand-written (excluded-schema) types that depend on the changed endpoints — a red build here means the generated types no longer match the code.
 
 ${SUMMARY}
 
