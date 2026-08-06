@@ -239,6 +239,9 @@ rc purchases refund <id>                                 # Web Billing only
 # Invoices
 rc invoices show <id>
 
+# Media Assets
+rc media-assets upload <file>                            # upload an image (jpg/png/webp/avif/heic/heif, ≤2 MiB) to the project Media Gallery
+
 # Virtual currencies (project catalog; per-customer lives under `customer wallet`)
 rc currencies list
 rc currencies show <id>
