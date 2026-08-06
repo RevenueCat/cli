@@ -28,28 +28,28 @@ type ManagementURL struct {
 // GET /projects/{project_id}/subscriptions/{id}
 func (s *SubscriptionsService) Get(ctx context.Context, projectID, id string) (*Subscription, error) {
 	var out Subscription
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "subscriptions", id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathSubscription(projectID, id), nil, &out)
 	return &out, err
 }
 
 // GET /projects/{project_id}/subscriptions/{id}/transactions
 func (s *SubscriptionsService) Transactions(ctx context.Context, projectID, id string) (*Page[Transaction], error) {
 	var out Page[Transaction]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "subscriptions", id, "transactions"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathSubscriptionTransactions(projectID, id), nil, &out)
 	return &out, err
 }
 
 // GET /projects/{project_id}/subscriptions/{id}/entitlements
 func (s *SubscriptionsService) Entitlements(ctx context.Context, projectID, id string) (*Page[Entitlement], error) {
 	var out Page[Entitlement]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "subscriptions", id, "entitlements"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathSubscriptionEntitlements(projectID, id), nil, &out)
 	return &out, err
 }
 
 // GET /projects/{project_id}/subscriptions/{id}/authenticated_management_url
 func (s *SubscriptionsService) ManagementURL(ctx context.Context, projectID, id string) (*ManagementURL, error) {
 	var out ManagementURL
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "subscriptions", id, "authenticated_management_url"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathSubscriptionAuthenticatedManagementURL(projectID, id), nil, &out)
 	return &out, err
 }
 
@@ -57,7 +57,7 @@ func (s *SubscriptionsService) ManagementURL(ctx context.Context, projectID, id 
 // Web Billing subscriptions only.
 func (s *SubscriptionsService) Cancel(ctx context.Context, projectID, id string) (*Subscription, error) {
 	var out Subscription
-	path := encodePath("projects", projectID, "subscriptions", id, "actions") + "/cancel"
+	path := pathSubscriptionActionsCancel(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
@@ -66,7 +66,7 @@ func (s *SubscriptionsService) Cancel(ctx context.Context, projectID, id string)
 // duration is ISO 8601 (e.g. "P1M", "P7D").
 func (s *SubscriptionsService) Extend(ctx context.Context, projectID, id, duration string) (*Subscription, error) {
 	var out Subscription
-	path := encodePath("projects", projectID, "subscriptions", id, "actions") + "/extend"
+	path := pathSubscriptionActionsExtend(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, map[string]any{"duration": duration}, &out)
 	return &out, err
 }
@@ -74,6 +74,6 @@ func (s *SubscriptionsService) Extend(ctx context.Context, projectID, id, durati
 // POST /projects/{project_id}/subscriptions/{id}/actions/refund
 // Web Billing subscriptions only.
 func (s *SubscriptionsService) Refund(ctx context.Context, projectID, id string) error {
-	path := encodePath("projects", projectID, "subscriptions", id, "actions") + "/refund"
+	path := pathSubscriptionActionsRefund(projectID, id)
 	return s.c.do(ctx, http.MethodPost, path, nil, nil)
 }
