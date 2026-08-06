@@ -93,7 +93,7 @@ func (s *StoreStateService) Get(ctx context.Context, projectID, productID string
 func (s *StoreStateService) ReserveScreenshotUpload(ctx context.Context, projectID, productID, filename string, fileSize int64) (*ScreenshotUploadReservation, error) {
 	var out ScreenshotUploadReservation
 	body := map[string]any{"filename": filename, "file_size": fileSize}
-	// Inline path pending verification: khepri's spec has this as
+	// Inline path pending verification: the backend spec has this as
 	// store_state/screenshot_upload (two segments); this sends one. Left as-is
 	// so this change stays behavior-preserving — the path fix is tracked separately.
 	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "products", productID, "store_state_screenshot_upload"), body, &out)

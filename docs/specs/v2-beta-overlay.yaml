@@ -1,4 +1,4 @@
-'# NOTE': 'Hand-maintained beta overlay — see DX-880. Seeded from khepri''s openapi-dev.yaml
+'# NOTE': 'Hand-maintained beta overlay — see DX-880. Seeded from the backend''s openapi-dev.yaml
   (x-release-status: development endpoints the CLI uses). Merged onto the public spec
   by scripts/preprocess-spec.py. Remove entries here once they graduate into the public
   spec.'
