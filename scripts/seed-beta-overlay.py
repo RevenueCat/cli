@@ -3,9 +3,11 @@
 
 The public spec we fetch from docs is release-filtered and omits endpoints the
 CLI uses but that khepri marks `x-release-status: development` (the store_state
-family). This extracts just those paths — plus every component they reference,
-transitively — into a small overlay that preprocess-spec.py merges on top of the
-public spec at codegen/diff time.
+family). This extracts just those path keys — with request/response bodies
+stripped — into a small overlay that preprocess-spec.py merges on top of the
+public spec at codegen/diff time. The overlay declares that the paths exist so
+gen-paths builds path helpers and spec-diff tracks coverage; the CLI hand-writes
+the types, so oapi-codegen generates nothing from it.
 
 This is a *seeding* tool, not part of CI: run it once against a local checkout
 of khepri's dev spec, then hand-maintain the result. Re-run to reseed when the
@@ -69,21 +71,18 @@ def main():
         print("no matching paths found — check PATH_SUBSTRINGS", file=sys.stderr)
         sys.exit(1)
 
-    # Drop non-2xx responses. The CLI decodes errors at runtime (parseError), so
-    # typing every 4xx/5xx body just floods types_gen.go with dead
-    # <op><code>JSONResponseBody types. Keeping 2xx preserves the real shapes.
+    # The CLI hand-writes the types for these development-status endpoints (see
+    # internal/api/store_state_*.go and products.go). The overlay only needs to
+    # declare that the paths exist — so gen-paths builds path helpers and
+    # spec-diff tracks coverage — not to generate models. Strip request/response
+    # bodies so oapi-codegen emits nothing for them.
     methods = {"get", "put", "post", "delete", "patch", "options", "head", "trace"}
     for item in paths.values():
         for method, op in item.items():
             if method not in methods or not isinstance(op, dict):
                 continue
-            responses = op.get("responses")
-            if isinstance(responses, dict):
-                op["responses"] = {
-                    code: body
-                    for code, body in responses.items()
-                    if str(code).startswith("2")
-                }
+            op.pop("requestBody", None)
+            op["responses"] = {"200": {"description": "OK"}}
 
     # Walk component refs transitively, starting from the selected paths.
     dev_components = dev.get("components", {})
