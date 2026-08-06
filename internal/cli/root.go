@@ -138,6 +138,7 @@ Agent-friendly entrypoints:
 		newWebhooksCmd(),
 		newPaywallsCmd(),
 		newMediaAssetsCmd(),
+		newFontsCmd(),
 		newRicoCmd(),
 		newChartsCmd(),
 		newMetricsCmd(),
