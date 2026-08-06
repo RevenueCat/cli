@@ -25,3 +25,7 @@ output-options:
     - PaywallComponentsVersion
     - PaywallComponentsVersionObject
     - PaywallObject
+    - PaywallDraftUpdate
+    - App
+    - AppType
+    - AppObject
