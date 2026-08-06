@@ -48,10 +48,6 @@ func screenshotBase(sessionPath string) string {
 	return strings.TrimSuffix(sessionPath, filepath.Ext(sessionPath))
 }
 
-// defaultPaywallSessionPath centralizes session files (and, alongside them,
-// preview screenshots) under the CLI data dir in a folder per paywall, so they
-// don't clutter — and get committed from — whatever working directory the
-// command ran in.
 func defaultPaywallSessionPath(projectID, paywallID string) (string, error) {
 	dir, err := config.Dir()
 	if err != nil {
