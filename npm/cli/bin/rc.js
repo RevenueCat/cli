@@ -6,9 +6,7 @@
 const { execFileSync } = require("child_process");
 const path = require("path");
 
-// npx runs the package from npm's ephemeral `_npx` cache rather than a real
-// install. That user typically wants a one-off, guided experience, so signal
-// the binary to prefer interactive prompts over terse help.
+// True when launched via npx (npm's ephemeral `_npx` cache), not a real install.
 function runViaNpx() {
   return __dirname.includes(`${path.sep}_npx${path.sep}`) || process.env.npm_command === "exec";
 }
