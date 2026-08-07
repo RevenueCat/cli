@@ -96,7 +96,7 @@ names; there's no list endpoint.
 # Onboarding entry points (the two scoped npx surfaces)
 rc setup                                                 # PUNTED: one-shot agent-driven bootstrap; hidden until DX-tested
 rc capital setup                                         # RevenueCat Capital = App Store Connect key flow (wraps apps apple setup)
-rc                                                       # bare rc in a TTY -> guided setup; --help elsewhere; --all reveals every command
+rc                                                       # bare rc -> getting-started help; --all reveals every command
 
 # Auth / meta
 rc auth login                                            # browser OAuth or API key; offers MCP-token import on npx runs; rc login is a hidden alias
@@ -206,6 +206,7 @@ rc products store apply <plan-id>                        # apply that same revie
 rc products store discard <plan-id>                      # discard without applying; requires confirmation/--yes
 
 # Paywalls
+rc paywalls                                              # help; under npx a TTY shows a generate/edit picker (npm launcher sets RC_GUIDED — paywalls-only for now)
 rc paywalls list
 rc paywalls show <id>
 rc paywalls generate [--offering-id <id>] --prompt "..." # create a paywall; standalone unless --offering-id attaches it to an offering

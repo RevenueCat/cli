@@ -35,6 +35,8 @@ func newPaywallsCmd() *cobra.Command {
 			}
 			for _, sub := range cmd.Commands() {
 				if sub.Name() == action {
+					// Calls RunE directly (no cobra arg parsing); generate and
+					// edit both support no-arg interactive entry.
 					sub.SetContext(cmd.Context())
 					return sub.RunE(sub, nil)
 				}
