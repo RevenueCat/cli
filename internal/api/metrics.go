@@ -15,6 +15,6 @@ type MetricsService struct{ c *Client }
 // Not paginated; returns a fixed bundle of project-wide KPIs.
 func (s *MetricsService) Overview(ctx context.Context, projectID string) (*OverviewMetrics, error) {
 	var out OverviewMetrics
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "metrics", "overview"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathMetricsOverview(projectID), nil, &out)
 	return &out, err
 }

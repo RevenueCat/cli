@@ -17,15 +17,18 @@ jobs:
       - name: Install Python deps for codegen
         run: python3 -m pip install pyyaml
 
-      - name: Verify generated types are up to date
+      - name: Verify generated code is up to date
         run: |
           cp internal/api/types_gen.go /tmp/types_gen_committed.go
+          cp internal/api/paths_gen.go /tmp/paths_gen_committed.go
           make gen
-          if ! diff -q internal/api/types_gen.go /tmp/types_gen_committed.go > /dev/null 2>&1; then
-            echo "::error::internal/api/types_gen.go is out of date. Run 'make gen' and commit the result."
-            diff /tmp/types_gen_committed.go internal/api/types_gen.go || true
-            exit 1
-          fi
+          for f in types_gen paths_gen; do
+            if ! diff -q "internal/api/$f.go" "/tmp/${f}_committed.go" > /dev/null 2>&1; then
+              echo "::error::internal/api/$f.go is out of date. Run 'make gen' and commit the result."
+              diff "/tmp/${f}_committed.go" "internal/api/$f.go" || true
+              exit 1
+            fi
+          done
 
       - name: gofmt
         run: |

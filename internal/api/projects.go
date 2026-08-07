@@ -16,7 +16,7 @@ type ProjectsService struct{ c *Client }
 // have (no worse than a single-page fetch).
 func (s *ProjectsService) List(ctx context.Context) (*Page[Project], error) {
 	var all []Project
-	path := "/projects"
+	path := pathProjects()
 	for {
 		var page Page[Project]
 		if err := s.c.do(ctx, http.MethodGet, path, nil, &page); err != nil {
@@ -34,7 +34,7 @@ func (s *ProjectsService) List(ctx context.Context) (*Page[Project], error) {
 		if cursor == "" {
 			break
 		}
-		path = "/projects?starting_after=" + url.QueryEscape(cursor)
+		path = pathProjects() + "?starting_after=" + url.QueryEscape(cursor)
 	}
 	return &Page[Project]{Items: all}, nil
 }
@@ -42,7 +42,7 @@ func (s *ProjectsService) List(ctx context.Context) (*Page[Project], error) {
 // POST /projects
 func (s *ProjectsService) Create(ctx context.Context, body ProjectCreate) (*Project, error) {
 	var out Project
-	if err := s.c.do(ctx, http.MethodPost, "/projects", body, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodPost, pathProjects(), body, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

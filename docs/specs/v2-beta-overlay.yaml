@@ -1,4 +1,4 @@
-'# NOTE': 'Hand-maintained beta overlay — see DX-880. Seeded from khepri''s openapi-dev.yaml
+'# NOTE': 'Hand-maintained beta overlay — see DX-880. Seeded from the backend''s openapi-dev.yaml
   (x-release-status: development endpoints the CLI uses). Merged onto the public spec
   by scripts/preprocess-spec.py. Remove entries here once they graduate into the public
   spec.'
@@ -7,6 +7,165 @@ info:
   title: RevenueCat v2 — beta overlay
   version: overlay
 paths:
+  /projects/{project_id}/products/{product_id}/test_store_prices:
+    get:
+      summary: 'List product prices (deprecated: use /prices instead)'
+      operationId: list-product-prices
+      deprecated: true
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+      description: 'This endpoint requires the following permission(s): <code>project_configuration:products:read</code>.
+        This endpoint belongs to the <strong>Project Configuration</strong> domain,
+        which has a default rate limit of <strong>60 requests per minute</strong>.'
+    post:
+      summary: Create product prices
+      operationId: create-product-prices
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-description: 'Configure prices for a product. This tool only
+        works with products configured in an app type test_store.
+
+        Calling this tool on products belonging to any other app type will cause an
+        error'
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+      description: 'This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.
+        This endpoint belongs to the <strong>Project Configuration</strong> domain,
+        which has a default rate limit of <strong>60 requests per minute</strong>.'
+  /projects/{project_id}/products/{product_id}/prices:
+    get:
+      summary: List product prices
+      operationId: list-prices
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-description: List prices for a product. Works for both Web
+        Billing and Test Store products.
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+      description: 'This endpoint requires the following permission(s): <code>project_configuration:products:read</code>.
+        This endpoint belongs to the <strong>Project Configuration</strong> domain,
+        which has a default rate limit of <strong>60 requests per minute</strong>.'
+  /projects/{project_id}/products/{product_id}/prices/{currency}:
+    patch:
+      summary: Update a product price for a currency
+      operationId: update-product-price
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Update an existing Test Store product price for
+        one currency.
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      - in: path
+        name: currency
+        required: true
+        schema:
+          $ref: '#/components/schemas/Currency'
+        description: ISO 4217 currency code for this product price.
+      responses:
+        '200':
+          description: OK
+      description: 'This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.
+        This endpoint belongs to the <strong>Project Configuration</strong> domain,
+        which has a default rate limit of <strong>60 requests per minute</strong>.'
   /projects/{project_id}/products/{product_id}/store_state:
     get:
       summary: Get a product store state
@@ -70,173 +229,7 @@ paths:
           example: prod1a2b3c4d5
       responses:
         '200':
-          description: The current product store state.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - project_id
-                - product_id
-                - store
-                - common
-                - store_state
-                properties:
-                  project_id:
-                    description: The RevenueCat project identifier.
-                    type: string
-                    example: proj1a2b3c4
-                  product_id:
-                    description: The RevenueCat product identifier.
-                    type: string
-                    example: prod1a2b3c4
-                  store:
-                    description: The store this state was read from.
-                    type: string
-                    enum:
-                    - app_store
-                    - play_store
-                    example: app_store
-                  warnings:
-                    description: Optional guidance for follow-up actions.
-                    type: array
-                    items:
-                      type: string
-                  store_status:
-                    description: Current normalized product status and raw store status
-                      returned by the underlying store, when available.
-                    type: object
-                    nullable: true
-                    required:
-                    - status
-                    properties:
-                      status:
-                        description: Normalized product status used across stores.
-                        type: string
-                        enum:
-                        - ok
-                        - could_not_check
-                        - not_found
-                        - action_in_progress
-                        - needs_action
-                        - inactive_in_store
-                        - draft
-                        - unspecified
-                        - unknown
-                        example: needs_action
-                      raw_store_status:
-                        description: Raw status returned by the store API.
-                        type: string
-                        nullable: true
-                        example: READY_TO_SUBMIT
-                  common:
-                    allOf:
-                    - $ref: '#/components/schemas/ProductStoreStateCommonResponse'
-                    - required:
-                      - pricing
-                      - availability
-                      - localizations
-                  store_state:
-                    anyOf:
-                    - $ref: '#/components/schemas/ProductStoreStateAppStoreStateResponse'
-                    - $ref: '#/components/schemas/ProductStoreStatePlayStoreStateResponse'
-              examples:
-                App Store subscription state:
-                  value:
-                    project_id: proj1a2b3c4
-                    product_id: prod1a2b3c4
-                    store: app_store
-                    store_status:
-                      status: needs_action
-                      raw_store_status: READY_TO_SUBMIT
-                    common:
-                      pricing:
-                        territory_prices:
-                          US:
-                            amount_micros: 10990000
-                            currency: USD
-                            start_date: '2026-05-01'
-                      availability:
-                        territories:
-                          US: true
-                        available_in_new_territories: true
-                      localizations:
-                        en-US:
-                          name: Premium Monthly
-                          description: Access premium content every month.
-                      title: Premium Monthly
-                      duration: ONE_MONTH
-                    store_state:
-                      subscription_group_localizations:
-                        en-US:
-                          name: Premium Plans
-                      privacy_policy_url: https://example.com/privacy
-                      review_information:
-                        notes: Test subscription for review.
-                Play Store subscription state:
-                  value:
-                    project_id: proj1a2b3c4
-                    product_id: prod1a2b3c4
-                    store: play_store
-                    store_status:
-                      status: ok
-                      raw_store_status: null
-                    common:
-                      pricing:
-                        territory_prices:
-                          US:
-                            amount_micros: 9990000
-                            currency: USD
-                      availability:
-                        territories:
-                          US: true
-                      localizations:
-                        en-US:
-                          name: Premium Monthly
-                          description: Access premium content every month.
-                    store_state:
-                      base_plans:
-                        monthly:
-                          state: ACTIVE
-                          auto_renewing_base_plan_type:
-                            billing_period_duration: P1M
-                            grace_period_duration: P3D
-                            account_hold_duration: P30D
-                            proration_mode: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
-                            resubscribe_state: RESUBSCRIBE_STATE_ACTIVE
-                            legacy_compatible: false
-                            legacy_compatible_subscription_offer_id: null
-                          regional_configs:
-                            US:
-                              new_subscriber_availability: true
-                              price:
-                                amount_micros: 9990000
-                                currency: USD
-                          offer_tags: []
-                          offers: {}
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '503':
-          $ref: '#/components/responses/InternalError'
+          description: OK
     post:
       summary: Set a product store state
       description: "Accepts desired store metadata for a product and enqueues an asynchronous\n\
@@ -313,268 +306,9 @@ paths:
           minLength: 1
           maxLength: 255
           example: prod1a2b3c4d5
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - store
-              properties:
-                store:
-                  description: The target store for this desired state.
-                  type: string
-                  enum:
-                  - app_store
-                  - play_store
-                  example: app_store
-                common:
-                  type: object
-                  properties:
-                    pricing:
-                      type: object
-                      properties:
-                        territory_prices:
-                          type: object
-                          additionalProperties:
-                            type: object
-                            required:
-                            - amount_micros
-                            properties:
-                              amount_micros:
-                                description: Territory price amount in micros.
-                                type: integer
-                                format: int64
-                                minimum: 0
-                                example: 9990000
-                              currency:
-                                description: ISO currency code for this territory
-                                  price.
-                                type: string
-                                minLength: 3
-                                maxLength: 3
-                                example: USD
-                              start_date:
-                                description: ISO-8601 date (YYYY-MM-DD) for a scheduled
-                                  price change. Required for approved subscriptions
-                                  — Apple does not allow modifying the current price
-                                  of an approved subscription directly; a future start
-                                  date must be provided to schedule the change. Omit
-                                  for initial pricing of unapproved products. For
-                                  in-app purchases, sets the start date on the price
-                                  schedule entry.
-                                type: string
-                                format: date
-                                nullable: true
-                                example: '2026-04-01'
-                            additionalProperties: false
-                      additionalProperties: false
-                    availability:
-                      type: object
-                      properties:
-                        territories:
-                          description: Territories where the product is available.
-                            True = available, false = remove.
-                          type: object
-                          additionalProperties:
-                            type: boolean
-                            example: true
-                        available_in_new_territories:
-                          description: Availability default for newly added territories.
-                            Optional; when omitted, the current App Store Connect
-                            value is preserved.
-                          type: boolean
-                          example: true
-                      additionalProperties: false
-                    localizations:
-                      type: object
-                      nullable: true
-                      additionalProperties:
-                        type: object
-                        nullable: true
-                        required:
-                        - name
-                        - description
-                        properties:
-                          name:
-                            description: 'Localized product display name. App Store
-                              Connect limits: 30 characters for both subscriptions
-                              and in-app purchases.'
-                            type: string
-                            minLength: 1
-                            maxLength: 30
-                            example: Premium Monthly
-                          description:
-                            description: 'Localized product description. App Store
-                              Connect limits: 45 characters for both subscriptions
-                              and in-app purchases.'
-                            type: string
-                            minLength: 1
-                            maxLength: 45
-                            example: Access premium content every month.
-                        additionalProperties: false
-                    title:
-                      description: Optional product title used by create-if-missing
-                        flows.
-                      type: string
-                      nullable: true
-                      minLength: 1
-                      maxLength: 255
-                      example: Premium Monthly
-                    duration:
-                      description: Subscription duration. Required for subscription
-                        creation in create-if-missing flows. Canonical ISO-like durations
-                        are preferred, but legacy App Store Connect period values
-                        are accepted for backwards compatibility.
-                      type: string
-                      nullable: true
-                      enum:
-                      - P1W
-                      - P1M
-                      - P2M
-                      - P3M
-                      - P6M
-                      - P1Y
-                      - ONE_WEEK
-                      - ONE_MONTH
-                      - TWO_MONTHS
-                      - THREE_MONTHS
-                      - SIX_MONTHS
-                      - ONE_YEAR
-                      example: ONE_MONTH
-                  additionalProperties: false
-                store_state:
-                  description: Store-specific desired state. Must match the `store`
-                    discriminator.
-                  anyOf:
-                  - $ref: '#/components/schemas/ProductStoreStateAppStoreState'
-                  - $ref: '#/components/schemas/ProductStoreStatePlayStoreState'
-              additionalProperties: false
-            examples:
-              App Store product state:
-                value:
-                  store: app_store
-                  common:
-                    pricing:
-                      territory_prices:
-                        US:
-                          amount_micros: 9990000
-                          currency: USD
-                        CA:
-                          amount_micros: 9990000
-                          currency: USD
-                    availability:
-                      territories:
-                        US: true
-                        CA: true
-                      available_in_new_territories: true
-                    localizations:
-                      en-US:
-                        name: Premium Monthly
-                        description: Access premium content every month.
-                  store_state:
-                    subscription_group_name: Premium Subscriptions
-                    privacy_policy_url: https://example.com/privacy
-                    review_information:
-                      notes: Reviewing updated metadata and pricing.
-              Play Store product state:
-                value:
-                  store: play_store
-                  store_state:
-                    base_plans:
-                      monthly:
-                        state: ACTIVE
-                        auto_renewing_base_plan_type:
-                          billing_period_duration: P1M
-                        regional_configs:
-                          US:
-                            new_subscriber_availability: true
-                            price:
-                              amount_micros: 9990000
-                              currency: USD
-                        offer_tags:
-                        - free-trial
-                        - intro-discount
-                        offers:
-                          free-trial:
-                            state: ACTIVE
-                            offer_tags:
-                            - free-trial
-                            phases:
-                            - recurrence_count: 1
-                              duration: P1W
-                              regional_configs:
-                                US:
-                                  free: true
-                          intro-discount:
-                            state: ACTIVE
-                            offer_tags:
-                            - intro-discount
-                            phases:
-                            - recurrence_count: 3
-                              duration: P1M
-                              regional_configs:
-                                US:
-                                  price:
-                                    amount_micros: 4990000
-                                    currency: USD
       responses:
-        '202':
-          description: Accepted. The product store state operation was queued.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - operation_id
-                - status
-                - polling_url
-                properties:
-                  operation_id:
-                    description: The ID of the queued store state operation.
-                    type: string
-                    minLength: 1
-                    maxLength: 255
-                    example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
-                  status:
-                    description: Current status of the queued operation.
-                    type: string
-                    enum:
-                    - pending
-                    example: pending
-                  polling_url:
-                    description: Relative URL to poll operation status.
-                    type: string
-                    minLength: 1
-                    maxLength: 5000
-                    example: /v2/projects/proj1a2b3c4/products/prod1a2b3c4/store_state/4d5c046e-fadd-4d91-bd78-744fe44d314d
-                additionalProperties: false
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '503':
-          $ref: '#/components/responses/InternalError'
+        '200':
+          description: OK
   /projects/{project_id}/products/{product_id}/store_state/actions/equalize_subscription_prices:
     post:
       summary: Equalize subscription prices for missing territories
@@ -620,90 +354,9 @@ paths:
           minLength: 1
           maxLength: 255
           example: prod1a2b3c4d5
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - store
-              - base_territory
-              properties:
-                store:
-                  description: The target store for this operation.
-                  type: string
-                  enum:
-                  - app_store
-                  example: app_store
-                base_territory:
-                  description: 'Base territory used to resolve the source price point
-                    from the
-
-                    territory''s current App Store price (alpha-2 or alpha-3 code).
-
-                    '
-                  type: string
-                  minLength: 2
-                  maxLength: 3
-                  example: US
-              additionalProperties: false
       responses:
-        '202':
-          description: Accepted. The equalization operation was queued.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - operation_id
-                - status
-                - polling_url
-                properties:
-                  operation_id:
-                    description: The ID of the queued operation.
-                    type: string
-                    minLength: 1
-                    maxLength: 255
-                    example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
-                  status:
-                    description: Current status of the queued operation.
-                    type: string
-                    enum:
-                    - pending
-                    example: pending
-                  polling_url:
-                    description: Relative URL to poll operation status.
-                    type: string
-                    minLength: 1
-                    maxLength: 5000
-                    example: /v2/projects/proj1a2b3c4/products/prod1a2b3c4/store_state/4d5c046e-fadd-4d91-bd78-744fe44d314d
-                additionalProperties: false
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '503':
-          $ref: '#/components/responses/InternalError'
+        '200':
+          description: OK
   /projects/{project_id}/products/{product_id}/store_state/{operation_id}:
     get:
       summary: Get a product store state operation
@@ -753,72 +406,7 @@ paths:
           example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
       responses:
         '200':
-          description: The current status/result for the operation.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - id
-                - product_id
-                - status
-                properties:
-                  id:
-                    description: Operation identifier.
-                    type: string
-                    minLength: 1
-                    maxLength: 255
-                    example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
-                  product_id:
-                    description: The RevenueCat product identifier.
-                    type: string
-                    minLength: 1
-                    maxLength: 255
-                    example: prod1a2b3c4
-                  status:
-                    description: Current status for the operation.
-                    type: string
-                    enum:
-                    - pending
-                    - running
-                    - succeeded
-                    - failed
-                    example: failed
-                  error_message:
-                    description: Error message when status is failed.
-                    type: string
-                    nullable: true
-                    example: 'Conflict detected: territory ''ZZZ'' is invalid.'
-                  completed_at:
-                    description: Timestamp (ms since epoch) when the operation completed.
-                    type: integer
-                    format: int64
-                    nullable: true
-                    example: 1739383320000
-                additionalProperties: false
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '503':
-          $ref: '#/components/responses/InternalError'
+          description: OK
   /projects/{project_id}/products/{product_id}/store_state/screenshot_upload:
     post:
       summary: Reserve a product store state screenshot upload
@@ -865,1878 +453,566 @@ paths:
           minLength: 1
           maxLength: 255
           example: prod1a2b3c4d5
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - filename
-              - file_size
-              properties:
-                filename:
-                  description: Screenshot filename to reserve in App Store Connect.
-                  type: string
-                  minLength: 1
-                  maxLength: 255
-                  example: review.png
-                file_size:
-                  description: Screenshot file size in bytes.
-                  type: integer
-                  format: int64
-                  minimum: 1
-                  example: 125000
-              additionalProperties: false
       responses:
         '200':
-          description: Screenshot upload slot successfully reserved.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - screenshot_id
-                properties:
-                  screenshot_id:
-                    description: App Store Connect screenshot identifier.
-                    type: string
-                    minLength: 1
-                    maxLength: 255
-                    example: asc_screenshot_123
-                  filename:
-                    description: Reserved filename echoed from App Store Connect.
-                    type: string
-                    nullable: true
-                    example: review.png
-                  file_size:
-                    description: Reserved file size echoed from App Store Connect.
-                    type: integer
-                    nullable: true
-                    format: int64
-                    minimum: 0
-                    example: 125000
-                  upload_operations:
-                    description: Upload operations for direct upload to Apple.
-                    type: array
-                    nullable: true
-                    items:
-                      type: object
-                      required:
-                      - method
-                      - url
-                      - length
-                      - offset
-                      properties:
-                        method:
-                          description: HTTP method for the upload operation.
-                          type: string
-                          example: PUT
-                        url:
-                          description: Presigned upload URL from App Store Connect.
-                          type: string
-                          example: https://example-upload-url
-                        length:
-                          description: Chunk length in bytes for this upload operation.
-                          type: integer
-                          format: int64
-                          minimum: 1
-                          example: 125000
-                        offset:
-                          description: Byte offset in the source file for this upload
-                            operation.
-                          type: integer
-                          format: int64
-                          minimum: 0
-                          example: 0
-                        request_headers:
-                          description: Headers required by App Store Connect for upload.
-                          type: array
-                          nullable: true
-                          items:
-                            type: object
-                            required:
-                            - name
-                            - value
-                            properties:
-                              name:
-                                description: Header name.
-                                type: string
-                                example: Content-Type
-                              value:
-                                description: Header value.
-                                type: string
-                                example: image/png
-                            additionalProperties: false
-                      additionalProperties: false
-                additionalProperties: false
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '503':
-          $ref: '#/components/responses/InternalError'
-components:
-  headers:
-    RateLimitCurrentLimit:
-      required: true
-      description: The rate limit for this endpoint, expressed in requests per minute.
-      schema:
-        type: integer
-      example: 30
-    RateLimitCurrentUsage:
-      required: true
-      description: The current number of requests used for the current limit (including
-        the current request).
-      schema:
-        type: integer
-      example: 25
-    RateLimitRetryAfter:
-      required: true
-      description: The number of seconds to wait before retrying a rate limited request.Only
-        present when a request is rate limited.
-      schema:
-        type: integer
-      example: 10
-  responses:
-    BadRequest:
-      description: Bad request
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - parameter_error
-                  - invalid_request
-          examples:
-            parameter_error:
-              value:
-                object: error
-                type: parameter_error
-                param: customer_id
-                message: id is too long
-                retryable: false
-                doc_url: https://errors.rev.cat/parameter-error
-            invalid_request:
-              value:
-                object: error
-                type: invalid_request
-                message: Content-Type not application/json
-                retryable: false
-                doc_url: https://errors.rev.cat/invalid-request
-    Conflict:
-      description: Conflict
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - resource_already_exists
-                  - idempotency_error
-                  - invalid_request
-          examples:
-            resource_already_exists:
-              value:
-                object: error
-                type: resource_already_exists
-                message: Name is already taken
-                retryable: false
-                doc_url: https://errors.rev.cat/resource-already-exists
-            idempotency_error:
-              value:
-                object: error
-                type: idempotency_error
-                message: Idempotency key already used for a different request
-                retryable: false
-                doc_url: https://errors.rev.cat/idempotency-error
-            invalid_request:
-              value:
-                object: error
-                type: invalid_request
-                message: Request conflicts with the current resource state
-                retryable: false
-                doc_url: https://errors.rev.cat/invalid-request
-    Forbidden:
-      description: Access denied
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - authorization_error
-            example:
-              object: error
-              type: authorization_error
-              message: You're not authorized to access this resource
-              retryable: false
-              doc_url: https://errors.rev.cat/authorization-error
-    InternalError:
-      description: Internal server error
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - server_error
-            example:
-              object: error
-              type: server_error
-              message: There was an internal server error
-              retryable: true
-              doc_url: https://errors.rev.cat/server-error
-              backoff_ms: 1000
-    Locked:
-      description: Locked
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - resource_locked_error
-            example:
-              object: error
-              type: resource_locked_error
-              message: The resource is currently being modified by a concurrent request
-              retryable: true
-              doc_url: https://errors.rev.cat/resource-locked-error
-              backoff_ms: 1000
-    NotFound:
-      description: Not found
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - resource_missing
-            example:
-              object: error
-              type: resource_missing
-              message: Resource not found
-              retryable: false
-              doc_url: https://errors.rev.cat/resource-missing
-    RateLimited:
-      description: The request could not be completed because the rate limiting domain
-        for this endpoint is currently at its limit for this project.
-      headers:
-        RevenueCat-Rate-Limit-Current-Usage:
-          $ref: '#/components/headers/RateLimitCurrentUsage'
-        RevenueCat-Rate-Limit-Current-Limit:
-          $ref: '#/components/headers/RateLimitCurrentLimit'
-        Retry-After:
-          $ref: '#/components/headers/RateLimitRetryAfter'
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - rate_limit_error
-            example:
-              object: error
-              type: rate_limit_error
-              message: Rate limit exceeded
-              retryable: true
-              doc_url: https://errors.rev.cat/rate-limit-error
-              backoff_ms: 1000
-    Unauthorized:
-      description: Unauthorized
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - authentication_error
-            example:
-              object: error
-              type: authentication_error
-              message: Invalid API key
-              retryable: false
-              doc_url: https://errors.rev.cat/authentication-error
-    UnprocessableEntity:
-      description: Unprocessable entity
-      content:
-        application/json:
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/Error'
-            - type: object
-              properties:
-                type:
-                  type: string
-                  enum:
-                  - unprocessable_entity_error
-                  - parameter_error
-                  - store_error
-                  - entity_references_archived_entities
-          examples:
-            unprocessable_entity:
-              value:
-                object: error
-                type: unprocessable_entity_error
-                message: Cannot delete a product that has purchases
-                retryable: false
-                doc_url: https://errors.rev.cat/unprocessable-entity-error
-            parameter_error:
-              value:
-                object: error
-                type: parameter_error
-                message: Date must in the future
-                retryable: false
-                doc_url: https://errors.rev.cat/parameter-error
-            store_error:
-              value:
-                object: error
-                type: store_error
-                message: There was a problem on the App Store
-                retryable: true
-                doc_url: https://errors.rev.cat/store-error
-                backoff_ms: 1000
-            entity_references_archived_entities:
-              value:
-                object: error
-                type: entity_references_archived_entities
-                message: This offering references inactive products. You will need
-                  to make the products active first before making the offering active.
-                retryable: false
-                doc_url: https://errors.rev.cat/entity-references-archived-entities
-                referenced_object_ids:
-                - prodabcd1234
-                - prodwxyz5678
-  schemas:
-    Error:
-      type: object
-      required:
-      - type
-      - message
-      - retryable
-      - object
-      properties:
-        object:
-          description: String representing the object's type. Objects of the same
-            type share the same value.
+          description: OK
+  /projects/{project_id}/store_state/plans:
+    get:
+      summary: List product store state plans
+      description: "Lists product store state plans for the project, optionally filtered\
+        \ by status.\n This endpoint requires the following permission(s): <code>project_configuration:products:read</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: list-product-store-state-plans
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Lists product store state plans for a project.
+        Use this to find an existing draft, planned, errored, applied, or discarded
+        plan before creating a new one, or to resume a previous plan workflow. Filter
+        by `status` when the user is looking for a specific stage, then call get-product-store-state-plan
+        with the returned `id` to inspect available actions, desired states, diffs,
+        warnings, and apply results.
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: status
+        in: query
+        description: Filter plans by status
+        required: false
+        schema:
+          type: string
           enum:
-          - error
+          - draft
+          - plan_queued
+          - planning
+          - planned
+          - planned_and_finished
+          - plan_errored
+          - apply_queued
+          - applying
+          - applied
+          - apply_errored
+          - discarded
+          - cancelled
+          - expired
+      - name: starting_after
+        in: query
+        required: false
+        schema:
           type: string
-          example: error
-        type:
-          description: The error type
-          type: string
-          nullable: false
-          enum:
-          - parameter_error
-          - resource_already_exists
-          - resource_missing
-          - idempotency_error
-          - rate_limit_error
-          - authentication_error
-          - authorization_error
-          - store_error
-          - server_error
-          - resource_locked_error
-          - unprocessable_entity_error
-          - invalid_request
-          - entity_references_archived_entities
-          example: parameter_error
-        param:
-          description: If the error is parameter-specific, the parameter related to
-            the error
-          type: string
-          nullable: true
-          example: customer_id
-        doc_url:
-          description: A URL to more information about the error reported
-          type: string
-          nullable: false
-          example: https://errors.rev.cat/parameter-error
-        message:
-          type: string
-          description: A message describing the reason of the error
-          nullable: false
-          example: id shouldn't be longer than 1,500 characters
-        retryable:
-          description: Indicates if the error is retryable or not
-          type: boolean
-          nullable: false
-          example: false
-        backoff_ms:
-          description: The ms the client should wait before retrying the request.
-            Only present for retryable errors.
+          example: ent12354
+      - name: limit
+        in: query
+        required: false
+        schema:
           type: integer
-          nullable: true
-          example: null
-        referenced_object_ids:
-          description: The IDs of related objects relevant to the error, such as the
-            archived entities that need to be made active before the operation can
-            succeed.
-          type: array
-          items:
-            type: string
-          example:
-          - prodabcd1234
-          - prodwxyz5678
-      additionalProperties: false
-    PlayStoreBasePlanConfig:
-      type: object
-      description: Configuration for a single Play subscription base plan. Mirrors
-        Google's `BasePlan`. At most one of `auto_renewing_base_plan_type`, `prepaid_base_plan_type`,
-        or `installments_base_plan_type` may be set; setting more than one is rejected
-        at plan creation. Plan items that only modify regional/state/offer fields
-        may omit all three.
-      properties:
-        state:
-          description: Lifecycle state of the base plan.
-          type: string
-          nullable: true
-          enum:
-          - DRAFT
-          - ACTIVE
-          - INACTIVE
-          - null
-          example: ACTIVE
-        regional_configs:
-          description: Per-region availability and price overrides keyed by region
-            code.
-          type: object
-          additionalProperties:
-            type: object
-            properties:
-              new_subscriber_availability:
-                type: boolean
-                nullable: true
-                example: true
-              price:
-                $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-            additionalProperties: false
-        other_regions_config:
-          description: Default availability and pricing for regions without an explicit
-            `regional_configs` entry.
-          type: object
-          nullable: true
-          properties:
-            new_subscriber_availability:
-              type: boolean
-              nullable: true
-              example: true
-            usd_price:
-              $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-            eur_price:
-              $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-          additionalProperties: false
-        auto_renewing_base_plan_type:
-          description: Auto-renewing variant of the base plan.
-          type: object
-          nullable: true
-          required:
-          - billing_period_duration
-          properties:
-            billing_period_duration:
-              description: ISO-8601 duration string (e.g. `P1M`).
-              type: string
-              minLength: 2
-              maxLength: 64
-              example: P1M
-            grace_period_duration:
-              type: string
-              nullable: true
-              minLength: 2
-              maxLength: 64
-              example: P3D
-            account_hold_duration:
-              type: string
-              nullable: true
-              minLength: 2
-              maxLength: 64
-              example: P30D
-            resubscribe_state:
-              type: string
-              nullable: true
-              enum:
-              - RESUBSCRIBE_STATE_UNSPECIFIED
-              - RESUBSCRIBE_STATE_ACTIVE
-              - RESUBSCRIBE_STATE_INACTIVE
-              - null
-              example: RESUBSCRIBE_STATE_ACTIVE
-            proration_mode:
-              type: string
-              nullable: true
-              enum:
-              - SUBSCRIPTION_PRORATION_MODE_UNSPECIFIED
-              - SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
-              - SUBSCRIPTION_PRORATION_MODE_CHARGE_FULL_PRICE_IMMEDIATELY
-              - null
-              example: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
-            legacy_compatible:
-              type: boolean
-              nullable: true
-              example: false
-            legacy_compatible_subscription_offer_id:
-              type: string
-              nullable: true
-              maxLength: 255
-              example: legacy-offer
-          additionalProperties: false
-        prepaid_base_plan_type:
-          description: Prepaid variant of the base plan.
-          type: object
-          nullable: true
-          required:
-          - billing_period_duration
-          properties:
-            billing_period_duration:
-              type: string
-              minLength: 2
-              maxLength: 64
-              example: P1M
-            time_extension:
-              type: string
-              nullable: true
-              enum:
-              - TIME_EXTENSION_UNSPECIFIED
-              - TIME_EXTENSION_ACTIVE
-              - TIME_EXTENSION_INACTIVE
-              - null
-              example: TIME_EXTENSION_ACTIVE
-          additionalProperties: false
-        installments_base_plan_type:
-          description: Installments variant of the base plan.
-          type: object
-          nullable: true
-          required:
-          - billing_period_duration
-          - committed_payments_count
-          - renewal_type
-          properties:
-            billing_period_duration:
-              type: string
-              minLength: 2
-              maxLength: 64
-              example: P1M
-            committed_payments_count:
-              type: integer
-              minimum: 1
-              example: 12
-            renewal_type:
-              type: string
-              enum:
-              - RENEWAL_TYPE_UNSPECIFIED
-              - RENEWAL_TYPE_RENEWS_WITHOUT_COMMITMENT
-              - RENEWAL_TYPE_RENEWS_WITH_COMMITMENT
-              example: RENEWAL_TYPE_RENEWS_WITHOUT_COMMITMENT
-            grace_period_duration:
-              type: string
-              nullable: true
-              minLength: 2
-              maxLength: 64
-              example: P3D
-            account_hold_duration:
-              type: string
-              nullable: true
-              minLength: 2
-              maxLength: 64
-              example: P30D
-            resubscribe_state:
-              type: string
-              nullable: true
-              enum:
-              - RESUBSCRIBE_STATE_UNSPECIFIED
-              - RESUBSCRIBE_STATE_ACTIVE
-              - RESUBSCRIBE_STATE_INACTIVE
-              - null
-              example: RESUBSCRIBE_STATE_ACTIVE
-            proration_mode:
-              type: string
-              nullable: true
-              enum:
-              - SUBSCRIPTION_PRORATION_MODE_UNSPECIFIED
-              - SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
-              - SUBSCRIPTION_PRORATION_MODE_CHARGE_FULL_PRICE_IMMEDIATELY
-              - null
-              example: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
-          additionalProperties: false
-        offer_tags:
-          description: Free-form tags attached to the base plan.
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 255
-            example: launch-promo
-        offers:
-          description: "Subscription offers attached to this base plan, keyed by `offer_id`\
-            \ (1-63 lowercase alphanumerics or hyphens). Each value is a `PlayStoreOfferConfig`:\n\
-            \n- `state`: `DRAFT` | `ACTIVE` | `INACTIVE` (defaults to `DRAFT`; an\n\
-            \  `ACTIVE` offer must define at least one phase).\n\n- `phases`: ordered\
-            \ list of `{ recurrence_count (int >= 1),\n  duration (ISO-8601, e.g.\
-            \ P1W), regional_configs{ <region>: { EXACTLY\n  ONE of `price` (`{ amount_micros,\
-            \ currency }`) / `free: true` /\n  `absolute_discount` (`{ amount_micros,\
-            \ currency }`) /\n  `relative_discount` (fraction in `[0, 1]`) } }, other_regions_config?\
-            \ }`.\n\n- `regional_configs`: per-region `{ new_subscriber_availability\
-            \ }`\n  overrides keyed by region code.\n\n- `other_regions_config`, `targeting`\n\
-            \  (`{ acquisition_rule?, upgrade_rule? }`, at most one), and\n  `offer_tags`\
-            \ (array of strings) are all optional."
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStoreOfferConfig'
-          example:
-            welcome-offer:
-              state: ACTIVE
-              phases:
-              - recurrence_count: 1
-                duration: P1W
-                regional_configs:
-                  US:
-                    free: true
-              offer_tags:
-              - launch-promo
-      additionalProperties: false
-    PlayStoreOfferConfig:
-      type: object
-      description: "A single subscription offer attached to a base plan (keyed by\
-        \ `offer_id` on the parent base plan's `offers` map). Fields:\n\n- `state`:\
-        \ `DRAFT` | `ACTIVE` | `INACTIVE` (defaults to `ACTIVE` on create).\n  An\
-        \ offer created with `state: ACTIVE` must define at least one phase.\n\n-\
-        \ `phases`: ordered list of phases (see `PlayStorePhaseConfig`). Each phase\n\
-        \  is `{ recurrence_count (int >= 1), duration (ISO-8601, e.g. P1W),\n  regional_configs{\
-        \ <region>: { one of price / free / absolute_discount /\n  relative_discount\
-        \ } }, other_regions_config? }`.\n\n- `regional_configs`: per-region availability\
-        \ overrides keyed by region\n  code, each `{ new_subscriber_availability:\
-        \ bool }`.\n\n- `other_regions_config`: availability fallback for regions\
-        \ without an\n  explicit `regional_configs` entry.\n\n- `targeting`: optional\
-        \ `{ acquisition_rule? , upgrade_rule? }`; at most one\n  of the two.\n\n\
-        - `offer_tags`: optional array of strings."
-      properties:
-        state:
-          description: Lifecycle state of the offer.
-          type: string
-          nullable: true
-          enum:
-          - DRAFT
-          - ACTIVE
-          - INACTIVE
-          - null
-          example: ACTIVE
-        phases:
-          description: 'Ordered list of offer phases. Each item is a `PlayStorePhaseConfig`:
-            `{ recurrence_count (int >= 1), duration (ISO-8601 string, e.g. `P1W`),
-            regional_configs{ <region_code>: { EXACTLY ONE of price / relative_discount
-            / absolute_discount / free: true } }, other_regions_config? }`. A phase
-            must define at least one `regional_configs` entry or `other_regions_config`.
-            Example: a free trial phase followed by a discounted introductory phase.'
-          type: array
-          items:
-            $ref: '#/components/schemas/PlayStorePhaseConfig'
-          example:
-          - recurrence_count: 1
-            duration: P1W
-            regional_configs:
-              US:
-                free: true
-          - recurrence_count: 3
-            duration: P1M
-            regional_configs:
-              US:
-                price:
-                  amount_micros: 4990000
-                  currency: USD
-        regional_configs:
-          description: Per-region availability overrides keyed by region code.
-          type: object
-          additionalProperties:
-            type: object
-            properties:
-              new_subscriber_availability:
-                type: boolean
-                nullable: true
-                example: true
-            additionalProperties: false
-        other_regions_config:
-          description: Default availability for regions without an explicit `regional_configs`
-            entry.
-          type: object
-          nullable: true
-          properties:
-            other_regions_new_subscriber_availability:
-              type: boolean
-              nullable: true
-              example: true
-          additionalProperties: false
-        targeting:
-          description: Targeting rule. At most one of `acquisition_rule` or `upgrade_rule`
-            should be set; leaving both unset means developer-determined offer eligibility.
-          type: object
-          nullable: true
-          properties:
-            acquisition_rule:
-              type: object
-              nullable: true
-              additionalProperties: true
-            upgrade_rule:
-              type: object
-              nullable: true
-              additionalProperties: true
-          additionalProperties: false
-        offer_tags:
-          description: Free-form tags attached to the offer.
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 255
-            example: launch-promo
-      additionalProperties: false
-    PlayStoreOneTimeOfferConfig:
-      type: object
-      description: A pre-order or discounted offer attached to a Play one-time product
-        purchase option. At most one of `pre_order_offer` or `discounted_offer` may
-        be set in one payload; create flows require one offer type.
-      properties:
-        state:
-          description: Lifecycle state of the one-time product offer.
-          type: string
-          nullable: true
-          enum:
-          - DRAFT
-          - ACTIVE
-          - CANCELLED
-          - INACTIVE
-          - null
-          example: DRAFT
-        regional_configs:
-          description: Per-region availability and price overrides keyed by region
-            code.
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStoreOneTimeOfferRegionalConfig'
-          example:
-            US:
-              availability: AVAILABLE
-              relative_discount: 0.5
-        offer_tags:
-          description: Free-form tags attached to the one-time product offer.
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 255
-            example: launch-promo
-        pre_order_offer:
-          description: Pre-order offer configuration. Mutually exclusive with `discounted_offer`.
-          nullable: true
-          $ref: '#/components/schemas/PlayStoreOneTimeOfferPreOrderConfig'
-        discounted_offer:
-          description: Discounted offer configuration. Mutually exclusive with `pre_order_offer`.
-          nullable: true
-          $ref: '#/components/schemas/PlayStoreOneTimeOfferDiscountedConfig'
-      additionalProperties: false
-    PlayStoreOneTimeOfferDiscountedConfig:
-      type: object
-      description: Discounted variant of a Play one-time product offer.
-      properties:
-        start_time:
-          description: Optional date-time when the discounted offer starts.
-          type: string
-          nullable: true
-          format: date-time
-          example: '2026-01-01T00:00:00Z'
-        end_time:
-          description: Optional date-time when the discounted offer ends.
-          type: string
-          nullable: true
-          format: date-time
-          example: '2026-01-31T00:00:00Z'
-        redemption_limit:
-          description: Maximum redemptions per user. Omit or set 0 for unlimited.
-          type: integer
-          nullable: true
-          minimum: 0
-          maximum: 50
           example: 10
-      additionalProperties: false
-    PlayStoreOneTimeOfferPreOrderConfig:
-      type: object
-      description: Pre-order variant of a Play one-time product offer.
-      required:
-      - start_time
-      - end_time
-      - release_time
-      - price_change_behavior
-      properties:
-        start_time:
-          description: Date-time when the pre-order offer starts.
+          default: 20
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create a product store state plan
+      description: "Creates a draft product store state plan by storing the provided\
+        \ desired states.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: create-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: 'Creates a draft plan to create or update products
+        in RevenueCat and the app stores from one or more desired product store states.  Prefer
+        this over set-product-store-state when the user wants to preview changes,
+        modify multiple products, create missing RevenueCat products, or safely review
+        store metadata before applying it. Provide `product_id` when the RevenueCat
+        product ID is known. Alternatively, provide `create_revenuecat_product` with
+        the app, store identifier, and product metadata; if a RevenueCat product already
+        exists for that app and store identifier, the plan will target the existing
+        product, otherwise the plan keeps it as a new RevenueCat product to create
+        when applied. Set `store` to `app_store` or `play_store` and populate the
+        matching `store_state` payload. For App Store subscriptions, include `common.pricing.equalize_missing_subscription_prices`
+        with a `base_territory` such as `US` when missing subscription territory prices
+        should be filled using Apple''s equalized price points. For App Store subscription
+        creation, provide `common.duration` using canonical ISO-like values such as
+        `P1M`. Play Store currently supports subscriptions only (no consumables or
+        non-consumables). For Play Store subscriptions: (1) provide at least one localization
+        in `common.localizations` (keyed by locale, e.g. `en-US`) with a `name` (and
+        optional `description`); (2) populate `store_state.play_store.base_plans`
+        with an entry keyed by `base_plan_id` — typically a single entry for the targeted
+        plan — and set `state` to `ACTIVE` by default (use `DRAFT` only when the user
+        explicitly wants the base plan held back; `INACTIVE` is not yet supported
+        on apply); (3) include a billing plan type on the base plan — exactly one
+        of `auto_renewing_base_plan_type`, `prepaid_base_plan_type`, or `installments_base_plan_type`.
+        This is required when creating a new subscription. On modify, if the caller
+        omits the billing plan type it is carried forward from the live Play Store
+        state, but always ask the user for the billing period upfront. The most common
+        is `auto_renewing_base_plan_type`, e.g. `{ "billing_period_duration": "P1M",
+        "grace_period_duration": "P3D", "account_hold_duration": "P30D", "proration_mode":
+        "SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE", "resubscribe_state":
+        "RESUBSCRIBE_STATE_ACTIVE", "legacy_compatible": false, "legacy_compatible_subscription_offer_id":
+        null }`. Only `billing_period_duration` (ISO-8601, e.g. `P1M`) is required;
+        the rest are optional and default to Google''s defaults when omitted. `prepaid_base_plan_type`
+        requires `billing_period_duration` (optional `time_extension`). `installments_base_plan_type`
+        additionally requires `committed_payments_count` and `renewal_type` (one of
+        `RENEWAL_TYPE_RENEWS_WITHOUT_COMMITMENT`, `RENEWAL_TYPE_RENEWS_WITH_COMMITMENT`).
+        (4) ensure every region that is available has a price, either in `common.pricing.territory_prices[region]`
+        or in `store_state.play_store.base_plans[base_plan_id].regional_configs[region].price`
+        (each price needs `amount_micros` and `currency`). When using `create_revenuecat_product`
+        for Play Store, `store_identifier` must be in the form `<subscription_id>:<base_plan_id>`
+        (e.g. `pro_monthly:monthly`). After creating the draft, call plan-product-store-state-plan,
+        then poll get-product-store-state-plan until it reaches `planned`, `planned_and_finished`,
+        or `plan_errored`.'
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
           type: string
-          format: date-time
-          example: '2026-01-01T00:00:00Z'
-        end_time:
-          description: Date-time when the pre-order offer ends.
-          type: string
-          format: date-time
-          example: '2026-01-31T00:00:00Z'
-        release_time:
-          description: Date-time when the product is released.
-          type: string
-          format: date-time
-          example: '2026-02-01T00:00:00Z'
-        price_change_behavior:
-          description: How Play handles pre-order price changes before release.
-          type: string
-          enum:
-          - PRE_ORDER_PRICE_CHANGE_BEHAVIOR_UNSPECIFIED
-          - PRE_ORDER_PRICE_CHANGE_BEHAVIOR_TWO_POINT_LOWEST
-          - PRE_ORDER_PRICE_CHANGE_BEHAVIOR_NEW_ORDERS_ONLY
-          example: PRE_ORDER_PRICE_CHANGE_BEHAVIOR_NEW_ORDERS_ONLY
-      additionalProperties: false
-    PlayStoreOneTimeOfferRegionalConfig:
-      type: object
-      description: Per-region availability and price override for a Play one-time
-        product offer.
-      properties:
-        availability:
-          description: Offer availability in this region.
-          type: string
-          nullable: true
-          enum:
-          - AVAILABLE
-          - NO_LONGER_AVAILABLE
-          - AVAILABLE_IF_RELEASED
-          - AVAILABLE_FOR_OFFERS_ONLY
-          - null
-          example: AVAILABLE
-        no_override:
-          description: Set to `true` to use the purchase option price without a regional
-            offer override. Omit the field to leave the override unspecified; `false`
-            is rejected.
-          type: boolean
-          nullable: true
-          example: true
-        relative_discount:
-          description: Relative discount fraction, strictly between 0 and 1, following
-            Google Play's `relativeDiscount` semantics.
-          type: number
-          nullable: true
-          minimum: 0
-          exclusiveMinimum: true
-          maximum: 1
-          exclusiveMaximum: true
-          example: 0.5
-        absolute_discount:
-          description: Absolute discount amount for this region.
-          $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-      additionalProperties: false
-    PlayStorePhaseConfig:
-      type: object
-      description: A single phase within a subscription offer (e.g. a 1-week free
-        trial, or a 3-month introductory price). Phases are ordered; `recurrence_count`
-        and `duration` are required. Pricing is set per region in `regional_configs`
-        and/or as a fallback in `other_regions_config`; a phase must define at least
-        one of the two.
-      required:
-      - recurrence_count
-      - duration
-      properties:
-        recurrence_count:
-          description: Number of times this phase repeats.
-          type: integer
-          minimum: 1
-          example: 1
-        duration:
-          description: ISO-8601 duration string (e.g. `P1W`).
-          type: string
-          minLength: 2
-          maxLength: 64
-          example: P1W
-        regional_configs:
-          description: "Per-region price override, keyed by region code (e.g. `US`,\
-            \ `GB`). Each value is a regional config object that sets EXACTLY ONE\
-            \ of the following mutually exclusive pricing fields (a discriminated\
-            \ union — setting zero or more than one is rejected with a 400):\n\n-\
-            \ `price`: absolute price, a `{ amount_micros, currency }` object\n  (e.g.\
-            \ `{ \"amount_micros\": 9990000, \"currency\": \"GBP\" }`).\n\n- `free`:\
-            \ the boolean literal `true` for a free phase. NOTE: this is a\n  boolean,\
-            \ not an object — use `\"free\": true`, never `{}` or a price\n  object.\n\
-            \n- `absolute_discount`: a fixed amount off, as a\n  `{ amount_micros,\
-            \ currency }` object.\n\n- `relative_discount`: a fraction off in `[0,\
-            \ 1]`\n  (e.g. `0.5` = 50% off)."
-          type: object
-          additionalProperties:
-            type: object
-            description: 'Per-region phase pricing. Set EXACTLY ONE of `price` / `relative_discount`
-              / `absolute_discount` / `free: true`.'
-            properties:
-              price:
-                $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-              relative_discount:
-                description: Relative discount expressed as a fraction (e.g. `0.5`
-                  = 50% off).
-                type: number
-                nullable: true
-                minimum: 0
-                maximum: 1
-                example: 0.5
-              absolute_discount:
-                $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-              free:
-                description: Set to `true` to make this phase free in the region.
-                  Boolean literal, not an object.
-                type: boolean
-                nullable: true
-                example: true
-            additionalProperties: false
-          example:
-            US:
-              free: true
-            GB:
-              price:
-                amount_micros: 9990000
-                currency: GBP
-        other_regions_config:
-          description: 'Default price override for regions without an explicit `regional_configs`
-            entry. Set EXACTLY ONE pricing option: both `other_regions_usd_price`
-            and `other_regions_eur_price` together, OR `relative_discount`, OR both
-            `absolute_discount_usd` and `absolute_discount_eur` together, OR `free:
-            true`.'
-          type: object
-          nullable: true
-          properties:
-            other_regions_usd_price:
-              $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-            other_regions_eur_price:
-              $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-            relative_discount:
-              type: number
-              nullable: true
-              minimum: 0
-              maximum: 1
-              example: 0.5
-            absolute_discount_usd:
-              $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-            absolute_discount_eur:
-              $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-            free:
-              description: Set to `true` to make this phase free in fallback regions.
-                Boolean literal, not an object.
-              type: boolean
-              nullable: true
-              example: true
-          additionalProperties: false
-      additionalProperties: false
-    PlayStorePurchaseOptionBuyOptionConfig:
-      type: object
-      description: Buy variant of a Play one-time product purchase option.
-      properties:
-        legacy_compatible:
-          description: Whether this buy option is visible to legacy Play Billing Library
-            clients.
-          type: boolean
-          nullable: true
-          example: true
-        multi_quantity_enabled:
-          description: Whether users can buy multiple quantities of this purchase
-            option.
-          type: boolean
-          nullable: true
-          example: false
-      additionalProperties: false
-    PlayStorePurchaseOptionConfig:
-      type: object
-      description: Configuration for a single Play one-time product purchase option.
-        At most one of `buy_option` or `rent_option` may be set in one payload; create
-        flows require one purchase option type.
-      properties:
-        state:
-          description: Lifecycle state of the purchase option.
-          type: string
-          nullable: true
-          enum:
-          - DRAFT
-          - ACTIVE
-          - INACTIVE
-          - INACTIVE_PUBLISHED
-          - null
-          example: ACTIVE
-        regional_configs:
-          description: Per-region availability and price keyed by region code.
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStorePurchaseOptionRegionalConfig'
-          example:
-            US:
-              availability: AVAILABLE
-              price:
-                amount_micros: 4990000
-                currency: USD
-        new_regions_config:
-          description: Default availability and pricing for new Play regions.
-          nullable: true
-          $ref: '#/components/schemas/PlayStorePurchaseOptionNewRegionsConfig'
-        buy_option:
-          description: Buy purchase option configuration. Mutually exclusive with
-            `rent_option`.
-          nullable: true
-          $ref: '#/components/schemas/PlayStorePurchaseOptionBuyOptionConfig'
-        rent_option:
-          description: Rent purchase option configuration. Mutually exclusive with
-            `buy_option`.
-          nullable: true
-          $ref: '#/components/schemas/PlayStorePurchaseOptionRentOptionConfig'
-        offer_tags:
-          description: Free-form tags attached to the purchase option.
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 255
-            example: one-time
-        tax_and_compliance:
-          description: Purchase-option-level tax and compliance settings.
-          nullable: true
-          $ref: '#/components/schemas/PlayStorePurchaseOptionTaxAndComplianceConfig'
-        offers:
-          description: One-time product offers keyed by `offer_id`.
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStoreOneTimeOfferConfig'
-          example:
-            launch-offer:
-              state: DRAFT
-              regional_configs:
-                US:
-                  availability: AVAILABLE
-                  relative_discount: 0.5
-              discounted_offer:
-                redemption_limit: 10
-              offer_tags:
-              - launch-promo
-      additionalProperties: false
-    PlayStorePurchaseOptionNewRegionsConfig:
-      type: object
-      description: Default availability and pricing for new Play regions on a one-time
-        purchase option.
-      properties:
-        usd_price:
-          description: USD fallback price for new regions.
-          $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-        eur_price:
-          description: EUR fallback price for new regions.
-          $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-        availability:
-          description: Availability applied to new regions.
-          type: string
-          nullable: true
-          enum:
-          - AVAILABLE
-          - NO_LONGER_AVAILABLE
-          - AVAILABLE_IF_RELEASED
-          - AVAILABLE_FOR_OFFERS_ONLY
-          - null
-          example: AVAILABLE
-      additionalProperties: false
-    PlayStorePurchaseOptionRegionalConfig:
-      type: object
-      description: Per-region availability and price for a Play one-time product purchase
-        option.
-      properties:
-        availability:
-          description: Availability of the purchase option in this region.
-          type: string
-          nullable: true
-          enum:
-          - AVAILABLE
-          - NO_LONGER_AVAILABLE
-          - AVAILABLE_IF_RELEASED
-          - AVAILABLE_FOR_OFFERS_ONLY
-          - null
-          example: AVAILABLE
-        price:
-          description: Price for this purchase option in the region.
-          $ref: '#/components/schemas/PlayStoreTerritoryPrice'
-      additionalProperties: false
-    PlayStorePurchaseOptionRentOptionConfig:
-      type: object
-      description: Rent variant of a Play one-time product purchase option.
-      required:
-      - rental_period
-      properties:
-        rental_period:
-          description: ISO-8601 duration for the rental period.
-          type: string
-          minLength: 2
-          maxLength: 64
-          example: P30D
-        expiration_period:
-          description: Optional ISO-8601 duration after which the rental expires.
-          type: string
-          nullable: true
-          minLength: 2
-          maxLength: 64
-          example: P7D
-      additionalProperties: false
-    PlayStorePurchaseOptionTaxAndComplianceConfig:
-      type: object
-      description: Purchase-option-level tax and compliance settings.
-      properties:
-        withdrawal_right_type:
-          description: Withdrawal right type for this purchase option.
-          type: string
-          nullable: true
-          enum:
-          - WITHDRAWAL_RIGHT_TYPE_UNSPECIFIED
-          - WITHDRAWAL_RIGHT_DIGITAL_CONTENT
-          - WITHDRAWAL_RIGHT_SERVICE
-          - null
-          example: WITHDRAWAL_RIGHT_DIGITAL_CONTENT
-      additionalProperties: false
-    PlayStoreRegionalProductAgeRatingInfo:
-      type: object
-      description: Per-region age-rating override.
-      required:
-      - region_code
-      - product_age_rating_tier
-      properties:
-        region_code:
-          description: ISO region code.
-          type: string
-          minLength: 1
           maxLength: 255
-          example: US
-        product_age_rating_tier:
-          description: Age-rating tier for the region. Values come from Google's `ProductAgeRatingTier`
-            enum.
+          example: proj1ab2c3d4
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans/{plan_id}:
+    get:
+      summary: Get a product store state plan
+      description: "Retrieves the current state of a product store state plan, including\
+        \ available actions,\nplanning summary, timestamps, and per-item planning/apply\
+        \ details when available.\n This endpoint requires the following permission(s):\
+        \ <code>project_configuration:products:read</code>. This endpoint belongs\
+        \ to the <strong>Project Configuration</strong> domain, which has a default\
+        \ rate limit of <strong>60 requests per minute</strong>."
+      operationId: get-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: "Returns the full product store state plan. Use\
+        \ this to poll asynchronous planning or apply work, inspect `actions` before\
+        \ choosing the next step, and review `plan_items` for per-product create/modify/unchanged\
+        \ actions, diffs, warnings, and apply status. After planning, review warnings\
+        \ and blocker messages before applying. After applying, poll this tool until\
+        \ the plan reaches `applied` or `apply_errored`; if planning errored, inspect\
+        \ `error_message` and per-item `error_message`; if applying errored, inspect\
+        \ per-item `apply_error_message`.\nResponse shape — read directly from the\
+        \ returned JSON. - `status` is the plan-level lifecycle state (`draft`, `plan_queued`,\n\
+        \  `planning`, `planned`, `planned_and_finished`, `plan_errored`,\n  `apply_queued`,\
+        \ `applying`, `applied`, `apply_errored`, `discarded`,\n  `cancelled`, `expired`).\
+        \ Use this when polling.\n- `actions` lists the next valid actions (`edit`,\
+        \ `plan`, `apply`,\n  `discard`) — pick the next step from this list.\n- `summary`\
+        \ has `products_added`, `products_modified`,\n  `products_unchanged` for a\
+        \ quick rollup.\n- `plan_items[*]` is the per-product detail. For each item:\n\
+        \  - `action` is `create` | `modify` | `unchanged`.\n  - `diff[*]` lists `{\
+        \ field, from_value, to_value }` where `field` is a\n    dotted path into\
+        \ the desired state (e.g.\n    `common.pricing.territory_prices.US`,\n   \
+        \ `store_state.base_plans.monthly.state`).\n  - `warnings[*]` is `{ severity,\
+        \ field, message }` where `severity` is\n    `info` | `warning` | `blocker`.\
+        \ Treat any `blocker` as something the\n    user must fix before applying.\n\
+        \  - `error_message` is the per-item planning error (if planning failed\n\
+        \    for that item).\n  - `apply_status` is `pending` | `running` | `applied`\
+        \ | `failed` |\n    `skipped`, and `apply_error_message` is set when `apply_status\
+        \ ==\n    failed`.\n- Plan-level `error_message` is set when the whole plan\
+        \ failed planning. - `timestamps` has `created_at`, `planning_at`, `planned_at`,\n\
+        \  `applied_at`, `discarded_at`, `cancelled_at`, `expired_at` (ms since\n\
+        \  epoch)."
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
           type: string
-          enum:
-          - PRODUCT_AGE_RATING_TIER_UNKNOWN
-          - PRODUCT_AGE_RATING_TIER_EVERYONE
-          - PRODUCT_AGE_RATING_TIER_THIRTEEN_AND_ABOVE
-          - PRODUCT_AGE_RATING_TIER_SIXTEEN_AND_ABOVE
-          - PRODUCT_AGE_RATING_TIER_EIGHTEEN_AND_ABOVE
-          example: PRODUCT_AGE_RATING_TIER_EVERYONE
-      additionalProperties: false
-    PlayStoreRegionalTaxRateInfo:
-      type: object
-      description: Per-region tax-rate hint used by Google's tax calculation. All
-        fields are optional; an absent field means "no override for this region".
-      properties:
-        eligible_for_streaming_service_tax_rate:
-          description: Whether the region is eligible for the streaming-service tax
-            rate.
-          type: boolean
-          nullable: true
-          example: false
-        streaming_tax_type:
-          description: Streaming-tax-type code.
-          type: string
-          nullable: true
-          minLength: 1
           maxLength: 255
-          example: STREAMING_TAX_TYPE_AUDIO_VIDEO
-        tax_tier:
-          description: Tax-tier code.
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
           type: string
-          nullable: true
-          minLength: 1
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+    put:
+      summary: Update a product store state plan
+      description: "Replaces all desired states in a plan and returns the plan in\
+        \ draft status.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: update-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: 'Replaces all desired states in an editable product
+        store state plan and moves it back to draft status. This is a full replacement,
+        not a patch: include the complete desired_states array that should remain
+        in the plan. Use this to fix warnings, add or remove products, adjust metadata,
+        or add `common.pricing.equalize_missing_subscription_prices` for App Store
+        subscriptions before re-planning. After updating, call plan-product-store-state-plan
+        again and poll get-product-store-state-plan.'
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
           maxLength: 255
-          example: TIER_1
-      additionalProperties: false
-    PlayStoreRestrictedPaymentCountriesConfig:
-      type: object
-      description: Subscription-level list of region codes where payment is restricted.
-        Lives on the parent subscription; must agree across plan items targeting the
-        same `subscription_id`. Shared by request and response shapes.
-      required:
-      - region_codes
-      properties:
-        region_codes:
-          description: ISO region codes where payment is restricted.
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 255
-            example: US
-      additionalProperties: false
-    PlayStoreTaxAndComplianceConfig:
-      type: object
-      description: Product-level tax and compliance settings. For subscriptions this
-        lives on the parent subscription in Google's API and must agree across plan
-        items targeting the same `subscription_id`. Shared by request and response
-        shapes.
-      properties:
-        eea_withdrawal_right_type:
-          description: EEA withdrawal-right type code. Only supported for subscriptions;
-            one-time products configure withdrawal rights per purchase option via
-            `tax_and_compliance.withdrawal_right_type`.
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
           type: string
-          nullable: true
-          minLength: 1
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans/{plan_id}/actions/plan:
+    post:
+      summary: Trigger product store state plan generation
+      description: "Queues asynchronous planning for the specified product store state\
+        \ plan.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: plan-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Queues asynchronous planning for a draft or replannable
+        product store state plan. Planning validates the desired states, compares
+        them to the current store state, computes per-product diffs and warnings,
+        and resolves `common.pricing.equalize_missing_subscription_prices` for App
+        Store subscriptions when that directive is present. Call this after creating
+        or updating a plan, then poll get-product-store-state-plan until status is
+        `planned`, `planned_and_finished`, or `plan_errored`. If planning fails or
+        returns blocker warnings, update the plan and run this action again.
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
           maxLength: 255
-          example: WITHDRAWAL_RIGHT_DIGITAL_CONTENT
-        tax_rate_info_by_region_code:
-          description: Per-region tax-rate hints used by Google's tax calculation.
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStoreRegionalTaxRateInfo'
-          example:
-            US:
-              tax_tier: TIER_1
-        is_tokenized_digital_asset:
-          description: Whether the product represents a tokenized digital asset.
-          type: boolean
-          nullable: true
-          example: false
-        regional_product_age_rating_infos:
-          description: Per-region age-rating overrides.
-          type: array
-          items:
-            $ref: '#/components/schemas/PlayStoreRegionalProductAgeRatingInfo'
-          example:
-          - region_code: US
-            product_age_rating_tier: PRODUCT_AGE_RATING_TIER_EVERYONE
-        product_tax_category_code:
-          description: Product tax-category code.
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
           type: string
-          nullable: true
-          minLength: 1
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans/{plan_id}/actions/apply:
+    post:
+      summary: Trigger product store state plan apply
+      description: "Queues asynchronous apply for the specified planned product store\
+        \ state plan.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: apply-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Queues asynchronous apply for a planned or retryable
+        product store state plan. Before calling this, call get-product-store-state-plan
+        and confirm the plan has an `apply` action, review the diffs and warnings,
+        and make sure the user wants the changes applied to the store. Applying may
+        create products, update App Store metadata, availability, pricing, localizations,
+        screenshots, and fill missing subscription territory prices when `common.pricing.equalize_missing_subscription_prices`
+        was included. After queueing apply, poll get-product-store-state-plan until
+        status is `applied` or `apply_errored`; if a 423 lock occurs, inspect the
+        referenced object ids and retry after the conflicting operation finishes.
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
           maxLength: 255
-          example: DIGITAL_GOODS
-      additionalProperties: false
-    PlayStoreTerritoryPrice:
-      type: object
-      nullable: true
-      description: Territory price expressed in micros, mirroring App Store inputs.
-        The Play driver converts to/from Google's `Money{units, nanos, currencyCode}`
-        at the API boundary.
-      required:
-      - amount_micros
-      properties:
-        amount_micros:
-          description: Price amount in micros (1 unit = 1_000_000 micros).
-          type: integer
-          format: int64
-          minimum: 0
-          example: 9990000
-        currency:
-          description: ISO-4217 currency code.
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
           type: string
-          minLength: 3
-          maxLength: 3
-          example: USD
-      additionalProperties: false
-    ProductStoreStateAppStoreState:
-      type: object
-      properties:
-        subscription_group_localizations:
-          type: object
-          nullable: true
-          additionalProperties:
-            type: object
-            nullable: true
-            required:
-            - name
-            properties:
-              name:
-                description: Localized subscription group name.
-                type: string
-                minLength: 1
-                maxLength: 255
-                example: Premium Subscriptions
-              custom_app_name:
-                description: Custom app name shown in App Store subscription UI.
-                type: string
-                nullable: true
-                minLength: 1
-                maxLength: 255
-                example: MagicWeather
-            additionalProperties: false
-        subscription_group_name:
-          description: Optional subscription group name used when creating a missing
-            App Store subscription. If omitted, defaults to `Default`.
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans/{plan_id}/actions/discard:
+    post:
+      summary: Discard a product store state plan
+      description: "Discards the specified product store state plan when it is in\
+        \ a discardable state.\n This endpoint requires the following permission(s):\
+        \ <code>project_configuration:products:read_write</code>. This endpoint belongs\
+        \ to the <strong>Project Configuration</strong> domain, which has a default\
+        \ rate limit of <strong>60 requests per minute</strong>."
+      operationId: discard-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Discards a product store state plan that is no
+        longer needed and is in a discardable state. Use this to clean up drafts,
+        planned changes, or errored plans that the user does not want to apply. Discarding
+        does not apply any store changes and does not undo a plan that has already
+        been applied.
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
           type: string
-          nullable: true
-          minLength: 1
           maxLength: 255
-          example: Premium Subscriptions
-        trial_offer:
-          description: Free trial introductory offer for the subscription. Applied
-            uniformly to all territories.
-          type: object
-          nullable: true
-          required:
-          - duration
-          properties:
-            duration:
-              description: Trial offer duration.
-              type: string
-              enum:
-              - THREE_DAYS
-              - ONE_WEEK
-              - TWO_WEEKS
-              - ONE_MONTH
-              - TWO_MONTHS
-              - THREE_MONTHS
-              - SIX_MONTHS
-              - ONE_YEAR
-              example: ONE_WEEK
-            start_date:
-              description: Optional start date for newly created introductory offers.
-              type: string
-              nullable: true
-              format: date
-              example: '2026-05-01'
-          additionalProperties: false
-        preserve_current_subscription_price:
-          description: When true, existing App Store subscription subscribers keep
-            their current price when a new subscription price is scheduled.
-          type: boolean
-          nullable: true
-          example: true
-        privacy_policy_url:
-          description: Privacy policy URL shown in App Store metadata.
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
           type: string
-          nullable: true
-          format: uri
-          maxLength: 5000
-          example: https://example.com/privacy
-        review_information:
-          type: object
-          nullable: true
-          properties:
-            screenshot:
-              description: Review screenshot configuration. If omitted or null, a
-                placeholder screenshot is uploaded automatically so the product can
-                reach READY_TO_SUBMIT state.
-              type: object
-              nullable: true
-              properties:
-                screenshot_id:
-                  description: App Store Connect screenshot identifier.
-                  type: string
-                  nullable: true
-                  minLength: 1
-                  maxLength: 255
-                  example: asc_screenshot_123
-                filename:
-                  description: Original screenshot filename.
-                  type: string
-                  nullable: true
-                  minLength: 1
-                  maxLength: 255
-                  example: review.png
-                file_size:
-                  description: Screenshot size in bytes.
-                  type: integer
-                  nullable: true
-                  format: int64
-                  minimum: 0
-                  example: 125000
-                source_file_checksum:
-                  description: MD5 checksum of the uploaded source file.
-                  type: string
-                  nullable: true
-                  minLength: 1
-                  maxLength: 255
-                  example: d41d8cd98f00b204e9800998ecf8427e
-              additionalProperties: false
-            notes:
-              description: App review notes for this product.
-              type: string
-              nullable: true
-              maxLength: 4000
-              example: Screenshot uploaded through screenshot_upload endpoint.
-          additionalProperties: false
-      additionalProperties: false
-    ProductStoreStateAppStoreStateResponse:
-      type: object
-      nullable: true
-      properties:
-        subscription_group_localizations:
-          type: object
-          nullable: true
-          additionalProperties:
-            type: object
-            nullable: true
-            required:
-            - name
-            properties:
-              name:
-                description: Localized subscription group name.
-                type: string
-                minLength: 1
-                maxLength: 255
-                example: Premium Subscriptions
-              custom_app_name:
-                description: Custom app name shown in App Store subscription UI.
-                type: string
-                nullable: true
-                minLength: 1
-                maxLength: 255
-                example: MagicWeather
-            additionalProperties: false
-        subscription_group_name:
-          description: Optional subscription group name used when creating a missing
-            App Store subscription. If omitted, defaults to `Default`.
-          type: string
-          nullable: true
-          minLength: 1
-          maxLength: 255
-          example: Premium Subscriptions
-        trial_offer:
-          description: Free trial introductory offer for the subscription. Applied
-            uniformly to all territories.
-          type: object
-          nullable: true
-          required:
-          - duration
-          properties:
-            duration:
-              description: Trial offer duration.
-              type: string
-              enum:
-              - THREE_DAYS
-              - ONE_WEEK
-              - TWO_WEEKS
-              - ONE_MONTH
-              - TWO_MONTHS
-              - THREE_MONTHS
-              - SIX_MONTHS
-              - ONE_YEAR
-              example: ONE_WEEK
-          additionalProperties: false
-        preserve_current_subscription_price:
-          description: Whether App Store Connect returns any preserved subscription
-            price for existing subscribers.
-          type: boolean
-          nullable: true
-          example: true
-        privacy_policy_url:
-          description: Privacy policy URL shown in App Store metadata.
-          type: string
-          nullable: true
-          format: uri
-          maxLength: 5000
-          example: https://example.com/privacy
-        review_information:
-          type: object
-          nullable: true
-          properties:
-            screenshot:
-              description: Review screenshot configuration. If omitted or null, a
-                placeholder screenshot is uploaded automatically so the product can
-                reach READY_TO_SUBMIT state.
-              type: object
-              nullable: true
-              properties:
-                screenshot_id:
-                  description: App Store Connect screenshot identifier.
-                  type: string
-                  nullable: true
-                  minLength: 1
-                  maxLength: 255
-                  example: asc_screenshot_123
-                filename:
-                  description: Original screenshot filename.
-                  type: string
-                  nullable: true
-                  minLength: 1
-                  maxLength: 255
-                  example: review.png
-                file_size:
-                  description: Screenshot size in bytes.
-                  type: integer
-                  nullable: true
-                  format: int64
-                  minimum: 0
-                  example: 125000
-                source_file_checksum:
-                  description: MD5 checksum of the uploaded source file.
-                  type: string
-                  nullable: true
-                  minLength: 1
-                  maxLength: 255
-                  example: d41d8cd98f00b204e9800998ecf8427e
-              additionalProperties: false
-            notes:
-              description: App review notes for this product.
-              type: string
-              nullable: true
-              maxLength: 4000
-              example: Screenshot uploaded through screenshot_upload endpoint.
-          additionalProperties: false
-      additionalProperties: false
-    ProductStoreStateCommonResponse:
-      type: object
-      nullable: true
-      properties:
-        pricing:
-          type: object
-          properties:
-            territory_prices:
-              type: object
-              additionalProperties:
-                type: object
-                required:
-                - amount_micros
-                properties:
-                  amount_micros:
-                    description: Territory price amount in micros.
-                    type: integer
-                    format: int64
-                    minimum: 0
-                    example: 9990000
-                  currency:
-                    description: ISO currency code for this territory price.
-                    type: string
-                    minLength: 3
-                    maxLength: 3
-                    example: USD
-                  start_date:
-                    description: ISO-8601 date (YYYY-MM-DD) when this price takes
-                      effect. Present when the next effective price for the territory
-                      is scheduled in the future.
-                    type: string
-                    format: date
-                    nullable: true
-                    example: '2026-05-01'
-                  subscription_price_point_id:
-                    description: Optional App Store Connect price point identifier.
-                    type: string
-                    nullable: true
-                    minLength: 1
-                    maxLength: 255
-                    example: null
-                additionalProperties: false
-          additionalProperties: false
-        availability:
-          type: object
-          properties:
-            territories:
-              description: Territories where the product is available. True = available,
-                false = remove.
-              type: object
-              additionalProperties:
-                type: boolean
-                example: true
-            available_in_new_territories:
-              description: Availability default for newly added territories. Optional;
-                when omitted, the current App Store Connect value is preserved.
-              type: boolean
-              example: true
-          additionalProperties: false
-        localizations:
-          type: object
-          nullable: true
-          additionalProperties:
-            type: object
-            nullable: true
-            required:
-            - name
-            - description
-            properties:
-              name:
-                description: Localized product display name.
-                type: string
-                minLength: 1
-                maxLength: 255
-                example: Premium Monthly
-              description:
-                description: Localized product description.
-                type: string
-                nullable: true
-                minLength: 1
-                maxLength: 4000
-                example: Access premium content every month.
-            additionalProperties: false
-        title:
-          description: Optional product title used by create-if-missing flows.
-          type: string
-          nullable: true
-          minLength: 1
-          maxLength: 255
-          example: Premium Monthly
-        duration:
-          description: Subscription duration. App Store product store state operations
-            return this value using App Store Connect period names for backwards compatibility.
-          type: string
-          nullable: true
-          enum:
-          - ONE_WEEK
-          - ONE_MONTH
-          - TWO_MONTHS
-          - THREE_MONTHS
-          - SIX_MONTHS
-          - ONE_YEAR
-          - null
-          example: ONE_MONTH
-      additionalProperties: false
-    ProductStoreStatePlayStoreState:
-      type: object
-      description: Play Store specific desired state for a single plan item. Subscriptions
-        use `base_plans` keyed by `base_plan_id`; one-time products use `purchase_options`
-        keyed by `purchase_option_id`. Do not combine both maps in a single desired
-        state.
-      properties:
-        base_plans:
-          description: "Configuration for each base plan keyed by `base_plan_id`.\
-            \ Only applies to subscriptions; one-time products use `purchase_options`\
-            \ instead. Plan-item granularity is `(subscription_id, base_plan_id)`,\
-            \ so this typically contains a single entry — the targeted base plan.\
-            \ May be omitted for plan items that only touch `common.*` or top-level\
-            \ fields (`tax_and_compliance`, `restricted_payment_countries`, `archived`,\
-            \ `regions_version`).\nEach value follows `PlayStoreBasePlanConfig`. The\
-            \ most important inner fields when creating a subscription are:\n- `state`\
-            \ (`ACTIVE` | `DRAFT` | `INACTIVE`, default `ACTIVE` on\n  create).\n\
-            - Exactly one billing plan type: `auto_renewing_base_plan_type`\n  (most\
-            \ common — requires `billing_period_duration`; optional\n  `grace_period_duration`,\
-            \ `account_hold_duration`,\n  `proration_mode`, `resubscribe_state`, `legacy_compatible`,\n\
-            \  `legacy_compatible_subscription_offer_id`),\n  `prepaid_base_plan_type`,\
-            \ or `installments_base_plan_type`.\n- `regional_configs[<region>]` with\n\
-            \  `new_subscriber_availability` and/or `price`\n  (`{ amount_micros,\
-            \ currency }`).\n- Optional `offer_tags` (array of strings) and `offers`\
-            \ (keyed by\n  `offer_id`). Each offer is `{ state (DRAFT|ACTIVE|INACTIVE),\n\
-            \  phases: [ { recurrence_count, duration, regional_configs{ <region>:\n\
-            \  { EXACTLY ONE of price / free: true / absolute_discount /\n  relative_discount\
-            \ } } } ], targeting?, offer_tags? }`. See the\n  `offers` field on `PlayStoreBasePlanConfig`\
-            \ for the full shape."
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStoreBasePlanConfig'
-          example:
-            monthly:
-              state: ACTIVE
-              auto_renewing_base_plan_type:
-                billing_period_duration: P1M
-                grace_period_duration: P3D
-                account_hold_duration: P30D
-                proration_mode: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
-                resubscribe_state: RESUBSCRIBE_STATE_ACTIVE
-                legacy_compatible: false
-                legacy_compatible_subscription_offer_id: null
-              regional_configs:
-                US:
-                  new_subscriber_availability: true
-                  price:
-                    amount_micros: 9990000
-                    currency: USD
-              offer_tags: []
-              offers: {}
-        purchase_options:
-          description: "Configuration for each one-time product purchase option keyed\
-            \ by `purchase_option_id`. Only applies to one-time products; subscriptions\
-            \ use `base_plans` instead. One-time product plan-item granularity is\
-            \ the product itself, so purchase options are managed inline on the product.\n\
-            Each value follows `PlayStorePurchaseOptionConfig`. Notable inner fields\
-            \ are:\n- `state` (`DRAFT` | `ACTIVE` | `INACTIVE` |\n  `INACTIVE_PUBLISHED`).\n\
-            - At most one of `buy_option` or `rent_option`; Google requires one\n\
-            \  when creating a purchase option.\n- `regional_configs[<region>]` with\
-            \ `availability` and/or `price`\n  (`{ amount_micros, currency }`).\n\
-            - Optional `offer_tags`, purchase-option `tax_and_compliance`, and\n \
-            \ `offers` keyed by `offer_id`."
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStorePurchaseOptionConfig'
-          example:
-            buy:
-              state: ACTIVE
-              buy_option:
-                legacy_compatible: true
-                multi_quantity_enabled: false
-              regional_configs:
-                US:
-                  availability: AVAILABLE
-                  price:
-                    amount_micros: 4990000
-                    currency: USD
-              offer_tags:
-              - one-time
-              offers: {}
-        tax_and_compliance:
-          description: Product-level tax and compliance settings. For subscriptions
-            this lives on the parent subscription in Google's API and must agree across
-            plan items targeting the same `subscription_id`. For one-time products,
-            `eea_withdrawal_right_type` is not supported — withdrawal rights are configured
-            per purchase option via `purchase_options.<id>.tax_and_compliance.withdrawal_right_type`.
-          nullable: true
-          $ref: '#/components/schemas/PlayStoreTaxAndComplianceConfig'
-        restricted_payment_countries:
-          description: Product-level list of region codes where payment is restricted.
-            For subscriptions this lives on the parent subscription and must agree
-            across plan items targeting the same `subscription_id`.
-          nullable: true
-          $ref: '#/components/schemas/PlayStoreRestrictedPaymentCountriesConfig'
-        archived:
-          description: Whether the parent subscription is archived in Play Console.
-            Must agree across plan items targeting the same `subscription_id`. Not
-            supported for one-time products.
-          type: boolean
-          nullable: true
-          example: false
-        regions_version:
-          description: Google Play regions version used to interpret region codes.
-            Optional; when omitted, the driver applies a sensible default.
-          type: string
-          nullable: true
-          minLength: 1
-          maxLength: 32
-          example: 2025/03
-        latency_tolerance:
-          description: Latency tolerance hint for Google's monetization API (e.g.
-            `LATENCY_TOLERANT_FRESHNESS` / `LATENCY_TOLERANT_LOW_LATENCY`).
-          type: string
-          nullable: true
-          minLength: 1
-          maxLength: 255
-          example: PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_TOLERANT
-      additionalProperties: false
-    ProductStoreStatePlayStoreStateResponse:
-      type: object
-      description: Play Store specific desired state as returned by the plan endpoints.
-        Same shape as the request schema with relaxed required-field constraints;
-        in particular the response may omit `base_plans`, `purchase_options`, or any
-        store-level field if the plan item didn't touch it.
-      properties:
-        base_plans:
-          description: 'Configuration for each base plan keyed by `base_plan_id`.
-            Only present for subscriptions; one-time products use `purchase_options`
-            instead. May be empty or omitted in responses for plan items that only
-            touch `common.*` fields.
-
-            Each value follows `PlayStoreBasePlanConfig` — see that schema for the
-            full inner shape. Notable inner fields: `state` (`ACTIVE` | `DRAFT` |
-            `INACTIVE`), one of `auto_renewing_base_plan_type` (with `billing_period_duration`
-            plus optional `grace_period_duration`, `account_hold_duration`, `proration_mode`,
-            `resubscribe_state`, `legacy_compatible`, `legacy_compatible_subscription_offer_id`),
-            `prepaid_base_plan_type`, or `installments_base_plan_type`, plus `regional_configs[<region>]`,
-            `offer_tags`, and `offers`.'
-          type: object
-          nullable: true
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStoreBasePlanConfig'
-          example:
-            monthly:
-              state: ACTIVE
-              auto_renewing_base_plan_type:
-                billing_period_duration: P1M
-                grace_period_duration: P3D
-                account_hold_duration: P30D
-                proration_mode: SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE
-                resubscribe_state: RESUBSCRIBE_STATE_ACTIVE
-                legacy_compatible: false
-                legacy_compatible_subscription_offer_id: null
-              regional_configs:
-                US:
-                  new_subscriber_availability: true
-                  price:
-                    amount_micros: 9990000
-                    currency: USD
-              offer_tags: []
-              offers: {}
-        purchase_options:
-          description: Configuration for each one-time product purchase option keyed
-            by `purchase_option_id`. Only present for one-time products; subscriptions
-            use `base_plans` instead. May be empty or omitted in responses for plan
-            items that only touch `common.*` fields.
-          type: object
-          nullable: true
-          additionalProperties:
-            $ref: '#/components/schemas/PlayStorePurchaseOptionConfig'
-          example:
-            buy:
-              state: ACTIVE
-              buy_option:
-                legacy_compatible: true
-                multi_quantity_enabled: false
-              regional_configs:
-                US:
-                  availability: AVAILABLE
-                  price:
-                    amount_micros: 4990000
-                    currency: USD
-              offer_tags:
-              - one-time
-              offers: {}
-        tax_and_compliance:
-          description: Product-level tax and compliance settings. `eea_withdrawal_right_type`
-            only applies to subscriptions.
-          nullable: true
-          $ref: '#/components/schemas/PlayStoreTaxAndComplianceConfig'
-        restricted_payment_countries:
-          description: Product-level list of region codes where payment is restricted.
-          nullable: true
-          $ref: '#/components/schemas/PlayStoreRestrictedPaymentCountriesConfig'
-        archived:
-          description: Whether the parent subscription is archived in Play Console.
-            Not supported for one-time products.
-          type: boolean
-          nullable: true
-          example: false
-        regions_version:
-          description: Google Play regions version used to interpret region codes.
-          type: string
-          nullable: true
-          minLength: 1
-          maxLength: 32
-          example: 2025/03
-        latency_tolerance:
-          description: Latency tolerance hint for Google's monetization API.
-          type: string
-          nullable: true
-          minLength: 1
-          maxLength: 255
-          example: PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_TOLERANT
-      additionalProperties: false
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Currency:
+      type: string
+      description: ISO 4217 currency code
+      nullable: false
+      example: USD
+      enum:
+      - AED
+      - AFN
+      - ALL
+      - AMD
+      - ANG
+      - AOA
+      - ARS
+      - AUD
+      - AWG
+      - AZN
+      - BAM
+      - BBD
+      - BDT
+      - BGN
+      - BHD
+      - BIF
+      - BMD
+      - BND
+      - BOB
+      - BRL
+      - BSD
+      - BTC
+      - BTN
+      - BWP
+      - BYN
+      - BZD
+      - CAD
+      - CDF
+      - CHF
+      - CLF
+      - CLP
+      - CNH
+      - CNY
+      - COP
+      - CRC
+      - CUC
+      - CUP
+      - CVE
+      - CZK
+      - DJF
+      - DKK
+      - DOP
+      - DZD
+      - EGP
+      - ERN
+      - ETB
+      - EUR
+      - FJD
+      - FKP
+      - GBP
+      - GEL
+      - GGP
+      - GHS
+      - GIP
+      - GMD
+      - GNF
+      - GTQ
+      - GYD
+      - HKD
+      - HNL
+      - HRK
+      - HTG
+      - HUF
+      - IDR
+      - ILS
+      - IMP
+      - INR
+      - IQD
+      - IRR
+      - ISK
+      - JEP
+      - JMD
+      - JOD
+      - JPY
+      - KES
+      - KGS
+      - KHR
+      - KMF
+      - KPW
+      - KRW
+      - KWD
+      - KYD
+      - KZT
+      - LAK
+      - LBP
+      - LKR
+      - LRD
+      - LSL
+      - LYD
+      - MAD
+      - MDL
+      - MGA
+      - MKD
+      - MMK
+      - MNT
+      - MOP
+      - MRU
+      - MUR
+      - MVR
+      - MWK
+      - MXN
+      - MYR
+      - MZN
+      - NAD
+      - NGN
+      - NIO
+      - NOK
+      - NPR
+      - NZD
+      - OMR
+      - PAB
+      - PEN
+      - PGK
+      - PHP
+      - PKR
+      - PLN
+      - PYG
+      - QAR
+      - RON
+      - RSD
+      - RUB
+      - RWF
+      - SAR
+      - SBD
+      - SCR
+      - SDG
+      - SEK
+      - SGD
+      - SHP
+      - SLL
+      - SOS
+      - SRD
+      - SSP
+      - STD
+      - STN
+      - SVC
+      - SYP
+      - SZL
+      - THB
+      - TJS
+      - TMT
+      - TND
+      - TOP
+      - TRY
+      - TTD
+      - TWD
+      - TZS
+      - UAH
+      - UGX
+      - USD
+      - UYU
+      - UZS
+      - VEF
+      - VES
+      - VND
+      - VUV
+      - WST
+      - XAF
+      - XAG
+      - XAU
+      - XCD
+      - XDR
+      - XOF
+      - XPD
+      - XPF
+      - XPT
+      - YER
+      - ZAR
+      - ZMW
+      - ZWL

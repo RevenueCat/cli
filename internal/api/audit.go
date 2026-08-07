@@ -35,6 +35,6 @@ func (o *ListAuditOptions) query() string {
 
 func (s *AuditService) List(ctx context.Context, projectID string, opts *ListAuditOptions) (*Page[AuditLog], error) {
 	var out Page[AuditLog]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "audit_logs")+opts.query(), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathAuditLogs(projectID)+opts.query(), nil, &out)
 	return &out, err
 }

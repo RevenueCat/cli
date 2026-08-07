@@ -86,13 +86,16 @@ type TerritoryPrice struct {
 
 func (s *StoreStateService) Get(ctx context.Context, projectID, productID string) (*LiveStoreState, error) {
 	var out LiveStoreState
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "products", productID, "store_state"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathProductStoreState(projectID, productID), nil, &out)
 	return &out, err
 }
 
 func (s *StoreStateService) ReserveScreenshotUpload(ctx context.Context, projectID, productID, filename string, fileSize int64) (*ScreenshotUploadReservation, error) {
 	var out ScreenshotUploadReservation
 	body := map[string]any{"filename": filename, "file_size": fileSize}
+	// Inline path pending verification: the backend spec has this as
+	// store_state/screenshot_upload (two segments); this sends one. Left as-is
+	// so this change stays behavior-preserving — the path fix is tracked separately.
 	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "products", productID, "store_state_screenshot_upload"), body, &out)
 	return &out, err
 }
@@ -101,12 +104,12 @@ func (s *StoreStateService) ReserveScreenshotUpload(ctx context.Context, project
 // leave App Store Connect unchanged.
 func (s *StoreStateService) Set(ctx context.Context, projectID, productID string, body map[string]any) (*StoreStateOperationQueued, error) {
 	var out StoreStateOperationQueued
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "products", productID, "store_state"), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathProductStoreState(projectID, productID), body, &out)
 	return &out, err
 }
 
 func (s *StoreStateService) GetOperation(ctx context.Context, projectID, productID, operationID string) (*StoreStateOperation, error) {
 	var out StoreStateOperation
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "products", productID, "store_state", operationID), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathProductStoreStateOperation(projectID, productID, operationID), nil, &out)
 	return &out, err
 }
