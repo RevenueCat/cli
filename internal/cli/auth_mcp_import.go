@@ -16,8 +16,8 @@ import (
 // we can read it. Two kinds:
 //
 //   - sk_… : a v2 secret key. Durable, no expiry. Ideal.
-//   - atk_…: an OAuth access token. khepri issues these with a 1-hour TTL
-//     (OAUTH2_TOKEN_EXPIRES_IN_SECONDS=3600) and the config carries NO refresh
+//   - atk_…: an OAuth access token. The backend issues these with a 1-hour TTL
+//     and the config carries NO refresh
 //     token — that lives in the client's private store. So an imported atk_ is
 //     a fast start, not a durable session: it works until it expires and rc
 //     can't refresh it. The token is opaque, so we can't read its remaining

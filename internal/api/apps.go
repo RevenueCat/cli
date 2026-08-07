@@ -29,8 +29,8 @@ type AppUpdate struct {
 }
 
 // AppExtras carries App read-model fields added after the generated types
-// were last regenerated (khepri #22858): the custom URL scheme used for
-// paywall preview / redemption deep links, and the App Store vendor number.
+// were last regenerated: the custom URL scheme used for paywall preview /
+// redemption deep links, and the App Store vendor number.
 // Both are empty when unset or when the server predates the fields.
 type AppExtras struct {
 	CustomURLScheme string `json:"custom_url_scheme,omitempty"`

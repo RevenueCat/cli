@@ -243,7 +243,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 
 // wrapPaywallActionGateError explains the beta gate on the paywall
 // publish/unpublish v2 actions: they 404 with a bare "Resource not found"
-// for projects without beta API access (khepri #22939 proposes ungating).
+// for projects without beta API access.
 // Without this hint, agents chase the 404 as a paywall-existence bug.
 func wrapPaywallActionGateError(err error, action string) error {
 	var apiErr *api.APIError
