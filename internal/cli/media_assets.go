@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/output"
 )
 
 var mediaAssetContentTypes = map[string]string{
@@ -54,7 +55,63 @@ func newMediaAssetsCmd() *cobra.Command {
 		Use:   "media-assets",
 		Short: "Manage project media assets",
 	}
-	cmd.AddCommand(newMediaAssetsUploadCmd())
+	cmd.AddCommand(newMediaAssetsUploadCmd(), newMediaAssetsListCmd())
+	return cmd
+}
+
+func newMediaAssetsListCmd() *cobra.Command {
+	var limit int
+	var cursor string
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List media assets in the project Media Gallery",
+		Example: `  rc media-assets list
+  rc media-assets list --json | jq '.data.items[].id'`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			page, err := client.MediaAssets.List(cmd.Context(), projectID, &api.ListMediaAssetsOptions{
+				Limit:         limit,
+				StartingAfter: cursor,
+			})
+			if err != nil {
+				return err
+			}
+
+			rows := make([][]string, 0, len(page.Items))
+			for _, a := range page.Items {
+				dimensions := ""
+				if a.OriginalWidth != nil && a.OriginalHeight != nil {
+					dimensions = fmt.Sprintf("%dx%d", *a.OriginalWidth, *a.OriginalHeight)
+				}
+				reference := a.ObjectName
+				if a.AssetBaseURL != nil {
+					reference = *a.AssetBaseURL + "/" + a.ObjectName
+				}
+				rows = append(rows, []string{a.ID, a.OriginalName, dimensions, string(a.AssetType), reference})
+			}
+			if err := rt.Out.RenderTable(output.Table{
+				Columns: []string{"ID", "NAME", "DIMENSIONS", "TYPE", "REFERENCE"},
+				Rows:    rows,
+				Raw:     page,
+			}); err != nil {
+				return err
+			}
+			if page.NextPage != "" && !rt.Globals.JSON && len(page.Items) > 0 {
+				rt.Out.Info(fmt.Sprintf("more results — pass --cursor %s for the next page", page.Items[len(page.Items)-1].ID))
+			}
+			return nil
+		},
+	}
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (server default if unset)")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "media asset ID to start after (pagination)")
 	return cmd
 }
 

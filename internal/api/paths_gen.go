@@ -130,6 +130,10 @@ func pathIntegrationsWebhooks(projectID string) string {
 	return encodePath("projects", projectID, "integrations", "webhooks")
 }
 
+func pathMediaAssets(projectID string) string {
+	return encodePath("projects", projectID, "media_assets")
+}
+
 func pathMetricsOverview(projectID string) string {
 	return encodePath("projects", projectID, "metrics", "overview")
 }
