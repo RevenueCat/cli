@@ -59,6 +59,7 @@ type Client struct {
 	Webhooks        *WebhooksService
 	Paywalls        *PaywallsService
 	MediaAssets     *MediaAssetsService
+	Fonts           *FontsService
 	Charts          *ChartsService
 	Metrics         *MetricsService
 	Audit           *AuditService
@@ -101,6 +102,7 @@ func NewClient(opts Options) *Client {
 	c.Webhooks = &WebhooksService{c: c}
 	c.Paywalls = &PaywallsService{c: c}
 	c.MediaAssets = &MediaAssetsService{c: c}
+	c.Fonts = &FontsService{c: c}
 	c.Charts = &ChartsService{c: c}
 	c.Metrics = &MetricsService{c: c}
 	c.Audit = &AuditService{c: c}

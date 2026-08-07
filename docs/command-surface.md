@@ -242,6 +242,9 @@ rc invoices show <id>
 # Media Assets
 rc media-assets upload <file>                            # upload an image (jpg/png/webp/avif/heic/heif, ≤2 MiB) to the project Media Gallery
 
+# Fonts
+rc fonts upload <file>                                   # upload a font (ttf/otf, ≤5 MiB) to the project for use in paywalls
+
 # Virtual currencies (project catalog; per-customer lives under `customer wallet`)
 rc currencies list
 rc currencies show <id>
