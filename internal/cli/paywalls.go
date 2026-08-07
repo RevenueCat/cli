@@ -155,13 +155,28 @@ func paywallPickerItems(ctx context.Context, client *api.Client, projectID strin
 	}
 	items := make([]PickerItem, len(page.Items))
 	for i, paywall := range page.Items {
-		label := paywall.Name
-		if label == "" {
-			label = paywall.ID
-		}
-		items[i] = PickerItem{ID: paywall.ID, Label: label}
+		items[i] = PickerItem{ID: paywall.ID, Label: paywallPickerLabel(paywall)}
 	}
 	return items, nil
+}
+
+// paywallPickerLabel folds offering, date, and publish state into the label:
+// paywall names are usually the default "Untitled Paywall", so the name alone
+// can't tell rows apart.
+func paywallPickerLabel(p api.Paywall) string {
+	name := p.Name
+	if name == "" {
+		name = p.ID
+	}
+	offering := "standalone"
+	if p.OfferingID != "" {
+		offering = p.OfferingID
+	}
+	status := "draft"
+	if p.PublishedAt != nil {
+		status = "published"
+	}
+	return fmt.Sprintf("%s · %s · %s · %s", name, offering, formatMillis(int64(p.CreatedAt)), status)
 }
 
 func formatPublishedAt(publishedAt *api.Millis) string {
