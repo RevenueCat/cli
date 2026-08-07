@@ -25,7 +25,7 @@ INITIALISMS = {"id": "ID", "url": "URL", "api": "API", "urls": "URLs"}
 # is generated. Remove an entry once the endpoint lands in the spec (or overlay).
 NON_SPEC_PATHS = {
     "/projects/{project_id}/invoices/{invoice_id}",  # rc invoices get — not in public v2 spec
-    "/projects/{project_id}/fonts",  # rc fonts — public in khepri, not yet in published spec
+    "/projects/{project_id}/fonts",  # rc fonts — live in the backend, not yet in published spec
 }
 
 
