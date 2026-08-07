@@ -4,5 +4,6 @@ lookup_key    default
 display_name  Default
 created_at    2026-07-17 14:19 UTC
 is_current    true
+paywall_id    —
 project_id    proj_snap
 state         —
