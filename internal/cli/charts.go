@@ -16,8 +16,15 @@ func newChartsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "charts",
 		Aliases: []string{"chart"},
-		Short:   "Inspect project charts",
-		RunE:    runChartsList,
+		Short:   "Explore subscription metric charts",
+		Long: `Explore subscription metric charts — Active Subscriptions, MRR, Revenue, Churn,
+Trial Conversion, and more — each sliceable with filters and segments. Run
+without arguments to list the available charts, then 'show' one or inspect its
+'options'.`,
+		Example: `  rc charts list
+  rc charts show mrr
+  rc charts show actives --filter store=app_store`,
+		RunE: runChartsList,
 	}
 	cmd.AddCommand(
 		newChartsListCmd(),
@@ -33,9 +40,11 @@ func newChartsCmd() *cobra.Command {
 // without making a request that 400s.
 func newChartsListCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "list",
-		Short: "List valid chart names",
-		RunE:  runChartsList,
+		Use:     "list",
+		Short:   "List available chart names",
+		Long:    `Lists the chart names accepted by 'rc charts show'. The set is a fixed enum, so this works without a request. In a terminal it opens the interactive chart browser.`,
+		Example: "  rc charts list\n  rc charts list --json | jq -r '.names[]'",
+		RunE:    runChartsList,
 	}
 }
 
@@ -71,7 +80,7 @@ func newChartsShowCmd() *cobra.Command {
 	var filterFlags []string
 	cmd := &cobra.Command{
 		Use:   "show <chart-name>",
-		Short: "Show chart data for a named chart",
+		Short: "Show data for a named chart",
 		Long: fmt.Sprintf(`Show data for a named chart. The chart name is validated client-side
 against a fixed enum (the API enforces the same enum server-side; we validate
 locally to avoid a 400 round-trip and to provide shell completion).
@@ -135,7 +144,9 @@ Valid names:
 func newChartsOptionsCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:               "options <chart-name>",
-		Short:             "Show available filters/segments for a chart",
+		Short:             "Show a chart's filters and segments",
+		Long:              `Lists the filters and segments a chart accepts, so you know what to pass to 'rc charts show --filter'.`,
+		Example:           "  rc charts options mrr\n  rc charts options actives --json",
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: cobra.FixedCompletions(api.ValidChartNames, cobra.ShellCompDirectiveNoFileComp),
 		RunE: func(cmd *cobra.Command, args []string) error {

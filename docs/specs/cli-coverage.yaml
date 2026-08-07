@@ -13,8 +13,6 @@ endpoints:
     path: /projects
   - method: POST
     path: /projects
-  - method: GET
-    path: /projects/{project_id}
 
   # Apps
   - method: GET
@@ -141,6 +139,12 @@ endpoints:
     path: /projects/{project_id}/products/{product_id}/actions/unarchive
   - method: POST
     path: /projects/{project_id}/products/{product_id}/create_in_store
+  - method: GET
+    path: /projects/{project_id}/products/{product_id}/prices
+  - method: PATCH
+    path: /projects/{project_id}/products/{product_id}/prices/{currency}
+  - method: POST
+    path: /projects/{project_id}/products/{product_id}/test_store_prices
 
   # Paywalls
   - method: GET
@@ -162,11 +166,11 @@ endpoints:
   - method: POST
     path: /projects/{project_id}/integrations/webhooks
   - method: GET
-    path: /projects/{project_id}/integrations/webhooks/{webhook_id}
+    path: /projects/{project_id}/integrations/webhooks/{webhook_integration_id}
   - method: POST
-    path: /projects/{project_id}/integrations/webhooks/{webhook_id}
+    path: /projects/{project_id}/integrations/webhooks/{webhook_integration_id}
   - method: DELETE
-    path: /projects/{project_id}/integrations/webhooks/{webhook_id}
+    path: /projects/{project_id}/integrations/webhooks/{webhook_integration_id}
 
   # Subscriptions
   - method: GET
@@ -206,8 +210,22 @@ endpoints:
   - method: GET
     path: /projects/{project_id}/metrics/overview
 
-  # Audit & Benchmarks
+  # Audit
   - method: GET
     path: /projects/{project_id}/audit_logs
+
+  # Store state (development-status; provided by the beta overlay). The
+  # screenshot_upload path and the dynamic plans/{plan_id}/actions/{action} call
+  # are intentionally omitted — see internal/api/store_state_*.go.
   - method: GET
-    path: /projects/{project_id}/benchmarks
+    path: /projects/{project_id}/products/{product_id}/store_state
+  - method: POST
+    path: /projects/{project_id}/products/{product_id}/store_state
+  - method: GET
+    path: /projects/{project_id}/products/{product_id}/store_state/{operation_id}
+  - method: POST
+    path: /projects/{project_id}/store_state/plans
+  - method: GET
+    path: /projects/{project_id}/store_state/plans
+  - method: GET
+    path: /projects/{project_id}/store_state/plans/{plan_id}

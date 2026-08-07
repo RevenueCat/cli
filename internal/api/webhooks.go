@@ -39,28 +39,28 @@ type WebhookUpdate struct {
 
 func (s *WebhooksService) List(ctx context.Context, projectID string) (*Page[Webhook], error) {
 	var out Page[Webhook]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "integrations", "webhooks"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathIntegrationsWebhooks(projectID), nil, &out)
 	return &out, err
 }
 
 func (s *WebhooksService) Get(ctx context.Context, projectID, id string) (*Webhook, error) {
 	var out Webhook
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "integrations", "webhooks", id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathIntegrationsWebhook(projectID, id), nil, &out)
 	return &out, err
 }
 
 func (s *WebhooksService) Create(ctx context.Context, projectID string, body WebhookCreate) (*Webhook, error) {
 	var out Webhook
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "integrations", "webhooks"), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathIntegrationsWebhooks(projectID), body, &out)
 	return &out, err
 }
 
 func (s *WebhooksService) Update(ctx context.Context, projectID, id string, body WebhookUpdate) (*Webhook, error) {
 	var out Webhook
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "integrations", "webhooks", id), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathIntegrationsWebhook(projectID, id), body, &out)
 	return &out, err
 }
 
 func (s *WebhooksService) Delete(ctx context.Context, projectID, id string) error {
-	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "integrations", "webhooks", id), nil, nil)
+	return s.c.do(ctx, http.MethodDelete, pathIntegrationsWebhook(projectID, id), nil, nil)
 }

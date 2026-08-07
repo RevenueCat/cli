@@ -22,7 +22,7 @@ type EntitlementUpdate struct {
 // GET /projects/{project_id}/entitlements
 func (s *EntitlementsService) List(ctx context.Context, projectID string) (*Page[Entitlement], error) {
 	var out Page[Entitlement]
-	if err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "entitlements"), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathEntitlements(projectID), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -31,7 +31,7 @@ func (s *EntitlementsService) List(ctx context.Context, projectID string) (*Page
 // GET /projects/{project_id}/entitlements/{id}
 func (s *EntitlementsService) Get(ctx context.Context, projectID, id string) (*Entitlement, error) {
 	var out Entitlement
-	if err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "entitlements", id), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathEntitlement(projectID, id), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -40,7 +40,7 @@ func (s *EntitlementsService) Get(ctx context.Context, projectID, id string) (*E
 // POST /projects/{project_id}/entitlements
 func (s *EntitlementsService) Create(ctx context.Context, projectID string, body EntitlementCreate) (*Entitlement, error) {
 	var out Entitlement
-	if err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "entitlements"), body, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodPost, pathEntitlements(projectID), body, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -49,7 +49,7 @@ func (s *EntitlementsService) Create(ctx context.Context, projectID string, body
 // POST /projects/{project_id}/entitlements/{id}
 func (s *EntitlementsService) Update(ctx context.Context, projectID, id string, body EntitlementUpdate) (*Entitlement, error) {
 	var out Entitlement
-	if err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "entitlements", id), body, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodPost, pathEntitlement(projectID, id), body, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -57,13 +57,13 @@ func (s *EntitlementsService) Update(ctx context.Context, projectID, id string, 
 
 // DELETE /projects/{project_id}/entitlements/{id}
 func (s *EntitlementsService) Delete(ctx context.Context, projectID, id string) error {
-	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "entitlements", id), nil, nil)
+	return s.c.do(ctx, http.MethodDelete, pathEntitlement(projectID, id), nil, nil)
 }
 
 // POST /projects/{project_id}/entitlements/{id}/actions/archive
 func (s *EntitlementsService) Archive(ctx context.Context, projectID, id string) (*Entitlement, error) {
 	var out Entitlement
-	path := encodePath("projects", projectID, "entitlements", id, "actions") + "/archive"
+	path := pathEntitlementActionsArchive(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
@@ -71,7 +71,7 @@ func (s *EntitlementsService) Archive(ctx context.Context, projectID, id string)
 // POST /projects/{project_id}/entitlements/{id}/actions/unarchive
 func (s *EntitlementsService) Restore(ctx context.Context, projectID, id string) (*Entitlement, error) {
 	var out Entitlement
-	path := encodePath("projects", projectID, "entitlements", id, "actions") + "/unarchive"
+	path := pathEntitlementActionsUnarchive(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
@@ -79,20 +79,20 @@ func (s *EntitlementsService) Restore(ctx context.Context, projectID, id string)
 // GET /projects/{project_id}/entitlements/{id}/products
 func (s *EntitlementsService) ListProducts(ctx context.Context, projectID, id string) (*Page[Product], error) {
 	var out Page[Product]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "entitlements", id, "products"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathEntitlementProducts(projectID, id), nil, &out)
 	return &out, err
 }
 
 // POST /projects/{project_id}/entitlements/{id}/actions/attach_products
 func (s *EntitlementsService) AttachProducts(ctx context.Context, projectID, id string, productIDs []string) error {
 	body := map[string]any{"product_ids": productIDs}
-	path := encodePath("projects", projectID, "entitlements", id, "actions") + "/attach_products"
+	path := pathEntitlementActionsAttachProducts(projectID, id)
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
 // POST /projects/{project_id}/entitlements/{id}/actions/detach_products
 func (s *EntitlementsService) DetachProducts(ctx context.Context, projectID, id string, productIDs []string) error {
 	body := map[string]any{"product_ids": productIDs}
-	path := encodePath("projects", projectID, "entitlements", id, "actions") + "/detach_products"
+	path := pathEntitlementActionsDetachProducts(projectID, id)
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }

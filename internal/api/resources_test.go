@@ -272,22 +272,6 @@ func TestAuditList_DecodesAdditionalData(t *testing.T) {
 	}
 }
 
-// --- Benchmarks ---
-
-func TestBenchmarksList_DecodesEmptyMetrics(t *testing.T) {
-	srv := fixtureServer(t, map[string]string{
-		"GET /projects/" + projID + "/benchmarks": "projects_PROJ_benchmarks.json",
-	})
-	c := newClient(t, srv.URL)
-	b, err := c.Benchmarks.Get(context.Background(), projID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(b.Metrics) != 0 {
-		t.Errorf("want empty metrics, got %d", len(b.Metrics))
-	}
-}
-
 // --- helper ---
 
 func newClient(t *testing.T, baseURL string) *api.Client {

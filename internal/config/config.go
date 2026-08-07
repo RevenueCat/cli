@@ -215,6 +215,10 @@ func configDir() (string, error) {
 	return filepath.Join(home, ".config", "revenuecat"), nil
 }
 
+// Dir is the CLI's config/data directory — the single home for profiles,
+// state, and other per-account files regardless of the working directory.
+func Dir() (string, error) { return configDir() }
+
 func profilePath(profile string) (string, error) {
 	name := ProfileName(profile)
 	if err := validateProfileName(name); err != nil {

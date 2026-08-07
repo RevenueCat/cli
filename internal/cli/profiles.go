@@ -37,8 +37,10 @@ RC_PROFILE env > .active pointer file > "default".`,
 
 func newProfilesListCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "list",
-		Short: "List configured profiles",
+		Use:     "list",
+		Short:   "List configured profiles",
+		Long:    `Lists the local credential profiles on disk, marking the active one and showing each profile's default project and whether it holds an API key.`,
+		Example: `  rc profiles list`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			names, err := config.ListProfiles()
@@ -98,9 +100,11 @@ The profile must already exist on disk (create it with ` + "`rc login --profile 
 
 func newProfilesShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show [name]",
-		Short: "Show the resolved configuration for a profile (API key redacted)",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "show [name]",
+		Short:   "Show a profile's resolved configuration (API key redacted)",
+		Long:    `Shows the resolved project, base URL, and redacted API key for a profile. Defaults to the active profile when no name is given.`,
+		Example: "  rc profiles show prod\n  rc profiles show                 # active profile",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			name := ""

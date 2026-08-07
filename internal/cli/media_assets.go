@@ -27,24 +27,24 @@ const mediaAssetMaxBytes = 2 << 20
 
 var errMediaAssetTooLarge = errors.New("the upload limit is 2 MiB")
 
-func loadMediaAsset(path string) (api.MediaAssetCreate, error) {
+func loadMediaAsset(path string) (api.CreateMediaAssetJSONBody, error) {
 	contentType, ok := mediaAssetContentTypes[strings.ToLower(filepath.Ext(path))]
 	if !ok {
-		return api.MediaAssetCreate{}, fmt.Errorf("unsupported image type %q (accepted: jpg, jpeg, png, webp, avif, heic, heif)", path)
+		return api.CreateMediaAssetJSONBody{}, fmt.Errorf("unsupported image type %q (accepted: jpg, jpeg, png, webp, avif, heic, heif)", path)
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return api.MediaAssetCreate{}, err
+		return api.CreateMediaAssetJSONBody{}, err
 	}
 	if len(data) == 0 {
-		return api.MediaAssetCreate{}, fmt.Errorf("image %s is empty", path)
+		return api.CreateMediaAssetJSONBody{}, fmt.Errorf("image %s is empty", path)
 	}
 	if len(data) > mediaAssetMaxBytes {
-		return api.MediaAssetCreate{}, fmt.Errorf("image %s is %d KB: %w", path, len(data)/1024, errMediaAssetTooLarge)
+		return api.CreateMediaAssetJSONBody{}, fmt.Errorf("image %s is %d KB: %w", path, len(data)/1024, errMediaAssetTooLarge)
 	}
-	return api.MediaAssetCreate{
+	return api.CreateMediaAssetJSONBody{
 		Filename:       filepath.Base(path),
-		ContentType:    contentType,
+		ContentType:    api.CreateMediaAssetJSONBodyContentType(contentType),
 		FileDataBase64: base64.StdEncoding.EncodeToString(data),
 	}, nil
 }

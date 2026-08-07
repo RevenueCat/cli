@@ -17,6 +17,8 @@ type Invoice struct {
 }
 
 // GET /projects/{project_id}/invoices/{id}
+// Inline path: this endpoint isn't in the public spec or the beta overlay, so it
+// has no generated builder.
 func (s *InvoicesService) Get(ctx context.Context, projectID, id string) (*Invoice, error) {
 	var out Invoice
 	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "invoices", id), nil, &out)
@@ -29,6 +31,6 @@ func (s *InvoicesService) Get(ctx context.Context, projectID, id string) (*Invoi
 // invoice resource is the noun being listed; the customer is just the filter.
 func (s *InvoicesService) ListForCustomer(ctx context.Context, projectID, customerID string) (*Page[Invoice], error) {
 	var out Page[Invoice]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "invoices"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathCustomerInvoices(projectID, customerID), nil, &out)
 	return &out, err
 }

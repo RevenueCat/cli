@@ -23,42 +23,42 @@ type OfferingUpdate struct {
 
 func (s *OfferingsService) List(ctx context.Context, projectID string) (*Page[Offering], error) {
 	var out Page[Offering]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "offerings"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathOfferings(projectID), nil, &out)
 	return &out, err
 }
 
 func (s *OfferingsService) Get(ctx context.Context, projectID, id string) (*Offering, error) {
 	var out Offering
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "offerings", id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathOffering(projectID, id), nil, &out)
 	return &out, err
 }
 
 func (s *OfferingsService) Create(ctx context.Context, projectID string, body OfferingCreate) (*Offering, error) {
 	var out Offering
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "offerings"), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathOfferings(projectID), body, &out)
 	return &out, err
 }
 
 func (s *OfferingsService) Update(ctx context.Context, projectID, id string, body OfferingUpdate) (*Offering, error) {
 	var out Offering
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "offerings", id), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathOffering(projectID, id), body, &out)
 	return &out, err
 }
 
 func (s *OfferingsService) Delete(ctx context.Context, projectID, id string) error {
-	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "offerings", id), nil, nil)
+	return s.c.do(ctx, http.MethodDelete, pathOffering(projectID, id), nil, nil)
 }
 
 func (s *OfferingsService) Archive(ctx context.Context, projectID, id string) (*Offering, error) {
 	var out Offering
-	path := encodePath("projects", projectID, "offerings", id, "actions") + "/archive"
+	path := pathOfferingActionsArchive(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
 
 func (s *OfferingsService) Restore(ctx context.Context, projectID, id string) (*Offering, error) {
 	var out Offering
-	path := encodePath("projects", projectID, "offerings", id, "actions") + "/unarchive"
+	path := pathOfferingActionsUnarchive(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }

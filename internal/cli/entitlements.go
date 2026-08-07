@@ -20,7 +20,12 @@ func newEntitlementsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "entitlements",
 		Aliases: []string{"entitlement", "ent"},
-		Short:   "Manage entitlements in the project catalog",
+		Short:   "Manage Entitlements in the project catalog",
+		Long: `An Entitlement is a level of access a Customer is entitled to — unlocked
+when they purchase a Product attached to it. Attach Products to an Entitlement,
+then reference the Entitlement in your app to gate premium features.`,
+		Example: `  rc entitlements list
+  rc entitlements attach entl_pro prod_x`,
 	}
 	cmd.AddCommand(
 		newEntitlementsListCmd(),
@@ -40,14 +45,15 @@ func newEntitlementsCmd() *cobra.Command {
 func newEntitlementsArchiveCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "archive [id]",
-		Short: "Archive an entitlement",
-		Long: `Archives an entitlement, removing it from new offerings while preserving
-historical access for existing subscribers.
+		Short: "Archive an Entitlement",
+		Long: `Archives an Entitlement, removing it from new Offerings while preserving
+historical access for existing subscribers. Omit the ID in a terminal to pick
+from a list.
 
 Reversibility: use ` + "`rc entitlements restore <id>`" + ` to undo.
 
 Confirmation: no prompt — this is a soft, reversible state change.`,
-		Example: `  rc entitlements archive entl_legacy`,
+		Example: `  rc entitlements archive entl_pro`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -78,14 +84,15 @@ Confirmation: no prompt — this is a soft, reversible state change.`,
 func newEntitlementsRestoreCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "restore [id]",
-		Short: "Restore an archived entitlement (= unarchive)",
-		Long: `Restores a previously-archived entitlement so it can be added to new
-offerings again. Inverse of ` + "`rc entitlements archive`" + `.
+		Short: "Restore an archived Entitlement",
+		Long: `Restores a previously-archived Entitlement so it can be added to new
+Offerings again. Inverse of ` + "`rc entitlements archive`" + `. Omit the ID in a
+terminal to pick from a list.
 
 Reversibility: re-archive with ` + "`rc entitlements archive <id>`" + `.
 
 Confirmation: no prompt.`,
-		Example: `  rc entitlements restore entl_legacy`,
+		Example: `  rc entitlements restore entl_pro`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -116,8 +123,12 @@ Confirmation: no prompt.`,
 func newEntitlementsProductsCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "products [id]",
-		Short: "List products attached to an entitlement",
-		Args:  cobra.MaximumNArgs(1),
+		Short: "List Products attached to an Entitlement",
+		Long: `Lists the Products whose purchase grants this Entitlement. Omit the ID in
+a terminal to pick from a list.`,
+		Example: `  rc entitlements products entl_pro
+  rc entitlements products entl_pro --json | jq '.data.items[].store_identifier'`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -154,11 +165,12 @@ func newEntitlementsProductsCmd() *cobra.Command {
 func newEntitlementsAttachCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "attach <id> <product-id> [product-id...]",
-		Short: "Attach products to an entitlement",
-		Long: `Attaches one or more products to an entitlement. The entitlement will
-then grant access to anyone who purchases any of the listed products.`,
-		Example: `  rc entitlements attach pro prod_monthly prod_yearly
-  rc entitlements attach pro prod_monthly --json`,
+		Short: "Attach Products to an Entitlement",
+		Long: `Attaches one or more Products to an Entitlement. The Entitlement then
+grants access to any Customer who purchases any of the listed Products. The
+first argument accepts an Entitlement ID or lookup key.`,
+		Example: `  rc entitlements attach entl_pro prod_monthly prod_yearly
+  rc entitlements attach entl_pro prod_monthly --json`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -186,8 +198,11 @@ then grant access to anyone who purchases any of the listed products.`,
 func newEntitlementsDetachCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "detach <id> <product-id> [product-id...]",
-		Short: "Detach products from an entitlement",
-		Args:  cobra.MinimumNArgs(2),
+		Short: "Detach Products from an Entitlement",
+		Long: `Detaches one or more Products from an Entitlement so their purchase no
+longer grants it. The first argument accepts an Entitlement ID or lookup key.`,
+		Example: `  rc entitlements detach entl_pro prod_legacy --json`,
+		Args:    cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -214,7 +229,10 @@ func newEntitlementsDetachCmd() *cobra.Command {
 func newEntitlementsListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
-		Short: "List entitlements",
+		Short: "List Entitlements",
+		Long:  `Lists the Entitlements in the active project, with each lookup key and display name.`,
+		Example: `  rc entitlements list
+  rc entitlements list --json | jq '.data.items[].lookup_key'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -254,9 +272,11 @@ func newEntitlementsListCmd() *cobra.Command {
 
 func newEntitlementsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show [id]",
-		Short: "Show an entitlement",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "show [id]",
+		Short:   "Show an Entitlement",
+		Long:    `Shows an Entitlement's lookup key, display name, and state. Omit the ID in a terminal to pick from a list.`,
+		Example: "  rc entitlements show entl_pro\n  rc entitlements show                 # pick interactively",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -290,7 +310,11 @@ func newEntitlementsCreateCmd() *cobra.Command {
 	var lookupKey, displayName string
 	cmd := &cobra.Command{
 		Use:   "create",
-		Short: "Create an entitlement",
+		Short: "Create an Entitlement",
+		Long: `Creates an Entitlement in the project catalog. Attach Products afterward
+with ` + "`rc entitlements attach`" + `. Prompts for the lookup key and display name
+when run interactively.`,
+		Example: `  rc entitlements create --lookup-key pro --display-name "Pro"`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -326,9 +350,11 @@ func newEntitlementsCreateCmd() *cobra.Command {
 func newEntitlementsUpdateCmd() *cobra.Command {
 	var displayName string
 	cmd := &cobra.Command{
-		Use:   "update [id]",
-		Short: "Update an entitlement",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "update [id]",
+		Short:   "Update an Entitlement",
+		Long:    `Updates an Entitlement's display name. Omit the ID in a terminal to pick from a list.`,
+		Example: `  rc entitlements update entl_pro --display-name "Pro Access"`,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -364,15 +390,16 @@ func newEntitlementsUpdateCmd() *cobra.Command {
 func newEntitlementsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [id]",
-		Short: "Delete an entitlement",
-		Long: `Permanently deletes an entitlement from the project catalog.
+		Short: "Delete an Entitlement",
+		Long: `Permanently deletes an Entitlement from the project catalog. Omit the ID
+in a terminal to pick from a list.
 
 Reversibility: irreversible. If you only need to hide it from current
-offerings, prefer ` + "`rc entitlements archive`" + ` which can be undone with
+Offerings, prefer ` + "`rc entitlements archive`" + ` which can be undone with
 ` + "`rc entitlements restore`" + `.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc entitlements delete entl_old --yes`,
+		Example: `  rc entitlements delete entl_pro --yes`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())

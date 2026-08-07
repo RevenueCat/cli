@@ -31,7 +31,13 @@ func newAppsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "apps",
 		Aliases: []string{"app"},
-		Short:   "Manage apps in a project",
+		Short:   "Manage apps in a Project",
+		Long: `An App is a per-platform connection in a Project — one App Store, Play Store,
+Amazon, Stripe, Web Billing, Roku, or Paddle app each. Apps hold the store
+credentials RevenueCat uses to validate purchases and the public SDK keys your
+client apps configure with.`,
+		Example: `  rc apps list
+  rc apps create --name "Acme iOS" --type app_store --bundle-id com.acme.app`,
 	}
 	cmd.AddCommand(
 		newAppsListCmd(),
@@ -50,6 +56,10 @@ func newAppsListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List apps",
+		Long: `Lists the apps in the active Project with their platform type and store-credential
+status. App Store apps show whether Apple credentials are configured.`,
+		Example: `  rc apps list
+  rc apps list --json | jq '.data.items[].id'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -94,9 +104,11 @@ func newAppsListCmd() *cobra.Command {
 
 func newAppsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show [id]",
-		Short: "Show an app",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "show [id]",
+		Short:   "Show an app",
+		Long:    `Shows an app's platform type, store configuration, and credential status. Omit the ID in a terminal to pick from a list.`,
+		Example: "  rc apps show app_x\n  rc apps show                 # pick interactively",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -149,6 +161,14 @@ func newAppsCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create an app",
+		Long: `Creates an app of a given platform type in the active Project. Prompts for the
+name, type, and the platform's required identifier (bundle ID, package name, or
+app name) when run interactively.
+
+App Store apps still need Apple credentials before purchases validate — finish
+with rc apps apple setup.`,
+		Example: `  rc apps create --name "Acme iOS" --type app_store --bundle-id com.acme.app
+  rc apps create --name "Acme Android" --type play_store --package-name com.acme.app`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -277,9 +297,11 @@ func validAppType(appType string) bool {
 func newAppsUpdateCmd() *cobra.Command {
 	var name string
 	cmd := &cobra.Command{
-		Use:   "update [id]",
-		Short: "Update an app",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "update [id]",
+		Short:   "Update an app",
+		Long:    `Updates an app's name. Only the flags you pass change; omit the ID in a terminal to pick from a list.`,
+		Example: `  rc apps update app_x --name "Acme iOS (prod)"`,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -512,8 +534,14 @@ func newAppsStoreKitConfigCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "storekit-config [app-id]",
 		Aliases: []string{"storekit"},
-		Short:   "Export the StoreKit configuration for an app",
-		Args:    cobra.MaximumNArgs(1),
+		Short:   "Export an app's StoreKit configuration",
+		Long: `Exports the StoreKit configuration file for an App Store app — the Products,
+prices, and subscription groups Xcode uses to run StoreKit testing without the
+sandbox. Prints JSON to stdout, or writes it with --output. Omit the app ID in a
+terminal to pick from a list.`,
+		Example: `  rc apps storekit-config app_x
+  rc apps storekit-config app_x --output Products.storekit`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

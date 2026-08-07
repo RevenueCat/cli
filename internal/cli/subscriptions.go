@@ -14,6 +14,12 @@ func newSubscriptionsCmd() *cobra.Command {
 		Use:     "subscriptions",
 		Aliases: []string{"subscription", "subs", "sub"},
 		Short:   "Inspect and manage subscriptions",
+		Long: `Inspect a subscription and act on it: view its status, list transactions and
+granted Entitlements, fetch the store management URL, or cancel, refund, and
+extend it. Refunds and direct cancellation are limited by store — see each
+subcommand.`,
+		Example: `  rc subscriptions show sub_x
+  rc subscriptions cancel sub_x --yes`,
 	}
 	cmd.AddCommand(
 		newSubsShowCmd(),
@@ -29,9 +35,11 @@ func newSubscriptionsCmd() *cobra.Command {
 
 func newSubsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
-		Short: "Show a subscription",
-		Args:  cobra.ExactArgs(1),
+		Use:     "show <id>",
+		Short:   "Show a subscription",
+		Long:    `Shows a subscription's status, store, current period, and the Customer (App User ID) it belongs to. In a terminal this opens the interactive browser.`,
+		Example: "  rc subscriptions show sub_x\n  rc subscriptions show sub_x --json | jq '.status'",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -57,9 +65,11 @@ func newSubsShowCmd() *cobra.Command {
 
 func newSubsTransactionsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "transactions <id>",
-		Short: "List transactions for a subscription",
-		Args:  cobra.ExactArgs(1),
+		Use:     "transactions <id>",
+		Short:   "List a subscription's transactions",
+		Long:    `Lists the transactions on a subscription — the initial purchase and each renewal — newest activity first.`,
+		Example: "  rc subscriptions transactions sub_x\n  rc subscriptions transactions sub_x --json | jq '.data.items[].id'",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -89,9 +99,11 @@ func newSubsTransactionsCmd() *cobra.Command {
 
 func newSubsEntitlementsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "entitlements <id>",
-		Short: "List entitlements granted by a subscription",
-		Args:  cobra.ExactArgs(1),
+		Use:     "entitlements <id>",
+		Short:   "List Entitlements granted by a subscription",
+		Long:    `Lists the Entitlements this subscription grants the Customer while it is active.`,
+		Example: "  rc subscriptions entitlements sub_x\n  rc subscriptions entitlements sub_x --json | jq '.data.items[].lookup_key'",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -121,9 +133,11 @@ func newSubsEntitlementsCmd() *cobra.Command {
 
 func newSubsManagementURLCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "management-url <id>",
-		Short: "Get the store-specific subscription management URL",
-		Args:  cobra.ExactArgs(1),
+		Use:     "management-url <id>",
+		Short:   "Get a subscription's store management URL",
+		Long:    `Returns the store-specific URL where the Customer manages this subscription (App Store, Play Store, or RevenueCat Billing). Send it to a Customer who wants to update or cancel on their own.`,
+		Example: "  rc subscriptions management-url sub_x\n  rc subscriptions management-url sub_x --json | jq -r '.url'",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -146,15 +160,16 @@ func newSubsManagementURLCmd() *cobra.Command {
 func newSubsCancelCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cancel <id>",
-		Short: "Cancel a Web Billing subscription",
-		Long: `Cancels a subscription. Web Billing only — App Store / Play Store
-subscriptions must be cancelled through the store.
+		Short: "Cancel a subscription",
+		Long: `Cancels a subscription so it stops renewing at the end of the current period.
+RevenueCat Billing only — App Store and Play Store subscriptions must be
+cancelled through the store.
 
 Reversibility: a cancelled subscription cannot be uncancelled via API; the
-customer would need to start a new subscription.
+Customer would need to start a new subscription.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc subscriptions cancel sub_abc --yes`,
+		Example: `  rc subscriptions cancel sub_x --yes`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -183,14 +198,15 @@ func newSubsExtendCmd() *cobra.Command {
 	var duration string
 	cmd := &cobra.Command{
 		Use:   "extend <id> --by <duration>",
-		Short: "Extend a subscription's billing period",
-		Long: `Extends a subscription's current period by an ISO 8601 duration.
-Used for support gestures (free month after an outage, etc.).
+		Short: "Extend a subscription's current period",
+		Long: `Extends a subscription's current period by an ISO 8601 duration, pushing back
+the next renewal. Used for support gestures — a free month after an outage,
+say. Entitlement access lasts through the new period end.
 
 Duration format: P[n]Y[n]M[n]D — e.g. P1M (one month), P7D (seven days),
 P3M (three months).`,
-		Example: `  rc subscriptions extend sub_abc --by P1M
-  rc subscriptions extend sub_abc --by P7D --json`,
+		Example: `  rc subscriptions extend sub_x --by P1M
+  rc subscriptions extend sub_x --by P7D --json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -220,15 +236,17 @@ P3M (three months).`,
 func newSubsRefundCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "refund <id>",
-		Short: "Refund a Web Billing subscription",
-		Long: `Refunds the most recent payment on a Web Billing subscription. Web
-Billing only — store-side refunds must be issued through the store.
+		Short: "Refund a subscription's latest payment",
+		Long: `Refunds the most recent payment on a subscription and emits a CANCELLATION.
+Only Google Play and RevenueCat Billing purchases can be refunded directly;
+App Store refunds must be issued through Apple. The refund immediately
+expires the subscription and removes Entitlement access.
 
-Reversibility: irreversible. Money is returned to the customer's payment
+Reversibility: irreversible. Money is returned to the Customer's payment
 method; recouping requires charging again.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc subscriptions refund sub_abc --yes`,
+		Example: `  rc subscriptions refund sub_x --yes`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())

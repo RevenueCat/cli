@@ -10,8 +10,10 @@ import (
 
 func newMetricsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "metrics",
-		Short: "Show the project metrics overview",
+		Use:     "metrics",
+		Short:   "Show the project Overview metrics",
+		Long:    `Shows the project Overview: the headline metrics — Active Trials, Active Subscriptions, MRR, and Revenue — each with its current value and period. For time series with filters and segments, use 'rc charts'.`,
+		Example: "  rc metrics\n  rc metrics --json | jq '.metrics[] | {id, value}'",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -35,29 +37,6 @@ func newMetricsCmd() *cobra.Command {
 				Rows:    rows,
 				Raw:     overview,
 			})
-		},
-	}
-}
-
-func newBenchmarksCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "benchmarks",
-		Short: "Show project benchmarks",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			rt := RuntimeFrom(cmd.Context())
-			projectID, err := requireProject(rt)
-			if err != nil {
-				return err
-			}
-			client, err := rt.API()
-			if err != nil {
-				return err
-			}
-			b, err := client.Benchmarks.Get(cmd.Context(), projectID)
-			if err != nil {
-				return err
-			}
-			return rt.Out.Render(b)
 		},
 	}
 }

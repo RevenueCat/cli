@@ -17,7 +17,12 @@ func newProjectsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "projects",
 		Aliases: []string{"project"},
-		Short:   "List and switch between projects",
+		Short:   "List and switch between Projects",
+		Long: `A Project groups your apps, catalog (Entitlements, Offerings, Packages,
+Products), and settings. Most commands run against one active Project; set it
+once with rc projects use so you don't pass --project-id every time.`,
+		Example: `  rc projects list
+  rc projects use proj_x`,
 		// Bare `rc projects` runs `list` for convenience.
 		RunE: runProjectsList,
 	}
@@ -34,7 +39,10 @@ func newProjectsListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List projects",
-		RunE:  runProjectsList,
+		Long:  `Lists the Projects on your account. The active Project is marked with an asterisk.`,
+		Example: `  rc projects list
+  rc projects list --json | jq '.data.items[].id'`,
+		RunE: runProjectsList,
 	}
 }
 
@@ -92,9 +100,11 @@ func runProjectsList(cmd *cobra.Command, _ []string) error {
 
 func newProjectsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show [project-id]",
-		Short: "Show a project's details",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "show [project-id]",
+		Short:   "Show a project's details",
+		Long:    `Shows a Project's details. Defaults to the active Project when no ID is given.`,
+		Example: "  rc projects show proj_x\n  rc projects show                 # active project",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			client, err := rt.API()

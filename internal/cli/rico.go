@@ -525,8 +525,10 @@ func newRicoConversationsCmd() *cobra.Command {
 	list := &cobra.Command{
 		Use:   "list",
 		Short: "List conversations",
-		Long: `Lists all conversations for the authenticated account. Pass --project to
-scope to a single project.`,
+		Long: `Lists all Rico conversations for the authenticated account. Pass --project to
+scope to a single Project.`,
+		Example: `  rc rico conversations list
+  rc rico conversations list --project proj_x`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			client, err := ricoClient(rt, baseURL)
@@ -554,9 +556,11 @@ scope to a single project.`,
 	}
 
 	show := &cobra.Command{
-		Use:   "show <id>",
-		Short: "Show a conversation transcript",
-		Args:  cobra.ExactArgs(1),
+		Use:     "show <id>",
+		Short:   "Show a conversation transcript",
+		Long:    `Prints the full message transcript for a Rico conversation, including tool calls and any pending approvals.`,
+		Example: `  rc rico conversations show NQ7bGmww8rLcPT9d`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			client, err := ricoClient(rt, baseURL)
@@ -623,6 +627,7 @@ func newRicoFeedbackCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "feedback <run-id> <good|bad>",
 		Short: "Rate a Rico reply",
+		Long:  `Rates a Rico reply good or bad by run ID (printed after each chat turn), with an optional comment.`,
 		Example: `  rc rico feedback rico_cli_1a2b3c good
   rc rico feedback rico_cli_1a2b3c bad --comment "wrong project"`,
 		Args: cobra.ExactArgs(2),
@@ -659,9 +664,10 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 		return nil, err
 	}
 	return rico.NewClient(rico.Options{
-		BaseURL:   baseURL,
-		Token:     agentAuthToken(rt),
-		UserAgent: userAgent(rt.Globals.Version),
+		BaseURL:      baseURL,
+		Token:        agentAuthToken(rt),
+		UserAgent:    userAgent(rt.Globals.Version),
+		ExtraHeaders: customHeaders(),
 	}), nil
 }
 

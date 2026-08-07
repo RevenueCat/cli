@@ -200,7 +200,7 @@ rc products push <id>                                    # push to store
 rc products prices [product-id]                         # list Test Store / Web Billing prices
 rc products prices set [product-id] --price USD=9.99    # idempotently create or update Test Store prices
 rc products store sync [app-id]                          # human flow: input → plan → review → confirm → apply
-rc products store plan [app-id]                          # persist desired state + diff in Khepri; accepts --file <path|->
+rc products store plan [app-id]                          # persist desired state + diff on the backend; accepts --file <path|->
 rc products store show <plan-id>                         # inspect the exact persisted plan from any process
 rc products store apply <plan-id>                        # apply that same reviewed plan; requires confirmation/--yes
 rc products store discard <plan-id>                      # discard without applying; requires confirmation/--yes
@@ -325,7 +325,7 @@ rc chat                                                  # internal agent chat
    human flow: gather desired state in memory (interactive input, a file, or
    stdin), create a server-side plan, review its diffs and warnings, then apply
    only after confirmation. Agents use the explicit `plan` → `show` → `apply`
-   lifecycle so a later CLI process applies the exact Khepri-persisted plan ID
+   lifecycle so a later CLI process applies the exact backend-persisted plan ID
    it reviewed; `discard` abandons it. `--file - --input-format csv|json` avoids
    any filesystem requirement. A future `.revenuecat` workspace may provide
    optional defaults, but is never a prerequisite and desired state is never

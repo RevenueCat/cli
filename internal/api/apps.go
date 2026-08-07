@@ -29,8 +29,8 @@ type AppUpdate struct {
 }
 
 // AppExtras carries App read-model fields added after the generated types
-// were last regenerated (khepri #22858): the custom URL scheme used for
-// paywall preview / redemption deep links, and the App Store vendor number.
+// were last regenerated: the custom URL scheme used for paywall preview /
+// redemption deep links, and the App Store vendor number.
 // Both are empty when unset or when the server predates the fields.
 type AppExtras struct {
 	CustomURLScheme string `json:"custom_url_scheme,omitempty"`
@@ -49,7 +49,7 @@ func (e *AppExtras) AppStoreVendorNumber() string {
 // GetExtras fetches the newer read-model fields for an app.
 func (s *AppsService) GetExtras(ctx context.Context, projectID, id string) (*AppExtras, error) {
 	var out AppExtras
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps", id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathApp(projectID, id), nil, &out)
 	return &out, err
 }
 
@@ -103,41 +103,41 @@ type StripeAppConfig struct {
 
 func (s *AppsService) List(ctx context.Context, projectID string) (*Page[App], error) {
 	var out Page[App]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathApps(projectID), nil, &out)
 	return &out, err
 }
 
 func (s *AppsService) Get(ctx context.Context, projectID, id string) (*App, error) {
 	var out App
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps", id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathApp(projectID, id), nil, &out)
 	return &out, err
 }
 
 func (s *AppsService) Create(ctx context.Context, projectID string, body AppCreate) (*App, error) {
 	var out App
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "apps"), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathApps(projectID), body, &out)
 	return &out, err
 }
 
 func (s *AppsService) Update(ctx context.Context, projectID, id string, body AppUpdate) (*App, error) {
 	var out App
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "apps", id), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathApp(projectID, id), body, &out)
 	return &out, err
 }
 
 func (s *AppsService) Delete(ctx context.Context, projectID, id string) error {
-	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "apps", id), nil, nil)
+	return s.c.do(ctx, http.MethodDelete, pathApp(projectID, id), nil, nil)
 }
 
 func (s *AppsService) PublicAPIKeys(ctx context.Context, projectID, appID string) (*ListPublicAPIKeys, error) {
 	var out ListPublicAPIKeys
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps", appID, "public_api_keys"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathAppPublicAPIKeys(projectID, appID), nil, &out)
 	return &out, err
 }
 
 // GET /projects/{project_id}/apps/{app_id}/store_kit_config
 func (s *AppsService) StoreKitConfig(ctx context.Context, projectID, appID string) (*StoreKitConfigFile, error) {
 	var out StoreKitConfigFile
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "apps", appID, "store_kit_config"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathAppStoreKitConfig(projectID, appID), nil, &out)
 	return &out, err
 }

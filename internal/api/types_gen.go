@@ -5,13 +5,42 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Defines values for AmazonAppObject.
+const (
+	AmazonAppObjectApp AmazonAppObject = "app"
+)
+
+// Valid indicates whether the value is a known member of the AmazonAppObject enum.
+func (e AmazonAppObject) Valid() bool {
+	switch e {
+	case AmazonAppObjectApp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AmazonAppType.
+const (
+	AmazonAppTypeAmazon AmazonAppType = "amazon"
+)
+
+// Valid indicates whether the value is a known member of the AmazonAppType enum.
+func (e AmazonAppType) Valid() bool {
+	switch e {
+	case AmazonAppTypeAmazon:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for AmazonAppCreateType.
 const (
@@ -28,54 +57,30 @@ func (e AmazonAppCreateType) Valid() bool {
 	}
 }
 
-// Defines values for AppObject.
+// Defines values for AppStoreAppObject.
 const (
-	AppObjectApp AppObject = "app"
+	AppStoreAppObjectApp AppStoreAppObject = "app"
 )
 
-// Valid indicates whether the value is a known member of the AppObject enum.
-func (e AppObject) Valid() bool {
+// Valid indicates whether the value is a known member of the AppStoreAppObject enum.
+func (e AppStoreAppObject) Valid() bool {
 	switch e {
-	case AppObjectApp:
+	case AppStoreAppObjectApp:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for AppType.
+// Defines values for AppStoreAppType.
 const (
-	AppTypeAmazon      AppType = "amazon"
-	AppTypeAppStore    AppType = "app_store"
-	AppTypeMacAppStore AppType = "mac_app_store"
-	AppTypePaddle      AppType = "paddle"
-	AppTypePlayStore   AppType = "play_store"
-	AppTypeRcBilling   AppType = "rc_billing"
-	AppTypeRoku        AppType = "roku"
-	AppTypeStripe      AppType = "stripe"
-	AppTypeTestStore   AppType = "test_store"
+	AppStoreAppTypeAppStore AppStoreAppType = "app_store"
 )
 
-// Valid indicates whether the value is a known member of the AppType enum.
-func (e AppType) Valid() bool {
+// Valid indicates whether the value is a known member of the AppStoreAppType enum.
+func (e AppStoreAppType) Valid() bool {
 	switch e {
-	case AppTypeAmazon:
-		return true
-	case AppTypeAppStore:
-		return true
-	case AppTypeMacAppStore:
-		return true
-	case AppTypePaddle:
-		return true
-	case AppTypePlayStore:
-		return true
-	case AppTypeRcBilling:
-		return true
-	case AppTypeRoku:
-		return true
-	case AppTypeStripe:
-		return true
-	case AppTypeTestStore:
+	case AppStoreAppTypeAppStore:
 		return true
 	default:
 		return false
@@ -99,10 +104,11 @@ func (e AppStoreAppCreateType) Valid() bool {
 
 // Defines values for AuditLogActorType.
 const (
-	APIKey      AuditLogActorType = "api_key"
-	OauthClient AuditLogActorType = "oauth_client"
-	System      AuditLogActorType = "system"
-	User        AuditLogActorType = "user"
+	APIKey         AuditLogActorType = "api_key"
+	OauthClient    AuditLogActorType = "oauth_client"
+	ServiceAccount AuditLogActorType = "service_account"
+	System         AuditLogActorType = "system"
+	User           AuditLogActorType = "user"
 )
 
 // Valid indicates whether the value is a known member of the AuditLogActorType enum.
@@ -111,6 +117,8 @@ func (e AuditLogActorType) Valid() bool {
 	case APIKey:
 		return true
 	case OauthClient:
+		return true
+	case ServiceAccount:
 		return true
 	case System:
 		return true
@@ -151,72 +159,30 @@ func (e AuthenticatedManagementURLObject) Valid() bool {
 	}
 }
 
-// Defines values for BenchmarkMetricObject.
+// Defines values for ChartAnnotationObject.
 const (
-	BenchmarkMetricObjectBenchmarkMetric BenchmarkMetricObject = "benchmark_metric"
+	ChartAnnotationObjectChartAnnotation ChartAnnotationObject = "chart_annotation"
 )
 
-// Valid indicates whether the value is a known member of the BenchmarkMetricObject enum.
-func (e BenchmarkMetricObject) Valid() bool {
+// Valid indicates whether the value is a known member of the ChartAnnotationObject enum.
+func (e ChartAnnotationObject) Valid() bool {
 	switch e {
-	case BenchmarkMetricObjectBenchmarkMetric:
+	case ChartAnnotationObjectChartAnnotation:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for BenchmarkMetricPercentileBucket.
+// Defines values for ChartFilterOptionObject.
 const (
-	N010   BenchmarkMetricPercentileBucket = "0-10"
-	N1020  BenchmarkMetricPercentileBucket = "10-20"
-	N2030  BenchmarkMetricPercentileBucket = "20-30"
-	N3040  BenchmarkMetricPercentileBucket = "30-40"
-	N4050  BenchmarkMetricPercentileBucket = "40-50"
-	N5060  BenchmarkMetricPercentileBucket = "50-60"
-	N6070  BenchmarkMetricPercentileBucket = "60-70"
-	N7080  BenchmarkMetricPercentileBucket = "70-80"
-	N8090  BenchmarkMetricPercentileBucket = "80-90"
-	N90100 BenchmarkMetricPercentileBucket = "90-100"
+	ChartFilterOptionObjectChartFilterOption ChartFilterOptionObject = "chart_filter_option"
 )
 
-// Valid indicates whether the value is a known member of the BenchmarkMetricPercentileBucket enum.
-func (e BenchmarkMetricPercentileBucket) Valid() bool {
+// Valid indicates whether the value is a known member of the ChartFilterOptionObject enum.
+func (e ChartFilterOptionObject) Valid() bool {
 	switch e {
-	case N010:
-		return true
-	case N1020:
-		return true
-	case N2030:
-		return true
-	case N3040:
-		return true
-	case N4050:
-		return true
-	case N5060:
-		return true
-	case N6070:
-		return true
-	case N7080:
-		return true
-	case N8090:
-		return true
-	case N90100:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BenchmarksObject.
-const (
-	BenchmarksObjectBenchmarks BenchmarksObject = "benchmarks"
-)
-
-// Valid indicates whether the value is a known member of the BenchmarksObject enum.
-func (e BenchmarksObject) Valid() bool {
-	switch e {
-	case BenchmarksObjectBenchmarks:
+	case ChartFilterOptionObjectChartFilterOption:
 		return true
 	default:
 		return false
@@ -238,6 +204,39 @@ func (e ChartOptionsObject) Valid() bool {
 	}
 }
 
+// Defines values for ChartSegmentOptionObject.
+const (
+	ChartSegmentOptionObjectChartSegmentOption ChartSegmentOptionObject = "chart_segment_option"
+)
+
+// Valid indicates whether the value is a known member of the ChartSegmentOptionObject enum.
+func (e ChartSegmentOptionObject) Valid() bool {
+	switch e {
+	case ChartSegmentOptionObjectChartSegmentOption:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ChartSeriesScale.
+const (
+	Absolute ChartSeriesScale = "absolute"
+	Relative ChartSeriesScale = "relative"
+)
+
+// Valid indicates whether the value is a known member of the ChartSeriesScale enum.
+func (e ChartSeriesScale) Valid() bool {
+	switch e {
+	case Absolute:
+		return true
+	case Relative:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CollaboratorObject.
 const (
 	CollaboratorObjectCollaborator CollaboratorObject = "collaborator"
@@ -247,6 +246,42 @@ const (
 func (e CollaboratorObject) Valid() bool {
 	switch e {
 	case CollaboratorObjectCollaborator:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CollaboratorRole.
+const (
+	Admin            CollaboratorRole = "admin"
+	CustomerSupport  CollaboratorRole = "customer_support"
+	Developer        CollaboratorRole = "developer"
+	GrowthSpecialist CollaboratorRole = "growth_specialist"
+	Operations       CollaboratorRole = "operations"
+	Owner            CollaboratorRole = "owner"
+	ReadOnly         CollaboratorRole = "read_only"
+	Revenuecat       CollaboratorRole = "revenuecat"
+)
+
+// Valid indicates whether the value is a known member of the CollaboratorRole enum.
+func (e CollaboratorRole) Valid() bool {
+	switch e {
+	case Admin:
+		return true
+	case CustomerSupport:
+		return true
+	case Developer:
+		return true
+	case GrowthSpecialist:
+		return true
+	case Operations:
+		return true
+	case Owner:
+		return true
+	case ReadOnly:
+		return true
+	case Revenuecat:
 		return true
 	default:
 		return false
@@ -1643,31 +1678,41 @@ const (
 	AmazonAdID                    CustomerAttributeReservedName = "$amazonAdId"
 	AmplitudeDeviceID             CustomerAttributeReservedName = "$amplitudeDeviceId"
 	AmplitudeUserID               CustomerAttributeReservedName = "$amplitudeUserId"
+	AndroidID                     CustomerAttributeReservedName = "$androidId"
 	ApnsTokens                    CustomerAttributeReservedName = "$apnsTokens"
 	AppleAdsAdGroupID             CustomerAttributeReservedName = "$appleAdsAdGroupId"
+	AppleAdsAdID                  CustomerAttributeReservedName = "$appleAdsAdId"
 	AppleAdsCampaignID            CustomerAttributeReservedName = "$appleAdsCampaignId"
+	AppleAdsCountryOrRegion       CustomerAttributeReservedName = "$appleAdsCountryOrRegion"
 	AppleAdsKeywordID             CustomerAttributeReservedName = "$appleAdsKeywordId"
+	AppleAdsOrgID                 CustomerAttributeReservedName = "$appleAdsOrgId"
 	AppleRefundHandlingPreference CustomerAttributeReservedName = "$appleRefundHandlingPreference"
 	AppsflyerID                   CustomerAttributeReservedName = "$appsflyerId"
 	AppsflyerSharingFilter        CustomerAttributeReservedName = "$appsflyerSharingFilter"
+	AppstackID                    CustomerAttributeReservedName = "$appstackId"
 	AttConsentStatus              CustomerAttributeReservedName = "$attConsentStatus"
 	BranchID                      CustomerAttributeReservedName = "$branchId"
 	BrazeAliasLabel               CustomerAttributeReservedName = "$brazeAliasLabel"
 	BrazeAliasName                CustomerAttributeReservedName = "$brazeAliasName"
 	Campaign                      CustomerAttributeReservedName = "$campaign"
+	ClaimType                     CustomerAttributeReservedName = "$claimType"
 	ClevertapID                   CustomerAttributeReservedName = "$clevertapId"
+	ConversionType                CustomerAttributeReservedName = "$conversionType"
 	Creative                      CustomerAttributeReservedName = "$creative"
 	CustomerioID                  CustomerAttributeReservedName = "$customerioId"
 	DeviceVersion                 CustomerAttributeReservedName = "$deviceVersion"
 	DisplayName                   CustomerAttributeReservedName = "$displayName"
 	Email                         CustomerAttributeReservedName = "$email"
 	FbAnonID                      CustomerAttributeReservedName = "$fbAnonId"
+	Fbc                           CustomerAttributeReservedName = "$fbc"
+	Fbp                           CustomerAttributeReservedName = "$fbp"
 	FcmTokens                     CustomerAttributeReservedName = "$fcmTokens"
 	FirebaseAppInstanceID         CustomerAttributeReservedName = "$firebaseAppInstanceId"
 	GpsAdID                       CustomerAttributeReservedName = "$gpsAdId"
 	IP                            CustomerAttributeReservedName = "$ip"
 	Idfa                          CustomerAttributeReservedName = "$idfa"
 	Idfv                          CustomerAttributeReservedName = "$idfv"
+	IntercomContactID             CustomerAttributeReservedName = "$intercomContactId"
 	IterableCampaignID            CustomerAttributeReservedName = "$iterableCampaignId"
 	IterableTemplateID            CustomerAttributeReservedName = "$iterableTemplateId"
 	IterableUserID                CustomerAttributeReservedName = "$iterableUserId"
@@ -1678,17 +1723,20 @@ const (
 	MparticleID                   CustomerAttributeReservedName = "$mparticleId"
 	OnesignalID                   CustomerAttributeReservedName = "$onesignalId"
 	OnesignalUserID               CustomerAttributeReservedName = "$onesignalUserId"
+	PageURL                       CustomerAttributeReservedName = "$pageUrl"
 	PhoneNumber                   CustomerAttributeReservedName = "$phoneNumber"
 	PosthogUserID                 CustomerAttributeReservedName = "$posthogUserId"
 	SegmentID                     CustomerAttributeReservedName = "$segmentId"
 	SolarEngineAccountID          CustomerAttributeReservedName = "$solarEngineAccountId"
 	SolarEngineDistinctID         CustomerAttributeReservedName = "$solarEngineDistinctId"
 	SolarEngineVisitorID          CustomerAttributeReservedName = "$solarEngineVisitorId"
+	SupplyPlacement               CustomerAttributeReservedName = "$supplyPlacement"
 	TelemetryDeckAppID            CustomerAttributeReservedName = "$telemetryDeckAppId"
 	TelemetryDeckAppID1           CustomerAttributeReservedName = "telemetry_deck_app_id"
 	TelemetryDeckUserID           CustomerAttributeReservedName = "$telemetryDeckUserId"
 	TelemetryDeckUserID1          CustomerAttributeReservedName = "telemetry_deck_user_id"
 	TenjinID                      CustomerAttributeReservedName = "$tenjinId"
+	UserAgent                     CustomerAttributeReservedName = "$userAgent"
 )
 
 // Valid indicates whether the value is a known member of the CustomerAttributeReservedName enum.
@@ -1710,19 +1758,29 @@ func (e CustomerAttributeReservedName) Valid() bool {
 		return true
 	case AmplitudeUserID:
 		return true
+	case AndroidID:
+		return true
 	case ApnsTokens:
 		return true
 	case AppleAdsAdGroupID:
 		return true
+	case AppleAdsAdID:
+		return true
 	case AppleAdsCampaignID:
 		return true
+	case AppleAdsCountryOrRegion:
+		return true
 	case AppleAdsKeywordID:
+		return true
+	case AppleAdsOrgID:
 		return true
 	case AppleRefundHandlingPreference:
 		return true
 	case AppsflyerID:
 		return true
 	case AppsflyerSharingFilter:
+		return true
+	case AppstackID:
 		return true
 	case AttConsentStatus:
 		return true
@@ -1734,7 +1792,11 @@ func (e CustomerAttributeReservedName) Valid() bool {
 		return true
 	case Campaign:
 		return true
+	case ClaimType:
+		return true
 	case ClevertapID:
+		return true
+	case ConversionType:
 		return true
 	case Creative:
 		return true
@@ -1748,6 +1810,10 @@ func (e CustomerAttributeReservedName) Valid() bool {
 		return true
 	case FbAnonID:
 		return true
+	case Fbc:
+		return true
+	case Fbp:
+		return true
 	case FcmTokens:
 		return true
 	case FirebaseAppInstanceID:
@@ -1759,6 +1825,8 @@ func (e CustomerAttributeReservedName) Valid() bool {
 	case Idfa:
 		return true
 	case Idfv:
+		return true
+	case IntercomContactID:
 		return true
 	case IterableCampaignID:
 		return true
@@ -1780,6 +1848,8 @@ func (e CustomerAttributeReservedName) Valid() bool {
 		return true
 	case OnesignalUserID:
 		return true
+	case PageURL:
+		return true
 	case PhoneNumber:
 		return true
 	case PosthogUserID:
@@ -1792,6 +1862,8 @@ func (e CustomerAttributeReservedName) Valid() bool {
 		return true
 	case SolarEngineVisitorID:
 		return true
+	case SupplyPlacement:
+		return true
 	case TelemetryDeckAppID:
 		return true
 	case TelemetryDeckAppID1:
@@ -1801,6 +1873,23 @@ func (e CustomerAttributeReservedName) Valid() bool {
 	case TelemetryDeckUserID1:
 		return true
 	case TenjinID:
+		return true
+	case UserAgent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomerCenterConfigObject.
+const (
+	CustomerCenterConfigObjectCustomerCenterConfig CustomerCenterConfigObject = "customer_center_config"
+)
+
+// Valid indicates whether the value is a known member of the CustomerCenterConfigObject enum.
+func (e CustomerCenterConfigObject) Valid() bool {
+	switch e {
+	case CustomerCenterConfigObjectCustomerCenterConfig:
 		return true
 	default:
 		return false
@@ -1837,24 +1926,10 @@ func (e CustomerEventObject) Valid() bool {
 	}
 }
 
-// Defines values for DeletedDiscountCodeObjectObject.
-const (
-	DeletedDiscountCodeObjectObjectDiscountCode DeletedDiscountCodeObjectObject = "discount_code"
-)
-
-// Valid indicates whether the value is a known member of the DeletedDiscountCodeObjectObject enum.
-func (e DeletedDiscountCodeObjectObject) Valid() bool {
-	switch e {
-	case DeletedDiscountCodeObjectObjectDiscountCode:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for DeletedObjectObject.
 const (
 	DeletedObjectObjectApp                DeletedObjectObject = "app"
+	DeletedObjectObjectChartAnnotation    DeletedObjectObject = "chart_annotation"
 	DeletedObjectObjectCustomer           DeletedObjectObject = "customer"
 	DeletedObjectObjectDiscount           DeletedObjectObject = "discount"
 	DeletedObjectObjectEntitlement        DeletedObjectObject = "entitlement"
@@ -1871,6 +1946,8 @@ const (
 func (e DeletedObjectObject) Valid() bool {
 	switch e {
 	case DeletedObjectObjectApp:
+		return true
+	case DeletedObjectObjectChartAnnotation:
 		return true
 	case DeletedObjectObjectCustomer:
 		return true
@@ -1891,171 +1968,6 @@ func (e DeletedObjectObject) Valid() bool {
 	case DeletedObjectObjectVirtualCurrency:
 		return true
 	case DeletedObjectObjectWebhookIntegration:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountCodeObject.
-const (
-	DiscountCodeObjectDiscountCode DiscountCodeObject = "discount_code"
-)
-
-// Valid indicates whether the value is a known member of the DiscountCodeObject enum.
-func (e DiscountCodeObject) Valid() bool {
-	switch e {
-	case DiscountCodeObjectDiscountCode:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountFixedAmountVariantDurationMode.
-const (
-	DiscountFixedAmountVariantDurationModeForever    DiscountFixedAmountVariantDurationMode = "forever"
-	DiscountFixedAmountVariantDurationModeOneTime    DiscountFixedAmountVariantDurationMode = "one_time"
-	DiscountFixedAmountVariantDurationModeTimeWindow DiscountFixedAmountVariantDurationMode = "time_window"
-)
-
-// Valid indicates whether the value is a known member of the DiscountFixedAmountVariantDurationMode enum.
-func (e DiscountFixedAmountVariantDurationMode) Valid() bool {
-	switch e {
-	case DiscountFixedAmountVariantDurationModeForever:
-		return true
-	case DiscountFixedAmountVariantDurationModeOneTime:
-		return true
-	case DiscountFixedAmountVariantDurationModeTimeWindow:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountFixedAmountVariantEligibility.
-const (
-	DiscountFixedAmountVariantEligibilityEveryone                        DiscountFixedAmountVariantEligibility = "everyone"
-	DiscountFixedAmountVariantEligibilityNeverPurchased                  DiscountFixedAmountVariantEligibility = "never_purchased"
-	DiscountFixedAmountVariantEligibilityNeverSubscribed                 DiscountFixedAmountVariantEligibility = "never_subscribed"
-	DiscountFixedAmountVariantEligibilityNeverSubscribedToTheSameProduct DiscountFixedAmountVariantEligibility = "never_subscribed_to_the_same_product"
-)
-
-// Valid indicates whether the value is a known member of the DiscountFixedAmountVariantEligibility enum.
-func (e DiscountFixedAmountVariantEligibility) Valid() bool {
-	switch e {
-	case DiscountFixedAmountVariantEligibilityEveryone:
-		return true
-	case DiscountFixedAmountVariantEligibilityNeverPurchased:
-		return true
-	case DiscountFixedAmountVariantEligibilityNeverSubscribed:
-		return true
-	case DiscountFixedAmountVariantEligibilityNeverSubscribedToTheSameProduct:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountFixedAmountVariantObject.
-const (
-	DiscountFixedAmountVariantObjectDiscount DiscountFixedAmountVariantObject = "discount"
-)
-
-// Valid indicates whether the value is a known member of the DiscountFixedAmountVariantObject enum.
-func (e DiscountFixedAmountVariantObject) Valid() bool {
-	switch e {
-	case DiscountFixedAmountVariantObjectDiscount:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountFixedAmountVariantType.
-const (
-	DiscountFixedAmountVariantTypeFixedAmount DiscountFixedAmountVariantType = "fixed_amount"
-)
-
-// Valid indicates whether the value is a known member of the DiscountFixedAmountVariantType enum.
-func (e DiscountFixedAmountVariantType) Valid() bool {
-	switch e {
-	case DiscountFixedAmountVariantTypeFixedAmount:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountPercentageVariantDurationMode.
-const (
-	DiscountPercentageVariantDurationModeForever    DiscountPercentageVariantDurationMode = "forever"
-	DiscountPercentageVariantDurationModeOneTime    DiscountPercentageVariantDurationMode = "one_time"
-	DiscountPercentageVariantDurationModeTimeWindow DiscountPercentageVariantDurationMode = "time_window"
-)
-
-// Valid indicates whether the value is a known member of the DiscountPercentageVariantDurationMode enum.
-func (e DiscountPercentageVariantDurationMode) Valid() bool {
-	switch e {
-	case DiscountPercentageVariantDurationModeForever:
-		return true
-	case DiscountPercentageVariantDurationModeOneTime:
-		return true
-	case DiscountPercentageVariantDurationModeTimeWindow:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountPercentageVariantEligibility.
-const (
-	DiscountPercentageVariantEligibilityEveryone                        DiscountPercentageVariantEligibility = "everyone"
-	DiscountPercentageVariantEligibilityNeverPurchased                  DiscountPercentageVariantEligibility = "never_purchased"
-	DiscountPercentageVariantEligibilityNeverSubscribed                 DiscountPercentageVariantEligibility = "never_subscribed"
-	DiscountPercentageVariantEligibilityNeverSubscribedToTheSameProduct DiscountPercentageVariantEligibility = "never_subscribed_to_the_same_product"
-)
-
-// Valid indicates whether the value is a known member of the DiscountPercentageVariantEligibility enum.
-func (e DiscountPercentageVariantEligibility) Valid() bool {
-	switch e {
-	case DiscountPercentageVariantEligibilityEveryone:
-		return true
-	case DiscountPercentageVariantEligibilityNeverPurchased:
-		return true
-	case DiscountPercentageVariantEligibilityNeverSubscribed:
-		return true
-	case DiscountPercentageVariantEligibilityNeverSubscribedToTheSameProduct:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountPercentageVariantObject.
-const (
-	DiscountPercentageVariantObjectDiscount DiscountPercentageVariantObject = "discount"
-)
-
-// Valid indicates whether the value is a known member of the DiscountPercentageVariantObject enum.
-func (e DiscountPercentageVariantObject) Valid() bool {
-	switch e {
-	case DiscountPercentageVariantObjectDiscount:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DiscountPercentageVariantType.
-const (
-	DiscountPercentageVariantTypePercentage DiscountPercentageVariantType = "percentage"
-)
-
-// Valid indicates whether the value is a known member of the DiscountPercentageVariantType enum.
-func (e DiscountPercentageVariantType) Valid() bool {
-	switch e {
-	case DiscountPercentageVariantTypePercentage:
 		return true
 	default:
 		return false
@@ -2242,6 +2154,21 @@ func (e ExtendSubscriptionUntilDateExtendReasonCode) Valid() bool {
 	}
 }
 
+// Defines values for IndicativePriceObject.
+const (
+	IndicativePriceObjectIndicativePrice IndicativePriceObject = "indicative_price"
+)
+
+// Valid indicates whether the value is a known member of the IndicativePriceObject enum.
+func (e IndicativePriceObject) Valid() bool {
+	switch e {
+	case IndicativePriceObjectIndicativePrice:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListAppsObject.
 const (
 	ListAppsObjectList ListAppsObject = "list"
@@ -2266,21 +2193,6 @@ const (
 func (e ListAuditLogsObject) Valid() bool {
 	switch e {
 	case ListAuditLogsObjectList:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomersObject.
-const (
-	BlockedCustomer ListBlockedCustomersObject = "blocked_customer"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomersObject enum.
-func (e ListBlockedCustomersObject) Valid() bool {
-	switch e {
-	case BlockedCustomer:
 		return true
 	default:
 		return false
@@ -2386,36 +2298,6 @@ const (
 func (e ListCustomersObject) Valid() bool {
 	switch e {
 	case ListCustomersObjectList:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodesObject.
-const (
-	ListDiscountCodesObjectList ListDiscountCodesObject = "list"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodesObject enum.
-func (e ListDiscountCodesObject) Valid() bool {
-	switch e {
-	case ListDiscountCodesObjectList:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountsObject.
-const (
-	ListDiscountsObjectList ListDiscountsObject = "list"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountsObject enum.
-func (e ListDiscountsObject) Valid() bool {
-	switch e {
-	case ListDiscountsObjectList:
 		return true
 	default:
 		return false
@@ -2602,6 +2484,36 @@ func (e ListVirtualCurrenciesBalancesObject) Valid() bool {
 	}
 }
 
+// Defines values for MacAppStoreAppObject.
+const (
+	MacAppStoreAppObjectApp MacAppStoreAppObject = "app"
+)
+
+// Valid indicates whether the value is a known member of the MacAppStoreAppObject enum.
+func (e MacAppStoreAppObject) Valid() bool {
+	switch e {
+	case MacAppStoreAppObjectApp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MacAppStoreAppType.
+const (
+	MacAppStoreAppTypeMacAppStore MacAppStoreAppType = "mac_app_store"
+)
+
+// Valid indicates whether the value is a known member of the MacAppStoreAppType enum.
+func (e MacAppStoreAppType) Valid() bool {
+	switch e {
+	case MacAppStoreAppTypeMacAppStore:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MacAppStoreAppCreateType.
 const (
 	MacAppStoreAppCreateTypeMacAppStore MacAppStoreAppCreateType = "mac_app_store"
@@ -2611,6 +2523,54 @@ const (
 func (e MacAppStoreAppCreateType) Valid() bool {
 	switch e {
 	case MacAppStoreAppCreateTypeMacAppStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MediaAssetAssetType.
+const (
+	Image MediaAssetAssetType = "image"
+	Video MediaAssetAssetType = "video"
+)
+
+// Valid indicates whether the value is a known member of the MediaAssetAssetType enum.
+func (e MediaAssetAssetType) Valid() bool {
+	switch e {
+	case Image:
+		return true
+	case Video:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MediaAssetObject.
+const (
+	MediaAssetObjectMediaAsset MediaAssetObject = "media_asset"
+)
+
+// Valid indicates whether the value is a known member of the MediaAssetObject enum.
+func (e MediaAssetObject) Valid() bool {
+	switch e {
+	case MediaAssetObjectMediaAsset:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MediaAssetFormatObject.
+const (
+	MediaAssetFormatObjectMediaAssetFormat MediaAssetFormatObject = "media_asset_format"
+)
+
+// Valid indicates whether the value is a known member of the MediaAssetFormatObject enum.
+func (e MediaAssetFormatObject) Valid() bool {
+	switch e {
+	case MediaAssetFormatObjectMediaAssetFormat:
 		return true
 	default:
 		return false
@@ -2698,6 +2658,60 @@ func (e OverviewMetricPeriod) Valid() bool {
 	}
 }
 
+// Defines values for OverviewMetricsCurrency.
+const (
+	OverviewMetricsCurrencyAUD OverviewMetricsCurrency = "AUD"
+	OverviewMetricsCurrencyBRL OverviewMetricsCurrency = "BRL"
+	OverviewMetricsCurrencyCAD OverviewMetricsCurrency = "CAD"
+	OverviewMetricsCurrencyCHF OverviewMetricsCurrency = "CHF"
+	OverviewMetricsCurrencyCNY OverviewMetricsCurrency = "CNY"
+	OverviewMetricsCurrencyEUR OverviewMetricsCurrency = "EUR"
+	OverviewMetricsCurrencyGBP OverviewMetricsCurrency = "GBP"
+	OverviewMetricsCurrencyJPY OverviewMetricsCurrency = "JPY"
+	OverviewMetricsCurrencyKRW OverviewMetricsCurrency = "KRW"
+	OverviewMetricsCurrencyMXN OverviewMetricsCurrency = "MXN"
+	OverviewMetricsCurrencyNZD OverviewMetricsCurrency = "NZD"
+	OverviewMetricsCurrencyPLN OverviewMetricsCurrency = "PLN"
+	OverviewMetricsCurrencySEK OverviewMetricsCurrency = "SEK"
+	OverviewMetricsCurrencyUSD OverviewMetricsCurrency = "USD"
+)
+
+// Valid indicates whether the value is a known member of the OverviewMetricsCurrency enum.
+func (e OverviewMetricsCurrency) Valid() bool {
+	switch e {
+	case OverviewMetricsCurrencyAUD:
+		return true
+	case OverviewMetricsCurrencyBRL:
+		return true
+	case OverviewMetricsCurrencyCAD:
+		return true
+	case OverviewMetricsCurrencyCHF:
+		return true
+	case OverviewMetricsCurrencyCNY:
+		return true
+	case OverviewMetricsCurrencyEUR:
+		return true
+	case OverviewMetricsCurrencyGBP:
+		return true
+	case OverviewMetricsCurrencyJPY:
+		return true
+	case OverviewMetricsCurrencyKRW:
+		return true
+	case OverviewMetricsCurrencyMXN:
+		return true
+	case OverviewMetricsCurrencyNZD:
+		return true
+	case OverviewMetricsCurrencyPLN:
+		return true
+	case OverviewMetricsCurrencySEK:
+		return true
+	case OverviewMetricsCurrencyUSD:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for OverviewMetricsObject.
 const (
 	OverviewMetricsObjectOverviewMetrics OverviewMetricsObject = "overview_metrics"
@@ -2761,6 +2775,36 @@ func (e PackageProductsObject) Valid() bool {
 	}
 }
 
+// Defines values for PaddleAppObject.
+const (
+	PaddleAppObjectApp PaddleAppObject = "app"
+)
+
+// Valid indicates whether the value is a known member of the PaddleAppObject enum.
+func (e PaddleAppObject) Valid() bool {
+	switch e {
+	case PaddleAppObjectApp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PaddleAppType.
+const (
+	PaddleAppTypePaddle PaddleAppType = "paddle"
+)
+
+// Valid indicates whether the value is a known member of the PaddleAppType enum.
+func (e PaddleAppType) Valid() bool {
+	switch e {
+	case PaddleAppTypePaddle:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PaddleAppCreateType.
 const (
 	PaddleAppCreateTypePaddle PaddleAppCreateType = "paddle"
@@ -2770,6 +2814,51 @@ const (
 func (e PaddleAppCreateType) Valid() bool {
 	switch e {
 	case PaddleAppCreateTypePaddle:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PaywallVersionObject.
+const (
+	PaywallVersionObjectPaywallVersion PaywallVersionObject = "paywall_version"
+)
+
+// Valid indicates whether the value is a known member of the PaywallVersionObject enum.
+func (e PaywallVersionObject) Valid() bool {
+	switch e {
+	case PaywallVersionObjectPaywallVersion:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreAppObject.
+const (
+	PlayStoreAppObjectApp PlayStoreAppObject = "app"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreAppObject enum.
+func (e PlayStoreAppObject) Valid() bool {
+	switch e {
+	case PlayStoreAppObjectApp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PlayStoreAppType.
+const (
+	PlayStoreAppTypePlayStore PlayStoreAppType = "play_store"
+)
+
+// Valid indicates whether the value is a known member of the PlayStoreAppType enum.
+func (e PlayStoreAppType) Valid() bool {
+	switch e {
+	case PlayStoreAppTypePlayStore:
 		return true
 	default:
 		return false
@@ -3028,6 +3117,36 @@ func (e PurchaseStore) Valid() bool {
 	}
 }
 
+// Defines values for RCBillingAppObject.
+const (
+	RCBillingAppObjectApp RCBillingAppObject = "app"
+)
+
+// Valid indicates whether the value is a known member of the RCBillingAppObject enum.
+func (e RCBillingAppObject) Valid() bool {
+	switch e {
+	case RCBillingAppObjectApp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RCBillingAppType.
+const (
+	RCBillingAppTypeRcBilling RCBillingAppType = "rc_billing"
+)
+
+// Valid indicates whether the value is a known member of the RCBillingAppType enum.
+func (e RCBillingAppType) Valid() bool {
+	switch e {
+	case RCBillingAppTypeRcBilling:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RCBillingAppCreateType.
 const (
 	RCBillingAppCreateTypeRcBilling RCBillingAppCreateType = "rc_billing"
@@ -3193,6 +3312,72 @@ func (e RCBillingCurrency) Valid() bool {
 	}
 }
 
+// Defines values for RevenueMetricObject.
+const (
+	RevenueMetricObjectRevenueMetric RevenueMetricObject = "revenue_metric"
+)
+
+// Valid indicates whether the value is a known member of the RevenueMetricObject enum.
+func (e RevenueMetricObject) Valid() bool {
+	switch e {
+	case RevenueMetricObjectRevenueMetric:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RevenueMetricRevenueType.
+const (
+	RevenueMetricRevenueTypeProceeds          RevenueMetricRevenueType = "proceeds"
+	RevenueMetricRevenueTypeRevenue           RevenueMetricRevenueType = "revenue"
+	RevenueMetricRevenueTypeRevenueNetOfTaxes RevenueMetricRevenueType = "revenue_net_of_taxes"
+)
+
+// Valid indicates whether the value is a known member of the RevenueMetricRevenueType enum.
+func (e RevenueMetricRevenueType) Valid() bool {
+	switch e {
+	case RevenueMetricRevenueTypeProceeds:
+		return true
+	case RevenueMetricRevenueTypeRevenue:
+		return true
+	case RevenueMetricRevenueTypeRevenueNetOfTaxes:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RokuAppObject.
+const (
+	RokuAppObjectApp RokuAppObject = "app"
+)
+
+// Valid indicates whether the value is a known member of the RokuAppObject enum.
+func (e RokuAppObject) Valid() bool {
+	switch e {
+	case RokuAppObjectApp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RokuAppType.
+const (
+	RokuAppTypeRoku RokuAppType = "roku"
+)
+
+// Valid indicates whether the value is a known member of the RokuAppType enum.
+func (e RokuAppType) Valid() bool {
+	switch e {
+	case RokuAppTypeRoku:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RokuAppCreateType.
 const (
 	RokuAppCreateTypeRoku RokuAppCreateType = "roku"
@@ -3238,6 +3423,36 @@ func (e StoreProductObject) Valid() bool {
 	}
 }
 
+// Defines values for StripeAppObject.
+const (
+	StripeAppObjectApp StripeAppObject = "app"
+)
+
+// Valid indicates whether the value is a known member of the StripeAppObject enum.
+func (e StripeAppObject) Valid() bool {
+	switch e {
+	case StripeAppObjectApp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StripeAppType.
+const (
+	StripeAppTypeStripe StripeAppType = "stripe"
+)
+
+// Valid indicates whether the value is a known member of the StripeAppType enum.
+func (e StripeAppType) Valid() bool {
+	switch e {
+	case StripeAppTypeStripe:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for StripeAppCreateType.
 const (
 	StripeAppCreateTypeStripe StripeAppCreateType = "stripe"
@@ -3255,28 +3470,28 @@ func (e StripeAppCreateType) Valid() bool {
 
 // Defines values for SubscriptionAutoRenewalStatus.
 const (
-	HasAlreadyRenewed            SubscriptionAutoRenewalStatus = "has_already_renewed"
-	RequiresPriceIncreaseConsent SubscriptionAutoRenewalStatus = "requires_price_increase_consent"
-	WillChangeProduct            SubscriptionAutoRenewalStatus = "will_change_product"
-	WillNotRenew                 SubscriptionAutoRenewalStatus = "will_not_renew"
-	WillPause                    SubscriptionAutoRenewalStatus = "will_pause"
-	WillRenew                    SubscriptionAutoRenewalStatus = "will_renew"
+	SubscriptionAutoRenewalStatusHasAlreadyRenewed            SubscriptionAutoRenewalStatus = "has_already_renewed"
+	SubscriptionAutoRenewalStatusRequiresPriceIncreaseConsent SubscriptionAutoRenewalStatus = "requires_price_increase_consent"
+	SubscriptionAutoRenewalStatusWillChangeProduct            SubscriptionAutoRenewalStatus = "will_change_product"
+	SubscriptionAutoRenewalStatusWillNotRenew                 SubscriptionAutoRenewalStatus = "will_not_renew"
+	SubscriptionAutoRenewalStatusWillPause                    SubscriptionAutoRenewalStatus = "will_pause"
+	SubscriptionAutoRenewalStatusWillRenew                    SubscriptionAutoRenewalStatus = "will_renew"
 )
 
 // Valid indicates whether the value is a known member of the SubscriptionAutoRenewalStatus enum.
 func (e SubscriptionAutoRenewalStatus) Valid() bool {
 	switch e {
-	case HasAlreadyRenewed:
+	case SubscriptionAutoRenewalStatusHasAlreadyRenewed:
 		return true
-	case RequiresPriceIncreaseConsent:
+	case SubscriptionAutoRenewalStatusRequiresPriceIncreaseConsent:
 		return true
-	case WillChangeProduct:
+	case SubscriptionAutoRenewalStatusWillChangeProduct:
 		return true
-	case WillNotRenew:
+	case SubscriptionAutoRenewalStatusWillNotRenew:
 		return true
-	case WillPause:
+	case SubscriptionAutoRenewalStatusWillPause:
 		return true
-	case WillRenew:
+	case SubscriptionAutoRenewalStatusWillRenew:
 		return true
 	default:
 		return false
@@ -3307,6 +3522,72 @@ const (
 func (e SubscriptionObject) Valid() bool {
 	switch e {
 	case SubscriptionObjectSubscription:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SubscriptionPendingChangesAutoRenewalStatus.
+const (
+	SubscriptionPendingChangesAutoRenewalStatusHasAlreadyRenewed            SubscriptionPendingChangesAutoRenewalStatus = "has_already_renewed"
+	SubscriptionPendingChangesAutoRenewalStatusRequiresPriceIncreaseConsent SubscriptionPendingChangesAutoRenewalStatus = "requires_price_increase_consent"
+	SubscriptionPendingChangesAutoRenewalStatusWillChangeProduct            SubscriptionPendingChangesAutoRenewalStatus = "will_change_product"
+	SubscriptionPendingChangesAutoRenewalStatusWillNotRenew                 SubscriptionPendingChangesAutoRenewalStatus = "will_not_renew"
+	SubscriptionPendingChangesAutoRenewalStatusWillPause                    SubscriptionPendingChangesAutoRenewalStatus = "will_pause"
+	SubscriptionPendingChangesAutoRenewalStatusWillRenew                    SubscriptionPendingChangesAutoRenewalStatus = "will_renew"
+)
+
+// Valid indicates whether the value is a known member of the SubscriptionPendingChangesAutoRenewalStatus enum.
+func (e SubscriptionPendingChangesAutoRenewalStatus) Valid() bool {
+	switch e {
+	case SubscriptionPendingChangesAutoRenewalStatusHasAlreadyRenewed:
+		return true
+	case SubscriptionPendingChangesAutoRenewalStatusRequiresPriceIncreaseConsent:
+		return true
+	case SubscriptionPendingChangesAutoRenewalStatusWillChangeProduct:
+		return true
+	case SubscriptionPendingChangesAutoRenewalStatusWillNotRenew:
+		return true
+	case SubscriptionPendingChangesAutoRenewalStatusWillPause:
+		return true
+	case SubscriptionPendingChangesAutoRenewalStatusWillRenew:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SubscriptionPendingChangesStatus.
+const (
+	SubscriptionPendingChangesStatusActive         SubscriptionPendingChangesStatus = "active"
+	SubscriptionPendingChangesStatusExpired        SubscriptionPendingChangesStatus = "expired"
+	SubscriptionPendingChangesStatusInBillingRetry SubscriptionPendingChangesStatus = "in_billing_retry"
+	SubscriptionPendingChangesStatusInGracePeriod  SubscriptionPendingChangesStatus = "in_grace_period"
+	SubscriptionPendingChangesStatusIncomplete     SubscriptionPendingChangesStatus = "incomplete"
+	SubscriptionPendingChangesStatusPaused         SubscriptionPendingChangesStatus = "paused"
+	SubscriptionPendingChangesStatusTrialing       SubscriptionPendingChangesStatus = "trialing"
+	SubscriptionPendingChangesStatusUnknown        SubscriptionPendingChangesStatus = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the SubscriptionPendingChangesStatus enum.
+func (e SubscriptionPendingChangesStatus) Valid() bool {
+	switch e {
+	case SubscriptionPendingChangesStatusActive:
+		return true
+	case SubscriptionPendingChangesStatusExpired:
+		return true
+	case SubscriptionPendingChangesStatusInBillingRetry:
+		return true
+	case SubscriptionPendingChangesStatusInGracePeriod:
+		return true
+	case SubscriptionPendingChangesStatusIncomplete:
+		return true
+	case SubscriptionPendingChangesStatusPaused:
+		return true
+	case SubscriptionPendingChangesStatusTrialing:
+		return true
+	case SubscriptionPendingChangesStatusUnknown:
 		return true
 	default:
 		return false
@@ -3409,6 +3690,36 @@ const (
 func (e SubscriptionTransactionObject) Valid() bool {
 	switch e {
 	case SubscriptionTransactionObjectSubscriptionTransaction:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TestStoreAppObject.
+const (
+	TestStoreAppObjectApp TestStoreAppObject = "app"
+)
+
+// Valid indicates whether the value is a known member of the TestStoreAppObject enum.
+func (e TestStoreAppObject) Valid() bool {
+	switch e {
+	case TestStoreAppObjectApp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TestStoreAppType.
+const (
+	TestStoreAppTypeTestStore TestStoreAppType = "test_store"
+)
+
+// Valid indicates whether the value is a known member of the TestStoreAppType enum.
+func (e TestStoreAppType) Valid() bool {
+	switch e {
+	case TestStoreAppTypeTestStore:
 		return true
 	default:
 		return false
@@ -3637,6 +3948,7 @@ func (e ConflictObject) Valid() bool {
 // Defines values for ConflictType.
 const (
 	ConflictTypeIdempotencyError      ConflictType = "idempotency_error"
+	ConflictTypeInvalidRequest        ConflictType = "invalid_request"
 	ConflictTypeResourceAlreadyExists ConflictType = "resource_already_exists"
 )
 
@@ -3644,6 +3956,8 @@ const (
 func (e ConflictType) Valid() bool {
 	switch e {
 	case ConflictTypeIdempotencyError:
+		return true
+	case ConflictTypeInvalidRequest:
 		return true
 	case ConflictTypeResourceAlreadyExists:
 		return true
@@ -4255,6 +4569,7 @@ func (e CreateProject409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateProject409JSONResponseBodyType.
 const (
 	CreateProject409JSONResponseBodyTypeIdempotencyError      CreateProject409JSONResponseBodyType = "idempotency_error"
+	CreateProject409JSONResponseBodyTypeInvalidRequest        CreateProject409JSONResponseBodyType = "invalid_request"
 	CreateProject409JSONResponseBodyTypeResourceAlreadyExists CreateProject409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -4262,6 +4577,8 @@ const (
 func (e CreateProject409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateProject409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateProject409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateProject409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -4813,6 +5130,7 @@ func (e CreateApp409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateApp409JSONResponseBodyType.
 const (
 	CreateApp409JSONResponseBodyTypeIdempotencyError      CreateApp409JSONResponseBodyType = "idempotency_error"
+	CreateApp409JSONResponseBodyTypeInvalidRequest        CreateApp409JSONResponseBodyType = "invalid_request"
 	CreateApp409JSONResponseBodyTypeResourceAlreadyExists CreateApp409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -4820,6 +5138,8 @@ const (
 func (e CreateApp409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateApp409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateApp409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateApp409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -5128,6 +5448,7 @@ func (e DeleteApp409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeleteApp409JSONResponseBodyType.
 const (
 	DeleteApp409JSONResponseBodyTypeIdempotencyError      DeleteApp409JSONResponseBodyType = "idempotency_error"
+	DeleteApp409JSONResponseBodyTypeInvalidRequest        DeleteApp409JSONResponseBodyType = "invalid_request"
 	DeleteApp409JSONResponseBodyTypeResourceAlreadyExists DeleteApp409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -5135,6 +5456,8 @@ const (
 func (e DeleteApp409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeleteApp409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeleteApp409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeleteApp409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -5686,6 +6009,7 @@ func (e UpdateApp409JSONResponseBodyObject) Valid() bool {
 // Defines values for UpdateApp409JSONResponseBodyType.
 const (
 	UpdateApp409JSONResponseBodyTypeIdempotencyError      UpdateApp409JSONResponseBodyType = "idempotency_error"
+	UpdateApp409JSONResponseBodyTypeInvalidRequest        UpdateApp409JSONResponseBodyType = "invalid_request"
 	UpdateApp409JSONResponseBodyTypeResourceAlreadyExists UpdateApp409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -5693,6 +6017,8 @@ const (
 func (e UpdateApp409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateApp409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdateApp409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UpdateApp409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -5824,6 +6150,36 @@ const (
 func (e UpdateApp500JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateApp500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateApp502JSONResponseBodyObject.
+const (
+	UpdateApp502JSONResponseBodyObjectError UpdateApp502JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdateApp502JSONResponseBodyObject enum.
+func (e UpdateApp502JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdateApp502JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateApp502JSONResponseBodyType.
+const (
+	UpdateApp502JSONResponseBodyTypeServerError UpdateApp502JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdateApp502JSONResponseBodyType enum.
+func (e UpdateApp502JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdateApp502JSONResponseBodyTypeServerError:
 		return true
 	default:
 		return false
@@ -6589,294 +6945,6 @@ func (e ListAuditLogs503JSONResponseBodyType) Valid() bool {
 	}
 }
 
-// Defines values for GetBenchmarksParamsComparisonCategory.
-const (
-	Business              GetBenchmarksParamsComparisonCategory = "business"
-	Education             GetBenchmarksParamsComparisonCategory = "education"
-	Gaming                GetBenchmarksParamsComparisonCategory = "gaming"
-	HealthAndFitness      GetBenchmarksParamsComparisonCategory = "health_and_fitness"
-	MediaAndEntertainment GetBenchmarksParamsComparisonCategory = "media_and_entertainment"
-	PhotoAndVideo         GetBenchmarksParamsComparisonCategory = "photo_and_video"
-	Productivity          GetBenchmarksParamsComparisonCategory = "productivity"
-	Shopping              GetBenchmarksParamsComparisonCategory = "shopping"
-	SocialAndLifestyle    GetBenchmarksParamsComparisonCategory = "social_and_lifestyle"
-	Travel                GetBenchmarksParamsComparisonCategory = "travel"
-	Utilities             GetBenchmarksParamsComparisonCategory = "utilities"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarksParamsComparisonCategory enum.
-func (e GetBenchmarksParamsComparisonCategory) Valid() bool {
-	switch e {
-	case Business:
-		return true
-	case Education:
-		return true
-	case Gaming:
-		return true
-	case HealthAndFitness:
-		return true
-	case MediaAndEntertainment:
-		return true
-	case PhotoAndVideo:
-		return true
-	case Productivity:
-		return true
-	case Shopping:
-		return true
-	case SocialAndLifestyle:
-		return true
-	case Travel:
-		return true
-	case Utilities:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks400JSONResponseBodyObject.
-const (
-	GetBenchmarks400JSONResponseBodyObjectError GetBenchmarks400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks400JSONResponseBodyObject enum.
-func (e GetBenchmarks400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetBenchmarks400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks400JSONResponseBodyType.
-const (
-	GetBenchmarks400JSONResponseBodyTypeInvalidRequest GetBenchmarks400JSONResponseBodyType = "invalid_request"
-	GetBenchmarks400JSONResponseBodyTypeParameterError GetBenchmarks400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks400JSONResponseBodyType enum.
-func (e GetBenchmarks400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetBenchmarks400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case GetBenchmarks400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks401JSONResponseBodyObject.
-const (
-	GetBenchmarks401JSONResponseBodyObjectError GetBenchmarks401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks401JSONResponseBodyObject enum.
-func (e GetBenchmarks401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetBenchmarks401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks401JSONResponseBodyType.
-const (
-	GetBenchmarks401JSONResponseBodyTypeAuthenticationError GetBenchmarks401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks401JSONResponseBodyType enum.
-func (e GetBenchmarks401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetBenchmarks401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks403JSONResponseBodyObject.
-const (
-	GetBenchmarks403JSONResponseBodyObjectError GetBenchmarks403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks403JSONResponseBodyObject enum.
-func (e GetBenchmarks403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetBenchmarks403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks403JSONResponseBodyType.
-const (
-	GetBenchmarks403JSONResponseBodyTypeAuthorizationError GetBenchmarks403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks403JSONResponseBodyType enum.
-func (e GetBenchmarks403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetBenchmarks403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks404JSONResponseBodyObject.
-const (
-	GetBenchmarks404JSONResponseBodyObjectError GetBenchmarks404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks404JSONResponseBodyObject enum.
-func (e GetBenchmarks404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetBenchmarks404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks404JSONResponseBodyType.
-const (
-	GetBenchmarks404JSONResponseBodyTypeResourceMissing GetBenchmarks404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks404JSONResponseBodyType enum.
-func (e GetBenchmarks404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetBenchmarks404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks423JSONResponseBodyObject.
-const (
-	GetBenchmarks423JSONResponseBodyObjectError GetBenchmarks423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks423JSONResponseBodyObject enum.
-func (e GetBenchmarks423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetBenchmarks423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks423JSONResponseBodyType.
-const (
-	GetBenchmarks423JSONResponseBodyTypeResourceLockedError GetBenchmarks423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks423JSONResponseBodyType enum.
-func (e GetBenchmarks423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetBenchmarks423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks429JSONResponseBodyObject.
-const (
-	GetBenchmarks429JSONResponseBodyObjectError GetBenchmarks429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks429JSONResponseBodyObject enum.
-func (e GetBenchmarks429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetBenchmarks429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks429JSONResponseBodyType.
-const (
-	GetBenchmarks429JSONResponseBodyTypeRateLimitError GetBenchmarks429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks429JSONResponseBodyType enum.
-func (e GetBenchmarks429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetBenchmarks429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks500JSONResponseBodyObject.
-const (
-	GetBenchmarks500JSONResponseBodyObjectError GetBenchmarks500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks500JSONResponseBodyObject enum.
-func (e GetBenchmarks500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetBenchmarks500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks500JSONResponseBodyType.
-const (
-	GetBenchmarks500JSONResponseBodyTypeServerError GetBenchmarks500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks500JSONResponseBodyType enum.
-func (e GetBenchmarks500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetBenchmarks500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks503JSONResponseBodyObject.
-const (
-	GetBenchmarks503JSONResponseBodyObjectError GetBenchmarks503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks503JSONResponseBodyObject enum.
-func (e GetBenchmarks503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetBenchmarks503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetBenchmarks503JSONResponseBodyType.
-const (
-	GetBenchmarks503JSONResponseBodyTypeServerError GetBenchmarks503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the GetBenchmarks503JSONResponseBodyType enum.
-func (e GetBenchmarks503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetBenchmarks503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for GetChartDataParamsAggregate.
 const (
 	Average GetChartDataParamsAggregate = "average"
@@ -6900,12 +6968,14 @@ const (
 	GetChartDataParamsCurrencyAUD GetChartDataParamsCurrency = "AUD"
 	GetChartDataParamsCurrencyBRL GetChartDataParamsCurrency = "BRL"
 	GetChartDataParamsCurrencyCAD GetChartDataParamsCurrency = "CAD"
+	GetChartDataParamsCurrencyCHF GetChartDataParamsCurrency = "CHF"
 	GetChartDataParamsCurrencyCNY GetChartDataParamsCurrency = "CNY"
 	GetChartDataParamsCurrencyEUR GetChartDataParamsCurrency = "EUR"
 	GetChartDataParamsCurrencyGBP GetChartDataParamsCurrency = "GBP"
 	GetChartDataParamsCurrencyJPY GetChartDataParamsCurrency = "JPY"
 	GetChartDataParamsCurrencyKRW GetChartDataParamsCurrency = "KRW"
 	GetChartDataParamsCurrencyMXN GetChartDataParamsCurrency = "MXN"
+	GetChartDataParamsCurrencyNZD GetChartDataParamsCurrency = "NZD"
 	GetChartDataParamsCurrencyPLN GetChartDataParamsCurrency = "PLN"
 	GetChartDataParamsCurrencySEK GetChartDataParamsCurrency = "SEK"
 	GetChartDataParamsCurrencyUSD GetChartDataParamsCurrency = "USD"
@@ -6920,6 +6990,8 @@ func (e GetChartDataParamsCurrency) Valid() bool {
 		return true
 	case GetChartDataParamsCurrencyCAD:
 		return true
+	case GetChartDataParamsCurrencyCHF:
+		return true
 	case GetChartDataParamsCurrencyCNY:
 		return true
 	case GetChartDataParamsCurrencyEUR:
@@ -6931,6 +7003,8 @@ func (e GetChartDataParamsCurrency) Valid() bool {
 	case GetChartDataParamsCurrencyKRW:
 		return true
 	case GetChartDataParamsCurrencyMXN:
+		return true
+	case GetChartDataParamsCurrencyNZD:
 		return true
 	case GetChartDataParamsCurrencyPLN:
 		return true
@@ -6945,27 +7019,30 @@ func (e GetChartDataParamsCurrency) Valid() bool {
 
 // Defines values for GetChartDataParamsChartName.
 const (
-	GetChartDataParamsChartNameActives               GetChartDataParamsChartName = "actives"
-	GetChartDataParamsChartNameActivesMovement       GetChartDataParamsChartName = "actives_movement"
-	GetChartDataParamsChartNameActivesNew            GetChartDataParamsChartName = "actives_new"
-	GetChartDataParamsChartNameArr                   GetChartDataParamsChartName = "arr"
-	GetChartDataParamsChartNameChurn                 GetChartDataParamsChartName = "churn"
-	GetChartDataParamsChartNameCohortExplorer        GetChartDataParamsChartName = "cohort_explorer"
-	GetChartDataParamsChartNameConversionToPaying    GetChartDataParamsChartName = "conversion_to_paying"
-	GetChartDataParamsChartNameCustomersActive       GetChartDataParamsChartName = "customers_active"
-	GetChartDataParamsChartNameCustomersNew          GetChartDataParamsChartName = "customers_new"
-	GetChartDataParamsChartNameLtvPerCustomer        GetChartDataParamsChartName = "ltv_per_customer"
-	GetChartDataParamsChartNameLtvPerPayingCustomer  GetChartDataParamsChartName = "ltv_per_paying_customer"
-	GetChartDataParamsChartNameMrr                   GetChartDataParamsChartName = "mrr"
-	GetChartDataParamsChartNameMrrMovement           GetChartDataParamsChartName = "mrr_movement"
-	GetChartDataParamsChartNameRefundRate            GetChartDataParamsChartName = "refund_rate"
-	GetChartDataParamsChartNameRevenue               GetChartDataParamsChartName = "revenue"
-	GetChartDataParamsChartNameSubscriptionRetention GetChartDataParamsChartName = "subscription_retention"
-	GetChartDataParamsChartNameSubscriptionStatus    GetChartDataParamsChartName = "subscription_status"
-	GetChartDataParamsChartNameTrialConversionRate   GetChartDataParamsChartName = "trial_conversion_rate"
-	GetChartDataParamsChartNameTrials                GetChartDataParamsChartName = "trials"
-	GetChartDataParamsChartNameTrialsMovement        GetChartDataParamsChartName = "trials_movement"
-	GetChartDataParamsChartNameTrialsNew             GetChartDataParamsChartName = "trials_new"
+	GetChartDataParamsChartNameActives                  GetChartDataParamsChartName = "actives"
+	GetChartDataParamsChartNameActivesMovement          GetChartDataParamsChartName = "actives_movement"
+	GetChartDataParamsChartNameActivesNew               GetChartDataParamsChartName = "actives_new"
+	GetChartDataParamsChartNameArr                      GetChartDataParamsChartName = "arr"
+	GetChartDataParamsChartNameChurn                    GetChartDataParamsChartName = "churn"
+	GetChartDataParamsChartNameCohortExplorer           GetChartDataParamsChartName = "cohort_explorer"
+	GetChartDataParamsChartNameConversionToPaying       GetChartDataParamsChartName = "conversion_to_paying"
+	GetChartDataParamsChartNameCustomersActive          GetChartDataParamsChartName = "customers_active"
+	GetChartDataParamsChartNameCustomersNew             GetChartDataParamsChartName = "customers_new"
+	GetChartDataParamsChartNameInitialConversion        GetChartDataParamsChartName = "initial_conversion"
+	GetChartDataParamsChartNameLtvPerCustomer           GetChartDataParamsChartName = "ltv_per_customer"
+	GetChartDataParamsChartNameLtvPerPayingCustomer     GetChartDataParamsChartName = "ltv_per_paying_customer"
+	GetChartDataParamsChartNameMrr                      GetChartDataParamsChartName = "mrr"
+	GetChartDataParamsChartNameMrrMovement              GetChartDataParamsChartName = "mrr_movement"
+	GetChartDataParamsChartNameNonSubscriptionPurchases GetChartDataParamsChartName = "non-subscription_purchases"
+	GetChartDataParamsChartNamePredictionExplorer       GetChartDataParamsChartName = "prediction_explorer"
+	GetChartDataParamsChartNameRefundRate               GetChartDataParamsChartName = "refund_rate"
+	GetChartDataParamsChartNameRevenue                  GetChartDataParamsChartName = "revenue"
+	GetChartDataParamsChartNameSubscriptionRetention    GetChartDataParamsChartName = "subscription_retention"
+	GetChartDataParamsChartNameSubscriptionStatus       GetChartDataParamsChartName = "subscription_status"
+	GetChartDataParamsChartNameTrialConversionRate      GetChartDataParamsChartName = "trial_conversion_rate"
+	GetChartDataParamsChartNameTrials                   GetChartDataParamsChartName = "trials"
+	GetChartDataParamsChartNameTrialsMovement           GetChartDataParamsChartName = "trials_movement"
+	GetChartDataParamsChartNameTrialsNew                GetChartDataParamsChartName = "trials_new"
 )
 
 // Valid indicates whether the value is a known member of the GetChartDataParamsChartName enum.
@@ -6989,6 +7066,8 @@ func (e GetChartDataParamsChartName) Valid() bool {
 		return true
 	case GetChartDataParamsChartNameCustomersNew:
 		return true
+	case GetChartDataParamsChartNameInitialConversion:
+		return true
 	case GetChartDataParamsChartNameLtvPerCustomer:
 		return true
 	case GetChartDataParamsChartNameLtvPerPayingCustomer:
@@ -6996,6 +7075,10 @@ func (e GetChartDataParamsChartName) Valid() bool {
 	case GetChartDataParamsChartNameMrr:
 		return true
 	case GetChartDataParamsChartNameMrrMovement:
+		return true
+	case GetChartDataParamsChartNameNonSubscriptionPurchases:
+		return true
+	case GetChartDataParamsChartNamePredictionExplorer:
 		return true
 	case GetChartDataParamsChartNameRefundRate:
 		return true
@@ -7263,27 +7346,30 @@ func (e GetChartData503JSONResponseBodyType) Valid() bool {
 
 // Defines values for GetChartOptionsParamsChartName.
 const (
-	GetChartOptionsParamsChartNameActives               GetChartOptionsParamsChartName = "actives"
-	GetChartOptionsParamsChartNameActivesMovement       GetChartOptionsParamsChartName = "actives_movement"
-	GetChartOptionsParamsChartNameActivesNew            GetChartOptionsParamsChartName = "actives_new"
-	GetChartOptionsParamsChartNameArr                   GetChartOptionsParamsChartName = "arr"
-	GetChartOptionsParamsChartNameChurn                 GetChartOptionsParamsChartName = "churn"
-	GetChartOptionsParamsChartNameCohortExplorer        GetChartOptionsParamsChartName = "cohort_explorer"
-	GetChartOptionsParamsChartNameConversionToPaying    GetChartOptionsParamsChartName = "conversion_to_paying"
-	GetChartOptionsParamsChartNameCustomersActive       GetChartOptionsParamsChartName = "customers_active"
-	GetChartOptionsParamsChartNameCustomersNew          GetChartOptionsParamsChartName = "customers_new"
-	GetChartOptionsParamsChartNameLtvPerCustomer        GetChartOptionsParamsChartName = "ltv_per_customer"
-	GetChartOptionsParamsChartNameLtvPerPayingCustomer  GetChartOptionsParamsChartName = "ltv_per_paying_customer"
-	GetChartOptionsParamsChartNameMrr                   GetChartOptionsParamsChartName = "mrr"
-	GetChartOptionsParamsChartNameMrrMovement           GetChartOptionsParamsChartName = "mrr_movement"
-	GetChartOptionsParamsChartNameRefundRate            GetChartOptionsParamsChartName = "refund_rate"
-	GetChartOptionsParamsChartNameRevenue               GetChartOptionsParamsChartName = "revenue"
-	GetChartOptionsParamsChartNameSubscriptionRetention GetChartOptionsParamsChartName = "subscription_retention"
-	GetChartOptionsParamsChartNameSubscriptionStatus    GetChartOptionsParamsChartName = "subscription_status"
-	GetChartOptionsParamsChartNameTrialConversionRate   GetChartOptionsParamsChartName = "trial_conversion_rate"
-	GetChartOptionsParamsChartNameTrials                GetChartOptionsParamsChartName = "trials"
-	GetChartOptionsParamsChartNameTrialsMovement        GetChartOptionsParamsChartName = "trials_movement"
-	GetChartOptionsParamsChartNameTrialsNew             GetChartOptionsParamsChartName = "trials_new"
+	GetChartOptionsParamsChartNameActives                  GetChartOptionsParamsChartName = "actives"
+	GetChartOptionsParamsChartNameActivesMovement          GetChartOptionsParamsChartName = "actives_movement"
+	GetChartOptionsParamsChartNameActivesNew               GetChartOptionsParamsChartName = "actives_new"
+	GetChartOptionsParamsChartNameArr                      GetChartOptionsParamsChartName = "arr"
+	GetChartOptionsParamsChartNameChurn                    GetChartOptionsParamsChartName = "churn"
+	GetChartOptionsParamsChartNameCohortExplorer           GetChartOptionsParamsChartName = "cohort_explorer"
+	GetChartOptionsParamsChartNameConversionToPaying       GetChartOptionsParamsChartName = "conversion_to_paying"
+	GetChartOptionsParamsChartNameCustomersActive          GetChartOptionsParamsChartName = "customers_active"
+	GetChartOptionsParamsChartNameCustomersNew             GetChartOptionsParamsChartName = "customers_new"
+	GetChartOptionsParamsChartNameInitialConversion        GetChartOptionsParamsChartName = "initial_conversion"
+	GetChartOptionsParamsChartNameLtvPerCustomer           GetChartOptionsParamsChartName = "ltv_per_customer"
+	GetChartOptionsParamsChartNameLtvPerPayingCustomer     GetChartOptionsParamsChartName = "ltv_per_paying_customer"
+	GetChartOptionsParamsChartNameMrr                      GetChartOptionsParamsChartName = "mrr"
+	GetChartOptionsParamsChartNameMrrMovement              GetChartOptionsParamsChartName = "mrr_movement"
+	GetChartOptionsParamsChartNameNonSubscriptionPurchases GetChartOptionsParamsChartName = "non-subscription_purchases"
+	GetChartOptionsParamsChartNamePredictionExplorer       GetChartOptionsParamsChartName = "prediction_explorer"
+	GetChartOptionsParamsChartNameRefundRate               GetChartOptionsParamsChartName = "refund_rate"
+	GetChartOptionsParamsChartNameRevenue                  GetChartOptionsParamsChartName = "revenue"
+	GetChartOptionsParamsChartNameSubscriptionRetention    GetChartOptionsParamsChartName = "subscription_retention"
+	GetChartOptionsParamsChartNameSubscriptionStatus       GetChartOptionsParamsChartName = "subscription_status"
+	GetChartOptionsParamsChartNameTrialConversionRate      GetChartOptionsParamsChartName = "trial_conversion_rate"
+	GetChartOptionsParamsChartNameTrials                   GetChartOptionsParamsChartName = "trials"
+	GetChartOptionsParamsChartNameTrialsMovement           GetChartOptionsParamsChartName = "trials_movement"
+	GetChartOptionsParamsChartNameTrialsNew                GetChartOptionsParamsChartName = "trials_new"
 )
 
 // Valid indicates whether the value is a known member of the GetChartOptionsParamsChartName enum.
@@ -7307,6 +7393,8 @@ func (e GetChartOptionsParamsChartName) Valid() bool {
 		return true
 	case GetChartOptionsParamsChartNameCustomersNew:
 		return true
+	case GetChartOptionsParamsChartNameInitialConversion:
+		return true
 	case GetChartOptionsParamsChartNameLtvPerCustomer:
 		return true
 	case GetChartOptionsParamsChartNameLtvPerPayingCustomer:
@@ -7314,6 +7402,10 @@ func (e GetChartOptionsParamsChartName) Valid() bool {
 	case GetChartOptionsParamsChartNameMrr:
 		return true
 	case GetChartOptionsParamsChartNameMrrMovement:
+		return true
+	case GetChartOptionsParamsChartNameNonSubscriptionPurchases:
+		return true
+	case GetChartOptionsParamsChartNamePredictionExplorer:
 		return true
 	case GetChartOptionsParamsChartNameRefundRate:
 		return true
@@ -8206,6 +8298,7 @@ func (e CreateCustomer409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateCustomer409JSONResponseBodyType.
 const (
 	CreateCustomer409JSONResponseBodyTypeIdempotencyError      CreateCustomer409JSONResponseBodyType = "idempotency_error"
+	CreateCustomer409JSONResponseBodyTypeInvalidRequest        CreateCustomer409JSONResponseBodyType = "invalid_request"
 	CreateCustomer409JSONResponseBodyTypeResourceAlreadyExists CreateCustomer409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -8213,6 +8306,8 @@ const (
 func (e CreateCustomer409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateCustomer409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateCustomer409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateCustomer409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -8380,879 +8475,6 @@ func (e CreateCustomer503JSONResponseBodyType) Valid() bool {
 	}
 }
 
-// Defines values for ListBlockedCustomers400JSONResponseBodyObject.
-const (
-	ListBlockedCustomers400JSONResponseBodyObjectError ListBlockedCustomers400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers400JSONResponseBodyObject enum.
-func (e ListBlockedCustomers400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListBlockedCustomers400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers400JSONResponseBodyType.
-const (
-	ListBlockedCustomers400JSONResponseBodyTypeInvalidRequest ListBlockedCustomers400JSONResponseBodyType = "invalid_request"
-	ListBlockedCustomers400JSONResponseBodyTypeParameterError ListBlockedCustomers400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers400JSONResponseBodyType enum.
-func (e ListBlockedCustomers400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListBlockedCustomers400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case ListBlockedCustomers400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers401JSONResponseBodyObject.
-const (
-	ListBlockedCustomers401JSONResponseBodyObjectError ListBlockedCustomers401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers401JSONResponseBodyObject enum.
-func (e ListBlockedCustomers401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListBlockedCustomers401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers401JSONResponseBodyType.
-const (
-	ListBlockedCustomers401JSONResponseBodyTypeAuthenticationError ListBlockedCustomers401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers401JSONResponseBodyType enum.
-func (e ListBlockedCustomers401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListBlockedCustomers401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers403JSONResponseBodyObject.
-const (
-	ListBlockedCustomers403JSONResponseBodyObjectError ListBlockedCustomers403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers403JSONResponseBodyObject enum.
-func (e ListBlockedCustomers403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListBlockedCustomers403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers403JSONResponseBodyType.
-const (
-	ListBlockedCustomers403JSONResponseBodyTypeAuthorizationError ListBlockedCustomers403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers403JSONResponseBodyType enum.
-func (e ListBlockedCustomers403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListBlockedCustomers403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers404JSONResponseBodyObject.
-const (
-	ListBlockedCustomers404JSONResponseBodyObjectError ListBlockedCustomers404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers404JSONResponseBodyObject enum.
-func (e ListBlockedCustomers404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListBlockedCustomers404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers404JSONResponseBodyType.
-const (
-	ListBlockedCustomers404JSONResponseBodyTypeResourceMissing ListBlockedCustomers404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers404JSONResponseBodyType enum.
-func (e ListBlockedCustomers404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListBlockedCustomers404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers423JSONResponseBodyObject.
-const (
-	ListBlockedCustomers423JSONResponseBodyObjectError ListBlockedCustomers423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers423JSONResponseBodyObject enum.
-func (e ListBlockedCustomers423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListBlockedCustomers423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers423JSONResponseBodyType.
-const (
-	ListBlockedCustomers423JSONResponseBodyTypeResourceLockedError ListBlockedCustomers423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers423JSONResponseBodyType enum.
-func (e ListBlockedCustomers423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListBlockedCustomers423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers429JSONResponseBodyObject.
-const (
-	ListBlockedCustomers429JSONResponseBodyObjectError ListBlockedCustomers429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers429JSONResponseBodyObject enum.
-func (e ListBlockedCustomers429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListBlockedCustomers429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers429JSONResponseBodyType.
-const (
-	ListBlockedCustomers429JSONResponseBodyTypeRateLimitError ListBlockedCustomers429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers429JSONResponseBodyType enum.
-func (e ListBlockedCustomers429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListBlockedCustomers429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers500JSONResponseBodyObject.
-const (
-	ListBlockedCustomers500JSONResponseBodyObjectError ListBlockedCustomers500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers500JSONResponseBodyObject enum.
-func (e ListBlockedCustomers500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListBlockedCustomers500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers500JSONResponseBodyType.
-const (
-	ListBlockedCustomers500JSONResponseBodyTypeServerError ListBlockedCustomers500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers500JSONResponseBodyType enum.
-func (e ListBlockedCustomers500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListBlockedCustomers500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers503JSONResponseBodyObject.
-const (
-	ListBlockedCustomers503JSONResponseBodyObjectError ListBlockedCustomers503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers503JSONResponseBodyObject enum.
-func (e ListBlockedCustomers503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListBlockedCustomers503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListBlockedCustomers503JSONResponseBodyType.
-const (
-	ListBlockedCustomers503JSONResponseBodyTypeServerError ListBlockedCustomers503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the ListBlockedCustomers503JSONResponseBodyType enum.
-func (e ListBlockedCustomers503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListBlockedCustomers503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer400JSONResponseBodyObject.
-const (
-	UnblockCustomer400JSONResponseBodyObjectError UnblockCustomer400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer400JSONResponseBodyObject enum.
-func (e UnblockCustomer400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer400JSONResponseBodyType.
-const (
-	UnblockCustomer400JSONResponseBodyTypeInvalidRequest UnblockCustomer400JSONResponseBodyType = "invalid_request"
-	UnblockCustomer400JSONResponseBodyTypeParameterError UnblockCustomer400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer400JSONResponseBodyType enum.
-func (e UnblockCustomer400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case UnblockCustomer400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer401JSONResponseBodyObject.
-const (
-	UnblockCustomer401JSONResponseBodyObjectError UnblockCustomer401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer401JSONResponseBodyObject enum.
-func (e UnblockCustomer401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer401JSONResponseBodyType.
-const (
-	UnblockCustomer401JSONResponseBodyTypeAuthenticationError UnblockCustomer401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer401JSONResponseBodyType enum.
-func (e UnblockCustomer401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer403JSONResponseBodyObject.
-const (
-	UnblockCustomer403JSONResponseBodyObjectError UnblockCustomer403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer403JSONResponseBodyObject enum.
-func (e UnblockCustomer403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer403JSONResponseBodyType.
-const (
-	UnblockCustomer403JSONResponseBodyTypeAuthorizationError UnblockCustomer403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer403JSONResponseBodyType enum.
-func (e UnblockCustomer403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer404JSONResponseBodyObject.
-const (
-	UnblockCustomer404JSONResponseBodyObjectError UnblockCustomer404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer404JSONResponseBodyObject enum.
-func (e UnblockCustomer404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer404JSONResponseBodyType.
-const (
-	UnblockCustomer404JSONResponseBodyTypeResourceMissing UnblockCustomer404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer404JSONResponseBodyType enum.
-func (e UnblockCustomer404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer409JSONResponseBodyObject.
-const (
-	UnblockCustomer409JSONResponseBodyObjectError UnblockCustomer409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer409JSONResponseBodyObject enum.
-func (e UnblockCustomer409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer409JSONResponseBodyType.
-const (
-	UnblockCustomer409JSONResponseBodyTypeIdempotencyError      UnblockCustomer409JSONResponseBodyType = "idempotency_error"
-	UnblockCustomer409JSONResponseBodyTypeResourceAlreadyExists UnblockCustomer409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer409JSONResponseBodyType enum.
-func (e UnblockCustomer409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case UnblockCustomer409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer422JSONResponseBodyObject.
-const (
-	UnblockCustomer422JSONResponseBodyObjectError UnblockCustomer422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer422JSONResponseBodyObject enum.
-func (e UnblockCustomer422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer422JSONResponseBodyType.
-const (
-	UnblockCustomer422JSONResponseBodyTypeEntityReferencesArchivedEntities UnblockCustomer422JSONResponseBodyType = "entity_references_archived_entities"
-	UnblockCustomer422JSONResponseBodyTypeParameterError                   UnblockCustomer422JSONResponseBodyType = "parameter_error"
-	UnblockCustomer422JSONResponseBodyTypeStoreError                       UnblockCustomer422JSONResponseBodyType = "store_error"
-	UnblockCustomer422JSONResponseBodyTypeUnprocessableEntityError         UnblockCustomer422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer422JSONResponseBodyType enum.
-func (e UnblockCustomer422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case UnblockCustomer422JSONResponseBodyTypeParameterError:
-		return true
-	case UnblockCustomer422JSONResponseBodyTypeStoreError:
-		return true
-	case UnblockCustomer422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer423JSONResponseBodyObject.
-const (
-	UnblockCustomer423JSONResponseBodyObjectError UnblockCustomer423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer423JSONResponseBodyObject enum.
-func (e UnblockCustomer423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer423JSONResponseBodyType.
-const (
-	UnblockCustomer423JSONResponseBodyTypeResourceLockedError UnblockCustomer423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer423JSONResponseBodyType enum.
-func (e UnblockCustomer423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer429JSONResponseBodyObject.
-const (
-	UnblockCustomer429JSONResponseBodyObjectError UnblockCustomer429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer429JSONResponseBodyObject enum.
-func (e UnblockCustomer429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer429JSONResponseBodyType.
-const (
-	UnblockCustomer429JSONResponseBodyTypeRateLimitError UnblockCustomer429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer429JSONResponseBodyType enum.
-func (e UnblockCustomer429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer500JSONResponseBodyObject.
-const (
-	UnblockCustomer500JSONResponseBodyObjectError UnblockCustomer500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer500JSONResponseBodyObject enum.
-func (e UnblockCustomer500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer500JSONResponseBodyType.
-const (
-	UnblockCustomer500JSONResponseBodyTypeServerError UnblockCustomer500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer500JSONResponseBodyType enum.
-func (e UnblockCustomer500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer503JSONResponseBodyObject.
-const (
-	UnblockCustomer503JSONResponseBodyObjectError UnblockCustomer503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer503JSONResponseBodyObject enum.
-func (e UnblockCustomer503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UnblockCustomer503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnblockCustomer503JSONResponseBodyType.
-const (
-	UnblockCustomer503JSONResponseBodyTypeServerError UnblockCustomer503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the UnblockCustomer503JSONResponseBodyType enum.
-func (e UnblockCustomer503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UnblockCustomer503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer400JSONResponseBodyObject.
-const (
-	BlockCustomer400JSONResponseBodyObjectError BlockCustomer400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer400JSONResponseBodyObject enum.
-func (e BlockCustomer400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer400JSONResponseBodyType.
-const (
-	BlockCustomer400JSONResponseBodyTypeInvalidRequest BlockCustomer400JSONResponseBodyType = "invalid_request"
-	BlockCustomer400JSONResponseBodyTypeParameterError BlockCustomer400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer400JSONResponseBodyType enum.
-func (e BlockCustomer400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case BlockCustomer400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer401JSONResponseBodyObject.
-const (
-	BlockCustomer401JSONResponseBodyObjectError BlockCustomer401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer401JSONResponseBodyObject enum.
-func (e BlockCustomer401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer401JSONResponseBodyType.
-const (
-	BlockCustomer401JSONResponseBodyTypeAuthenticationError BlockCustomer401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer401JSONResponseBodyType enum.
-func (e BlockCustomer401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer403JSONResponseBodyObject.
-const (
-	BlockCustomer403JSONResponseBodyObjectError BlockCustomer403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer403JSONResponseBodyObject enum.
-func (e BlockCustomer403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer403JSONResponseBodyType.
-const (
-	BlockCustomer403JSONResponseBodyTypeAuthorizationError BlockCustomer403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer403JSONResponseBodyType enum.
-func (e BlockCustomer403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer404JSONResponseBodyObject.
-const (
-	BlockCustomer404JSONResponseBodyObjectError BlockCustomer404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer404JSONResponseBodyObject enum.
-func (e BlockCustomer404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer404JSONResponseBodyType.
-const (
-	BlockCustomer404JSONResponseBodyTypeResourceMissing BlockCustomer404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer404JSONResponseBodyType enum.
-func (e BlockCustomer404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer409JSONResponseBodyObject.
-const (
-	BlockCustomer409JSONResponseBodyObjectError BlockCustomer409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer409JSONResponseBodyObject enum.
-func (e BlockCustomer409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer409JSONResponseBodyType.
-const (
-	BlockCustomer409JSONResponseBodyTypeIdempotencyError      BlockCustomer409JSONResponseBodyType = "idempotency_error"
-	BlockCustomer409JSONResponseBodyTypeResourceAlreadyExists BlockCustomer409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer409JSONResponseBodyType enum.
-func (e BlockCustomer409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case BlockCustomer409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer422JSONResponseBodyObject.
-const (
-	BlockCustomer422JSONResponseBodyObjectError BlockCustomer422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer422JSONResponseBodyObject enum.
-func (e BlockCustomer422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer422JSONResponseBodyType.
-const (
-	BlockCustomer422JSONResponseBodyTypeEntityReferencesArchivedEntities BlockCustomer422JSONResponseBodyType = "entity_references_archived_entities"
-	BlockCustomer422JSONResponseBodyTypeParameterError                   BlockCustomer422JSONResponseBodyType = "parameter_error"
-	BlockCustomer422JSONResponseBodyTypeStoreError                       BlockCustomer422JSONResponseBodyType = "store_error"
-	BlockCustomer422JSONResponseBodyTypeUnprocessableEntityError         BlockCustomer422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer422JSONResponseBodyType enum.
-func (e BlockCustomer422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case BlockCustomer422JSONResponseBodyTypeParameterError:
-		return true
-	case BlockCustomer422JSONResponseBodyTypeStoreError:
-		return true
-	case BlockCustomer422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer423JSONResponseBodyObject.
-const (
-	BlockCustomer423JSONResponseBodyObjectError BlockCustomer423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer423JSONResponseBodyObject enum.
-func (e BlockCustomer423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer423JSONResponseBodyType.
-const (
-	BlockCustomer423JSONResponseBodyTypeResourceLockedError BlockCustomer423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer423JSONResponseBodyType enum.
-func (e BlockCustomer423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer429JSONResponseBodyObject.
-const (
-	BlockCustomer429JSONResponseBodyObjectError BlockCustomer429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer429JSONResponseBodyObject enum.
-func (e BlockCustomer429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer429JSONResponseBodyType.
-const (
-	BlockCustomer429JSONResponseBodyTypeRateLimitError BlockCustomer429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer429JSONResponseBodyType enum.
-func (e BlockCustomer429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer500JSONResponseBodyObject.
-const (
-	BlockCustomer500JSONResponseBodyObjectError BlockCustomer500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer500JSONResponseBodyObject enum.
-func (e BlockCustomer500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer500JSONResponseBodyType.
-const (
-	BlockCustomer500JSONResponseBodyTypeServerError BlockCustomer500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer500JSONResponseBodyType enum.
-func (e BlockCustomer500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer503JSONResponseBodyObject.
-const (
-	BlockCustomer503JSONResponseBodyObjectError BlockCustomer503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer503JSONResponseBodyObject enum.
-func (e BlockCustomer503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case BlockCustomer503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BlockCustomer503JSONResponseBodyType.
-const (
-	BlockCustomer503JSONResponseBodyTypeServerError BlockCustomer503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the BlockCustomer503JSONResponseBodyType enum.
-func (e BlockCustomer503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case BlockCustomer503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for DeleteCustomer400JSONResponseBodyObject.
 const (
 	DeleteCustomer400JSONResponseBodyObjectError DeleteCustomer400JSONResponseBodyObject = "error"
@@ -9394,6 +8616,7 @@ func (e DeleteCustomer409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeleteCustomer409JSONResponseBodyType.
 const (
 	DeleteCustomer409JSONResponseBodyTypeIdempotencyError      DeleteCustomer409JSONResponseBodyType = "idempotency_error"
+	DeleteCustomer409JSONResponseBodyTypeInvalidRequest        DeleteCustomer409JSONResponseBodyType = "invalid_request"
 	DeleteCustomer409JSONResponseBodyTypeResourceAlreadyExists DeleteCustomer409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -9401,6 +8624,8 @@ const (
 func (e DeleteCustomer409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeleteCustomer409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeleteCustomer409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeleteCustomer409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -9967,6 +9192,7 @@ func (e AssignCustomerOffering409JSONResponseBodyObject) Valid() bool {
 // Defines values for AssignCustomerOffering409JSONResponseBodyType.
 const (
 	AssignCustomerOffering409JSONResponseBodyTypeIdempotencyError      AssignCustomerOffering409JSONResponseBodyType = "idempotency_error"
+	AssignCustomerOffering409JSONResponseBodyTypeInvalidRequest        AssignCustomerOffering409JSONResponseBodyType = "invalid_request"
 	AssignCustomerOffering409JSONResponseBodyTypeResourceAlreadyExists AssignCustomerOffering409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -9974,6 +9200,8 @@ const (
 func (e AssignCustomerOffering409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case AssignCustomerOffering409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case AssignCustomerOffering409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case AssignCustomerOffering409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -10282,6 +9510,7 @@ func (e GrantCustomerEntitlement409JSONResponseBodyObject) Valid() bool {
 // Defines values for GrantCustomerEntitlement409JSONResponseBodyType.
 const (
 	GrantCustomerEntitlement409JSONResponseBodyTypeIdempotencyError      GrantCustomerEntitlement409JSONResponseBodyType = "idempotency_error"
+	GrantCustomerEntitlement409JSONResponseBodyTypeInvalidRequest        GrantCustomerEntitlement409JSONResponseBodyType = "invalid_request"
 	GrantCustomerEntitlement409JSONResponseBodyTypeResourceAlreadyExists GrantCustomerEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -10289,6 +9518,8 @@ const (
 func (e GrantCustomerEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case GrantCustomerEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case GrantCustomerEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case GrantCustomerEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -10597,6 +9828,7 @@ func (e RestorePurchaseByOrderID409JSONResponseBodyObject) Valid() bool {
 // Defines values for RestorePurchaseByOrderID409JSONResponseBodyType.
 const (
 	RestorePurchaseByOrderID409JSONResponseBodyTypeIdempotencyError      RestorePurchaseByOrderID409JSONResponseBodyType = "idempotency_error"
+	RestorePurchaseByOrderID409JSONResponseBodyTypeInvalidRequest        RestorePurchaseByOrderID409JSONResponseBodyType = "invalid_request"
 	RestorePurchaseByOrderID409JSONResponseBodyTypeResourceAlreadyExists RestorePurchaseByOrderID409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -10604,6 +9836,8 @@ const (
 func (e RestorePurchaseByOrderID409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case RestorePurchaseByOrderID409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case RestorePurchaseByOrderID409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case RestorePurchaseByOrderID409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -10912,6 +10146,7 @@ func (e RevokeCustomerGrantedEntitlement409JSONResponseBodyObject) Valid() bool 
 // Defines values for RevokeCustomerGrantedEntitlement409JSONResponseBodyType.
 const (
 	RevokeCustomerGrantedEntitlement409JSONResponseBodyTypeIdempotencyError      RevokeCustomerGrantedEntitlement409JSONResponseBodyType = "idempotency_error"
+	RevokeCustomerGrantedEntitlement409JSONResponseBodyTypeInvalidRequest        RevokeCustomerGrantedEntitlement409JSONResponseBodyType = "invalid_request"
 	RevokeCustomerGrantedEntitlement409JSONResponseBodyTypeResourceAlreadyExists RevokeCustomerGrantedEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -10919,6 +10154,8 @@ const (
 func (e RevokeCustomerGrantedEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case RevokeCustomerGrantedEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case RevokeCustomerGrantedEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case RevokeCustomerGrantedEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -11227,6 +10464,7 @@ func (e TransferCustomerData409JSONResponseBodyObject) Valid() bool {
 // Defines values for TransferCustomerData409JSONResponseBodyType.
 const (
 	TransferCustomerData409JSONResponseBodyTypeIdempotencyError      TransferCustomerData409JSONResponseBodyType = "idempotency_error"
+	TransferCustomerData409JSONResponseBodyTypeInvalidRequest        TransferCustomerData409JSONResponseBodyType = "invalid_request"
 	TransferCustomerData409JSONResponseBodyTypeResourceAlreadyExists TransferCustomerData409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -11234,6 +10472,8 @@ const (
 func (e TransferCustomerData409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case TransferCustomerData409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case TransferCustomerData409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case TransferCustomerData409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -12271,6 +11511,7 @@ func (e SetCustomerAttributes409JSONResponseBodyObject) Valid() bool {
 // Defines values for SetCustomerAttributes409JSONResponseBodyType.
 const (
 	SetCustomerAttributes409JSONResponseBodyTypeIdempotencyError      SetCustomerAttributes409JSONResponseBodyType = "idempotency_error"
+	SetCustomerAttributes409JSONResponseBodyTypeInvalidRequest        SetCustomerAttributes409JSONResponseBodyType = "invalid_request"
 	SetCustomerAttributes409JSONResponseBodyTypeResourceAlreadyExists SetCustomerAttributes409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -12278,6 +11519,8 @@ const (
 func (e SetCustomerAttributes409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case SetCustomerAttributes409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case SetCustomerAttributes409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case SetCustomerAttributes409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -12439,6 +11682,276 @@ const (
 func (e SetCustomerAttributes503JSONResponseBodyType) Valid() bool {
 	switch e {
 	case SetCustomerAttributes503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfigParamsPlatform.
+const (
+	GetCustomerCenterConfigParamsPlatformAmazon      GetCustomerCenterConfigParamsPlatform = "amazon"
+	GetCustomerCenterConfigParamsPlatformAppStore    GetCustomerCenterConfigParamsPlatform = "app_store"
+	GetCustomerCenterConfigParamsPlatformMacAppStore GetCustomerCenterConfigParamsPlatform = "mac_app_store"
+	GetCustomerCenterConfigParamsPlatformPlayStore   GetCustomerCenterConfigParamsPlatform = "play_store"
+	GetCustomerCenterConfigParamsPlatformStripe      GetCustomerCenterConfigParamsPlatform = "stripe"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfigParamsPlatform enum.
+func (e GetCustomerCenterConfigParamsPlatform) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfigParamsPlatformAmazon:
+		return true
+	case GetCustomerCenterConfigParamsPlatformAppStore:
+		return true
+	case GetCustomerCenterConfigParamsPlatformMacAppStore:
+		return true
+	case GetCustomerCenterConfigParamsPlatformPlayStore:
+		return true
+	case GetCustomerCenterConfigParamsPlatformStripe:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig400JSONResponseBodyObject.
+const (
+	GetCustomerCenterConfig400JSONResponseBodyObjectError GetCustomerCenterConfig400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig400JSONResponseBodyObject enum.
+func (e GetCustomerCenterConfig400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig400JSONResponseBodyType.
+const (
+	GetCustomerCenterConfig400JSONResponseBodyTypeInvalidRequest GetCustomerCenterConfig400JSONResponseBodyType = "invalid_request"
+	GetCustomerCenterConfig400JSONResponseBodyTypeParameterError GetCustomerCenterConfig400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig400JSONResponseBodyType enum.
+func (e GetCustomerCenterConfig400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case GetCustomerCenterConfig400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig401JSONResponseBodyObject.
+const (
+	GetCustomerCenterConfig401JSONResponseBodyObjectError GetCustomerCenterConfig401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig401JSONResponseBodyObject enum.
+func (e GetCustomerCenterConfig401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig401JSONResponseBodyType.
+const (
+	GetCustomerCenterConfig401JSONResponseBodyTypeAuthenticationError GetCustomerCenterConfig401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig401JSONResponseBodyType enum.
+func (e GetCustomerCenterConfig401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig403JSONResponseBodyObject.
+const (
+	GetCustomerCenterConfig403JSONResponseBodyObjectError GetCustomerCenterConfig403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig403JSONResponseBodyObject enum.
+func (e GetCustomerCenterConfig403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig403JSONResponseBodyType.
+const (
+	GetCustomerCenterConfig403JSONResponseBodyTypeAuthorizationError GetCustomerCenterConfig403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig403JSONResponseBodyType enum.
+func (e GetCustomerCenterConfig403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig404JSONResponseBodyObject.
+const (
+	GetCustomerCenterConfig404JSONResponseBodyObjectError GetCustomerCenterConfig404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig404JSONResponseBodyObject enum.
+func (e GetCustomerCenterConfig404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig404JSONResponseBodyType.
+const (
+	GetCustomerCenterConfig404JSONResponseBodyTypeResourceMissing GetCustomerCenterConfig404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig404JSONResponseBodyType enum.
+func (e GetCustomerCenterConfig404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig423JSONResponseBodyObject.
+const (
+	GetCustomerCenterConfig423JSONResponseBodyObjectError GetCustomerCenterConfig423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig423JSONResponseBodyObject enum.
+func (e GetCustomerCenterConfig423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig423JSONResponseBodyType.
+const (
+	GetCustomerCenterConfig423JSONResponseBodyTypeResourceLockedError GetCustomerCenterConfig423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig423JSONResponseBodyType enum.
+func (e GetCustomerCenterConfig423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig429JSONResponseBodyObject.
+const (
+	GetCustomerCenterConfig429JSONResponseBodyObjectError GetCustomerCenterConfig429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig429JSONResponseBodyObject enum.
+func (e GetCustomerCenterConfig429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig429JSONResponseBodyType.
+const (
+	GetCustomerCenterConfig429JSONResponseBodyTypeRateLimitError GetCustomerCenterConfig429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig429JSONResponseBodyType enum.
+func (e GetCustomerCenterConfig429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig500JSONResponseBodyObject.
+const (
+	GetCustomerCenterConfig500JSONResponseBodyObjectError GetCustomerCenterConfig500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig500JSONResponseBodyObject enum.
+func (e GetCustomerCenterConfig500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig500JSONResponseBodyType.
+const (
+	GetCustomerCenterConfig500JSONResponseBodyTypeServerError GetCustomerCenterConfig500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig500JSONResponseBodyType enum.
+func (e GetCustomerCenterConfig500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig503JSONResponseBodyObject.
+const (
+	GetCustomerCenterConfig503JSONResponseBodyObjectError GetCustomerCenterConfig503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig503JSONResponseBodyObject enum.
+func (e GetCustomerCenterConfig503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCustomerCenterConfig503JSONResponseBodyType.
+const (
+	GetCustomerCenterConfig503JSONResponseBodyTypeServerError GetCustomerCenterConfig503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetCustomerCenterConfig503JSONResponseBodyType enum.
+func (e GetCustomerCenterConfig503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetCustomerCenterConfig503JSONResponseBodyTypeServerError:
 		return true
 	default:
 		return false
@@ -14098,6 +13611,7 @@ func (e CreateVirtualCurrenciesTransaction409JSONResponseBodyObject) Valid() boo
 // Defines values for CreateVirtualCurrenciesTransaction409JSONResponseBodyType.
 const (
 	CreateVirtualCurrenciesTransaction409JSONResponseBodyTypeIdempotencyError      CreateVirtualCurrenciesTransaction409JSONResponseBodyType = "idempotency_error"
+	CreateVirtualCurrenciesTransaction409JSONResponseBodyTypeInvalidRequest        CreateVirtualCurrenciesTransaction409JSONResponseBodyType = "invalid_request"
 	CreateVirtualCurrenciesTransaction409JSONResponseBodyTypeResourceAlreadyExists CreateVirtualCurrenciesTransaction409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -14105,6 +13619,8 @@ const (
 func (e CreateVirtualCurrenciesTransaction409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateVirtualCurrenciesTransaction409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateVirtualCurrenciesTransaction409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateVirtualCurrenciesTransaction409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -14413,6 +13929,7 @@ func (e UpdateVirtualCurrenciesBalance409JSONResponseBodyObject) Valid() bool {
 // Defines values for UpdateVirtualCurrenciesBalance409JSONResponseBodyType.
 const (
 	UpdateVirtualCurrenciesBalance409JSONResponseBodyTypeIdempotencyError      UpdateVirtualCurrenciesBalance409JSONResponseBodyType = "idempotency_error"
+	UpdateVirtualCurrenciesBalance409JSONResponseBodyTypeInvalidRequest        UpdateVirtualCurrenciesBalance409JSONResponseBodyType = "invalid_request"
 	UpdateVirtualCurrenciesBalance409JSONResponseBodyTypeResourceAlreadyExists UpdateVirtualCurrenciesBalance409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -14420,6 +13937,8 @@ const (
 func (e UpdateVirtualCurrenciesBalance409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateVirtualCurrenciesBalance409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdateVirtualCurrenciesBalance409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UpdateVirtualCurrenciesBalance409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -14581,3066 +14100,6 @@ const (
 func (e UpdateVirtualCurrenciesBalance503JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateVirtualCurrenciesBalance503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts400JSONResponseBodyObject.
-const (
-	ListDiscounts400JSONResponseBodyObjectError ListDiscounts400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts400JSONResponseBodyObject enum.
-func (e ListDiscounts400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscounts400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts400JSONResponseBodyType.
-const (
-	ListDiscounts400JSONResponseBodyTypeInvalidRequest ListDiscounts400JSONResponseBodyType = "invalid_request"
-	ListDiscounts400JSONResponseBodyTypeParameterError ListDiscounts400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts400JSONResponseBodyType enum.
-func (e ListDiscounts400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscounts400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case ListDiscounts400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts401JSONResponseBodyObject.
-const (
-	ListDiscounts401JSONResponseBodyObjectError ListDiscounts401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts401JSONResponseBodyObject enum.
-func (e ListDiscounts401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscounts401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts401JSONResponseBodyType.
-const (
-	ListDiscounts401JSONResponseBodyTypeAuthenticationError ListDiscounts401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts401JSONResponseBodyType enum.
-func (e ListDiscounts401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscounts401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts403JSONResponseBodyObject.
-const (
-	ListDiscounts403JSONResponseBodyObjectError ListDiscounts403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts403JSONResponseBodyObject enum.
-func (e ListDiscounts403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscounts403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts403JSONResponseBodyType.
-const (
-	ListDiscounts403JSONResponseBodyTypeAuthorizationError ListDiscounts403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts403JSONResponseBodyType enum.
-func (e ListDiscounts403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscounts403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts404JSONResponseBodyObject.
-const (
-	ListDiscounts404JSONResponseBodyObjectError ListDiscounts404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts404JSONResponseBodyObject enum.
-func (e ListDiscounts404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscounts404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts404JSONResponseBodyType.
-const (
-	ListDiscounts404JSONResponseBodyTypeResourceMissing ListDiscounts404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts404JSONResponseBodyType enum.
-func (e ListDiscounts404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscounts404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts423JSONResponseBodyObject.
-const (
-	ListDiscounts423JSONResponseBodyObjectError ListDiscounts423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts423JSONResponseBodyObject enum.
-func (e ListDiscounts423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscounts423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts423JSONResponseBodyType.
-const (
-	ListDiscounts423JSONResponseBodyTypeResourceLockedError ListDiscounts423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts423JSONResponseBodyType enum.
-func (e ListDiscounts423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscounts423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts429JSONResponseBodyObject.
-const (
-	ListDiscounts429JSONResponseBodyObjectError ListDiscounts429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts429JSONResponseBodyObject enum.
-func (e ListDiscounts429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscounts429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts429JSONResponseBodyType.
-const (
-	ListDiscounts429JSONResponseBodyTypeRateLimitError ListDiscounts429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts429JSONResponseBodyType enum.
-func (e ListDiscounts429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscounts429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts500JSONResponseBodyObject.
-const (
-	ListDiscounts500JSONResponseBodyObjectError ListDiscounts500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts500JSONResponseBodyObject enum.
-func (e ListDiscounts500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscounts500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts500JSONResponseBodyType.
-const (
-	ListDiscounts500JSONResponseBodyTypeServerError ListDiscounts500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts500JSONResponseBodyType enum.
-func (e ListDiscounts500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscounts500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts503JSONResponseBodyObject.
-const (
-	ListDiscounts503JSONResponseBodyObjectError ListDiscounts503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts503JSONResponseBodyObject enum.
-func (e ListDiscounts503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscounts503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscounts503JSONResponseBodyType.
-const (
-	ListDiscounts503JSONResponseBodyTypeServerError ListDiscounts503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscounts503JSONResponseBodyType enum.
-func (e ListDiscounts503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscounts503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountJSONBodyDurationMode.
-const (
-	CreateDiscountJSONBodyDurationModeForever    CreateDiscountJSONBodyDurationMode = "forever"
-	CreateDiscountJSONBodyDurationModeOneTime    CreateDiscountJSONBodyDurationMode = "one_time"
-	CreateDiscountJSONBodyDurationModeTimeWindow CreateDiscountJSONBodyDurationMode = "time_window"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountJSONBodyDurationMode enum.
-func (e CreateDiscountJSONBodyDurationMode) Valid() bool {
-	switch e {
-	case CreateDiscountJSONBodyDurationModeForever:
-		return true
-	case CreateDiscountJSONBodyDurationModeOneTime:
-		return true
-	case CreateDiscountJSONBodyDurationModeTimeWindow:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountJSONBodyEligibility.
-const (
-	CreateDiscountJSONBodyEligibilityEveryone                        CreateDiscountJSONBodyEligibility = "everyone"
-	CreateDiscountJSONBodyEligibilityNeverPurchased                  CreateDiscountJSONBodyEligibility = "never_purchased"
-	CreateDiscountJSONBodyEligibilityNeverSubscribed                 CreateDiscountJSONBodyEligibility = "never_subscribed"
-	CreateDiscountJSONBodyEligibilityNeverSubscribedToTheSameProduct CreateDiscountJSONBodyEligibility = "never_subscribed_to_the_same_product"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountJSONBodyEligibility enum.
-func (e CreateDiscountJSONBodyEligibility) Valid() bool {
-	switch e {
-	case CreateDiscountJSONBodyEligibilityEveryone:
-		return true
-	case CreateDiscountJSONBodyEligibilityNeverPurchased:
-		return true
-	case CreateDiscountJSONBodyEligibilityNeverSubscribed:
-		return true
-	case CreateDiscountJSONBodyEligibilityNeverSubscribedToTheSameProduct:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountJSONBodyType.
-const (
-	CreateDiscountJSONBodyTypeFixedAmount CreateDiscountJSONBodyType = "fixed_amount"
-	CreateDiscountJSONBodyTypePercentage  CreateDiscountJSONBodyType = "percentage"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountJSONBodyType enum.
-func (e CreateDiscountJSONBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountJSONBodyTypeFixedAmount:
-		return true
-	case CreateDiscountJSONBodyTypePercentage:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount400JSONResponseBodyObject.
-const (
-	CreateDiscount400JSONResponseBodyObjectError CreateDiscount400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount400JSONResponseBodyObject enum.
-func (e CreateDiscount400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount400JSONResponseBodyType.
-const (
-	CreateDiscount400JSONResponseBodyTypeInvalidRequest CreateDiscount400JSONResponseBodyType = "invalid_request"
-	CreateDiscount400JSONResponseBodyTypeParameterError CreateDiscount400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount400JSONResponseBodyType enum.
-func (e CreateDiscount400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case CreateDiscount400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount401JSONResponseBodyObject.
-const (
-	CreateDiscount401JSONResponseBodyObjectError CreateDiscount401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount401JSONResponseBodyObject enum.
-func (e CreateDiscount401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount401JSONResponseBodyType.
-const (
-	CreateDiscount401JSONResponseBodyTypeAuthenticationError CreateDiscount401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount401JSONResponseBodyType enum.
-func (e CreateDiscount401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount403JSONResponseBodyObject.
-const (
-	CreateDiscount403JSONResponseBodyObjectError CreateDiscount403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount403JSONResponseBodyObject enum.
-func (e CreateDiscount403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount403JSONResponseBodyType.
-const (
-	CreateDiscount403JSONResponseBodyTypeAuthorizationError CreateDiscount403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount403JSONResponseBodyType enum.
-func (e CreateDiscount403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount404JSONResponseBodyObject.
-const (
-	CreateDiscount404JSONResponseBodyObjectError CreateDiscount404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount404JSONResponseBodyObject enum.
-func (e CreateDiscount404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount404JSONResponseBodyType.
-const (
-	CreateDiscount404JSONResponseBodyTypeResourceMissing CreateDiscount404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount404JSONResponseBodyType enum.
-func (e CreateDiscount404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount409JSONResponseBodyObject.
-const (
-	CreateDiscount409JSONResponseBodyObjectError CreateDiscount409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount409JSONResponseBodyObject enum.
-func (e CreateDiscount409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount409JSONResponseBodyType.
-const (
-	CreateDiscount409JSONResponseBodyTypeIdempotencyError      CreateDiscount409JSONResponseBodyType = "idempotency_error"
-	CreateDiscount409JSONResponseBodyTypeResourceAlreadyExists CreateDiscount409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount409JSONResponseBodyType enum.
-func (e CreateDiscount409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case CreateDiscount409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount422JSONResponseBodyObject.
-const (
-	CreateDiscount422JSONResponseBodyObjectError CreateDiscount422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount422JSONResponseBodyObject enum.
-func (e CreateDiscount422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount422JSONResponseBodyType.
-const (
-	CreateDiscount422JSONResponseBodyTypeEntityReferencesArchivedEntities CreateDiscount422JSONResponseBodyType = "entity_references_archived_entities"
-	CreateDiscount422JSONResponseBodyTypeParameterError                   CreateDiscount422JSONResponseBodyType = "parameter_error"
-	CreateDiscount422JSONResponseBodyTypeStoreError                       CreateDiscount422JSONResponseBodyType = "store_error"
-	CreateDiscount422JSONResponseBodyTypeUnprocessableEntityError         CreateDiscount422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount422JSONResponseBodyType enum.
-func (e CreateDiscount422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case CreateDiscount422JSONResponseBodyTypeParameterError:
-		return true
-	case CreateDiscount422JSONResponseBodyTypeStoreError:
-		return true
-	case CreateDiscount422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount423JSONResponseBodyObject.
-const (
-	CreateDiscount423JSONResponseBodyObjectError CreateDiscount423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount423JSONResponseBodyObject enum.
-func (e CreateDiscount423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount423JSONResponseBodyType.
-const (
-	CreateDiscount423JSONResponseBodyTypeResourceLockedError CreateDiscount423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount423JSONResponseBodyType enum.
-func (e CreateDiscount423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount429JSONResponseBodyObject.
-const (
-	CreateDiscount429JSONResponseBodyObjectError CreateDiscount429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount429JSONResponseBodyObject enum.
-func (e CreateDiscount429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount429JSONResponseBodyType.
-const (
-	CreateDiscount429JSONResponseBodyTypeRateLimitError CreateDiscount429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount429JSONResponseBodyType enum.
-func (e CreateDiscount429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount500JSONResponseBodyObject.
-const (
-	CreateDiscount500JSONResponseBodyObjectError CreateDiscount500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount500JSONResponseBodyObject enum.
-func (e CreateDiscount500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount500JSONResponseBodyType.
-const (
-	CreateDiscount500JSONResponseBodyTypeServerError CreateDiscount500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount500JSONResponseBodyType enum.
-func (e CreateDiscount500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount503JSONResponseBodyObject.
-const (
-	CreateDiscount503JSONResponseBodyObjectError CreateDiscount503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount503JSONResponseBodyObject enum.
-func (e CreateDiscount503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscount503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscount503JSONResponseBodyType.
-const (
-	CreateDiscount503JSONResponseBodyTypeServerError CreateDiscount503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscount503JSONResponseBodyType enum.
-func (e CreateDiscount503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscount503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount400JSONResponseBodyObject.
-const (
-	DeleteDiscount400JSONResponseBodyObjectError DeleteDiscount400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount400JSONResponseBodyObject enum.
-func (e DeleteDiscount400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount400JSONResponseBodyType.
-const (
-	DeleteDiscount400JSONResponseBodyTypeInvalidRequest DeleteDiscount400JSONResponseBodyType = "invalid_request"
-	DeleteDiscount400JSONResponseBodyTypeParameterError DeleteDiscount400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount400JSONResponseBodyType enum.
-func (e DeleteDiscount400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case DeleteDiscount400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount401JSONResponseBodyObject.
-const (
-	DeleteDiscount401JSONResponseBodyObjectError DeleteDiscount401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount401JSONResponseBodyObject enum.
-func (e DeleteDiscount401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount401JSONResponseBodyType.
-const (
-	DeleteDiscount401JSONResponseBodyTypeAuthenticationError DeleteDiscount401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount401JSONResponseBodyType enum.
-func (e DeleteDiscount401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount403JSONResponseBodyObject.
-const (
-	DeleteDiscount403JSONResponseBodyObjectError DeleteDiscount403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount403JSONResponseBodyObject enum.
-func (e DeleteDiscount403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount403JSONResponseBodyType.
-const (
-	DeleteDiscount403JSONResponseBodyTypeAuthorizationError DeleteDiscount403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount403JSONResponseBodyType enum.
-func (e DeleteDiscount403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount404JSONResponseBodyObject.
-const (
-	DeleteDiscount404JSONResponseBodyObjectError DeleteDiscount404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount404JSONResponseBodyObject enum.
-func (e DeleteDiscount404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount404JSONResponseBodyType.
-const (
-	DeleteDiscount404JSONResponseBodyTypeResourceMissing DeleteDiscount404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount404JSONResponseBodyType enum.
-func (e DeleteDiscount404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount409JSONResponseBodyObject.
-const (
-	DeleteDiscount409JSONResponseBodyObjectError DeleteDiscount409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount409JSONResponseBodyObject enum.
-func (e DeleteDiscount409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount409JSONResponseBodyType.
-const (
-	DeleteDiscount409JSONResponseBodyTypeIdempotencyError      DeleteDiscount409JSONResponseBodyType = "idempotency_error"
-	DeleteDiscount409JSONResponseBodyTypeResourceAlreadyExists DeleteDiscount409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount409JSONResponseBodyType enum.
-func (e DeleteDiscount409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case DeleteDiscount409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount422JSONResponseBodyObject.
-const (
-	DeleteDiscount422JSONResponseBodyObjectError DeleteDiscount422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount422JSONResponseBodyObject enum.
-func (e DeleteDiscount422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount422JSONResponseBodyType.
-const (
-	DeleteDiscount422JSONResponseBodyTypeEntityReferencesArchivedEntities DeleteDiscount422JSONResponseBodyType = "entity_references_archived_entities"
-	DeleteDiscount422JSONResponseBodyTypeParameterError                   DeleteDiscount422JSONResponseBodyType = "parameter_error"
-	DeleteDiscount422JSONResponseBodyTypeStoreError                       DeleteDiscount422JSONResponseBodyType = "store_error"
-	DeleteDiscount422JSONResponseBodyTypeUnprocessableEntityError         DeleteDiscount422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount422JSONResponseBodyType enum.
-func (e DeleteDiscount422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case DeleteDiscount422JSONResponseBodyTypeParameterError:
-		return true
-	case DeleteDiscount422JSONResponseBodyTypeStoreError:
-		return true
-	case DeleteDiscount422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount423JSONResponseBodyObject.
-const (
-	DeleteDiscount423JSONResponseBodyObjectError DeleteDiscount423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount423JSONResponseBodyObject enum.
-func (e DeleteDiscount423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount423JSONResponseBodyType.
-const (
-	DeleteDiscount423JSONResponseBodyTypeResourceLockedError DeleteDiscount423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount423JSONResponseBodyType enum.
-func (e DeleteDiscount423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount429JSONResponseBodyObject.
-const (
-	DeleteDiscount429JSONResponseBodyObjectError DeleteDiscount429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount429JSONResponseBodyObject enum.
-func (e DeleteDiscount429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount429JSONResponseBodyType.
-const (
-	DeleteDiscount429JSONResponseBodyTypeRateLimitError DeleteDiscount429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount429JSONResponseBodyType enum.
-func (e DeleteDiscount429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount500JSONResponseBodyObject.
-const (
-	DeleteDiscount500JSONResponseBodyObjectError DeleteDiscount500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount500JSONResponseBodyObject enum.
-func (e DeleteDiscount500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount500JSONResponseBodyType.
-const (
-	DeleteDiscount500JSONResponseBodyTypeServerError DeleteDiscount500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount500JSONResponseBodyType enum.
-func (e DeleteDiscount500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount503JSONResponseBodyObject.
-const (
-	DeleteDiscount503JSONResponseBodyObjectError DeleteDiscount503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount503JSONResponseBodyObject enum.
-func (e DeleteDiscount503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscount503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscount503JSONResponseBodyType.
-const (
-	DeleteDiscount503JSONResponseBodyTypeServerError DeleteDiscount503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscount503JSONResponseBodyType enum.
-func (e DeleteDiscount503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscount503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount400JSONResponseBodyObject.
-const (
-	GetDiscount400JSONResponseBodyObjectError GetDiscount400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount400JSONResponseBodyObject enum.
-func (e GetDiscount400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetDiscount400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount400JSONResponseBodyType.
-const (
-	GetDiscount400JSONResponseBodyTypeInvalidRequest GetDiscount400JSONResponseBodyType = "invalid_request"
-	GetDiscount400JSONResponseBodyTypeParameterError GetDiscount400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount400JSONResponseBodyType enum.
-func (e GetDiscount400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetDiscount400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case GetDiscount400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount401JSONResponseBodyObject.
-const (
-	GetDiscount401JSONResponseBodyObjectError GetDiscount401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount401JSONResponseBodyObject enum.
-func (e GetDiscount401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetDiscount401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount401JSONResponseBodyType.
-const (
-	GetDiscount401JSONResponseBodyTypeAuthenticationError GetDiscount401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount401JSONResponseBodyType enum.
-func (e GetDiscount401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetDiscount401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount403JSONResponseBodyObject.
-const (
-	GetDiscount403JSONResponseBodyObjectError GetDiscount403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount403JSONResponseBodyObject enum.
-func (e GetDiscount403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetDiscount403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount403JSONResponseBodyType.
-const (
-	GetDiscount403JSONResponseBodyTypeAuthorizationError GetDiscount403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount403JSONResponseBodyType enum.
-func (e GetDiscount403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetDiscount403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount404JSONResponseBodyObject.
-const (
-	GetDiscount404JSONResponseBodyObjectError GetDiscount404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount404JSONResponseBodyObject enum.
-func (e GetDiscount404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetDiscount404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount404JSONResponseBodyType.
-const (
-	GetDiscount404JSONResponseBodyTypeResourceMissing GetDiscount404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount404JSONResponseBodyType enum.
-func (e GetDiscount404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetDiscount404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount423JSONResponseBodyObject.
-const (
-	GetDiscount423JSONResponseBodyObjectError GetDiscount423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount423JSONResponseBodyObject enum.
-func (e GetDiscount423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetDiscount423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount423JSONResponseBodyType.
-const (
-	GetDiscount423JSONResponseBodyTypeResourceLockedError GetDiscount423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount423JSONResponseBodyType enum.
-func (e GetDiscount423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetDiscount423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount429JSONResponseBodyObject.
-const (
-	GetDiscount429JSONResponseBodyObjectError GetDiscount429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount429JSONResponseBodyObject enum.
-func (e GetDiscount429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetDiscount429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount429JSONResponseBodyType.
-const (
-	GetDiscount429JSONResponseBodyTypeRateLimitError GetDiscount429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount429JSONResponseBodyType enum.
-func (e GetDiscount429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetDiscount429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount500JSONResponseBodyObject.
-const (
-	GetDiscount500JSONResponseBodyObjectError GetDiscount500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount500JSONResponseBodyObject enum.
-func (e GetDiscount500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetDiscount500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount500JSONResponseBodyType.
-const (
-	GetDiscount500JSONResponseBodyTypeServerError GetDiscount500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount500JSONResponseBodyType enum.
-func (e GetDiscount500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetDiscount500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount503JSONResponseBodyObject.
-const (
-	GetDiscount503JSONResponseBodyObjectError GetDiscount503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount503JSONResponseBodyObject enum.
-func (e GetDiscount503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case GetDiscount503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetDiscount503JSONResponseBodyType.
-const (
-	GetDiscount503JSONResponseBodyTypeServerError GetDiscount503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the GetDiscount503JSONResponseBodyType enum.
-func (e GetDiscount503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case GetDiscount503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOfferJSONBodyDurationMode.
-const (
-	UpdateDiscountOfferJSONBodyDurationModeForever    UpdateDiscountOfferJSONBodyDurationMode = "forever"
-	UpdateDiscountOfferJSONBodyDurationModeOneTime    UpdateDiscountOfferJSONBodyDurationMode = "one_time"
-	UpdateDiscountOfferJSONBodyDurationModeTimeWindow UpdateDiscountOfferJSONBodyDurationMode = "time_window"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOfferJSONBodyDurationMode enum.
-func (e UpdateDiscountOfferJSONBodyDurationMode) Valid() bool {
-	switch e {
-	case UpdateDiscountOfferJSONBodyDurationModeForever:
-		return true
-	case UpdateDiscountOfferJSONBodyDurationModeOneTime:
-		return true
-	case UpdateDiscountOfferJSONBodyDurationModeTimeWindow:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOfferJSONBodyEligibility.
-const (
-	UpdateDiscountOfferJSONBodyEligibilityEveryone                        UpdateDiscountOfferJSONBodyEligibility = "everyone"
-	UpdateDiscountOfferJSONBodyEligibilityNeverPurchased                  UpdateDiscountOfferJSONBodyEligibility = "never_purchased"
-	UpdateDiscountOfferJSONBodyEligibilityNeverSubscribed                 UpdateDiscountOfferJSONBodyEligibility = "never_subscribed"
-	UpdateDiscountOfferJSONBodyEligibilityNeverSubscribedToTheSameProduct UpdateDiscountOfferJSONBodyEligibility = "never_subscribed_to_the_same_product"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOfferJSONBodyEligibility enum.
-func (e UpdateDiscountOfferJSONBodyEligibility) Valid() bool {
-	switch e {
-	case UpdateDiscountOfferJSONBodyEligibilityEveryone:
-		return true
-	case UpdateDiscountOfferJSONBodyEligibilityNeverPurchased:
-		return true
-	case UpdateDiscountOfferJSONBodyEligibilityNeverSubscribed:
-		return true
-	case UpdateDiscountOfferJSONBodyEligibilityNeverSubscribedToTheSameProduct:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOfferJSONBodyType.
-const (
-	UpdateDiscountOfferJSONBodyTypeFixedAmount UpdateDiscountOfferJSONBodyType = "fixed_amount"
-	UpdateDiscountOfferJSONBodyTypePercentage  UpdateDiscountOfferJSONBodyType = "percentage"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOfferJSONBodyType enum.
-func (e UpdateDiscountOfferJSONBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOfferJSONBodyTypeFixedAmount:
-		return true
-	case UpdateDiscountOfferJSONBodyTypePercentage:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer400JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer400JSONResponseBodyObjectError UpdateDiscountOffer400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer400JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer400JSONResponseBodyType.
-const (
-	UpdateDiscountOffer400JSONResponseBodyTypeInvalidRequest UpdateDiscountOffer400JSONResponseBodyType = "invalid_request"
-	UpdateDiscountOffer400JSONResponseBodyTypeParameterError UpdateDiscountOffer400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer400JSONResponseBodyType enum.
-func (e UpdateDiscountOffer400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case UpdateDiscountOffer400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer401JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer401JSONResponseBodyObjectError UpdateDiscountOffer401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer401JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer401JSONResponseBodyType.
-const (
-	UpdateDiscountOffer401JSONResponseBodyTypeAuthenticationError UpdateDiscountOffer401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer401JSONResponseBodyType enum.
-func (e UpdateDiscountOffer401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer403JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer403JSONResponseBodyObjectError UpdateDiscountOffer403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer403JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer403JSONResponseBodyType.
-const (
-	UpdateDiscountOffer403JSONResponseBodyTypeAuthorizationError UpdateDiscountOffer403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer403JSONResponseBodyType enum.
-func (e UpdateDiscountOffer403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer404JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer404JSONResponseBodyObjectError UpdateDiscountOffer404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer404JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer404JSONResponseBodyType.
-const (
-	UpdateDiscountOffer404JSONResponseBodyTypeResourceMissing UpdateDiscountOffer404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer404JSONResponseBodyType enum.
-func (e UpdateDiscountOffer404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer409JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer409JSONResponseBodyObjectError UpdateDiscountOffer409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer409JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer409JSONResponseBodyType.
-const (
-	UpdateDiscountOffer409JSONResponseBodyTypeIdempotencyError      UpdateDiscountOffer409JSONResponseBodyType = "idempotency_error"
-	UpdateDiscountOffer409JSONResponseBodyTypeResourceAlreadyExists UpdateDiscountOffer409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer409JSONResponseBodyType enum.
-func (e UpdateDiscountOffer409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case UpdateDiscountOffer409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer422JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer422JSONResponseBodyObjectError UpdateDiscountOffer422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer422JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer422JSONResponseBodyType.
-const (
-	UpdateDiscountOffer422JSONResponseBodyTypeEntityReferencesArchivedEntities UpdateDiscountOffer422JSONResponseBodyType = "entity_references_archived_entities"
-	UpdateDiscountOffer422JSONResponseBodyTypeParameterError                   UpdateDiscountOffer422JSONResponseBodyType = "parameter_error"
-	UpdateDiscountOffer422JSONResponseBodyTypeStoreError                       UpdateDiscountOffer422JSONResponseBodyType = "store_error"
-	UpdateDiscountOffer422JSONResponseBodyTypeUnprocessableEntityError         UpdateDiscountOffer422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer422JSONResponseBodyType enum.
-func (e UpdateDiscountOffer422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case UpdateDiscountOffer422JSONResponseBodyTypeParameterError:
-		return true
-	case UpdateDiscountOffer422JSONResponseBodyTypeStoreError:
-		return true
-	case UpdateDiscountOffer422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer423JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer423JSONResponseBodyObjectError UpdateDiscountOffer423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer423JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer423JSONResponseBodyType.
-const (
-	UpdateDiscountOffer423JSONResponseBodyTypeResourceLockedError UpdateDiscountOffer423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer423JSONResponseBodyType enum.
-func (e UpdateDiscountOffer423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer429JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer429JSONResponseBodyObjectError UpdateDiscountOffer429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer429JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer429JSONResponseBodyType.
-const (
-	UpdateDiscountOffer429JSONResponseBodyTypeRateLimitError UpdateDiscountOffer429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer429JSONResponseBodyType enum.
-func (e UpdateDiscountOffer429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer500JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer500JSONResponseBodyObjectError UpdateDiscountOffer500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer500JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer500JSONResponseBodyType.
-const (
-	UpdateDiscountOffer500JSONResponseBodyTypeServerError UpdateDiscountOffer500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer500JSONResponseBodyType enum.
-func (e UpdateDiscountOffer500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer503JSONResponseBodyObject.
-const (
-	UpdateDiscountOffer503JSONResponseBodyObjectError UpdateDiscountOffer503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer503JSONResponseBodyObject enum.
-func (e UpdateDiscountOffer503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDiscountOffer503JSONResponseBodyType.
-const (
-	UpdateDiscountOffer503JSONResponseBodyTypeServerError UpdateDiscountOffer503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDiscountOffer503JSONResponseBodyType enum.
-func (e UpdateDiscountOffer503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case UpdateDiscountOffer503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount400JSONResponseBodyObject.
-const (
-	DisableDiscount400JSONResponseBodyObjectError DisableDiscount400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount400JSONResponseBodyObject enum.
-func (e DisableDiscount400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount400JSONResponseBodyType.
-const (
-	DisableDiscount400JSONResponseBodyTypeInvalidRequest DisableDiscount400JSONResponseBodyType = "invalid_request"
-	DisableDiscount400JSONResponseBodyTypeParameterError DisableDiscount400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount400JSONResponseBodyType enum.
-func (e DisableDiscount400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case DisableDiscount400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount401JSONResponseBodyObject.
-const (
-	DisableDiscount401JSONResponseBodyObjectError DisableDiscount401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount401JSONResponseBodyObject enum.
-func (e DisableDiscount401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount401JSONResponseBodyType.
-const (
-	DisableDiscount401JSONResponseBodyTypeAuthenticationError DisableDiscount401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount401JSONResponseBodyType enum.
-func (e DisableDiscount401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount403JSONResponseBodyObject.
-const (
-	DisableDiscount403JSONResponseBodyObjectError DisableDiscount403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount403JSONResponseBodyObject enum.
-func (e DisableDiscount403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount403JSONResponseBodyType.
-const (
-	DisableDiscount403JSONResponseBodyTypeAuthorizationError DisableDiscount403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount403JSONResponseBodyType enum.
-func (e DisableDiscount403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount404JSONResponseBodyObject.
-const (
-	DisableDiscount404JSONResponseBodyObjectError DisableDiscount404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount404JSONResponseBodyObject enum.
-func (e DisableDiscount404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount404JSONResponseBodyType.
-const (
-	DisableDiscount404JSONResponseBodyTypeResourceMissing DisableDiscount404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount404JSONResponseBodyType enum.
-func (e DisableDiscount404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount409JSONResponseBodyObject.
-const (
-	DisableDiscount409JSONResponseBodyObjectError DisableDiscount409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount409JSONResponseBodyObject enum.
-func (e DisableDiscount409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount409JSONResponseBodyType.
-const (
-	DisableDiscount409JSONResponseBodyTypeIdempotencyError      DisableDiscount409JSONResponseBodyType = "idempotency_error"
-	DisableDiscount409JSONResponseBodyTypeResourceAlreadyExists DisableDiscount409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount409JSONResponseBodyType enum.
-func (e DisableDiscount409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case DisableDiscount409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount422JSONResponseBodyObject.
-const (
-	DisableDiscount422JSONResponseBodyObjectError DisableDiscount422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount422JSONResponseBodyObject enum.
-func (e DisableDiscount422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount422JSONResponseBodyType.
-const (
-	DisableDiscount422JSONResponseBodyTypeEntityReferencesArchivedEntities DisableDiscount422JSONResponseBodyType = "entity_references_archived_entities"
-	DisableDiscount422JSONResponseBodyTypeParameterError                   DisableDiscount422JSONResponseBodyType = "parameter_error"
-	DisableDiscount422JSONResponseBodyTypeStoreError                       DisableDiscount422JSONResponseBodyType = "store_error"
-	DisableDiscount422JSONResponseBodyTypeUnprocessableEntityError         DisableDiscount422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount422JSONResponseBodyType enum.
-func (e DisableDiscount422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case DisableDiscount422JSONResponseBodyTypeParameterError:
-		return true
-	case DisableDiscount422JSONResponseBodyTypeStoreError:
-		return true
-	case DisableDiscount422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount423JSONResponseBodyObject.
-const (
-	DisableDiscount423JSONResponseBodyObjectError DisableDiscount423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount423JSONResponseBodyObject enum.
-func (e DisableDiscount423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount423JSONResponseBodyType.
-const (
-	DisableDiscount423JSONResponseBodyTypeResourceLockedError DisableDiscount423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount423JSONResponseBodyType enum.
-func (e DisableDiscount423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount429JSONResponseBodyObject.
-const (
-	DisableDiscount429JSONResponseBodyObjectError DisableDiscount429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount429JSONResponseBodyObject enum.
-func (e DisableDiscount429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount429JSONResponseBodyType.
-const (
-	DisableDiscount429JSONResponseBodyTypeRateLimitError DisableDiscount429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount429JSONResponseBodyType enum.
-func (e DisableDiscount429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount500JSONResponseBodyObject.
-const (
-	DisableDiscount500JSONResponseBodyObjectError DisableDiscount500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount500JSONResponseBodyObject enum.
-func (e DisableDiscount500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount500JSONResponseBodyType.
-const (
-	DisableDiscount500JSONResponseBodyTypeServerError DisableDiscount500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount500JSONResponseBodyType enum.
-func (e DisableDiscount500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount503JSONResponseBodyObject.
-const (
-	DisableDiscount503JSONResponseBodyObjectError DisableDiscount503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount503JSONResponseBodyObject enum.
-func (e DisableDiscount503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DisableDiscount503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DisableDiscount503JSONResponseBodyType.
-const (
-	DisableDiscount503JSONResponseBodyTypeServerError DisableDiscount503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the DisableDiscount503JSONResponseBodyType enum.
-func (e DisableDiscount503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DisableDiscount503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount400JSONResponseBodyObject.
-const (
-	EnableDiscount400JSONResponseBodyObjectError EnableDiscount400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount400JSONResponseBodyObject enum.
-func (e EnableDiscount400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount400JSONResponseBodyType.
-const (
-	EnableDiscount400JSONResponseBodyTypeInvalidRequest EnableDiscount400JSONResponseBodyType = "invalid_request"
-	EnableDiscount400JSONResponseBodyTypeParameterError EnableDiscount400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount400JSONResponseBodyType enum.
-func (e EnableDiscount400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case EnableDiscount400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount401JSONResponseBodyObject.
-const (
-	EnableDiscount401JSONResponseBodyObjectError EnableDiscount401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount401JSONResponseBodyObject enum.
-func (e EnableDiscount401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount401JSONResponseBodyType.
-const (
-	EnableDiscount401JSONResponseBodyTypeAuthenticationError EnableDiscount401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount401JSONResponseBodyType enum.
-func (e EnableDiscount401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount403JSONResponseBodyObject.
-const (
-	EnableDiscount403JSONResponseBodyObjectError EnableDiscount403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount403JSONResponseBodyObject enum.
-func (e EnableDiscount403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount403JSONResponseBodyType.
-const (
-	EnableDiscount403JSONResponseBodyTypeAuthorizationError EnableDiscount403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount403JSONResponseBodyType enum.
-func (e EnableDiscount403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount404JSONResponseBodyObject.
-const (
-	EnableDiscount404JSONResponseBodyObjectError EnableDiscount404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount404JSONResponseBodyObject enum.
-func (e EnableDiscount404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount404JSONResponseBodyType.
-const (
-	EnableDiscount404JSONResponseBodyTypeResourceMissing EnableDiscount404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount404JSONResponseBodyType enum.
-func (e EnableDiscount404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount409JSONResponseBodyObject.
-const (
-	EnableDiscount409JSONResponseBodyObjectError EnableDiscount409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount409JSONResponseBodyObject enum.
-func (e EnableDiscount409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount409JSONResponseBodyType.
-const (
-	EnableDiscount409JSONResponseBodyTypeIdempotencyError      EnableDiscount409JSONResponseBodyType = "idempotency_error"
-	EnableDiscount409JSONResponseBodyTypeResourceAlreadyExists EnableDiscount409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount409JSONResponseBodyType enum.
-func (e EnableDiscount409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case EnableDiscount409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount422JSONResponseBodyObject.
-const (
-	EnableDiscount422JSONResponseBodyObjectError EnableDiscount422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount422JSONResponseBodyObject enum.
-func (e EnableDiscount422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount422JSONResponseBodyType.
-const (
-	EnableDiscount422JSONResponseBodyTypeEntityReferencesArchivedEntities EnableDiscount422JSONResponseBodyType = "entity_references_archived_entities"
-	EnableDiscount422JSONResponseBodyTypeParameterError                   EnableDiscount422JSONResponseBodyType = "parameter_error"
-	EnableDiscount422JSONResponseBodyTypeStoreError                       EnableDiscount422JSONResponseBodyType = "store_error"
-	EnableDiscount422JSONResponseBodyTypeUnprocessableEntityError         EnableDiscount422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount422JSONResponseBodyType enum.
-func (e EnableDiscount422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case EnableDiscount422JSONResponseBodyTypeParameterError:
-		return true
-	case EnableDiscount422JSONResponseBodyTypeStoreError:
-		return true
-	case EnableDiscount422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount423JSONResponseBodyObject.
-const (
-	EnableDiscount423JSONResponseBodyObjectError EnableDiscount423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount423JSONResponseBodyObject enum.
-func (e EnableDiscount423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount423JSONResponseBodyType.
-const (
-	EnableDiscount423JSONResponseBodyTypeResourceLockedError EnableDiscount423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount423JSONResponseBodyType enum.
-func (e EnableDiscount423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount429JSONResponseBodyObject.
-const (
-	EnableDiscount429JSONResponseBodyObjectError EnableDiscount429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount429JSONResponseBodyObject enum.
-func (e EnableDiscount429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount429JSONResponseBodyType.
-const (
-	EnableDiscount429JSONResponseBodyTypeRateLimitError EnableDiscount429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount429JSONResponseBodyType enum.
-func (e EnableDiscount429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount500JSONResponseBodyObject.
-const (
-	EnableDiscount500JSONResponseBodyObjectError EnableDiscount500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount500JSONResponseBodyObject enum.
-func (e EnableDiscount500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount500JSONResponseBodyType.
-const (
-	EnableDiscount500JSONResponseBodyTypeServerError EnableDiscount500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount500JSONResponseBodyType enum.
-func (e EnableDiscount500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount503JSONResponseBodyObject.
-const (
-	EnableDiscount503JSONResponseBodyObjectError EnableDiscount503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount503JSONResponseBodyObject enum.
-func (e EnableDiscount503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case EnableDiscount503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for EnableDiscount503JSONResponseBodyType.
-const (
-	EnableDiscount503JSONResponseBodyTypeServerError EnableDiscount503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the EnableDiscount503JSONResponseBodyType enum.
-func (e EnableDiscount503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case EnableDiscount503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes400JSONResponseBodyObject.
-const (
-	ListDiscountCodes400JSONResponseBodyObjectError ListDiscountCodes400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes400JSONResponseBodyObject enum.
-func (e ListDiscountCodes400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscountCodes400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes400JSONResponseBodyType.
-const (
-	ListDiscountCodes400JSONResponseBodyTypeInvalidRequest ListDiscountCodes400JSONResponseBodyType = "invalid_request"
-	ListDiscountCodes400JSONResponseBodyTypeParameterError ListDiscountCodes400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes400JSONResponseBodyType enum.
-func (e ListDiscountCodes400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscountCodes400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case ListDiscountCodes400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes401JSONResponseBodyObject.
-const (
-	ListDiscountCodes401JSONResponseBodyObjectError ListDiscountCodes401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes401JSONResponseBodyObject enum.
-func (e ListDiscountCodes401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscountCodes401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes401JSONResponseBodyType.
-const (
-	ListDiscountCodes401JSONResponseBodyTypeAuthenticationError ListDiscountCodes401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes401JSONResponseBodyType enum.
-func (e ListDiscountCodes401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscountCodes401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes403JSONResponseBodyObject.
-const (
-	ListDiscountCodes403JSONResponseBodyObjectError ListDiscountCodes403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes403JSONResponseBodyObject enum.
-func (e ListDiscountCodes403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscountCodes403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes403JSONResponseBodyType.
-const (
-	ListDiscountCodes403JSONResponseBodyTypeAuthorizationError ListDiscountCodes403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes403JSONResponseBodyType enum.
-func (e ListDiscountCodes403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscountCodes403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes404JSONResponseBodyObject.
-const (
-	ListDiscountCodes404JSONResponseBodyObjectError ListDiscountCodes404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes404JSONResponseBodyObject enum.
-func (e ListDiscountCodes404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscountCodes404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes404JSONResponseBodyType.
-const (
-	ListDiscountCodes404JSONResponseBodyTypeResourceMissing ListDiscountCodes404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes404JSONResponseBodyType enum.
-func (e ListDiscountCodes404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscountCodes404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes423JSONResponseBodyObject.
-const (
-	ListDiscountCodes423JSONResponseBodyObjectError ListDiscountCodes423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes423JSONResponseBodyObject enum.
-func (e ListDiscountCodes423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscountCodes423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes423JSONResponseBodyType.
-const (
-	ListDiscountCodes423JSONResponseBodyTypeResourceLockedError ListDiscountCodes423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes423JSONResponseBodyType enum.
-func (e ListDiscountCodes423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscountCodes423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes429JSONResponseBodyObject.
-const (
-	ListDiscountCodes429JSONResponseBodyObjectError ListDiscountCodes429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes429JSONResponseBodyObject enum.
-func (e ListDiscountCodes429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscountCodes429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes429JSONResponseBodyType.
-const (
-	ListDiscountCodes429JSONResponseBodyTypeRateLimitError ListDiscountCodes429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes429JSONResponseBodyType enum.
-func (e ListDiscountCodes429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscountCodes429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes500JSONResponseBodyObject.
-const (
-	ListDiscountCodes500JSONResponseBodyObjectError ListDiscountCodes500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes500JSONResponseBodyObject enum.
-func (e ListDiscountCodes500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscountCodes500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes500JSONResponseBodyType.
-const (
-	ListDiscountCodes500JSONResponseBodyTypeServerError ListDiscountCodes500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes500JSONResponseBodyType enum.
-func (e ListDiscountCodes500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscountCodes500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes503JSONResponseBodyObject.
-const (
-	ListDiscountCodes503JSONResponseBodyObjectError ListDiscountCodes503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes503JSONResponseBodyObject enum.
-func (e ListDiscountCodes503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case ListDiscountCodes503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListDiscountCodes503JSONResponseBodyType.
-const (
-	ListDiscountCodes503JSONResponseBodyTypeServerError ListDiscountCodes503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the ListDiscountCodes503JSONResponseBodyType enum.
-func (e ListDiscountCodes503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case ListDiscountCodes503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes400JSONResponseBodyObject.
-const (
-	CreateDiscountCodes400JSONResponseBodyObjectError CreateDiscountCodes400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes400JSONResponseBodyObject enum.
-func (e CreateDiscountCodes400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes400JSONResponseBodyType.
-const (
-	CreateDiscountCodes400JSONResponseBodyTypeInvalidRequest CreateDiscountCodes400JSONResponseBodyType = "invalid_request"
-	CreateDiscountCodes400JSONResponseBodyTypeParameterError CreateDiscountCodes400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes400JSONResponseBodyType enum.
-func (e CreateDiscountCodes400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case CreateDiscountCodes400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes401JSONResponseBodyObject.
-const (
-	CreateDiscountCodes401JSONResponseBodyObjectError CreateDiscountCodes401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes401JSONResponseBodyObject enum.
-func (e CreateDiscountCodes401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes401JSONResponseBodyType.
-const (
-	CreateDiscountCodes401JSONResponseBodyTypeAuthenticationError CreateDiscountCodes401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes401JSONResponseBodyType enum.
-func (e CreateDiscountCodes401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes403JSONResponseBodyObject.
-const (
-	CreateDiscountCodes403JSONResponseBodyObjectError CreateDiscountCodes403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes403JSONResponseBodyObject enum.
-func (e CreateDiscountCodes403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes403JSONResponseBodyType.
-const (
-	CreateDiscountCodes403JSONResponseBodyTypeAuthorizationError CreateDiscountCodes403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes403JSONResponseBodyType enum.
-func (e CreateDiscountCodes403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes404JSONResponseBodyObject.
-const (
-	CreateDiscountCodes404JSONResponseBodyObjectError CreateDiscountCodes404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes404JSONResponseBodyObject enum.
-func (e CreateDiscountCodes404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes404JSONResponseBodyType.
-const (
-	CreateDiscountCodes404JSONResponseBodyTypeResourceMissing CreateDiscountCodes404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes404JSONResponseBodyType enum.
-func (e CreateDiscountCodes404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes409JSONResponseBodyObject.
-const (
-	CreateDiscountCodes409JSONResponseBodyObjectError CreateDiscountCodes409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes409JSONResponseBodyObject enum.
-func (e CreateDiscountCodes409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes409JSONResponseBodyType.
-const (
-	CreateDiscountCodes409JSONResponseBodyTypeIdempotencyError      CreateDiscountCodes409JSONResponseBodyType = "idempotency_error"
-	CreateDiscountCodes409JSONResponseBodyTypeResourceAlreadyExists CreateDiscountCodes409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes409JSONResponseBodyType enum.
-func (e CreateDiscountCodes409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case CreateDiscountCodes409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes422JSONResponseBodyObject.
-const (
-	CreateDiscountCodes422JSONResponseBodyObjectError CreateDiscountCodes422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes422JSONResponseBodyObject enum.
-func (e CreateDiscountCodes422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes422JSONResponseBodyType.
-const (
-	CreateDiscountCodes422JSONResponseBodyTypeEntityReferencesArchivedEntities CreateDiscountCodes422JSONResponseBodyType = "entity_references_archived_entities"
-	CreateDiscountCodes422JSONResponseBodyTypeParameterError                   CreateDiscountCodes422JSONResponseBodyType = "parameter_error"
-	CreateDiscountCodes422JSONResponseBodyTypeStoreError                       CreateDiscountCodes422JSONResponseBodyType = "store_error"
-	CreateDiscountCodes422JSONResponseBodyTypeUnprocessableEntityError         CreateDiscountCodes422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes422JSONResponseBodyType enum.
-func (e CreateDiscountCodes422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case CreateDiscountCodes422JSONResponseBodyTypeParameterError:
-		return true
-	case CreateDiscountCodes422JSONResponseBodyTypeStoreError:
-		return true
-	case CreateDiscountCodes422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes423JSONResponseBodyObject.
-const (
-	CreateDiscountCodes423JSONResponseBodyObjectError CreateDiscountCodes423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes423JSONResponseBodyObject enum.
-func (e CreateDiscountCodes423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes423JSONResponseBodyType.
-const (
-	CreateDiscountCodes423JSONResponseBodyTypeResourceLockedError CreateDiscountCodes423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes423JSONResponseBodyType enum.
-func (e CreateDiscountCodes423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes429JSONResponseBodyObject.
-const (
-	CreateDiscountCodes429JSONResponseBodyObjectError CreateDiscountCodes429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes429JSONResponseBodyObject enum.
-func (e CreateDiscountCodes429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes429JSONResponseBodyType.
-const (
-	CreateDiscountCodes429JSONResponseBodyTypeRateLimitError CreateDiscountCodes429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes429JSONResponseBodyType enum.
-func (e CreateDiscountCodes429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes500JSONResponseBodyObject.
-const (
-	CreateDiscountCodes500JSONResponseBodyObjectError CreateDiscountCodes500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes500JSONResponseBodyObject enum.
-func (e CreateDiscountCodes500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes500JSONResponseBodyType.
-const (
-	CreateDiscountCodes500JSONResponseBodyTypeServerError CreateDiscountCodes500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes500JSONResponseBodyType enum.
-func (e CreateDiscountCodes500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes503JSONResponseBodyObject.
-const (
-	CreateDiscountCodes503JSONResponseBodyObjectError CreateDiscountCodes503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes503JSONResponseBodyObject enum.
-func (e CreateDiscountCodes503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case CreateDiscountCodes503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateDiscountCodes503JSONResponseBodyType.
-const (
-	CreateDiscountCodes503JSONResponseBodyTypeServerError CreateDiscountCodes503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the CreateDiscountCodes503JSONResponseBodyType enum.
-func (e CreateDiscountCodes503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case CreateDiscountCodes503JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode400JSONResponseBodyObject.
-const (
-	DeleteDiscountCode400JSONResponseBodyObjectError DeleteDiscountCode400JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode400JSONResponseBodyObject enum.
-func (e DeleteDiscountCode400JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode400JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode400JSONResponseBodyType.
-const (
-	DeleteDiscountCode400JSONResponseBodyTypeInvalidRequest DeleteDiscountCode400JSONResponseBodyType = "invalid_request"
-	DeleteDiscountCode400JSONResponseBodyTypeParameterError DeleteDiscountCode400JSONResponseBodyType = "parameter_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode400JSONResponseBodyType enum.
-func (e DeleteDiscountCode400JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode400JSONResponseBodyTypeInvalidRequest:
-		return true
-	case DeleteDiscountCode400JSONResponseBodyTypeParameterError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode401JSONResponseBodyObject.
-const (
-	DeleteDiscountCode401JSONResponseBodyObjectError DeleteDiscountCode401JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode401JSONResponseBodyObject enum.
-func (e DeleteDiscountCode401JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode401JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode401JSONResponseBodyType.
-const (
-	DeleteDiscountCode401JSONResponseBodyTypeAuthenticationError DeleteDiscountCode401JSONResponseBodyType = "authentication_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode401JSONResponseBodyType enum.
-func (e DeleteDiscountCode401JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode401JSONResponseBodyTypeAuthenticationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode403JSONResponseBodyObject.
-const (
-	DeleteDiscountCode403JSONResponseBodyObjectError DeleteDiscountCode403JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode403JSONResponseBodyObject enum.
-func (e DeleteDiscountCode403JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode403JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode403JSONResponseBodyType.
-const (
-	DeleteDiscountCode403JSONResponseBodyTypeAuthorizationError DeleteDiscountCode403JSONResponseBodyType = "authorization_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode403JSONResponseBodyType enum.
-func (e DeleteDiscountCode403JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode403JSONResponseBodyTypeAuthorizationError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode404JSONResponseBodyObject.
-const (
-	DeleteDiscountCode404JSONResponseBodyObjectError DeleteDiscountCode404JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode404JSONResponseBodyObject enum.
-func (e DeleteDiscountCode404JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode404JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode404JSONResponseBodyType.
-const (
-	DeleteDiscountCode404JSONResponseBodyTypeResourceMissing DeleteDiscountCode404JSONResponseBodyType = "resource_missing"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode404JSONResponseBodyType enum.
-func (e DeleteDiscountCode404JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode404JSONResponseBodyTypeResourceMissing:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode409JSONResponseBodyObject.
-const (
-	DeleteDiscountCode409JSONResponseBodyObjectError DeleteDiscountCode409JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode409JSONResponseBodyObject enum.
-func (e DeleteDiscountCode409JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode409JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode409JSONResponseBodyType.
-const (
-	DeleteDiscountCode409JSONResponseBodyTypeIdempotencyError      DeleteDiscountCode409JSONResponseBodyType = "idempotency_error"
-	DeleteDiscountCode409JSONResponseBodyTypeResourceAlreadyExists DeleteDiscountCode409JSONResponseBodyType = "resource_already_exists"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode409JSONResponseBodyType enum.
-func (e DeleteDiscountCode409JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode409JSONResponseBodyTypeIdempotencyError:
-		return true
-	case DeleteDiscountCode409JSONResponseBodyTypeResourceAlreadyExists:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode422JSONResponseBodyObject.
-const (
-	DeleteDiscountCode422JSONResponseBodyObjectError DeleteDiscountCode422JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode422JSONResponseBodyObject enum.
-func (e DeleteDiscountCode422JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode422JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode422JSONResponseBodyType.
-const (
-	DeleteDiscountCode422JSONResponseBodyTypeEntityReferencesArchivedEntities DeleteDiscountCode422JSONResponseBodyType = "entity_references_archived_entities"
-	DeleteDiscountCode422JSONResponseBodyTypeParameterError                   DeleteDiscountCode422JSONResponseBodyType = "parameter_error"
-	DeleteDiscountCode422JSONResponseBodyTypeStoreError                       DeleteDiscountCode422JSONResponseBodyType = "store_error"
-	DeleteDiscountCode422JSONResponseBodyTypeUnprocessableEntityError         DeleteDiscountCode422JSONResponseBodyType = "unprocessable_entity_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode422JSONResponseBodyType enum.
-func (e DeleteDiscountCode422JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode422JSONResponseBodyTypeEntityReferencesArchivedEntities:
-		return true
-	case DeleteDiscountCode422JSONResponseBodyTypeParameterError:
-		return true
-	case DeleteDiscountCode422JSONResponseBodyTypeStoreError:
-		return true
-	case DeleteDiscountCode422JSONResponseBodyTypeUnprocessableEntityError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode423JSONResponseBodyObject.
-const (
-	DeleteDiscountCode423JSONResponseBodyObjectError DeleteDiscountCode423JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode423JSONResponseBodyObject enum.
-func (e DeleteDiscountCode423JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode423JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode423JSONResponseBodyType.
-const (
-	DeleteDiscountCode423JSONResponseBodyTypeResourceLockedError DeleteDiscountCode423JSONResponseBodyType = "resource_locked_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode423JSONResponseBodyType enum.
-func (e DeleteDiscountCode423JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode423JSONResponseBodyTypeResourceLockedError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode429JSONResponseBodyObject.
-const (
-	DeleteDiscountCode429JSONResponseBodyObjectError DeleteDiscountCode429JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode429JSONResponseBodyObject enum.
-func (e DeleteDiscountCode429JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode429JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode429JSONResponseBodyType.
-const (
-	DeleteDiscountCode429JSONResponseBodyTypeRateLimitError DeleteDiscountCode429JSONResponseBodyType = "rate_limit_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode429JSONResponseBodyType enum.
-func (e DeleteDiscountCode429JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode429JSONResponseBodyTypeRateLimitError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode500JSONResponseBodyObject.
-const (
-	DeleteDiscountCode500JSONResponseBodyObjectError DeleteDiscountCode500JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode500JSONResponseBodyObject enum.
-func (e DeleteDiscountCode500JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode500JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode500JSONResponseBodyType.
-const (
-	DeleteDiscountCode500JSONResponseBodyTypeServerError DeleteDiscountCode500JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode500JSONResponseBodyType enum.
-func (e DeleteDiscountCode500JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode500JSONResponseBodyTypeServerError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode503JSONResponseBodyObject.
-const (
-	DeleteDiscountCode503JSONResponseBodyObjectError DeleteDiscountCode503JSONResponseBodyObject = "error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode503JSONResponseBodyObject enum.
-func (e DeleteDiscountCode503JSONResponseBodyObject) Valid() bool {
-	switch e {
-	case DeleteDiscountCode503JSONResponseBodyObjectError:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DeleteDiscountCode503JSONResponseBodyType.
-const (
-	DeleteDiscountCode503JSONResponseBodyTypeServerError DeleteDiscountCode503JSONResponseBodyType = "server_error"
-)
-
-// Valid indicates whether the value is a known member of the DeleteDiscountCode503JSONResponseBodyType enum.
-func (e DeleteDiscountCode503JSONResponseBodyType) Valid() bool {
-	switch e {
-	case DeleteDiscountCode503JSONResponseBodyTypeServerError:
 		return true
 	default:
 		return false
@@ -18046,6 +14505,7 @@ func (e CreateEntitlement409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateEntitlement409JSONResponseBodyType.
 const (
 	CreateEntitlement409JSONResponseBodyTypeIdempotencyError      CreateEntitlement409JSONResponseBodyType = "idempotency_error"
+	CreateEntitlement409JSONResponseBodyTypeInvalidRequest        CreateEntitlement409JSONResponseBodyType = "invalid_request"
 	CreateEntitlement409JSONResponseBodyTypeResourceAlreadyExists CreateEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -18053,6 +14513,8 @@ const (
 func (e CreateEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -18361,6 +14823,7 @@ func (e DeleteEntitlement409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeleteEntitlement409JSONResponseBodyType.
 const (
 	DeleteEntitlement409JSONResponseBodyTypeIdempotencyError      DeleteEntitlement409JSONResponseBodyType = "idempotency_error"
+	DeleteEntitlement409JSONResponseBodyTypeInvalidRequest        DeleteEntitlement409JSONResponseBodyType = "invalid_request"
 	DeleteEntitlement409JSONResponseBodyTypeResourceAlreadyExists DeleteEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -18368,6 +14831,8 @@ const (
 func (e DeleteEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeleteEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeleteEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeleteEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -18934,6 +15399,7 @@ func (e UpdateEntitlement409JSONResponseBodyObject) Valid() bool {
 // Defines values for UpdateEntitlement409JSONResponseBodyType.
 const (
 	UpdateEntitlement409JSONResponseBodyTypeIdempotencyError      UpdateEntitlement409JSONResponseBodyType = "idempotency_error"
+	UpdateEntitlement409JSONResponseBodyTypeInvalidRequest        UpdateEntitlement409JSONResponseBodyType = "invalid_request"
 	UpdateEntitlement409JSONResponseBodyTypeResourceAlreadyExists UpdateEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -18941,6 +15407,8 @@ const (
 func (e UpdateEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdateEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UpdateEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -19249,6 +15717,7 @@ func (e ArchiveEntitlement409JSONResponseBodyObject) Valid() bool {
 // Defines values for ArchiveEntitlement409JSONResponseBodyType.
 const (
 	ArchiveEntitlement409JSONResponseBodyTypeIdempotencyError      ArchiveEntitlement409JSONResponseBodyType = "idempotency_error"
+	ArchiveEntitlement409JSONResponseBodyTypeInvalidRequest        ArchiveEntitlement409JSONResponseBodyType = "invalid_request"
 	ArchiveEntitlement409JSONResponseBodyTypeResourceAlreadyExists ArchiveEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -19256,6 +15725,8 @@ const (
 func (e ArchiveEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case ArchiveEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case ArchiveEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case ArchiveEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -19564,6 +16035,7 @@ func (e AttachProductsToEntitlement409JSONResponseBodyObject) Valid() bool {
 // Defines values for AttachProductsToEntitlement409JSONResponseBodyType.
 const (
 	AttachProductsToEntitlement409JSONResponseBodyTypeIdempotencyError      AttachProductsToEntitlement409JSONResponseBodyType = "idempotency_error"
+	AttachProductsToEntitlement409JSONResponseBodyTypeInvalidRequest        AttachProductsToEntitlement409JSONResponseBodyType = "invalid_request"
 	AttachProductsToEntitlement409JSONResponseBodyTypeResourceAlreadyExists AttachProductsToEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -19571,6 +16043,8 @@ const (
 func (e AttachProductsToEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case AttachProductsToEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case AttachProductsToEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case AttachProductsToEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -19879,6 +16353,7 @@ func (e DetachProductsFromEntitlement409JSONResponseBodyObject) Valid() bool {
 // Defines values for DetachProductsFromEntitlement409JSONResponseBodyType.
 const (
 	DetachProductsFromEntitlement409JSONResponseBodyTypeIdempotencyError      DetachProductsFromEntitlement409JSONResponseBodyType = "idempotency_error"
+	DetachProductsFromEntitlement409JSONResponseBodyTypeInvalidRequest        DetachProductsFromEntitlement409JSONResponseBodyType = "invalid_request"
 	DetachProductsFromEntitlement409JSONResponseBodyTypeResourceAlreadyExists DetachProductsFromEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -19886,6 +16361,8 @@ const (
 func (e DetachProductsFromEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DetachProductsFromEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DetachProductsFromEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DetachProductsFromEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -20194,6 +16671,7 @@ func (e UnarchiveEntitlement409JSONResponseBodyObject) Valid() bool {
 // Defines values for UnarchiveEntitlement409JSONResponseBodyType.
 const (
 	UnarchiveEntitlement409JSONResponseBodyTypeIdempotencyError      UnarchiveEntitlement409JSONResponseBodyType = "idempotency_error"
+	UnarchiveEntitlement409JSONResponseBodyTypeInvalidRequest        UnarchiveEntitlement409JSONResponseBodyType = "invalid_request"
 	UnarchiveEntitlement409JSONResponseBodyTypeResourceAlreadyExists UnarchiveEntitlement409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -20201,6 +16679,8 @@ const (
 func (e UnarchiveEntitlement409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UnarchiveEntitlement409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UnarchiveEntitlement409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UnarchiveEntitlement409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -20995,6 +17475,7 @@ func (e CreateWebhookIntegration409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateWebhookIntegration409JSONResponseBodyType.
 const (
 	CreateWebhookIntegration409JSONResponseBodyTypeIdempotencyError      CreateWebhookIntegration409JSONResponseBodyType = "idempotency_error"
+	CreateWebhookIntegration409JSONResponseBodyTypeInvalidRequest        CreateWebhookIntegration409JSONResponseBodyType = "invalid_request"
 	CreateWebhookIntegration409JSONResponseBodyTypeResourceAlreadyExists CreateWebhookIntegration409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -21002,6 +17483,8 @@ const (
 func (e CreateWebhookIntegration409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateWebhookIntegration409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateWebhookIntegration409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateWebhookIntegration409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -21310,6 +17793,7 @@ func (e DeleteWebhookIntegration409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeleteWebhookIntegration409JSONResponseBodyType.
 const (
 	DeleteWebhookIntegration409JSONResponseBodyTypeIdempotencyError      DeleteWebhookIntegration409JSONResponseBodyType = "idempotency_error"
+	DeleteWebhookIntegration409JSONResponseBodyTypeInvalidRequest        DeleteWebhookIntegration409JSONResponseBodyType = "invalid_request"
 	DeleteWebhookIntegration409JSONResponseBodyTypeResourceAlreadyExists DeleteWebhookIntegration409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -21317,6 +17801,8 @@ const (
 func (e DeleteWebhookIntegration409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeleteWebhookIntegration409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeleteWebhookIntegration409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeleteWebhookIntegration409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -21868,6 +18354,7 @@ func (e UpdateWebhookIntegration409JSONResponseBodyObject) Valid() bool {
 // Defines values for UpdateWebhookIntegration409JSONResponseBodyType.
 const (
 	UpdateWebhookIntegration409JSONResponseBodyTypeIdempotencyError      UpdateWebhookIntegration409JSONResponseBodyType = "idempotency_error"
+	UpdateWebhookIntegration409JSONResponseBodyTypeInvalidRequest        UpdateWebhookIntegration409JSONResponseBodyType = "invalid_request"
 	UpdateWebhookIntegration409JSONResponseBodyTypeResourceAlreadyExists UpdateWebhookIntegration409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -21875,6 +18362,8 @@ const (
 func (e UpdateWebhookIntegration409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateWebhookIntegration409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdateWebhookIntegration409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UpdateWebhookIntegration409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -22042,17 +18531,367 @@ func (e UpdateWebhookIntegration503JSONResponseBodyType) Valid() bool {
 	}
 }
 
+// Defines values for CreateMediaAssetJSONBodyContentType.
+const (
+	ImageAvif CreateMediaAssetJSONBodyContentType = "image/avif"
+	ImageHeic CreateMediaAssetJSONBodyContentType = "image/heic"
+	ImageHeif CreateMediaAssetJSONBodyContentType = "image/heif"
+	ImageJpeg CreateMediaAssetJSONBodyContentType = "image/jpeg"
+	ImagePng  CreateMediaAssetJSONBodyContentType = "image/png"
+	ImageWebp CreateMediaAssetJSONBodyContentType = "image/webp"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAssetJSONBodyContentType enum.
+func (e CreateMediaAssetJSONBodyContentType) Valid() bool {
+	switch e {
+	case ImageAvif:
+		return true
+	case ImageHeic:
+		return true
+	case ImageHeif:
+		return true
+	case ImageJpeg:
+		return true
+	case ImagePng:
+		return true
+	case ImageWebp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset400JSONResponseBodyObject.
+const (
+	CreateMediaAsset400JSONResponseBodyObjectError CreateMediaAsset400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset400JSONResponseBodyObject enum.
+func (e CreateMediaAsset400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset400JSONResponseBodyType.
+const (
+	CreateMediaAsset400JSONResponseBodyTypeInvalidRequest CreateMediaAsset400JSONResponseBodyType = "invalid_request"
+	CreateMediaAsset400JSONResponseBodyTypeParameterError CreateMediaAsset400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset400JSONResponseBodyType enum.
+func (e CreateMediaAsset400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case CreateMediaAsset400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset401JSONResponseBodyObject.
+const (
+	CreateMediaAsset401JSONResponseBodyObjectError CreateMediaAsset401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset401JSONResponseBodyObject enum.
+func (e CreateMediaAsset401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset401JSONResponseBodyType.
+const (
+	CreateMediaAsset401JSONResponseBodyTypeAuthenticationError CreateMediaAsset401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset401JSONResponseBodyType enum.
+func (e CreateMediaAsset401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset403JSONResponseBodyObject.
+const (
+	CreateMediaAsset403JSONResponseBodyObjectError CreateMediaAsset403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset403JSONResponseBodyObject enum.
+func (e CreateMediaAsset403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset403JSONResponseBodyType.
+const (
+	CreateMediaAsset403JSONResponseBodyTypeAuthorizationError CreateMediaAsset403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset403JSONResponseBodyType enum.
+func (e CreateMediaAsset403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset404JSONResponseBodyObject.
+const (
+	CreateMediaAsset404JSONResponseBodyObjectError CreateMediaAsset404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset404JSONResponseBodyObject enum.
+func (e CreateMediaAsset404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset404JSONResponseBodyType.
+const (
+	CreateMediaAsset404JSONResponseBodyTypeResourceMissing CreateMediaAsset404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset404JSONResponseBodyType enum.
+func (e CreateMediaAsset404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset409JSONResponseBodyObject.
+const (
+	CreateMediaAsset409JSONResponseBodyObjectError CreateMediaAsset409JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset409JSONResponseBodyObject enum.
+func (e CreateMediaAsset409JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset409JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset409JSONResponseBodyType.
+const (
+	CreateMediaAsset409JSONResponseBodyTypeIdempotencyError      CreateMediaAsset409JSONResponseBodyType = "idempotency_error"
+	CreateMediaAsset409JSONResponseBodyTypeInvalidRequest        CreateMediaAsset409JSONResponseBodyType = "invalid_request"
+	CreateMediaAsset409JSONResponseBodyTypeResourceAlreadyExists CreateMediaAsset409JSONResponseBodyType = "resource_already_exists"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset409JSONResponseBodyType enum.
+func (e CreateMediaAsset409JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateMediaAsset409JSONResponseBodyTypeInvalidRequest:
+		return true
+	case CreateMediaAsset409JSONResponseBodyTypeResourceAlreadyExists:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset422JSONResponseBodyObject.
+const (
+	CreateMediaAsset422JSONResponseBodyObjectError CreateMediaAsset422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset422JSONResponseBodyObject enum.
+func (e CreateMediaAsset422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset422JSONResponseBodyType.
+const (
+	CreateMediaAsset422JSONResponseBodyTypeEntityReferencesArchivedEntities CreateMediaAsset422JSONResponseBodyType = "entity_references_archived_entities"
+	CreateMediaAsset422JSONResponseBodyTypeParameterError                   CreateMediaAsset422JSONResponseBodyType = "parameter_error"
+	CreateMediaAsset422JSONResponseBodyTypeStoreError                       CreateMediaAsset422JSONResponseBodyType = "store_error"
+	CreateMediaAsset422JSONResponseBodyTypeUnprocessableEntityError         CreateMediaAsset422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset422JSONResponseBodyType enum.
+func (e CreateMediaAsset422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case CreateMediaAsset422JSONResponseBodyTypeParameterError:
+		return true
+	case CreateMediaAsset422JSONResponseBodyTypeStoreError:
+		return true
+	case CreateMediaAsset422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset423JSONResponseBodyObject.
+const (
+	CreateMediaAsset423JSONResponseBodyObjectError CreateMediaAsset423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset423JSONResponseBodyObject enum.
+func (e CreateMediaAsset423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset423JSONResponseBodyType.
+const (
+	CreateMediaAsset423JSONResponseBodyTypeResourceLockedError CreateMediaAsset423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset423JSONResponseBodyType enum.
+func (e CreateMediaAsset423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset429JSONResponseBodyObject.
+const (
+	CreateMediaAsset429JSONResponseBodyObjectError CreateMediaAsset429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset429JSONResponseBodyObject enum.
+func (e CreateMediaAsset429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset429JSONResponseBodyType.
+const (
+	CreateMediaAsset429JSONResponseBodyTypeRateLimitError CreateMediaAsset429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset429JSONResponseBodyType enum.
+func (e CreateMediaAsset429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset500JSONResponseBodyObject.
+const (
+	CreateMediaAsset500JSONResponseBodyObjectError CreateMediaAsset500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset500JSONResponseBodyObject enum.
+func (e CreateMediaAsset500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset500JSONResponseBodyType.
+const (
+	CreateMediaAsset500JSONResponseBodyTypeServerError CreateMediaAsset500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset500JSONResponseBodyType enum.
+func (e CreateMediaAsset500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset503JSONResponseBodyObject.
+const (
+	CreateMediaAsset503JSONResponseBodyObjectError CreateMediaAsset503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset503JSONResponseBodyObject enum.
+func (e CreateMediaAsset503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreateMediaAsset503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMediaAsset503JSONResponseBodyType.
+const (
+	CreateMediaAsset503JSONResponseBodyTypeServerError CreateMediaAsset503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the CreateMediaAsset503JSONResponseBodyType enum.
+func (e CreateMediaAsset503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreateMediaAsset503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetOverviewMetricsParamsCurrency.
 const (
 	GetOverviewMetricsParamsCurrencyAUD GetOverviewMetricsParamsCurrency = "AUD"
 	GetOverviewMetricsParamsCurrencyBRL GetOverviewMetricsParamsCurrency = "BRL"
 	GetOverviewMetricsParamsCurrencyCAD GetOverviewMetricsParamsCurrency = "CAD"
+	GetOverviewMetricsParamsCurrencyCHF GetOverviewMetricsParamsCurrency = "CHF"
 	GetOverviewMetricsParamsCurrencyCNY GetOverviewMetricsParamsCurrency = "CNY"
 	GetOverviewMetricsParamsCurrencyEUR GetOverviewMetricsParamsCurrency = "EUR"
 	GetOverviewMetricsParamsCurrencyGBP GetOverviewMetricsParamsCurrency = "GBP"
 	GetOverviewMetricsParamsCurrencyJPY GetOverviewMetricsParamsCurrency = "JPY"
 	GetOverviewMetricsParamsCurrencyKRW GetOverviewMetricsParamsCurrency = "KRW"
 	GetOverviewMetricsParamsCurrencyMXN GetOverviewMetricsParamsCurrency = "MXN"
+	GetOverviewMetricsParamsCurrencyNZD GetOverviewMetricsParamsCurrency = "NZD"
 	GetOverviewMetricsParamsCurrencyPLN GetOverviewMetricsParamsCurrency = "PLN"
 	GetOverviewMetricsParamsCurrencySEK GetOverviewMetricsParamsCurrency = "SEK"
 	GetOverviewMetricsParamsCurrencyUSD GetOverviewMetricsParamsCurrency = "USD"
@@ -22067,6 +18906,8 @@ func (e GetOverviewMetricsParamsCurrency) Valid() bool {
 		return true
 	case GetOverviewMetricsParamsCurrencyCAD:
 		return true
+	case GetOverviewMetricsParamsCurrencyCHF:
+		return true
 	case GetOverviewMetricsParamsCurrencyCNY:
 		return true
 	case GetOverviewMetricsParamsCurrencyEUR:
@@ -22078,6 +18919,8 @@ func (e GetOverviewMetricsParamsCurrency) Valid() bool {
 	case GetOverviewMetricsParamsCurrencyKRW:
 		return true
 	case GetOverviewMetricsParamsCurrencyMXN:
+		return true
+	case GetOverviewMetricsParamsCurrencyNZD:
 		return true
 	case GetOverviewMetricsParamsCurrencyPLN:
 		return true
@@ -22327,6 +19170,324 @@ const (
 func (e GetOverviewMetrics503JSONResponseBodyType) Valid() bool {
 	switch e {
 	case GetOverviewMetrics503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetricParamsCurrency.
+const (
+	GetRevenueMetricParamsCurrencyAUD GetRevenueMetricParamsCurrency = "AUD"
+	GetRevenueMetricParamsCurrencyBRL GetRevenueMetricParamsCurrency = "BRL"
+	GetRevenueMetricParamsCurrencyCAD GetRevenueMetricParamsCurrency = "CAD"
+	GetRevenueMetricParamsCurrencyCHF GetRevenueMetricParamsCurrency = "CHF"
+	GetRevenueMetricParamsCurrencyCNY GetRevenueMetricParamsCurrency = "CNY"
+	GetRevenueMetricParamsCurrencyEUR GetRevenueMetricParamsCurrency = "EUR"
+	GetRevenueMetricParamsCurrencyGBP GetRevenueMetricParamsCurrency = "GBP"
+	GetRevenueMetricParamsCurrencyJPY GetRevenueMetricParamsCurrency = "JPY"
+	GetRevenueMetricParamsCurrencyKRW GetRevenueMetricParamsCurrency = "KRW"
+	GetRevenueMetricParamsCurrencyMXN GetRevenueMetricParamsCurrency = "MXN"
+	GetRevenueMetricParamsCurrencyNZD GetRevenueMetricParamsCurrency = "NZD"
+	GetRevenueMetricParamsCurrencyPLN GetRevenueMetricParamsCurrency = "PLN"
+	GetRevenueMetricParamsCurrencySEK GetRevenueMetricParamsCurrency = "SEK"
+	GetRevenueMetricParamsCurrencyUSD GetRevenueMetricParamsCurrency = "USD"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetricParamsCurrency enum.
+func (e GetRevenueMetricParamsCurrency) Valid() bool {
+	switch e {
+	case GetRevenueMetricParamsCurrencyAUD:
+		return true
+	case GetRevenueMetricParamsCurrencyBRL:
+		return true
+	case GetRevenueMetricParamsCurrencyCAD:
+		return true
+	case GetRevenueMetricParamsCurrencyCHF:
+		return true
+	case GetRevenueMetricParamsCurrencyCNY:
+		return true
+	case GetRevenueMetricParamsCurrencyEUR:
+		return true
+	case GetRevenueMetricParamsCurrencyGBP:
+		return true
+	case GetRevenueMetricParamsCurrencyJPY:
+		return true
+	case GetRevenueMetricParamsCurrencyKRW:
+		return true
+	case GetRevenueMetricParamsCurrencyMXN:
+		return true
+	case GetRevenueMetricParamsCurrencyNZD:
+		return true
+	case GetRevenueMetricParamsCurrencyPLN:
+		return true
+	case GetRevenueMetricParamsCurrencySEK:
+		return true
+	case GetRevenueMetricParamsCurrencyUSD:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetricParamsRevenueType.
+const (
+	GetRevenueMetricParamsRevenueTypeProceeds          GetRevenueMetricParamsRevenueType = "proceeds"
+	GetRevenueMetricParamsRevenueTypeRevenue           GetRevenueMetricParamsRevenueType = "revenue"
+	GetRevenueMetricParamsRevenueTypeRevenueNetOfTaxes GetRevenueMetricParamsRevenueType = "revenue_net_of_taxes"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetricParamsRevenueType enum.
+func (e GetRevenueMetricParamsRevenueType) Valid() bool {
+	switch e {
+	case GetRevenueMetricParamsRevenueTypeProceeds:
+		return true
+	case GetRevenueMetricParamsRevenueTypeRevenue:
+		return true
+	case GetRevenueMetricParamsRevenueTypeRevenueNetOfTaxes:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric400JSONResponseBodyObject.
+const (
+	GetRevenueMetric400JSONResponseBodyObjectError GetRevenueMetric400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric400JSONResponseBodyObject enum.
+func (e GetRevenueMetric400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetRevenueMetric400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric400JSONResponseBodyType.
+const (
+	GetRevenueMetric400JSONResponseBodyTypeInvalidRequest GetRevenueMetric400JSONResponseBodyType = "invalid_request"
+	GetRevenueMetric400JSONResponseBodyTypeParameterError GetRevenueMetric400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric400JSONResponseBodyType enum.
+func (e GetRevenueMetric400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetRevenueMetric400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case GetRevenueMetric400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric401JSONResponseBodyObject.
+const (
+	GetRevenueMetric401JSONResponseBodyObjectError GetRevenueMetric401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric401JSONResponseBodyObject enum.
+func (e GetRevenueMetric401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetRevenueMetric401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric401JSONResponseBodyType.
+const (
+	GetRevenueMetric401JSONResponseBodyTypeAuthenticationError GetRevenueMetric401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric401JSONResponseBodyType enum.
+func (e GetRevenueMetric401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetRevenueMetric401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric403JSONResponseBodyObject.
+const (
+	GetRevenueMetric403JSONResponseBodyObjectError GetRevenueMetric403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric403JSONResponseBodyObject enum.
+func (e GetRevenueMetric403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetRevenueMetric403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric403JSONResponseBodyType.
+const (
+	GetRevenueMetric403JSONResponseBodyTypeAuthorizationError GetRevenueMetric403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric403JSONResponseBodyType enum.
+func (e GetRevenueMetric403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetRevenueMetric403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric404JSONResponseBodyObject.
+const (
+	GetRevenueMetric404JSONResponseBodyObjectError GetRevenueMetric404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric404JSONResponseBodyObject enum.
+func (e GetRevenueMetric404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetRevenueMetric404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric404JSONResponseBodyType.
+const (
+	GetRevenueMetric404JSONResponseBodyTypeResourceMissing GetRevenueMetric404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric404JSONResponseBodyType enum.
+func (e GetRevenueMetric404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetRevenueMetric404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric423JSONResponseBodyObject.
+const (
+	GetRevenueMetric423JSONResponseBodyObjectError GetRevenueMetric423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric423JSONResponseBodyObject enum.
+func (e GetRevenueMetric423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetRevenueMetric423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric423JSONResponseBodyType.
+const (
+	GetRevenueMetric423JSONResponseBodyTypeResourceLockedError GetRevenueMetric423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric423JSONResponseBodyType enum.
+func (e GetRevenueMetric423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetRevenueMetric423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric429JSONResponseBodyObject.
+const (
+	GetRevenueMetric429JSONResponseBodyObjectError GetRevenueMetric429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric429JSONResponseBodyObject enum.
+func (e GetRevenueMetric429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetRevenueMetric429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric429JSONResponseBodyType.
+const (
+	GetRevenueMetric429JSONResponseBodyTypeRateLimitError GetRevenueMetric429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric429JSONResponseBodyType enum.
+func (e GetRevenueMetric429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetRevenueMetric429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric500JSONResponseBodyObject.
+const (
+	GetRevenueMetric500JSONResponseBodyObjectError GetRevenueMetric500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric500JSONResponseBodyObject enum.
+func (e GetRevenueMetric500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetRevenueMetric500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric500JSONResponseBodyType.
+const (
+	GetRevenueMetric500JSONResponseBodyTypeServerError GetRevenueMetric500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric500JSONResponseBodyType enum.
+func (e GetRevenueMetric500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetRevenueMetric500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric503JSONResponseBodyObject.
+const (
+	GetRevenueMetric503JSONResponseBodyObjectError GetRevenueMetric503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric503JSONResponseBodyObject enum.
+func (e GetRevenueMetric503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetRevenueMetric503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetRevenueMetric503JSONResponseBodyType.
+const (
+	GetRevenueMetric503JSONResponseBodyTypeServerError GetRevenueMetric503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetRevenueMetric503JSONResponseBodyType enum.
+func (e GetRevenueMetric503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetRevenueMetric503JSONResponseBodyTypeServerError:
 		return true
 	default:
 		return false
@@ -22735,6 +19896,7 @@ func (e CreateOffering409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateOffering409JSONResponseBodyType.
 const (
 	CreateOffering409JSONResponseBodyTypeIdempotencyError      CreateOffering409JSONResponseBodyType = "idempotency_error"
+	CreateOffering409JSONResponseBodyTypeInvalidRequest        CreateOffering409JSONResponseBodyType = "invalid_request"
 	CreateOffering409JSONResponseBodyTypeResourceAlreadyExists CreateOffering409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -22742,6 +19904,8 @@ const (
 func (e CreateOffering409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateOffering409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateOffering409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateOffering409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -23050,6 +20214,7 @@ func (e DeleteOffering409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeleteOffering409JSONResponseBodyType.
 const (
 	DeleteOffering409JSONResponseBodyTypeIdempotencyError      DeleteOffering409JSONResponseBodyType = "idempotency_error"
+	DeleteOffering409JSONResponseBodyTypeInvalidRequest        DeleteOffering409JSONResponseBodyType = "invalid_request"
 	DeleteOffering409JSONResponseBodyTypeResourceAlreadyExists DeleteOffering409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -23057,6 +20222,8 @@ const (
 func (e DeleteOffering409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeleteOffering409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeleteOffering409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeleteOffering409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -23626,6 +20793,7 @@ func (e UpdateOffering409JSONResponseBodyObject) Valid() bool {
 // Defines values for UpdateOffering409JSONResponseBodyType.
 const (
 	UpdateOffering409JSONResponseBodyTypeIdempotencyError      UpdateOffering409JSONResponseBodyType = "idempotency_error"
+	UpdateOffering409JSONResponseBodyTypeInvalidRequest        UpdateOffering409JSONResponseBodyType = "invalid_request"
 	UpdateOffering409JSONResponseBodyTypeResourceAlreadyExists UpdateOffering409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -23633,6 +20801,8 @@ const (
 func (e UpdateOffering409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateOffering409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdateOffering409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UpdateOffering409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -23941,6 +21111,7 @@ func (e ArchiveOffering409JSONResponseBodyObject) Valid() bool {
 // Defines values for ArchiveOffering409JSONResponseBodyType.
 const (
 	ArchiveOffering409JSONResponseBodyTypeIdempotencyError      ArchiveOffering409JSONResponseBodyType = "idempotency_error"
+	ArchiveOffering409JSONResponseBodyTypeInvalidRequest        ArchiveOffering409JSONResponseBodyType = "invalid_request"
 	ArchiveOffering409JSONResponseBodyTypeResourceAlreadyExists ArchiveOffering409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -23948,6 +21119,8 @@ const (
 func (e ArchiveOffering409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case ArchiveOffering409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case ArchiveOffering409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case ArchiveOffering409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -24256,6 +21429,7 @@ func (e UnarchiveOffering409JSONResponseBodyObject) Valid() bool {
 // Defines values for UnarchiveOffering409JSONResponseBodyType.
 const (
 	UnarchiveOffering409JSONResponseBodyTypeIdempotencyError      UnarchiveOffering409JSONResponseBodyType = "idempotency_error"
+	UnarchiveOffering409JSONResponseBodyTypeInvalidRequest        UnarchiveOffering409JSONResponseBodyType = "invalid_request"
 	UnarchiveOffering409JSONResponseBodyTypeResourceAlreadyExists UnarchiveOffering409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -24263,6 +21437,8 @@ const (
 func (e UnarchiveOffering409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UnarchiveOffering409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UnarchiveOffering409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UnarchiveOffering409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -24829,6 +22005,7 @@ func (e CreatePackages409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreatePackages409JSONResponseBodyType.
 const (
 	CreatePackages409JSONResponseBodyTypeIdempotencyError      CreatePackages409JSONResponseBodyType = "idempotency_error"
+	CreatePackages409JSONResponseBodyTypeInvalidRequest        CreatePackages409JSONResponseBodyType = "invalid_request"
 	CreatePackages409JSONResponseBodyTypeResourceAlreadyExists CreatePackages409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -24836,6 +22013,8 @@ const (
 func (e CreatePackages409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreatePackages409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreatePackages409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreatePackages409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -25144,6 +22323,7 @@ func (e DeletePackageFromOffering409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeletePackageFromOffering409JSONResponseBodyType.
 const (
 	DeletePackageFromOffering409JSONResponseBodyTypeIdempotencyError      DeletePackageFromOffering409JSONResponseBodyType = "idempotency_error"
+	DeletePackageFromOffering409JSONResponseBodyTypeInvalidRequest        DeletePackageFromOffering409JSONResponseBodyType = "invalid_request"
 	DeletePackageFromOffering409JSONResponseBodyTypeResourceAlreadyExists DeletePackageFromOffering409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -25151,6 +22331,8 @@ const (
 func (e DeletePackageFromOffering409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeletePackageFromOffering409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeletePackageFromOffering409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeletePackageFromOffering409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -25717,6 +22899,7 @@ func (e UpdatePackage409JSONResponseBodyObject) Valid() bool {
 // Defines values for UpdatePackage409JSONResponseBodyType.
 const (
 	UpdatePackage409JSONResponseBodyTypeIdempotencyError      UpdatePackage409JSONResponseBodyType = "idempotency_error"
+	UpdatePackage409JSONResponseBodyTypeInvalidRequest        UpdatePackage409JSONResponseBodyType = "invalid_request"
 	UpdatePackage409JSONResponseBodyTypeResourceAlreadyExists UpdatePackage409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -25724,6 +22907,8 @@ const (
 func (e UpdatePackage409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdatePackage409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdatePackage409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UpdatePackage409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -26032,6 +23217,7 @@ func (e AttachProductsToPackage409JSONResponseBodyObject) Valid() bool {
 // Defines values for AttachProductsToPackage409JSONResponseBodyType.
 const (
 	AttachProductsToPackage409JSONResponseBodyTypeIdempotencyError      AttachProductsToPackage409JSONResponseBodyType = "idempotency_error"
+	AttachProductsToPackage409JSONResponseBodyTypeInvalidRequest        AttachProductsToPackage409JSONResponseBodyType = "invalid_request"
 	AttachProductsToPackage409JSONResponseBodyTypeResourceAlreadyExists AttachProductsToPackage409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -26039,6 +23225,8 @@ const (
 func (e AttachProductsToPackage409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case AttachProductsToPackage409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case AttachProductsToPackage409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case AttachProductsToPackage409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -26347,6 +23535,7 @@ func (e DetachProductsFromPackage409JSONResponseBodyObject) Valid() bool {
 // Defines values for DetachProductsFromPackage409JSONResponseBodyType.
 const (
 	DetachProductsFromPackage409JSONResponseBodyTypeIdempotencyError      DetachProductsFromPackage409JSONResponseBodyType = "idempotency_error"
+	DetachProductsFromPackage409JSONResponseBodyTypeInvalidRequest        DetachProductsFromPackage409JSONResponseBodyType = "invalid_request"
 	DetachProductsFromPackage409JSONResponseBodyTypeResourceAlreadyExists DetachProductsFromPackage409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -26354,6 +23543,8 @@ const (
 func (e DetachProductsFromPackage409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DetachProductsFromPackage409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DetachProductsFromPackage409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DetachProductsFromPackage409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -27163,6 +24354,7 @@ func (e CreatePaywall409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreatePaywall409JSONResponseBodyType.
 const (
 	CreatePaywall409JSONResponseBodyTypeIdempotencyError      CreatePaywall409JSONResponseBodyType = "idempotency_error"
+	CreatePaywall409JSONResponseBodyTypeInvalidRequest        CreatePaywall409JSONResponseBodyType = "invalid_request"
 	CreatePaywall409JSONResponseBodyTypeResourceAlreadyExists CreatePaywall409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -27170,6 +24362,8 @@ const (
 func (e CreatePaywall409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreatePaywall409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreatePaywall409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreatePaywall409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -27478,6 +24672,7 @@ func (e DeletePaywall409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeletePaywall409JSONResponseBodyType.
 const (
 	DeletePaywall409JSONResponseBodyTypeIdempotencyError      DeletePaywall409JSONResponseBodyType = "idempotency_error"
+	DeletePaywall409JSONResponseBodyTypeInvalidRequest        DeletePaywall409JSONResponseBodyType = "invalid_request"
 	DeletePaywall409JSONResponseBodyTypeResourceAlreadyExists DeletePaywall409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -27485,6 +24680,8 @@ const (
 func (e DeletePaywall409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeletePaywall409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeletePaywall409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeletePaywall409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -27913,15 +25110,1533 @@ func (e GetPaywall503JSONResponseBodyType) Valid() bool {
 	}
 }
 
+// Defines values for UpdatePaywall400JSONResponseBodyObject.
+const (
+	UpdatePaywall400JSONResponseBodyObjectError UpdatePaywall400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall400JSONResponseBodyObject enum.
+func (e UpdatePaywall400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall400JSONResponseBodyType.
+const (
+	UpdatePaywall400JSONResponseBodyTypeInvalidRequest UpdatePaywall400JSONResponseBodyType = "invalid_request"
+	UpdatePaywall400JSONResponseBodyTypeParameterError UpdatePaywall400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall400JSONResponseBodyType enum.
+func (e UpdatePaywall400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case UpdatePaywall400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall401JSONResponseBodyObject.
+const (
+	UpdatePaywall401JSONResponseBodyObjectError UpdatePaywall401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall401JSONResponseBodyObject enum.
+func (e UpdatePaywall401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall401JSONResponseBodyType.
+const (
+	UpdatePaywall401JSONResponseBodyTypeAuthenticationError UpdatePaywall401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall401JSONResponseBodyType enum.
+func (e UpdatePaywall401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall403JSONResponseBodyObject.
+const (
+	UpdatePaywall403JSONResponseBodyObjectError UpdatePaywall403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall403JSONResponseBodyObject enum.
+func (e UpdatePaywall403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall403JSONResponseBodyType.
+const (
+	UpdatePaywall403JSONResponseBodyTypeAuthorizationError UpdatePaywall403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall403JSONResponseBodyType enum.
+func (e UpdatePaywall403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall404JSONResponseBodyObject.
+const (
+	UpdatePaywall404JSONResponseBodyObjectError UpdatePaywall404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall404JSONResponseBodyObject enum.
+func (e UpdatePaywall404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall404JSONResponseBodyType.
+const (
+	UpdatePaywall404JSONResponseBodyTypeResourceMissing UpdatePaywall404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall404JSONResponseBodyType enum.
+func (e UpdatePaywall404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall409JSONResponseBodyObject.
+const (
+	UpdatePaywall409JSONResponseBodyObjectError UpdatePaywall409JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall409JSONResponseBodyObject enum.
+func (e UpdatePaywall409JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall409JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall409JSONResponseBodyType.
+const (
+	UpdatePaywall409JSONResponseBodyTypeIdempotencyError      UpdatePaywall409JSONResponseBodyType = "idempotency_error"
+	UpdatePaywall409JSONResponseBodyTypeInvalidRequest        UpdatePaywall409JSONResponseBodyType = "invalid_request"
+	UpdatePaywall409JSONResponseBodyTypeResourceAlreadyExists UpdatePaywall409JSONResponseBodyType = "resource_already_exists"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall409JSONResponseBodyType enum.
+func (e UpdatePaywall409JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdatePaywall409JSONResponseBodyTypeInvalidRequest:
+		return true
+	case UpdatePaywall409JSONResponseBodyTypeResourceAlreadyExists:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall422JSONResponseBodyObject.
+const (
+	UpdatePaywall422JSONResponseBodyObjectError UpdatePaywall422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall422JSONResponseBodyObject enum.
+func (e UpdatePaywall422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall422JSONResponseBodyType.
+const (
+	UpdatePaywall422JSONResponseBodyTypeEntityReferencesArchivedEntities UpdatePaywall422JSONResponseBodyType = "entity_references_archived_entities"
+	UpdatePaywall422JSONResponseBodyTypeParameterError                   UpdatePaywall422JSONResponseBodyType = "parameter_error"
+	UpdatePaywall422JSONResponseBodyTypeStoreError                       UpdatePaywall422JSONResponseBodyType = "store_error"
+	UpdatePaywall422JSONResponseBodyTypeUnprocessableEntityError         UpdatePaywall422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall422JSONResponseBodyType enum.
+func (e UpdatePaywall422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case UpdatePaywall422JSONResponseBodyTypeParameterError:
+		return true
+	case UpdatePaywall422JSONResponseBodyTypeStoreError:
+		return true
+	case UpdatePaywall422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall423JSONResponseBodyObject.
+const (
+	UpdatePaywall423JSONResponseBodyObjectError UpdatePaywall423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall423JSONResponseBodyObject enum.
+func (e UpdatePaywall423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall423JSONResponseBodyType.
+const (
+	UpdatePaywall423JSONResponseBodyTypeResourceLockedError UpdatePaywall423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall423JSONResponseBodyType enum.
+func (e UpdatePaywall423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall429JSONResponseBodyObject.
+const (
+	UpdatePaywall429JSONResponseBodyObjectError UpdatePaywall429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall429JSONResponseBodyObject enum.
+func (e UpdatePaywall429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall429JSONResponseBodyType.
+const (
+	UpdatePaywall429JSONResponseBodyTypeRateLimitError UpdatePaywall429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall429JSONResponseBodyType enum.
+func (e UpdatePaywall429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall500JSONResponseBodyObject.
+const (
+	UpdatePaywall500JSONResponseBodyObjectError UpdatePaywall500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall500JSONResponseBodyObject enum.
+func (e UpdatePaywall500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall500JSONResponseBodyType.
+const (
+	UpdatePaywall500JSONResponseBodyTypeServerError UpdatePaywall500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall500JSONResponseBodyType enum.
+func (e UpdatePaywall500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall503JSONResponseBodyObject.
+const (
+	UpdatePaywall503JSONResponseBodyObjectError UpdatePaywall503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall503JSONResponseBodyObject enum.
+func (e UpdatePaywall503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UpdatePaywall503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdatePaywall503JSONResponseBodyType.
+const (
+	UpdatePaywall503JSONResponseBodyTypeServerError UpdatePaywall503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the UpdatePaywall503JSONResponseBodyType enum.
+func (e UpdatePaywall503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UpdatePaywall503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall400JSONResponseBodyObject.
+const (
+	PublishPaywall400JSONResponseBodyObjectError PublishPaywall400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall400JSONResponseBodyObject enum.
+func (e PublishPaywall400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall400JSONResponseBodyType.
+const (
+	PublishPaywall400JSONResponseBodyTypeInvalidRequest PublishPaywall400JSONResponseBodyType = "invalid_request"
+	PublishPaywall400JSONResponseBodyTypeParameterError PublishPaywall400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall400JSONResponseBodyType enum.
+func (e PublishPaywall400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case PublishPaywall400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall401JSONResponseBodyObject.
+const (
+	PublishPaywall401JSONResponseBodyObjectError PublishPaywall401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall401JSONResponseBodyObject enum.
+func (e PublishPaywall401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall401JSONResponseBodyType.
+const (
+	PublishPaywall401JSONResponseBodyTypeAuthenticationError PublishPaywall401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall401JSONResponseBodyType enum.
+func (e PublishPaywall401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall403JSONResponseBodyObject.
+const (
+	PublishPaywall403JSONResponseBodyObjectError PublishPaywall403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall403JSONResponseBodyObject enum.
+func (e PublishPaywall403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall403JSONResponseBodyType.
+const (
+	PublishPaywall403JSONResponseBodyTypeAuthorizationError PublishPaywall403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall403JSONResponseBodyType enum.
+func (e PublishPaywall403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall404JSONResponseBodyObject.
+const (
+	PublishPaywall404JSONResponseBodyObjectError PublishPaywall404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall404JSONResponseBodyObject enum.
+func (e PublishPaywall404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall404JSONResponseBodyType.
+const (
+	PublishPaywall404JSONResponseBodyTypeResourceMissing PublishPaywall404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall404JSONResponseBodyType enum.
+func (e PublishPaywall404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall409JSONResponseBodyObject.
+const (
+	PublishPaywall409JSONResponseBodyObjectError PublishPaywall409JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall409JSONResponseBodyObject enum.
+func (e PublishPaywall409JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall409JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall409JSONResponseBodyType.
+const (
+	PublishPaywall409JSONResponseBodyTypeIdempotencyError      PublishPaywall409JSONResponseBodyType = "idempotency_error"
+	PublishPaywall409JSONResponseBodyTypeInvalidRequest        PublishPaywall409JSONResponseBodyType = "invalid_request"
+	PublishPaywall409JSONResponseBodyTypeResourceAlreadyExists PublishPaywall409JSONResponseBodyType = "resource_already_exists"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall409JSONResponseBodyType enum.
+func (e PublishPaywall409JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case PublishPaywall409JSONResponseBodyTypeInvalidRequest:
+		return true
+	case PublishPaywall409JSONResponseBodyTypeResourceAlreadyExists:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall422JSONResponseBodyObject.
+const (
+	PublishPaywall422JSONResponseBodyObjectError PublishPaywall422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall422JSONResponseBodyObject enum.
+func (e PublishPaywall422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall422JSONResponseBodyType.
+const (
+	PublishPaywall422JSONResponseBodyTypeEntityReferencesArchivedEntities PublishPaywall422JSONResponseBodyType = "entity_references_archived_entities"
+	PublishPaywall422JSONResponseBodyTypeParameterError                   PublishPaywall422JSONResponseBodyType = "parameter_error"
+	PublishPaywall422JSONResponseBodyTypeStoreError                       PublishPaywall422JSONResponseBodyType = "store_error"
+	PublishPaywall422JSONResponseBodyTypeUnprocessableEntityError         PublishPaywall422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall422JSONResponseBodyType enum.
+func (e PublishPaywall422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case PublishPaywall422JSONResponseBodyTypeParameterError:
+		return true
+	case PublishPaywall422JSONResponseBodyTypeStoreError:
+		return true
+	case PublishPaywall422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall423JSONResponseBodyObject.
+const (
+	PublishPaywall423JSONResponseBodyObjectError PublishPaywall423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall423JSONResponseBodyObject enum.
+func (e PublishPaywall423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall423JSONResponseBodyType.
+const (
+	PublishPaywall423JSONResponseBodyTypeResourceLockedError PublishPaywall423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall423JSONResponseBodyType enum.
+func (e PublishPaywall423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall429JSONResponseBodyObject.
+const (
+	PublishPaywall429JSONResponseBodyObjectError PublishPaywall429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall429JSONResponseBodyObject enum.
+func (e PublishPaywall429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall429JSONResponseBodyType.
+const (
+	PublishPaywall429JSONResponseBodyTypeRateLimitError PublishPaywall429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall429JSONResponseBodyType enum.
+func (e PublishPaywall429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall500JSONResponseBodyObject.
+const (
+	PublishPaywall500JSONResponseBodyObjectError PublishPaywall500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall500JSONResponseBodyObject enum.
+func (e PublishPaywall500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall500JSONResponseBodyType.
+const (
+	PublishPaywall500JSONResponseBodyTypeServerError PublishPaywall500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall500JSONResponseBodyType enum.
+func (e PublishPaywall500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall503JSONResponseBodyObject.
+const (
+	PublishPaywall503JSONResponseBodyObjectError PublishPaywall503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall503JSONResponseBodyObject enum.
+func (e PublishPaywall503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case PublishPaywall503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublishPaywall503JSONResponseBodyType.
+const (
+	PublishPaywall503JSONResponseBodyTypeServerError PublishPaywall503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the PublishPaywall503JSONResponseBodyType enum.
+func (e PublishPaywall503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case PublishPaywall503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall400JSONResponseBodyObject.
+const (
+	UnpublishPaywall400JSONResponseBodyObjectError UnpublishPaywall400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall400JSONResponseBodyObject enum.
+func (e UnpublishPaywall400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall400JSONResponseBodyType.
+const (
+	UnpublishPaywall400JSONResponseBodyTypeInvalidRequest UnpublishPaywall400JSONResponseBodyType = "invalid_request"
+	UnpublishPaywall400JSONResponseBodyTypeParameterError UnpublishPaywall400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall400JSONResponseBodyType enum.
+func (e UnpublishPaywall400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case UnpublishPaywall400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall401JSONResponseBodyObject.
+const (
+	UnpublishPaywall401JSONResponseBodyObjectError UnpublishPaywall401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall401JSONResponseBodyObject enum.
+func (e UnpublishPaywall401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall401JSONResponseBodyType.
+const (
+	UnpublishPaywall401JSONResponseBodyTypeAuthenticationError UnpublishPaywall401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall401JSONResponseBodyType enum.
+func (e UnpublishPaywall401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall403JSONResponseBodyObject.
+const (
+	UnpublishPaywall403JSONResponseBodyObjectError UnpublishPaywall403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall403JSONResponseBodyObject enum.
+func (e UnpublishPaywall403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall403JSONResponseBodyType.
+const (
+	UnpublishPaywall403JSONResponseBodyTypeAuthorizationError UnpublishPaywall403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall403JSONResponseBodyType enum.
+func (e UnpublishPaywall403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall404JSONResponseBodyObject.
+const (
+	UnpublishPaywall404JSONResponseBodyObjectError UnpublishPaywall404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall404JSONResponseBodyObject enum.
+func (e UnpublishPaywall404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall404JSONResponseBodyType.
+const (
+	UnpublishPaywall404JSONResponseBodyTypeResourceMissing UnpublishPaywall404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall404JSONResponseBodyType enum.
+func (e UnpublishPaywall404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall409JSONResponseBodyObject.
+const (
+	UnpublishPaywall409JSONResponseBodyObjectError UnpublishPaywall409JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall409JSONResponseBodyObject enum.
+func (e UnpublishPaywall409JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall409JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall409JSONResponseBodyType.
+const (
+	UnpublishPaywall409JSONResponseBodyTypeIdempotencyError      UnpublishPaywall409JSONResponseBodyType = "idempotency_error"
+	UnpublishPaywall409JSONResponseBodyTypeInvalidRequest        UnpublishPaywall409JSONResponseBodyType = "invalid_request"
+	UnpublishPaywall409JSONResponseBodyTypeResourceAlreadyExists UnpublishPaywall409JSONResponseBodyType = "resource_already_exists"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall409JSONResponseBodyType enum.
+func (e UnpublishPaywall409JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UnpublishPaywall409JSONResponseBodyTypeInvalidRequest:
+		return true
+	case UnpublishPaywall409JSONResponseBodyTypeResourceAlreadyExists:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall422JSONResponseBodyObject.
+const (
+	UnpublishPaywall422JSONResponseBodyObjectError UnpublishPaywall422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall422JSONResponseBodyObject enum.
+func (e UnpublishPaywall422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall422JSONResponseBodyType.
+const (
+	UnpublishPaywall422JSONResponseBodyTypeEntityReferencesArchivedEntities UnpublishPaywall422JSONResponseBodyType = "entity_references_archived_entities"
+	UnpublishPaywall422JSONResponseBodyTypeParameterError                   UnpublishPaywall422JSONResponseBodyType = "parameter_error"
+	UnpublishPaywall422JSONResponseBodyTypeStoreError                       UnpublishPaywall422JSONResponseBodyType = "store_error"
+	UnpublishPaywall422JSONResponseBodyTypeUnprocessableEntityError         UnpublishPaywall422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall422JSONResponseBodyType enum.
+func (e UnpublishPaywall422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case UnpublishPaywall422JSONResponseBodyTypeParameterError:
+		return true
+	case UnpublishPaywall422JSONResponseBodyTypeStoreError:
+		return true
+	case UnpublishPaywall422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall423JSONResponseBodyObject.
+const (
+	UnpublishPaywall423JSONResponseBodyObjectError UnpublishPaywall423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall423JSONResponseBodyObject enum.
+func (e UnpublishPaywall423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall423JSONResponseBodyType.
+const (
+	UnpublishPaywall423JSONResponseBodyTypeResourceLockedError UnpublishPaywall423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall423JSONResponseBodyType enum.
+func (e UnpublishPaywall423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall429JSONResponseBodyObject.
+const (
+	UnpublishPaywall429JSONResponseBodyObjectError UnpublishPaywall429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall429JSONResponseBodyObject enum.
+func (e UnpublishPaywall429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall429JSONResponseBodyType.
+const (
+	UnpublishPaywall429JSONResponseBodyTypeRateLimitError UnpublishPaywall429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall429JSONResponseBodyType enum.
+func (e UnpublishPaywall429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall500JSONResponseBodyObject.
+const (
+	UnpublishPaywall500JSONResponseBodyObjectError UnpublishPaywall500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall500JSONResponseBodyObject enum.
+func (e UnpublishPaywall500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall500JSONResponseBodyType.
+const (
+	UnpublishPaywall500JSONResponseBodyTypeServerError UnpublishPaywall500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall500JSONResponseBodyType enum.
+func (e UnpublishPaywall500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall503JSONResponseBodyObject.
+const (
+	UnpublishPaywall503JSONResponseBodyObjectError UnpublishPaywall503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall503JSONResponseBodyObject enum.
+func (e UnpublishPaywall503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case UnpublishPaywall503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UnpublishPaywall503JSONResponseBodyType.
+const (
+	UnpublishPaywall503JSONResponseBodyTypeServerError UnpublishPaywall503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the UnpublishPaywall503JSONResponseBodyType enum.
+func (e UnpublishPaywall503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case UnpublishPaywall503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion400JSONResponseBodyObject.
+const (
+	CreatePaywallVersion400JSONResponseBodyObjectError CreatePaywallVersion400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion400JSONResponseBodyObject enum.
+func (e CreatePaywallVersion400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion400JSONResponseBodyType.
+const (
+	CreatePaywallVersion400JSONResponseBodyTypeInvalidRequest CreatePaywallVersion400JSONResponseBodyType = "invalid_request"
+	CreatePaywallVersion400JSONResponseBodyTypeParameterError CreatePaywallVersion400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion400JSONResponseBodyType enum.
+func (e CreatePaywallVersion400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case CreatePaywallVersion400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion401JSONResponseBodyObject.
+const (
+	CreatePaywallVersion401JSONResponseBodyObjectError CreatePaywallVersion401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion401JSONResponseBodyObject enum.
+func (e CreatePaywallVersion401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion401JSONResponseBodyType.
+const (
+	CreatePaywallVersion401JSONResponseBodyTypeAuthenticationError CreatePaywallVersion401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion401JSONResponseBodyType enum.
+func (e CreatePaywallVersion401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion403JSONResponseBodyObject.
+const (
+	CreatePaywallVersion403JSONResponseBodyObjectError CreatePaywallVersion403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion403JSONResponseBodyObject enum.
+func (e CreatePaywallVersion403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion403JSONResponseBodyType.
+const (
+	CreatePaywallVersion403JSONResponseBodyTypeAuthorizationError CreatePaywallVersion403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion403JSONResponseBodyType enum.
+func (e CreatePaywallVersion403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion404JSONResponseBodyObject.
+const (
+	CreatePaywallVersion404JSONResponseBodyObjectError CreatePaywallVersion404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion404JSONResponseBodyObject enum.
+func (e CreatePaywallVersion404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion404JSONResponseBodyType.
+const (
+	CreatePaywallVersion404JSONResponseBodyTypeResourceMissing CreatePaywallVersion404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion404JSONResponseBodyType enum.
+func (e CreatePaywallVersion404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion409JSONResponseBodyObject.
+const (
+	CreatePaywallVersion409JSONResponseBodyObjectError CreatePaywallVersion409JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion409JSONResponseBodyObject enum.
+func (e CreatePaywallVersion409JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion409JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion409JSONResponseBodyType.
+const (
+	CreatePaywallVersion409JSONResponseBodyTypeIdempotencyError      CreatePaywallVersion409JSONResponseBodyType = "idempotency_error"
+	CreatePaywallVersion409JSONResponseBodyTypeInvalidRequest        CreatePaywallVersion409JSONResponseBodyType = "invalid_request"
+	CreatePaywallVersion409JSONResponseBodyTypeResourceAlreadyExists CreatePaywallVersion409JSONResponseBodyType = "resource_already_exists"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion409JSONResponseBodyType enum.
+func (e CreatePaywallVersion409JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreatePaywallVersion409JSONResponseBodyTypeInvalidRequest:
+		return true
+	case CreatePaywallVersion409JSONResponseBodyTypeResourceAlreadyExists:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion422JSONResponseBodyObject.
+const (
+	CreatePaywallVersion422JSONResponseBodyObjectError CreatePaywallVersion422JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion422JSONResponseBodyObject enum.
+func (e CreatePaywallVersion422JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion422JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion422JSONResponseBodyType.
+const (
+	CreatePaywallVersion422JSONResponseBodyTypeEntityReferencesArchivedEntities CreatePaywallVersion422JSONResponseBodyType = "entity_references_archived_entities"
+	CreatePaywallVersion422JSONResponseBodyTypeParameterError                   CreatePaywallVersion422JSONResponseBodyType = "parameter_error"
+	CreatePaywallVersion422JSONResponseBodyTypeStoreError                       CreatePaywallVersion422JSONResponseBodyType = "store_error"
+	CreatePaywallVersion422JSONResponseBodyTypeUnprocessableEntityError         CreatePaywallVersion422JSONResponseBodyType = "unprocessable_entity_error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion422JSONResponseBodyType enum.
+func (e CreatePaywallVersion422JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+		return true
+	case CreatePaywallVersion422JSONResponseBodyTypeParameterError:
+		return true
+	case CreatePaywallVersion422JSONResponseBodyTypeStoreError:
+		return true
+	case CreatePaywallVersion422JSONResponseBodyTypeUnprocessableEntityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion423JSONResponseBodyObject.
+const (
+	CreatePaywallVersion423JSONResponseBodyObjectError CreatePaywallVersion423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion423JSONResponseBodyObject enum.
+func (e CreatePaywallVersion423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion423JSONResponseBodyType.
+const (
+	CreatePaywallVersion423JSONResponseBodyTypeResourceLockedError CreatePaywallVersion423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion423JSONResponseBodyType enum.
+func (e CreatePaywallVersion423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion429JSONResponseBodyObject.
+const (
+	CreatePaywallVersion429JSONResponseBodyObjectError CreatePaywallVersion429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion429JSONResponseBodyObject enum.
+func (e CreatePaywallVersion429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion429JSONResponseBodyType.
+const (
+	CreatePaywallVersion429JSONResponseBodyTypeRateLimitError CreatePaywallVersion429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion429JSONResponseBodyType enum.
+func (e CreatePaywallVersion429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion500JSONResponseBodyObject.
+const (
+	CreatePaywallVersion500JSONResponseBodyObjectError CreatePaywallVersion500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion500JSONResponseBodyObject enum.
+func (e CreatePaywallVersion500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion500JSONResponseBodyType.
+const (
+	CreatePaywallVersion500JSONResponseBodyTypeServerError CreatePaywallVersion500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion500JSONResponseBodyType enum.
+func (e CreatePaywallVersion500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion503JSONResponseBodyObject.
+const (
+	CreatePaywallVersion503JSONResponseBodyObjectError CreatePaywallVersion503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion503JSONResponseBodyObject enum.
+func (e CreatePaywallVersion503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case CreatePaywallVersion503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreatePaywallVersion503JSONResponseBodyType.
+const (
+	CreatePaywallVersion503JSONResponseBodyTypeServerError CreatePaywallVersion503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the CreatePaywallVersion503JSONResponseBodyType enum.
+func (e CreatePaywallVersion503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case CreatePaywallVersion503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion400JSONResponseBodyObject.
+const (
+	GetPaywallVersion400JSONResponseBodyObjectError GetPaywallVersion400JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion400JSONResponseBodyObject enum.
+func (e GetPaywallVersion400JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetPaywallVersion400JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion400JSONResponseBodyType.
+const (
+	GetPaywallVersion400JSONResponseBodyTypeInvalidRequest GetPaywallVersion400JSONResponseBodyType = "invalid_request"
+	GetPaywallVersion400JSONResponseBodyTypeParameterError GetPaywallVersion400JSONResponseBodyType = "parameter_error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion400JSONResponseBodyType enum.
+func (e GetPaywallVersion400JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetPaywallVersion400JSONResponseBodyTypeInvalidRequest:
+		return true
+	case GetPaywallVersion400JSONResponseBodyTypeParameterError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion401JSONResponseBodyObject.
+const (
+	GetPaywallVersion401JSONResponseBodyObjectError GetPaywallVersion401JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion401JSONResponseBodyObject enum.
+func (e GetPaywallVersion401JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetPaywallVersion401JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion401JSONResponseBodyType.
+const (
+	GetPaywallVersion401JSONResponseBodyTypeAuthenticationError GetPaywallVersion401JSONResponseBodyType = "authentication_error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion401JSONResponseBodyType enum.
+func (e GetPaywallVersion401JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetPaywallVersion401JSONResponseBodyTypeAuthenticationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion403JSONResponseBodyObject.
+const (
+	GetPaywallVersion403JSONResponseBodyObjectError GetPaywallVersion403JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion403JSONResponseBodyObject enum.
+func (e GetPaywallVersion403JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetPaywallVersion403JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion403JSONResponseBodyType.
+const (
+	GetPaywallVersion403JSONResponseBodyTypeAuthorizationError GetPaywallVersion403JSONResponseBodyType = "authorization_error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion403JSONResponseBodyType enum.
+func (e GetPaywallVersion403JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetPaywallVersion403JSONResponseBodyTypeAuthorizationError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion404JSONResponseBodyObject.
+const (
+	GetPaywallVersion404JSONResponseBodyObjectError GetPaywallVersion404JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion404JSONResponseBodyObject enum.
+func (e GetPaywallVersion404JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetPaywallVersion404JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion404JSONResponseBodyType.
+const (
+	GetPaywallVersion404JSONResponseBodyTypeResourceMissing GetPaywallVersion404JSONResponseBodyType = "resource_missing"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion404JSONResponseBodyType enum.
+func (e GetPaywallVersion404JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetPaywallVersion404JSONResponseBodyTypeResourceMissing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion423JSONResponseBodyObject.
+const (
+	GetPaywallVersion423JSONResponseBodyObjectError GetPaywallVersion423JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion423JSONResponseBodyObject enum.
+func (e GetPaywallVersion423JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetPaywallVersion423JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion423JSONResponseBodyType.
+const (
+	GetPaywallVersion423JSONResponseBodyTypeResourceLockedError GetPaywallVersion423JSONResponseBodyType = "resource_locked_error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion423JSONResponseBodyType enum.
+func (e GetPaywallVersion423JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetPaywallVersion423JSONResponseBodyTypeResourceLockedError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion429JSONResponseBodyObject.
+const (
+	GetPaywallVersion429JSONResponseBodyObjectError GetPaywallVersion429JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion429JSONResponseBodyObject enum.
+func (e GetPaywallVersion429JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetPaywallVersion429JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion429JSONResponseBodyType.
+const (
+	GetPaywallVersion429JSONResponseBodyTypeRateLimitError GetPaywallVersion429JSONResponseBodyType = "rate_limit_error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion429JSONResponseBodyType enum.
+func (e GetPaywallVersion429JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetPaywallVersion429JSONResponseBodyTypeRateLimitError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion500JSONResponseBodyObject.
+const (
+	GetPaywallVersion500JSONResponseBodyObjectError GetPaywallVersion500JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion500JSONResponseBodyObject enum.
+func (e GetPaywallVersion500JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetPaywallVersion500JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion500JSONResponseBodyType.
+const (
+	GetPaywallVersion500JSONResponseBodyTypeServerError GetPaywallVersion500JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion500JSONResponseBodyType enum.
+func (e GetPaywallVersion500JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetPaywallVersion500JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion503JSONResponseBodyObject.
+const (
+	GetPaywallVersion503JSONResponseBodyObjectError GetPaywallVersion503JSONResponseBodyObject = "error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion503JSONResponseBodyObject enum.
+func (e GetPaywallVersion503JSONResponseBodyObject) Valid() bool {
+	switch e {
+	case GetPaywallVersion503JSONResponseBodyObjectError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetPaywallVersion503JSONResponseBodyType.
+const (
+	GetPaywallVersion503JSONResponseBodyTypeServerError GetPaywallVersion503JSONResponseBodyType = "server_error"
+)
+
+// Valid indicates whether the value is a known member of the GetPaywallVersion503JSONResponseBodyType enum.
+func (e GetPaywallVersion503JSONResponseBodyType) Valid() bool {
+	switch e {
+	case GetPaywallVersion503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListProductsParamsExpand.
 const (
-	ItemsApp ListProductsParamsExpand = "items.app"
+	ItemsApp             ListProductsParamsExpand = "items.app"
+	ItemsIndicativePrice ListProductsParamsExpand = "items.indicative_price"
 )
 
 // Valid indicates whether the value is a known member of the ListProductsParamsExpand enum.
 func (e ListProductsParamsExpand) Valid() bool {
 	switch e {
 	case ItemsApp:
+		return true
+	case ItemsIndicativePrice:
 		return true
 	default:
 		return false
@@ -28312,6 +27027,7 @@ func (e CreateProduct409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateProduct409JSONResponseBodyType.
 const (
 	CreateProduct409JSONResponseBodyTypeIdempotencyError      CreateProduct409JSONResponseBodyType = "idempotency_error"
+	CreateProduct409JSONResponseBodyTypeInvalidRequest        CreateProduct409JSONResponseBodyType = "invalid_request"
 	CreateProduct409JSONResponseBodyTypeResourceAlreadyExists CreateProduct409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -28319,6 +27035,8 @@ const (
 func (e CreateProduct409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateProduct409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateProduct409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateProduct409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -28627,6 +27345,7 @@ func (e DeleteProduct409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeleteProduct409JSONResponseBodyType.
 const (
 	DeleteProduct409JSONResponseBodyTypeIdempotencyError      DeleteProduct409JSONResponseBodyType = "idempotency_error"
+	DeleteProduct409JSONResponseBodyTypeInvalidRequest        DeleteProduct409JSONResponseBodyType = "invalid_request"
 	DeleteProduct409JSONResponseBodyTypeResourceAlreadyExists DeleteProduct409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -28634,6 +27353,8 @@ const (
 func (e DeleteProduct409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeleteProduct409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeleteProduct409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeleteProduct409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -28803,13 +27524,16 @@ func (e DeleteProduct503JSONResponseBodyType) Valid() bool {
 
 // Defines values for GetProductParamsExpand.
 const (
-	GetProductParamsExpandApp GetProductParamsExpand = "app"
+	GetProductParamsExpandApp             GetProductParamsExpand = "app"
+	GetProductParamsExpandIndicativePrice GetProductParamsExpand = "indicative_price"
 )
 
 // Valid indicates whether the value is a known member of the GetProductParamsExpand enum.
 func (e GetProductParamsExpand) Valid() bool {
 	switch e {
 	case GetProductParamsExpandApp:
+		return true
+	case GetProductParamsExpandIndicativePrice:
 		return true
 	default:
 		return false
@@ -29200,6 +27924,7 @@ func (e UpdateProduct409JSONResponseBodyObject) Valid() bool {
 // Defines values for UpdateProduct409JSONResponseBodyType.
 const (
 	UpdateProduct409JSONResponseBodyTypeIdempotencyError      UpdateProduct409JSONResponseBodyType = "idempotency_error"
+	UpdateProduct409JSONResponseBodyTypeInvalidRequest        UpdateProduct409JSONResponseBodyType = "invalid_request"
 	UpdateProduct409JSONResponseBodyTypeResourceAlreadyExists UpdateProduct409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -29207,6 +27932,8 @@ const (
 func (e UpdateProduct409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateProduct409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdateProduct409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UpdateProduct409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -29515,6 +28242,7 @@ func (e ArchiveProduct409JSONResponseBodyObject) Valid() bool {
 // Defines values for ArchiveProduct409JSONResponseBodyType.
 const (
 	ArchiveProduct409JSONResponseBodyTypeIdempotencyError      ArchiveProduct409JSONResponseBodyType = "idempotency_error"
+	ArchiveProduct409JSONResponseBodyTypeInvalidRequest        ArchiveProduct409JSONResponseBodyType = "invalid_request"
 	ArchiveProduct409JSONResponseBodyTypeResourceAlreadyExists ArchiveProduct409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -29522,6 +28250,8 @@ const (
 func (e ArchiveProduct409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case ArchiveProduct409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case ArchiveProduct409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case ArchiveProduct409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -29830,6 +28560,7 @@ func (e UnarchiveProduct409JSONResponseBodyObject) Valid() bool {
 // Defines values for UnarchiveProduct409JSONResponseBodyType.
 const (
 	UnarchiveProduct409JSONResponseBodyTypeIdempotencyError      UnarchiveProduct409JSONResponseBodyType = "idempotency_error"
+	UnarchiveProduct409JSONResponseBodyTypeInvalidRequest        UnarchiveProduct409JSONResponseBodyType = "invalid_request"
 	UnarchiveProduct409JSONResponseBodyTypeResourceAlreadyExists UnarchiveProduct409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -29837,6 +28568,8 @@ const (
 func (e UnarchiveProduct409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UnarchiveProduct409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UnarchiveProduct409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UnarchiveProduct409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -30145,6 +28878,7 @@ func (e CreateProductInStore409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateProductInStore409JSONResponseBodyType.
 const (
 	CreateProductInStore409JSONResponseBodyTypeIdempotencyError      CreateProductInStore409JSONResponseBodyType = "idempotency_error"
+	CreateProductInStore409JSONResponseBodyTypeInvalidRequest        CreateProductInStore409JSONResponseBodyType = "invalid_request"
 	CreateProductInStore409JSONResponseBodyTypeResourceAlreadyExists CreateProductInStore409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -30152,6 +28886,8 @@ const (
 func (e CreateProductInStore409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateProductInStore409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateProductInStore409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateProductInStore409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -30946,6 +29682,7 @@ func (e RefundPurchase409JSONResponseBodyObject) Valid() bool {
 // Defines values for RefundPurchase409JSONResponseBodyType.
 const (
 	RefundPurchase409JSONResponseBodyTypeIdempotencyError      RefundPurchase409JSONResponseBodyType = "idempotency_error"
+	RefundPurchase409JSONResponseBodyTypeInvalidRequest        RefundPurchase409JSONResponseBodyType = "invalid_request"
 	RefundPurchase409JSONResponseBodyTypeResourceAlreadyExists RefundPurchase409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -30953,6 +29690,8 @@ const (
 func (e RefundPurchase409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case RefundPurchase409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case RefundPurchase409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case RefundPurchase409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -31357,6 +30096,57 @@ const (
 func (e ListPurchaseEntitlements503JSONResponseBodyType) Valid() bool {
 	switch e {
 	case ListPurchaseEntitlements503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListProductStoreStatePlansParamsStatus.
+const (
+	ListProductStoreStatePlansParamsStatusApplied            ListProductStoreStatePlansParamsStatus = "applied"
+	ListProductStoreStatePlansParamsStatusApplyErrored       ListProductStoreStatePlansParamsStatus = "apply_errored"
+	ListProductStoreStatePlansParamsStatusApplyQueued        ListProductStoreStatePlansParamsStatus = "apply_queued"
+	ListProductStoreStatePlansParamsStatusApplying           ListProductStoreStatePlansParamsStatus = "applying"
+	ListProductStoreStatePlansParamsStatusCancelled          ListProductStoreStatePlansParamsStatus = "cancelled"
+	ListProductStoreStatePlansParamsStatusDiscarded          ListProductStoreStatePlansParamsStatus = "discarded"
+	ListProductStoreStatePlansParamsStatusDraft              ListProductStoreStatePlansParamsStatus = "draft"
+	ListProductStoreStatePlansParamsStatusExpired            ListProductStoreStatePlansParamsStatus = "expired"
+	ListProductStoreStatePlansParamsStatusPlanErrored        ListProductStoreStatePlansParamsStatus = "plan_errored"
+	ListProductStoreStatePlansParamsStatusPlanQueued         ListProductStoreStatePlansParamsStatus = "plan_queued"
+	ListProductStoreStatePlansParamsStatusPlanned            ListProductStoreStatePlansParamsStatus = "planned"
+	ListProductStoreStatePlansParamsStatusPlannedAndFinished ListProductStoreStatePlansParamsStatus = "planned_and_finished"
+	ListProductStoreStatePlansParamsStatusPlanning           ListProductStoreStatePlansParamsStatus = "planning"
+)
+
+// Valid indicates whether the value is a known member of the ListProductStoreStatePlansParamsStatus enum.
+func (e ListProductStoreStatePlansParamsStatus) Valid() bool {
+	switch e {
+	case ListProductStoreStatePlansParamsStatusApplied:
+		return true
+	case ListProductStoreStatePlansParamsStatusApplyErrored:
+		return true
+	case ListProductStoreStatePlansParamsStatusApplyQueued:
+		return true
+	case ListProductStoreStatePlansParamsStatusApplying:
+		return true
+	case ListProductStoreStatePlansParamsStatusCancelled:
+		return true
+	case ListProductStoreStatePlansParamsStatusDiscarded:
+		return true
+	case ListProductStoreStatePlansParamsStatusDraft:
+		return true
+	case ListProductStoreStatePlansParamsStatusExpired:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlanErrored:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlanQueued:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlanned:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlannedAndFinished:
+		return true
+	case ListProductStoreStatePlansParamsStatusPlanning:
 		return true
 	default:
 		return false
@@ -31990,6 +30780,7 @@ func (e CancelSubscription409JSONResponseBodyObject) Valid() bool {
 // Defines values for CancelSubscription409JSONResponseBodyType.
 const (
 	CancelSubscription409JSONResponseBodyTypeIdempotencyError      CancelSubscription409JSONResponseBodyType = "idempotency_error"
+	CancelSubscription409JSONResponseBodyTypeInvalidRequest        CancelSubscription409JSONResponseBodyType = "invalid_request"
 	CancelSubscription409JSONResponseBodyTypeResourceAlreadyExists CancelSubscription409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -31997,6 +30788,8 @@ const (
 func (e CancelSubscription409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CancelSubscription409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CancelSubscription409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CancelSubscription409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -32305,6 +31098,7 @@ func (e ExtendSubscription409JSONResponseBodyObject) Valid() bool {
 // Defines values for ExtendSubscription409JSONResponseBodyType.
 const (
 	ExtendSubscription409JSONResponseBodyTypeIdempotencyError      ExtendSubscription409JSONResponseBodyType = "idempotency_error"
+	ExtendSubscription409JSONResponseBodyTypeInvalidRequest        ExtendSubscription409JSONResponseBodyType = "invalid_request"
 	ExtendSubscription409JSONResponseBodyTypeResourceAlreadyExists ExtendSubscription409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -32312,6 +31106,8 @@ const (
 func (e ExtendSubscription409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case ExtendSubscription409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case ExtendSubscription409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case ExtendSubscription409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -32620,6 +31416,7 @@ func (e RefundSubscription409JSONResponseBodyObject) Valid() bool {
 // Defines values for RefundSubscription409JSONResponseBodyType.
 const (
 	RefundSubscription409JSONResponseBodyTypeIdempotencyError      RefundSubscription409JSONResponseBodyType = "idempotency_error"
+	RefundSubscription409JSONResponseBodyTypeInvalidRequest        RefundSubscription409JSONResponseBodyType = "invalid_request"
 	RefundSubscription409JSONResponseBodyTypeResourceAlreadyExists RefundSubscription409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -32627,6 +31424,8 @@ const (
 func (e RefundSubscription409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case RefundSubscription409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case RefundSubscription409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case RefundSubscription409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -33589,315 +32388,318 @@ func (e GetPlayStoreOrAppStoreSubscriptionTransactions503JSONResponseBodyType) V
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction400JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction400JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction400JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction400JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction400JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction400JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction400JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction400JSONResponseBodyTypeInvalidRequest RefundPlayStoreSubscriptionTransaction400JSONResponseBodyType = "invalid_request"
-	RefundPlayStoreSubscriptionTransaction400JSONResponseBodyTypeParameterError RefundPlayStoreSubscriptionTransaction400JSONResponseBodyType = "parameter_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyTypeInvalidRequest RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyType = "invalid_request"
+	RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyTypeParameterError RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyType = "parameter_error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction400JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction400JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction400JSONResponseBodyTypeInvalidRequest:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyTypeInvalidRequest:
 		return true
-	case RefundPlayStoreSubscriptionTransaction400JSONResponseBodyTypeParameterError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyTypeParameterError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction401JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction401JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction401JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction401JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction401JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction401JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction401JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction401JSONResponseBodyTypeAuthenticationError RefundPlayStoreSubscriptionTransaction401JSONResponseBodyType = "authentication_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyTypeAuthenticationError RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyType = "authentication_error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction401JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction401JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction401JSONResponseBodyTypeAuthenticationError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyTypeAuthenticationError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction403JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction403JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction403JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction403JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction403JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction403JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction403JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction403JSONResponseBodyTypeAuthorizationError RefundPlayStoreSubscriptionTransaction403JSONResponseBodyType = "authorization_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyTypeAuthorizationError RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyType = "authorization_error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction403JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction403JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction403JSONResponseBodyTypeAuthorizationError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyTypeAuthorizationError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction404JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction404JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction404JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction404JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction404JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction404JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction404JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction404JSONResponseBodyTypeResourceMissing RefundPlayStoreSubscriptionTransaction404JSONResponseBodyType = "resource_missing"
+	RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyTypeResourceMissing RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyType = "resource_missing"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction404JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction404JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction404JSONResponseBodyTypeResourceMissing:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyTypeResourceMissing:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction409JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction409JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction409JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction409JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction409JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction409JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction409JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction409JSONResponseBodyTypeIdempotencyError      RefundPlayStoreSubscriptionTransaction409JSONResponseBodyType = "idempotency_error"
-	RefundPlayStoreSubscriptionTransaction409JSONResponseBodyTypeResourceAlreadyExists RefundPlayStoreSubscriptionTransaction409JSONResponseBodyType = "resource_already_exists"
+	RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyTypeIdempotencyError      RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyType = "idempotency_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyTypeInvalidRequest        RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyType = "invalid_request"
+	RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyTypeResourceAlreadyExists RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyType = "resource_already_exists"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction409JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction409JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction409JSONResponseBodyTypeIdempotencyError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyTypeIdempotencyError:
 		return true
-	case RefundPlayStoreSubscriptionTransaction409JSONResponseBodyTypeResourceAlreadyExists:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyTypeInvalidRequest:
+		return true
+	case RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction422JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction422JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction422JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction422JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction422JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction422JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction422JSONResponseBodyTypeEntityReferencesArchivedEntities RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType = "entity_references_archived_entities"
-	RefundPlayStoreSubscriptionTransaction422JSONResponseBodyTypeParameterError                   RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType = "parameter_error"
-	RefundPlayStoreSubscriptionTransaction422JSONResponseBodyTypeStoreError                       RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType = "store_error"
-	RefundPlayStoreSubscriptionTransaction422JSONResponseBodyTypeUnprocessableEntityError         RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType = "unprocessable_entity_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyTypeEntityReferencesArchivedEntities RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType = "entity_references_archived_entities"
+	RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyTypeParameterError                   RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType = "parameter_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyTypeStoreError                       RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType = "store_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyTypeUnprocessableEntityError         RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType = "unprocessable_entity_error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction422JSONResponseBodyTypeEntityReferencesArchivedEntities:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyTypeEntityReferencesArchivedEntities:
 		return true
-	case RefundPlayStoreSubscriptionTransaction422JSONResponseBodyTypeParameterError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyTypeParameterError:
 		return true
-	case RefundPlayStoreSubscriptionTransaction422JSONResponseBodyTypeStoreError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyTypeStoreError:
 		return true
-	case RefundPlayStoreSubscriptionTransaction422JSONResponseBodyTypeUnprocessableEntityError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyTypeUnprocessableEntityError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction423JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction423JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction423JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction423JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction423JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction423JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction423JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction423JSONResponseBodyTypeResourceLockedError RefundPlayStoreSubscriptionTransaction423JSONResponseBodyType = "resource_locked_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyTypeResourceLockedError RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyType = "resource_locked_error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction423JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction423JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction423JSONResponseBodyTypeResourceLockedError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyTypeResourceLockedError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction429JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction429JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction429JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction429JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction429JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction429JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction429JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction429JSONResponseBodyTypeRateLimitError RefundPlayStoreSubscriptionTransaction429JSONResponseBodyType = "rate_limit_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyTypeRateLimitError RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyType = "rate_limit_error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction429JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction429JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction429JSONResponseBodyTypeRateLimitError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyTypeRateLimitError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction500JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction500JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction500JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction500JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction500JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction500JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction500JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction500JSONResponseBodyTypeServerError RefundPlayStoreSubscriptionTransaction500JSONResponseBodyType = "server_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyTypeServerError RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyType = "server_error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction500JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction500JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction500JSONResponseBodyTypeServerError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyTypeServerError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction503JSONResponseBodyObject.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyObject.
 const (
-	RefundPlayStoreSubscriptionTransaction503JSONResponseBodyObjectError RefundPlayStoreSubscriptionTransaction503JSONResponseBodyObject = "error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyObjectError RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyObject = "error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction503JSONResponseBodyObject enum.
-func (e RefundPlayStoreSubscriptionTransaction503JSONResponseBodyObject) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyObject enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyObject) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction503JSONResponseBodyObjectError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyObjectError:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RefundPlayStoreSubscriptionTransaction503JSONResponseBodyType.
+// Defines values for RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyType.
 const (
-	RefundPlayStoreSubscriptionTransaction503JSONResponseBodyTypeServerError RefundPlayStoreSubscriptionTransaction503JSONResponseBodyType = "server_error"
+	RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyTypeServerError RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyType = "server_error"
 )
 
-// Valid indicates whether the value is a known member of the RefundPlayStoreSubscriptionTransaction503JSONResponseBodyType enum.
-func (e RefundPlayStoreSubscriptionTransaction503JSONResponseBodyType) Valid() bool {
+// Valid indicates whether the value is a known member of the RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyType enum.
+func (e RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyType) Valid() bool {
 	switch e {
-	case RefundPlayStoreSubscriptionTransaction503JSONResponseBodyTypeServerError:
+	case RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyTypeServerError:
 		return true
 	default:
 		return false
@@ -34288,6 +33090,7 @@ func (e CreateVirtualCurrency409JSONResponseBodyObject) Valid() bool {
 // Defines values for CreateVirtualCurrency409JSONResponseBodyType.
 const (
 	CreateVirtualCurrency409JSONResponseBodyTypeIdempotencyError      CreateVirtualCurrency409JSONResponseBodyType = "idempotency_error"
+	CreateVirtualCurrency409JSONResponseBodyTypeInvalidRequest        CreateVirtualCurrency409JSONResponseBodyType = "invalid_request"
 	CreateVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists CreateVirtualCurrency409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -34295,6 +33098,8 @@ const (
 func (e CreateVirtualCurrency409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case CreateVirtualCurrency409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case CreateVirtualCurrency409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case CreateVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -34603,6 +33408,7 @@ func (e DeleteVirtualCurrency409JSONResponseBodyObject) Valid() bool {
 // Defines values for DeleteVirtualCurrency409JSONResponseBodyType.
 const (
 	DeleteVirtualCurrency409JSONResponseBodyTypeIdempotencyError      DeleteVirtualCurrency409JSONResponseBodyType = "idempotency_error"
+	DeleteVirtualCurrency409JSONResponseBodyTypeInvalidRequest        DeleteVirtualCurrency409JSONResponseBodyType = "invalid_request"
 	DeleteVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists DeleteVirtualCurrency409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -34610,6 +33416,8 @@ const (
 func (e DeleteVirtualCurrency409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case DeleteVirtualCurrency409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case DeleteVirtualCurrency409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case DeleteVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -35161,6 +33969,7 @@ func (e UpdateVirtualCurrency409JSONResponseBodyObject) Valid() bool {
 // Defines values for UpdateVirtualCurrency409JSONResponseBodyType.
 const (
 	UpdateVirtualCurrency409JSONResponseBodyTypeIdempotencyError      UpdateVirtualCurrency409JSONResponseBodyType = "idempotency_error"
+	UpdateVirtualCurrency409JSONResponseBodyTypeInvalidRequest        UpdateVirtualCurrency409JSONResponseBodyType = "invalid_request"
 	UpdateVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists UpdateVirtualCurrency409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -35168,6 +33977,8 @@ const (
 func (e UpdateVirtualCurrency409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UpdateVirtualCurrency409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UpdateVirtualCurrency409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UpdateVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -35476,6 +34287,7 @@ func (e ArchiveVirtualCurrency409JSONResponseBodyObject) Valid() bool {
 // Defines values for ArchiveVirtualCurrency409JSONResponseBodyType.
 const (
 	ArchiveVirtualCurrency409JSONResponseBodyTypeIdempotencyError      ArchiveVirtualCurrency409JSONResponseBodyType = "idempotency_error"
+	ArchiveVirtualCurrency409JSONResponseBodyTypeInvalidRequest        ArchiveVirtualCurrency409JSONResponseBodyType = "invalid_request"
 	ArchiveVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists ArchiveVirtualCurrency409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -35483,6 +34295,8 @@ const (
 func (e ArchiveVirtualCurrency409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case ArchiveVirtualCurrency409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case ArchiveVirtualCurrency409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case ArchiveVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -35791,6 +34605,7 @@ func (e UnarchiveVirtualCurrency409JSONResponseBodyObject) Valid() bool {
 // Defines values for UnarchiveVirtualCurrency409JSONResponseBodyType.
 const (
 	UnarchiveVirtualCurrency409JSONResponseBodyTypeIdempotencyError      UnarchiveVirtualCurrency409JSONResponseBodyType = "idempotency_error"
+	UnarchiveVirtualCurrency409JSONResponseBodyTypeInvalidRequest        UnarchiveVirtualCurrency409JSONResponseBodyType = "invalid_request"
 	UnarchiveVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists UnarchiveVirtualCurrency409JSONResponseBodyType = "resource_already_exists"
 )
 
@@ -35798,6 +34613,8 @@ const (
 func (e UnarchiveVirtualCurrency409JSONResponseBodyType) Valid() bool {
 	switch e {
 	case UnarchiveVirtualCurrency409JSONResponseBodyTypeIdempotencyError:
+		return true
+	case UnarchiveVirtualCurrency409JSONResponseBodyTypeInvalidRequest:
 		return true
 	case UnarchiveVirtualCurrency409JSONResponseBodyTypeResourceAlreadyExists:
 		return true
@@ -35968,11 +34785,55 @@ func (e UnarchiveVirtualCurrency503JSONResponseBodyType) Valid() bool {
 // AmazonApp defines model for AmazonApp.
 type AmazonApp struct {
 	// Amazon Amazon type details
-	Amazon *struct {
-		// PackageName The package name of the app
-		PackageName string `json:"package_name"`
-	} `json:"amazon,omitempty"`
+	Amazon AmazonApp_Amazon `json:"amazon"`
+
+	// CreatedAt The date when the app was created in ms since epoch
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
+
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
+	// ID The id of the app
+	//
+	// Example: app1a2b3c4
+	ID string `json:"id"`
+
+	// Name The name of the app
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object AmazonAppObject `json:"object"`
+
+	// ProjectID The id of the project
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
+	// Type The platform of the app
+	//
+	// Example: amazon
+	Type                 AmazonAppType          `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
+
+// AmazonApp_Amazon Amazon type details
+type AmazonApp_Amazon struct {
+	// PackageName The package name of the app
+	PackageName          string                 `json:"package_name"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// AmazonAppObject String representing the object's type. Objects of the same type share the same value.
+type AmazonAppObject string
+
+// AmazonAppType The platform of the app
+//
+// Example: amazon
+type AmazonAppType string
 
 // AmazonAppCreate defines model for AmazonAppCreate.
 type AmazonAppCreate struct {
@@ -35997,147 +34858,83 @@ type AmazonAppCreate struct {
 // Mac App Store is disabled by default. See [Legacy Mac Apps](https://www.revenuecat.com/docs/legacy-mac-apps) for more details.
 type AmazonAppCreateType string
 
-// App defines model for App.
-type App struct {
-	// Amazon Amazon type details
-	Amazon *struct {
-		// PackageName The package name of the app
-		PackageName string `json:"package_name"`
-	} `json:"amazon,omitempty"`
+// AmountMicros The price in micros. For example, USD 1 would be represented as 1000000
+//
+// Example: For 99.99, the value should be 99990000
+type AmountMicros = int
 
+// AppStoreApp defines model for AppStoreApp.
+type AppStoreApp struct {
 	// AppStore App Store type details
-	AppStore *struct {
-		// AppStoreConnectAPIKeyConfigured Whether App Store Connect API key credentials are configured.
-		//
-		// Example: true
-		AppStoreConnectAPIKeyConfigured bool `json:"app_store_connect_api_key_configured"`
-
-		// BundleID The bundle ID of the app
-		BundleID string `json:"bundle_id"`
-
-		// SubscriptionKeyConfigured Whether In-App Purchase subscription key credentials are configured.
-		//
-		// Example: true
-		SubscriptionKeyConfigured bool `json:"subscription_key_configured"`
-	} `json:"app_store,omitempty"`
+	AppStore AppStoreApp_AppStore `json:"app_store"`
 
 	// CreatedAt The date when the app was created in ms since epoch
 	//
 	// Example: 1658399423658
 	CreatedAt int64 `json:"created_at"`
 
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
 	// ID The id of the app
 	//
 	// Example: app1a2b3c4
 	ID string `json:"id"`
 
-	// MacAppStore Legacy Mac App Store type details
-	MacAppStore *struct {
-		// BundleID The bundle ID of the app
-		BundleID string `json:"bundle_id"`
-	} `json:"mac_app_store,omitempty"`
-
 	// Name The name of the app
 	Name string `json:"name"`
 
 	// Object String representing the object's type. Objects of the same type share the same value.
-	Object AppObject `json:"object"`
-
-	// Paddle Paddle Billing type details
-	Paddle *struct {
-		// PaddleAPIKey Paddle Server-side API key provided on the Paddle dashboard.
-		PaddleAPIKey *string `json:"paddle_api_key,omitempty"`
-
-		// PaddleIsSandbox Whether the app is tied to the sandbox environment.
-		//
-		// Example: true
-		PaddleIsSandbox *bool `json:"paddle_is_sandbox,omitempty"`
-	} `json:"paddle,omitempty"`
-
-	// PlayStore Play Store type details
-	PlayStore *struct {
-		// PackageName The package name of the app
-		PackageName string `json:"package_name"`
-	} `json:"play_store,omitempty"`
+	Object AppStoreAppObject `json:"object"`
 
 	// ProjectID The id of the project
 	//
 	// Example: proj1a2b3c4
 	ProjectID string `json:"project_id"`
 
-	// RcBilling Revenue Cat Billing Store type details
-	RcBilling *struct {
-		// AppName Shown in checkout, emails, and receipts sent to customers.
-		AppName *string `json:"app_name,omitempty"`
-
-		// DefaultCurrency ISO 4217 currency code
-		//
-		// Example: USD
-		DefaultCurrency RCBillingCurrency `json:"default_currency"`
-
-		// SellerCompanyName The company name.  This field is deprecated. Please, use `app_name` instead.
-		// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-		SellerCompanyName string `json:"seller_company_name"`
-
-		// SellerCompanySupportEmail The company support email. This field is deprecated. Please, use `support_email` instead.
-		// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-		SellerCompanySupportEmail *string `json:"seller_company_support_email,omitempty"`
-
-		// StripeAccountID Stripe account connected to your RevenueCat account.
-		StripeAccountID *string `json:"stripe_account_id,omitempty"`
-
-		// SupportEmail Used as the `reply to` address in all emails sent to customers, to allow them to receive support.
-		SupportEmail *string `json:"support_email,omitempty"`
-	} `json:"rc_billing,omitempty"`
-
-	// Roku Roku Channel Store type details
-	Roku *struct {
-		// RokuChannelID Channel ID provided on the Roku Channel page.
-		RokuChannelID *string `json:"roku_channel_id,omitempty"`
-
-		// RokuChannelName Channel name that is displayed on the Roku Channel page.
-		RokuChannelName *string `json:"roku_channel_name,omitempty"`
-	} `json:"roku,omitempty"`
-
-	// Stripe Stripe type details
-	Stripe *struct {
-		// StripeAccountID Stripe account connected to your RevenueCat account.
-		StripeAccountID *string `json:"stripe_account_id,omitempty"`
-	} `json:"stripe,omitempty"`
-
 	// Type The platform of the app
 	//
 	// Example: app_store
-	Type                 AppType                `json:"type"`
+	Type                 AppStoreAppType        `json:"type"`
 	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
-// AppObject String representing the object's type. Objects of the same type share the same value.
-type AppObject string
+// AppStoreApp_AppStore App Store type details
+type AppStoreApp_AppStore struct {
+	// AppStoreConnectAPIKeyConfigured Whether App Store Connect API key credentials are configured.
+	//
+	// Example: true
+	AppStoreConnectAPIKeyConfigured bool `json:"app_store_connect_api_key_configured"`
 
-// AppType The platform of the app
+	// AppStoreConnectVendorNumber Your vendor number from App Store Connect, or null when not configured.
+	//
+	// Example: 81234567
+	AppStoreConnectVendorNumber *string `json:"app_store_connect_vendor_number,omitempty"`
+
+	// BundleID The bundle ID of the app
+	BundleID string `json:"bundle_id"`
+
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme *string `json:"custom_url_scheme,omitempty"`
+
+	// SubscriptionKeyConfigured Whether In-App Purchase subscription key credentials are configured.
+	//
+	// Example: true
+	SubscriptionKeyConfigured bool                   `json:"subscription_key_configured"`
+	AdditionalProperties      map[string]interface{} `json:"-"`
+}
+
+// AppStoreAppObject String representing the object's type. Objects of the same type share the same value.
+type AppStoreAppObject string
+
+// AppStoreAppType The platform of the app
 //
 // Example: app_store
-type AppType string
-
-// AppStoreApp defines model for AppStoreApp.
-type AppStoreApp struct {
-	// AppStore App Store type details
-	AppStore *struct {
-		// AppStoreConnectAPIKeyConfigured Whether App Store Connect API key credentials are configured.
-		//
-		// Example: true
-		AppStoreConnectAPIKeyConfigured bool `json:"app_store_connect_api_key_configured"`
-
-		// BundleID The bundle ID of the app
-		BundleID string `json:"bundle_id"`
-
-		// SubscriptionKeyConfigured Whether In-App Purchase subscription key credentials are configured.
-		//
-		// Example: true
-		SubscriptionKeyConfigured bool `json:"subscription_key_configured"`
-	} `json:"app_store,omitempty"`
-}
+type AppStoreAppType string
 
 // AppStoreAppCreate defines model for AppStoreAppCreate.
 type AppStoreAppCreate struct {
@@ -36251,91 +35048,38 @@ type AuthenticatedManagementURL struct {
 // AuthenticatedManagementURLObject String representing the object's type. Objects of the same type share the same value.
 type AuthenticatedManagementURLObject string
 
-// BenchmarkMetric defines model for BenchmarkMetric.
-type BenchmarkMetric struct {
-	// AppCategory Store category currently assigned to the app.
+// ChartAnnotation A chart annotation marking a significant event on charts.
+type ChartAnnotation struct {
+	// Description Human-readable description of the event this annotation represents.
 	//
-	// Example: gaming
-	AppCategory *string `json:"app_category"`
+	// Example: App version 2.0 released
+	Description string `json:"description"`
 
-	// AppID RevenueCat app id that this metric belongs to.
+	// EndDate The end date of the annotated period (ISO 8601 date format), or null if the annotation is a single-day event.
 	//
-	// Example: app1a2b3c4d
-	AppID string `json:"app_id"`
+	// Example: 2024-01-20
+	EndDate *openapi_types.Date `json:"end_date"`
 
-	// ComparisonCategory Category used to resolve the benchmark percentiles for this row.
+	// ID The ID of the chart annotation.
 	//
-	// Example: productivity
-	ComparisonCategory *string `json:"comparison_category"`
-
-	// ID Stable identifier for this benchmark row, composed of the app id and the metric name separated by a colon.
-	//
-	// Example: app1a2b3c4d:trial_conversion_rate
+	// Example: chartannot1a2b3c
 	ID string `json:"id"`
 
-	// IsEligibleForBenchmarking Whether the app has enough data for this metric to be reliably compared against the peer group. Rows with `false` should be treated as low-confidence.
-	//
-	// Example: true
-	IsEligibleForBenchmarking bool `json:"is_eligible_for_benchmarking"`
-
-	// IsReverseMetric When `true`, lower values are better for this metric (e.g. churn, refund rate). Callers should not recommend reducing a metric when the app already scores highly.
-	//
-	// Example: false
-	IsReverseMetric bool `json:"is_reverse_metric"`
-
-	// MetricDisplayName Human-readable label for the benchmark metric.
-	//
-	// Example: Trial conversion rate
-	MetricDisplayName string `json:"metric_display_name"`
-
-	// MetricName Machine-readable identifier of the benchmark metric.
-	//
-	// Example: trial_conversion_rate
-	MetricName string `json:"metric_name"`
-
-	// MetricValue The app's own value for this metric for the current period.
-	//
-	// Example: 0.182
-	MetricValue *float64 `json:"metric_value"`
-
 	// Object String representing the object's type. Objects of the same type share the same value.
-	Object BenchmarkMetricObject `json:"object"`
-
-	// PercentileBucket Human-readable percentile range that the app falls into within the peer group. Expressed as `"<lower>-<upper>"` where lower/upper are the percentile bounds (0-10, 10-20, ..., 90-100). `null` when the app does not have enough data to be placed in a bucket.
 	//
-	// Example: 60-70
-	PercentileBucket *BenchmarkMetricPercentileBucket `json:"percentile_bucket"`
+	// Example: chart_annotation
+	Object ChartAnnotationObject `json:"object"`
 
-	// Store Store the app's metric value was computed for.
+	// StartDate The start date of the annotated period (ISO 8601 date format).
 	//
-	// Example: app_store
-	Store string `json:"store"`
-
-	// UpdatedAt When the app's benchmark data was last refreshed, in ms since epoch.
-	//
-	// Example: 1704067200000
-	UpdatedAt *int64 `json:"updated_at"`
+	// Example: 2024-01-15
+	StartDate openapi_types.Date `json:"start_date"`
 }
 
-// BenchmarkMetricObject String representing the object's type. Objects of the same type share the same value.
-type BenchmarkMetricObject string
-
-// BenchmarkMetricPercentileBucket Human-readable percentile range that the app falls into within the peer group. Expressed as `"<lower>-<upper>"` where lower/upper are the percentile bounds (0-10, 10-20, ..., 90-100). `null` when the app does not have enough data to be placed in a bucket.
+// ChartAnnotationObject String representing the object's type. Objects of the same type share the same value.
 //
-// Example: 60-70
-type BenchmarkMetricPercentileBucket string
-
-// Benchmarks defines model for Benchmarks.
-type Benchmarks struct {
-	// Metrics Benchmark metrics for every app in the project that has data.
-	Metrics []BenchmarkMetric `json:"metrics"`
-
-	// Object String representing the object's type. Objects of the same type share the same value.
-	Object BenchmarksObject `json:"object"`
-}
-
-// BenchmarksObject String representing the object's type. Objects of the same type share the same value.
-type BenchmarksObject string
+// Example: chart_annotation
+type ChartAnnotationObject string
 
 // ChartFilterOption A filter option for a chart
 type ChartFilterOption struct {
@@ -36354,9 +35098,16 @@ type ChartFilterOption struct {
 	// Example: country
 	ID string `json:"id"`
 
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object ChartFilterOptionObject `json:"object"`
+
 	// Options Available values for this filter
-	Options []ChartFilterOption_Options_Item `json:"options"`
+	Options              []ChartFilterOption_Options_Item `json:"options"`
+	AdditionalProperties map[string]interface{}           `json:"-"`
 }
+
+// ChartFilterOptionObject String representing the object's type. Objects of the same type share the same value.
+type ChartFilterOptionObject string
 
 // ChartFilterOption_Options_Item defines model for ChartFilterOption.options.Item.
 type ChartFilterOption_Options_Item struct {
@@ -36427,7 +35178,71 @@ type ChartSegmentOption struct {
 	//
 	// Example: country
 	ID string `json:"id"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object               ChartSegmentOptionObject `json:"object"`
+	AdditionalProperties map[string]interface{}   `json:"-"`
 }
+
+// ChartSegmentOptionObject String representing the object's type. Objects of the same type share the same value.
+type ChartSegmentOptionObject string
+
+// ChartSeries Metadata describing one series (a segment, measure, or cohort period) of a chart, used to label and format the matching data points in `values`.
+type ChartSeries struct {
+	// Chartable Whether the series is meaningful to plot.
+	//
+	// Example: true
+	Chartable *bool `json:"chartable,omitempty"`
+
+	// DecimalPrecision Number of decimal places the values of this series should be rendered with.
+	//
+	// Example: 2
+	DecimalPrecision *int `json:"decimal_precision,omitempty"`
+
+	// Description Longer explanation of what the series measures.
+	//
+	// Example: Gross revenue generated by the cohort.
+	Description *string `json:"description,omitempty"`
+
+	// DisplayName Human-readable label for the series. For cohort `periods`, index 0 is named after the cohorting date (e.g. `New customers`) and later indices after the cohort age (e.g. `Month 0`, `Month 1`).
+	//
+	// Example: Month 0
+	DisplayName string `json:"display_name"`
+
+	// IsOther Whether the series aggregates the segments beyond `segments_limit`.
+	//
+	// Example: false
+	IsOther *bool `json:"is_other,omitempty"`
+
+	// IsTotal Whether the series aggregates all the others.
+	//
+	// Example: false
+	IsTotal *bool `json:"is_total,omitempty"`
+
+	// NestedMeasures Per-measure metadata, when a segmented series carries more than one measure.
+	NestedMeasures *[]ChartSeries `json:"nested_measures,omitempty"`
+
+	// Scale Whether the values of this series are absolute amounts or percentages of a baseline.
+	//
+	// Example: absolute
+	Scale *ChartSeriesScale `json:"scale,omitempty"`
+
+	// Tabulable Whether the series is meaningful to show as a table column.
+	//
+	// Example: true
+	Tabulable *bool `json:"tabulable,omitempty"`
+
+	// Unit Unit the values of this series are expressed in. `#` means the values are counts, not amounts of the chart's measure.
+	//
+	// Example: $
+	Unit                 *string                `json:"unit,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// ChartSeriesScale Whether the values of this series are absolute amounts or percentages of a baseline.
+//
+// Example: absolute
+type ChartSeriesScale string
 
 // Collaborator defines model for Collaborator.
 type Collaborator struct {
@@ -36459,14 +35274,19 @@ type Collaborator struct {
 	// Object String representing the object's type. Objects of the same type share the same value.
 	Object CollaboratorObject `json:"object"`
 
-	// Role The role of the collaborator
+	// Role The role of the collaborator. The project owner is included in the list with the role `owner`.
 	//
 	// Example: admin
-	Role string `json:"role"`
+	Role CollaboratorRole `json:"role"`
 }
 
 // CollaboratorObject String representing the object's type. Objects of the same type share the same value.
 type CollaboratorObject string
+
+// CollaboratorRole The role of the collaborator. The project owner is included in the list with the role `owner`.
+//
+// Example: admin
+type CollaboratorRole string
 
 // Country The country that the object is associated with, in ISO alpha 2 code
 //
@@ -36537,7 +35357,7 @@ type Customer struct {
 	Attributes *ListCustomerAttributes `json:"attributes,omitempty"`
 	Experiment *ExperimentEnrollment   `json:"experiment,omitempty"`
 
-	// FirstSeenAt The first time the customer was seen
+	// FirstSeenAt The earliest date we have for this customer, whichever comes first: when the SDK first saw them, their first purchase, the App Store install date, or when the record was created. Matches the 'First seen or purchased' date shown in the dashboard.
 	//
 	// Example: 1658399423658
 	FirstSeenAt int64 `json:"first_seen_at"`
@@ -36629,6 +35449,25 @@ type CustomerAttributeCustomName = string
 // CustomerAttributeReservedName Example: $email
 type CustomerAttributeReservedName string
 
+// CustomerCenterConfig defines model for CustomerCenterConfig.
+type CustomerCenterConfig struct {
+	// CustomerCenter The Customer Center configuration. When no platform is specified, contains the full configuration for all platforms and locales. When a platform is specified, contains the processed configuration for that platform and locale.
+	//
+	//
+	// Example: {}
+	CustomerCenter map[string]interface{} `json:"customer_center"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	//
+	// Example: customer_center_config
+	Object CustomerCenterConfigObject `json:"object"`
+}
+
+// CustomerCenterConfigObject String representing the object's type. Objects of the same type share the same value.
+//
+// Example: customer_center_config
+type CustomerCenterConfigObject string
+
 // CustomerEntitlement defines model for CustomerEntitlement.
 type CustomerEntitlement struct {
 	// EntitlementID ID of the entitlement granted to the customer
@@ -36687,25 +35526,6 @@ type CustomerEvent struct {
 // CustomerEventObject String representing the object's type. Objects of the same type share the same value.
 type CustomerEventObject string
 
-// DeletedDiscountCodeObject defines model for DeletedDiscountCodeObject.
-type DeletedDiscountCodeObject struct {
-	// DeletedAt The date when the object was deleted in ms since epoch.
-	//
-	// Example: 1658399423658
-	DeletedAt int64 `json:"deleted_at"`
-
-	// ID The code of the deleted discount code.
-	//
-	// Example: SPRING_2026
-	ID string `json:"id"`
-
-	// Object The type of the deleted object.
-	Object DeletedDiscountCodeObjectObject `json:"object"`
-}
-
-// DeletedDiscountCodeObjectObject The type of the deleted object.
-type DeletedDiscountCodeObjectObject string
-
 // DeletedObject defines model for DeletedObject.
 type DeletedObject struct {
 	// DeletedAt The date when the object was deleted in ms since epoch
@@ -36722,188 +35542,6 @@ type DeletedObject struct {
 
 // DeletedObjectObject The type of the deleted object
 type DeletedObjectObject string
-
-// Discount defines model for Discount.
-type Discount struct {
-	union json.RawMessage
-}
-
-// DiscountCode defines model for DiscountCode.
-type DiscountCode struct {
-	// Code The discount code value.
-	//
-	// Example: SPRING_2026
-	Code string `json:"code"`
-
-	// CreatedAt Time when this discount code was created in milliseconds since epoch.
-	//
-	// Example: 1712145600000
-	CreatedAt int64 `json:"created_at"`
-
-	// Object String representing the object's type.
-	Object DiscountCodeObject `json:"object"`
-}
-
-// DiscountCodeObject String representing the object's type.
-type DiscountCodeObject string
-
-// DiscountFixedAmountVariant defines model for DiscountFixedAmountVariant.
-type DiscountFixedAmountVariant struct {
-	// CreatedAt The date the discount was created at in ms since epoch.
-	//
-	// Example: 1762270200000
-	CreatedAt int64 `json:"created_at"`
-
-	// CustomerFacingName Name displayed to customers for this discount.
-	//
-	// Example: Spring sale
-	CustomerFacingName string `json:"customer_facing_name"`
-
-	// DisabledAt Timestamp in ms since epoch when the discount was disabled.
-	//
-	// Example: 1762273200000
-	DisabledAt *int64 `json:"disabled_at,omitempty"`
-
-	// DurationMode The discount duration mode.
-	//
-	// Example: one_time
-	DurationMode DiscountFixedAmountVariantDurationMode `json:"duration_mode"`
-
-	// Eligibility Eligibility criteria for this discount.
-	//
-	// Example: everyone
-	Eligibility DiscountFixedAmountVariantEligibility `json:"eligibility"`
-
-	// FixedAmount Fixed discount amounts keyed by currency code.
-	//
-	// Example: {"EUR":3.99,"USD":4.99}
-	FixedAmount map[string]float64 `json:"fixed_amount"`
-
-	// ID The id of the discount.
-	//
-	// Example: discnt1a2b3c4d5e
-	ID string `json:"id"`
-
-	// Identifier The customizable discount identifier (developer-defined).
-	//
-	// Example: spring_2026
-	Identifier string `json:"identifier"`
-
-	// Object String representing the object's type. Objects of the same type share the same value.
-	Object DiscountFixedAmountVariantObject `json:"object"`
-
-	// TimeWindow ISO-8601 duration when using time window duration mode.
-	//
-	// Example: P1M
-	TimeWindow *string `json:"time_window,omitempty"`
-
-	// Type The type of discount to apply.
-	//
-	// Example: fixed_amount
-	Type DiscountFixedAmountVariantType `json:"type"`
-
-	// UpdatedAt The date the discount was updated at in ms since epoch.
-	//
-	// Example: 1762270200000
-	UpdatedAt int64 `json:"updated_at"`
-}
-
-// DiscountFixedAmountVariantDurationMode The discount duration mode.
-//
-// Example: one_time
-type DiscountFixedAmountVariantDurationMode string
-
-// DiscountFixedAmountVariantEligibility Eligibility criteria for this discount.
-//
-// Example: everyone
-type DiscountFixedAmountVariantEligibility string
-
-// DiscountFixedAmountVariantObject String representing the object's type. Objects of the same type share the same value.
-type DiscountFixedAmountVariantObject string
-
-// DiscountFixedAmountVariantType The type of discount to apply.
-//
-// Example: fixed_amount
-type DiscountFixedAmountVariantType string
-
-// DiscountPercentageVariant defines model for DiscountPercentageVariant.
-type DiscountPercentageVariant struct {
-	// CreatedAt The date the discount was created at in ms since epoch.
-	//
-	// Example: 1762270200000
-	CreatedAt int64 `json:"created_at"`
-
-	// CustomerFacingName Name displayed to customers for this discount.
-	//
-	// Example: Spring sale
-	CustomerFacingName string `json:"customer_facing_name"`
-
-	// DisabledAt Timestamp in ms since epoch when the discount was disabled.
-	//
-	// Example: 1762273200000
-	DisabledAt *int64 `json:"disabled_at,omitempty"`
-
-	// DurationMode The discount duration mode.
-	//
-	// Example: one_time
-	DurationMode DiscountPercentageVariantDurationMode `json:"duration_mode"`
-
-	// Eligibility Eligibility criteria for this discount.
-	//
-	// Example: everyone
-	Eligibility DiscountPercentageVariantEligibility `json:"eligibility"`
-
-	// ID The id of the discount.
-	//
-	// Example: discnt1a2b3c4d5e
-	ID string `json:"id"`
-
-	// Identifier The customizable discount identifier (developer-defined).
-	//
-	// Example: spring_2026
-	Identifier string `json:"identifier"`
-
-	// Object String representing the object's type. Objects of the same type share the same value.
-	Object DiscountPercentageVariantObject `json:"object"`
-
-	// Percentage Percentage value for percentage discounts (1–100).
-	//
-	// Example: 20
-	Percentage int `json:"percentage"`
-
-	// TimeWindow ISO-8601 duration when using time window duration mode.
-	//
-	// Example: P1M
-	TimeWindow *string `json:"time_window,omitempty"`
-
-	// Type The type of discount to apply.
-	//
-	// Example: percentage
-	Type DiscountPercentageVariantType `json:"type"`
-
-	// UpdatedAt The date the discount was updated at in ms since epoch.
-	//
-	// Example: 1762270200000
-	UpdatedAt int64 `json:"updated_at"`
-}
-
-// DiscountPercentageVariantDurationMode The discount duration mode.
-//
-// Example: one_time
-type DiscountPercentageVariantDurationMode string
-
-// DiscountPercentageVariantEligibility Eligibility criteria for this discount.
-//
-// Example: everyone
-type DiscountPercentageVariantEligibility string
-
-// DiscountPercentageVariantObject String representing the object's type. Objects of the same type share the same value.
-type DiscountPercentageVariantObject string
-
-// DiscountPercentageVariantType The type of discount to apply.
-//
-// Example: percentage
-type DiscountPercentageVariantType string
 
 // Duration The duration of the product subscription. This field is only supported for the test store and it is ignored for other stores.
 //
@@ -37049,6 +35687,30 @@ type ExtendSubscriptionUntilDate struct {
 // Example: customer_satisfaction
 type ExtendSubscriptionUntilDateExtendReasonCode string
 
+// IndicativePrice An indicative price for a product, in the default currency/country (USD / US). Uses the same price source as the get-offering-prices endpoint.
+type IndicativePrice struct {
+	// AmountMicros The price in micros. For example, USD 1 would be represented as 1000000
+	//
+	// Example: For 99.99, the value should be 99990000
+	AmountMicros AmountMicros `json:"amount_micros"`
+
+	// Country The country that the object is associated with, in ISO alpha 2 code
+	//
+	// Example: US
+	Country *Country `json:"country"`
+
+	// Currency ISO 4217 currency code
+	//
+	// Example: USD
+	Currency Currency `json:"currency"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object IndicativePriceObject `json:"object"`
+}
+
+// IndicativePriceObject String representing the object's type. Objects of the same type share the same value.
+type IndicativePriceObject string
+
 // ListApps defines model for ListApps.
 type ListApps struct {
 	// Items Details about each object.
@@ -37092,21 +35754,6 @@ type ListAuditLogs struct {
 
 // ListAuditLogsObject String representing the object's type. Objects of the same type share the same value. Always has the value `list`.
 type ListAuditLogsObject string
-
-// ListBlockedCustomers Details about each blocked customer.
-type ListBlockedCustomers struct {
-	// Object String representing the object's type. Objects of the same type share the same value.
-	Object               ListBlockedCustomersObject `json:"object"`
-	AdditionalProperties map[string]struct {
-		// UpdatedAtMs Timestamp when the customer was blocked, in milliseconds since epoch
-		//
-		// Example: 1758617658369
-		UpdatedAtMs int `json:"updated_at_ms"`
-	} `json:"-"`
-}
-
-// ListBlockedCustomersObject String representing the object's type. Objects of the same type share the same value.
-type ListBlockedCustomersObject string
 
 // ListCollaborators defines model for ListCollaborators.
 type ListCollaborators struct {
@@ -37261,50 +35908,6 @@ type ListCustomers struct {
 
 // ListCustomersObject String representing the object's type. Objects of the same type share the same value. Always has the value `list`.
 type ListCustomersObject string
-
-// ListDiscountCodes defines model for ListDiscountCodes.
-type ListDiscountCodes struct {
-	// Items Details about each discount code.
-	Items []DiscountCode `json:"items"`
-
-	// NextPage URL to access the next page of the discount codes list. If not present / null, there is no next page.
-	//
-	// Example: /v2/projects/proj1ab2c3d4/discounts/discnt1a2b3c4d5e/discount_codes?starting_after=SPRING_2026
-	NextPage *string `json:"next_page"`
-
-	// Object String representing the object's type. Objects of the same type share the same value. Always has the value `list`.
-	Object ListDiscountCodesObject `json:"object"`
-
-	// URL The URL where this list can be accessed.
-	//
-	// Example: /v2/projects/proj1ab2c3d4/discounts/discnt1a2b3c4d5e/discount_codes
-	URL string `json:"url"`
-}
-
-// ListDiscountCodesObject String representing the object's type. Objects of the same type share the same value. Always has the value `list`.
-type ListDiscountCodesObject string
-
-// ListDiscounts defines model for ListDiscounts.
-type ListDiscounts struct {
-	// Items Details about each object.
-	Items []Discount `json:"items"`
-
-	// NextPage URL to access the next page of the project's discounts. If not present / null, there is no next page.
-	//
-	// Example: /v2/projects/proj1ab2c3d4/discounts?starting_after=discntab21dac
-	NextPage *string `json:"next_page"`
-
-	// Object String representing the object's type. Objects of the same type share the same value. Always has the value `list`.
-	Object ListDiscountsObject `json:"object"`
-
-	// URL The URL where this list can be accessed.
-	//
-	// Example: /v2/projects/proj1ab2c3d4/discounts
-	URL string `json:"url"`
-}
-
-// ListDiscountsObject String representing the object's type. Objects of the same type share the same value. Always has the value `list`.
-type ListDiscountsObject string
 
 // ListEntitlements defines model for ListEntitlements.
 type ListEntitlements struct {
@@ -37572,12 +36175,61 @@ type ListVirtualCurrenciesBalancesObject string
 
 // MacAppStoreApp defines model for MacAppStoreApp.
 type MacAppStoreApp struct {
+	// CreatedAt The date when the app was created in ms since epoch
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
+
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
+	// ID The id of the app
+	//
+	// Example: app1a2b3c4
+	ID string `json:"id"`
+
 	// MacAppStore Legacy Mac App Store type details
-	MacAppStore *struct {
-		// BundleID The bundle ID of the app
-		BundleID string `json:"bundle_id"`
-	} `json:"mac_app_store,omitempty"`
+	MacAppStore MacAppStoreApp_MacAppStore `json:"mac_app_store"`
+
+	// Name The name of the app
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object MacAppStoreAppObject `json:"object"`
+
+	// ProjectID The id of the project
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
+	// Type The platform of the app
+	//
+	// Example: mac_app_store
+	Type                 MacAppStoreAppType     `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
+
+// MacAppStoreApp_MacAppStore Legacy Mac App Store type details
+type MacAppStoreApp_MacAppStore struct {
+	// BundleID The bundle ID of the app
+	BundleID string `json:"bundle_id"`
+
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme      *string                `json:"custom_url_scheme,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// MacAppStoreAppObject String representing the object's type. Objects of the same type share the same value.
+type MacAppStoreAppObject string
+
+// MacAppStoreAppType The platform of the app
+//
+// Example: mac_app_store
+type MacAppStoreAppType string
 
 // MacAppStoreAppCreate defines model for MacAppStoreAppCreate.
 type MacAppStoreAppCreate struct {
@@ -37601,6 +36253,116 @@ type MacAppStoreAppCreate struct {
 // MacAppStoreAppCreateType The platform of the app.
 // Mac App Store is disabled by default. See [Legacy Mac Apps](https://www.revenuecat.com/docs/legacy-mac-apps) for more details.
 type MacAppStoreAppCreateType string
+
+// MediaAsset defines model for MediaAsset.
+type MediaAsset struct {
+	// AltText Alt text for the asset.
+	//
+	// Example: A dog looking at a phone
+	AltText *string `json:"alt_text"`
+
+	// AssetBaseURL The base URL where asset object names can be resolved.
+	//
+	// Example: https://paywalls-assets.revenuecat.com
+	AssetBaseURL *string `json:"asset_base_url"`
+
+	// AssetType The media asset type.
+	//
+	// Example: image
+	AssetType MediaAssetAssetType `json:"asset_type"`
+
+	// Formats Rendered image formats keyed by format name.
+	Formats *map[string]MediaAssetFormat `json:"formats"`
+
+	// ID The ID of the media asset.
+	//
+	// Example: mediaasset123456789abcdef
+	ID string `json:"id"`
+
+	// IsDecorative Whether this asset is decorative.
+	//
+	// Example: false
+	IsDecorative bool `json:"is_decorative"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	//
+	// Example: media_asset
+	Object MediaAssetObject `json:"object"`
+
+	// ObjectName The storage object name for the original asset.
+	//
+	// Example: paywalls/originals/abc123.webp
+	ObjectName string `json:"object_name"`
+
+	// OriginalHeight The original image height in pixels.
+	//
+	// Example: 1024
+	OriginalHeight *int `json:"original_height"`
+
+	// OriginalName The uploaded file name.
+	//
+	// Example: hero.webp
+	OriginalName string `json:"original_name"`
+
+	// OriginalSize The original file size in kilobytes.
+	//
+	// Example: 12345
+	OriginalSize int64 `json:"original_size"`
+
+	// OriginalWidth The original image width in pixels.
+	//
+	// Example: 1024
+	OriginalWidth *int `json:"original_width"`
+
+	// TranscodingStatus The video transcoding status, if this is a video asset.
+	TranscodingStatus *string `json:"transcoding_status"`
+
+	// VideoMetadata Video metadata, if this is a video asset.
+	VideoMetadata *map[string]interface{} `json:"video_metadata"`
+}
+
+// MediaAssetAssetType The media asset type.
+//
+// Example: image
+type MediaAssetAssetType string
+
+// MediaAssetObject String representing the object's type. Objects of the same type share the same value.
+//
+// Example: media_asset
+type MediaAssetObject string
+
+// MediaAssetFormat defines model for MediaAssetFormat.
+type MediaAssetFormat struct {
+	// Height The image height in pixels.
+	//
+	// Example: 1024
+	Height *int `json:"height"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	//
+	// Example: media_asset_format
+	Object MediaAssetFormatObject `json:"object"`
+
+	// ObjectName The storage object name for this rendered asset format.
+	//
+	// Example: paywalls/abc123.webp
+	ObjectName string `json:"object_name"`
+
+	// Size The file size in kilobytes.
+	//
+	// Example: 12345
+	Size int64 `json:"size"`
+
+	// Width The image width in pixels.
+	//
+	// Example: 1024
+	Width *int `json:"width"`
+}
+
+// MediaAssetFormatObject String representing the object's type. Objects of the same type share the same value.
+//
+// Example: media_asset_format
+type MediaAssetFormatObject string
 
 // MonetaryAmount defines model for MonetaryAmount.
 type MonetaryAmount struct {
@@ -37627,7 +36389,8 @@ type MonetaryAmount struct {
 	// Tax Estimated taxes deducted from gross revenue
 	//
 	// Example: 0.75
-	Tax float32 `json:"tax"`
+	Tax                  float32                `json:"tax"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // Offering defines model for Offering.
@@ -37682,6 +36445,11 @@ type Offering struct {
 		URL string `json:"url"`
 	} `json:"packages,omitempty"`
 
+	// PaywallID ID of the v2-visible paywall attached to this offering, or null if none.
+	//
+	// Example: pw12345abcde
+	PaywallID *string `json:"paywall_id"`
+
 	// ProjectID ID of the project to which the offering belongs
 	//
 	// Example: proj1ab2c3d4
@@ -37714,7 +36482,8 @@ type OneTimeProduct struct {
 	// IsConsumable Indicates whether the product is consumable or not.
 	//
 	// Example: true
-	IsConsumable *bool `json:"is_consumable"`
+	IsConsumable         *bool                  `json:"is_consumable"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // OverviewMetric defines model for OverviewMetric.
@@ -37771,12 +36540,22 @@ type OverviewMetricPeriod string
 
 // OverviewMetrics defines model for OverviewMetrics.
 type OverviewMetrics struct {
+	// Currency The currency that monetary metric values are expressed in. Defaults to USD. When the request is authenticated with a developer JWT/OAuth token and no `currency` query parameter is provided, this reflects the developer's saved dashboard display currency.
+	//
+	// Example: EUR
+	Currency OverviewMetricsCurrency `json:"currency"`
+
 	// Metrics Details about each overview metric.
 	Metrics []OverviewMetric `json:"metrics"`
 
 	// Object String representing the object's type. Objects of the same type share the same value.
 	Object OverviewMetricsObject `json:"object"`
 }
+
+// OverviewMetricsCurrency The currency that monetary metric values are expressed in. Defaults to USD. When the request is authenticated with a developer JWT/OAuth token and no `currency` query parameter is provided, this reflects the developer's saved dashboard display currency.
+//
+// Example: EUR
+type OverviewMetricsCurrency string
 
 // OverviewMetricsObject String representing the object's type. Objects of the same type share the same value.
 type OverviewMetricsObject string
@@ -37840,8 +36619,9 @@ type PackageProductsObject string
 
 // PackageProductAssociation defines model for PackageProductAssociation.
 type PackageProductAssociation struct {
-	EligibilityCriteria EligibilityCriteria `json:"eligibility_criteria"`
-	Product             Product             `json:"product"`
+	EligibilityCriteria  EligibilityCriteria    `json:"eligibility_criteria"`
+	Product              Product                `json:"product"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // PackageProductIDAssociation defines model for PackageProductIDAssociation.
@@ -37852,17 +36632,61 @@ type PackageProductIDAssociation struct {
 
 // PaddleApp defines model for PaddleApp.
 type PaddleApp struct {
-	// Paddle Paddle Billing type details
-	Paddle *struct {
-		// PaddleAPIKey Paddle Server-side API key provided on the Paddle dashboard.
-		PaddleAPIKey *string `json:"paddle_api_key,omitempty"`
+	// CreatedAt The date when the app was created in ms since epoch
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
 
-		// PaddleIsSandbox Whether the app is tied to the sandbox environment.
-		//
-		// Example: true
-		PaddleIsSandbox *bool `json:"paddle_is_sandbox,omitempty"`
-	} `json:"paddle,omitempty"`
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
+	// ID The id of the app
+	//
+	// Example: app1a2b3c4
+	ID string `json:"id"`
+
+	// Name The name of the app
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object PaddleAppObject `json:"object"`
+
+	// Paddle Paddle Billing type details
+	Paddle PaddleApp_Paddle `json:"paddle"`
+
+	// ProjectID The id of the project
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
+	// Type The platform of the app
+	//
+	// Example: paddle
+	Type                 PaddleAppType          `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
+
+// PaddleAppObject String representing the object's type. Objects of the same type share the same value.
+type PaddleAppObject string
+
+// PaddleApp_Paddle Paddle Billing type details
+type PaddleApp_Paddle struct {
+	// PaddleAPIKey Paddle Server-side API key provided on the Paddle dashboard.
+	PaddleAPIKey *string `json:"paddle_api_key,omitempty"`
+
+	// PaddleIsSandbox Whether the app is tied to the sandbox environment.
+	//
+	// Example: true
+	PaddleIsSandbox      *bool                  `json:"paddle_is_sandbox,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// PaddleAppType The platform of the app
+//
+// Example: paddle
+type PaddleAppType string
 
 // PaddleAppCreate defines model for PaddleAppCreate.
 type PaddleAppCreate struct {
@@ -37892,14 +36716,162 @@ type PaddleAppCreate struct {
 // Mac App Store is disabled by default. See [Legacy Mac Apps](https://www.revenuecat.com/docs/legacy-mac-apps) for more details.
 type PaddleAppCreateType string
 
+// PaywallDraftCreate defines model for PaywallDraftCreate.
+type PaywallDraftCreate struct {
+	// AutomaticallyScaleFontSize Whether font sizes should automatically scale for this paywall. Defaults to true.
+	//
+	// Example: true
+	AutomaticallyScaleFontSize *bool `json:"automatically_scale_font_size,omitempty"`
+
+	// ComponentsConfig The raw paywall components configuration to save as the draft.
+	//
+	// Example: {"base":{"stack":{"components":[],"id":"main_stack","type":"stack"}}}
+	ComponentsConfig map[string]interface{} `json:"components_config"`
+
+	// ComponentsLocalizations Localized component values keyed by locale.
+	//
+	// Example: {"en_US":{"title":"Premium"}}
+	ComponentsLocalizations map[string]map[string]interface{} `json:"components_localizations"`
+
+	// DefaultLocale The default locale for this paywall. Defaults to en_US.
+	//
+	// Example: en_US
+	DefaultLocale *string `json:"default_locale,omitempty"`
+
+	// Name Optional paywall name.
+	//
+	// Example: Main Paywall
+	Name *string `json:"name,omitempty"`
+
+	// OfferingID The optional ID of the offering the paywall draft will be attached to.
+	//
+	//
+	// Example: ofrng123456789a
+	OfferingID *string `json:"offering_id,omitempty"`
+}
+
+// PaywallVersion defines model for PaywallVersion.
+type PaywallVersion struct {
+	// AutomaticallyScaleFontSize Whether font sizes should automatically scale for this paywall version.
+	//
+	// Example: true
+	AutomaticallyScaleFontSize bool `json:"automatically_scale_font_size"`
+
+	// ComponentsConfig The raw paywall components configuration captured by this version.
+	//
+	// Example: {"base":{"stack":{"components":[],"id":"main_stack","type":"stack"}}}
+	ComponentsConfig *map[string]interface{} `json:"components_config"`
+
+	// ComponentsLocalizations Localized component values keyed by locale.
+	//
+	// Example: {"en_US":{"title":"Premium"}}
+	ComponentsLocalizations *map[string]map[string]interface{} `json:"components_localizations"`
+
+	// CreatedAt The date the paywall version was created at in ms since epoch.
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
+
+	// DefaultLocale The default locale captured by this version.
+	//
+	// Example: en_US
+	DefaultLocale *string `json:"default_locale"`
+
+	// ExitOffers Exit offer configuration captured by this version.
+	//
+	// Example: {"dismiss":{"offering_id":"ofrng123456789abcdef"}}
+	ExitOffers *map[string]interface{} `json:"exit_offers"`
+
+	// ID The id of the paywall version.
+	//
+	// Example: pwv123456789abcdef
+	ID string `json:"id"`
+
+	// Name The name of the paywall version.
+	//
+	// Example: Before AI edit
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object PaywallVersionObject `json:"object"`
+
+	// PlayStoreProductChangeMode Play Store product change mode configuration captured by this version.
+	//
+	// Example: {"upgrade_replacement_mode":"deferred"}
+	PlayStoreProductChangeMode *map[string]interface{} `json:"play_store_product_change_mode"`
+
+	// Revision The paywall revision captured by this version.
+	//
+	// Example: 3
+	Revision int `json:"revision"`
+
+	// StateDeclarations State declarations captured by this version.
+	//
+	// Example: {"selectedPackage":{"default":"monthly","type":"string"}}
+	StateDeclarations    *map[string]interface{} `json:"state_declarations"`
+	AdditionalProperties map[string]interface{}  `json:"-"`
+}
+
+// PaywallVersionObject String representing the object's type. Objects of the same type share the same value.
+type PaywallVersionObject string
+
 // PlayStoreApp defines model for PlayStoreApp.
 type PlayStoreApp struct {
+	// CreatedAt The date when the app was created in ms since epoch
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
+
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
+	// ID The id of the app
+	//
+	// Example: app1a2b3c4
+	ID string `json:"id"`
+
+	// Name The name of the app
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object PlayStoreAppObject `json:"object"`
+
 	// PlayStore Play Store type details
-	PlayStore *struct {
-		// PackageName The package name of the app
-		PackageName string `json:"package_name"`
-	} `json:"play_store,omitempty"`
+	PlayStore PlayStoreApp_PlayStore `json:"play_store"`
+
+	// ProjectID The id of the project
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
+	// Type The platform of the app
+	//
+	// Example: play_store
+	Type                 PlayStoreAppType       `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
+
+// PlayStoreAppObject String representing the object's type. Objects of the same type share the same value.
+type PlayStoreAppObject string
+
+// PlayStoreApp_PlayStore Play Store type details
+type PlayStoreApp_PlayStore struct {
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme *string `json:"custom_url_scheme,omitempty"`
+
+	// PackageName The package name of the app
+	PackageName          string                 `json:"package_name"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// PlayStoreAppType The platform of the app
+//
+// Example: play_store
+type PlayStoreAppType string
 
 // PlayStoreAppCreate defines model for PlayStoreAppCreate.
 type PlayStoreAppCreate struct {
@@ -37944,6 +36916,9 @@ type Product struct {
 	//
 	// Example: prod1a2b3c4d5e
 	ID string `json:"id"`
+
+	// IndicativePrice An indicative price for a product, in the default currency/country (USD / US). Uses the same price source as the get-offering-prices endpoint.
+	IndicativePrice *IndicativePrice `json:"indicative_price,omitempty"`
 
 	// Object String representing the object's type. Objects of the same type share the same value. Always has the value `list`.
 	Object  ProductObject   `json:"object"`
@@ -38217,31 +37192,75 @@ type PurchaseStore string
 
 // RCBillingApp defines model for RCBillingApp.
 type RCBillingApp struct {
+	// CreatedAt The date when the app was created in ms since epoch
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
+
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
+	// ID The id of the app
+	//
+	// Example: app1a2b3c4
+	ID string `json:"id"`
+
+	// Name The name of the app
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object RCBillingAppObject `json:"object"`
+
+	// ProjectID The id of the project
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
 	// RcBilling Revenue Cat Billing Store type details
-	RcBilling *struct {
-		// AppName Shown in checkout, emails, and receipts sent to customers.
-		AppName *string `json:"app_name,omitempty"`
+	RcBilling RCBillingApp_RcBilling `json:"rc_billing"`
 
-		// DefaultCurrency ISO 4217 currency code
-		//
-		// Example: USD
-		DefaultCurrency RCBillingCurrency `json:"default_currency"`
-
-		// SellerCompanyName The company name.  This field is deprecated. Please, use `app_name` instead.
-		// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-		SellerCompanyName string `json:"seller_company_name"`
-
-		// SellerCompanySupportEmail The company support email. This field is deprecated. Please, use `support_email` instead.
-		// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-		SellerCompanySupportEmail *string `json:"seller_company_support_email,omitempty"`
-
-		// StripeAccountID Stripe account connected to your RevenueCat account.
-		StripeAccountID *string `json:"stripe_account_id,omitempty"`
-
-		// SupportEmail Used as the `reply to` address in all emails sent to customers, to allow them to receive support.
-		SupportEmail *string `json:"support_email,omitempty"`
-	} `json:"rc_billing,omitempty"`
+	// Type The platform of the app
+	//
+	// Example: rc_billing
+	Type                 RCBillingAppType       `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
+
+// RCBillingAppObject String representing the object's type. Objects of the same type share the same value.
+type RCBillingAppObject string
+
+// RCBillingApp_RcBilling Revenue Cat Billing Store type details
+type RCBillingApp_RcBilling struct {
+	// AppName Shown in checkout, emails, and receipts sent to customers.
+	AppName *string `json:"app_name,omitempty"`
+
+	// DefaultCurrency ISO 4217 currency code
+	//
+	// Example: USD
+	DefaultCurrency RCBillingCurrency `json:"default_currency"`
+
+	// SellerCompanyName The company name. This field is deprecated. Please, use `app_name` instead.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	SellerCompanyName string `json:"seller_company_name"`
+
+	// SellerCompanySupportEmail The company support email. This field is deprecated. Please, use `support_email` instead.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	SellerCompanySupportEmail *string `json:"seller_company_support_email,omitempty"`
+
+	// StripeAccountID Stripe account connected to your RevenueCat account.
+	StripeAccountID *string `json:"stripe_account_id,omitempty"`
+
+	// SupportEmail Used as the `reply to` address in all emails sent to customers, to allow them to receive support.
+	SupportEmail         *string                `json:"support_email,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// RCBillingAppType The platform of the app
+//
+// Example: rc_billing
+type RCBillingAppType string
 
 // RCBillingAppCreate defines model for RCBillingAppCreate.
 type RCBillingAppCreate struct {
@@ -38279,17 +37298,104 @@ type RCBillingAppCreateType string
 // Example: USD
 type RCBillingCurrency string
 
+// RevenueMetric defines model for RevenueMetric.
+type RevenueMetric struct {
+	// Currency The ISO 4217 currency code that the revenue value is expressed in.
+	//
+	// Example: USD
+	Currency string `json:"currency"`
+
+	// EndDate End date of the revenue range, inclusive (ISO 8601 format).
+	//
+	// Example: 2026-01-31
+	EndDate openapi_types.Date `json:"end_date"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	//
+	// Example: revenue_metric
+	Object RevenueMetricObject `json:"object"`
+
+	// RevenueType The revenue definition that `value` represents: `revenue` (gross), `revenue_net_of_taxes`, or `proceeds` (net of both taxes and store commission). Matches the `revenue_type` request parameter.
+	//
+	// Example: proceeds
+	RevenueType RevenueMetricRevenueType `json:"revenue_type"`
+
+	// StartDate Start date of the revenue range, inclusive (ISO 8601 format).
+	//
+	// Example: 2026-01-01
+	StartDate openapi_types.Date `json:"start_date"`
+
+	// Value Revenue for the date range, expressed in `currency`, for the revenue definition selected by the `revenue_type` request parameter. Two-decimal precision.
+	//
+	// Example: 12345.67
+	Value float32 `json:"value"`
+}
+
+// RevenueMetricObject String representing the object's type. Objects of the same type share the same value.
+//
+// Example: revenue_metric
+type RevenueMetricObject string
+
+// RevenueMetricRevenueType The revenue definition that `value` represents: `revenue` (gross), `revenue_net_of_taxes`, or `proceeds` (net of both taxes and store commission). Matches the `revenue_type` request parameter.
+//
+// Example: proceeds
+type RevenueMetricRevenueType string
+
 // RokuApp defines model for RokuApp.
 type RokuApp struct {
-	// Roku Roku Channel Store type details
-	Roku *struct {
-		// RokuChannelID Channel ID provided on the Roku Channel page.
-		RokuChannelID *string `json:"roku_channel_id,omitempty"`
+	// CreatedAt The date when the app was created in ms since epoch
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
 
-		// RokuChannelName Channel name that is displayed on the Roku Channel page.
-		RokuChannelName *string `json:"roku_channel_name,omitempty"`
-	} `json:"roku,omitempty"`
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
+	// ID The id of the app
+	//
+	// Example: app1a2b3c4
+	ID string `json:"id"`
+
+	// Name The name of the app
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object RokuAppObject `json:"object"`
+
+	// ProjectID The id of the project
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
+	// Roku Roku Channel Store type details
+	Roku RokuApp_Roku `json:"roku"`
+
+	// Type The platform of the app
+	//
+	// Example: roku
+	Type                 RokuAppType            `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
+
+// RokuAppObject String representing the object's type. Objects of the same type share the same value.
+type RokuAppObject string
+
+// RokuApp_Roku Roku Channel Store type details
+type RokuApp_Roku struct {
+	// RokuChannelID Channel ID provided on the Roku Channel page.
+	RokuChannelID *string `json:"roku_channel_id,omitempty"`
+
+	// RokuChannelName Channel name that is displayed on the Roku Channel page.
+	RokuChannelName      *string                `json:"roku_channel_name,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// RokuAppType The platform of the app
+//
+// Example: roku
+type RokuAppType string
 
 // RokuAppCreate defines model for RokuAppCreate.
 type RokuAppCreate struct {
@@ -38355,12 +37461,56 @@ type StoreProductObject string
 
 // StripeApp defines model for StripeApp.
 type StripeApp struct {
+	// CreatedAt The date when the app was created in ms since epoch
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
+
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
+	// ID The id of the app
+	//
+	// Example: app1a2b3c4
+	ID string `json:"id"`
+
+	// Name The name of the app
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object StripeAppObject `json:"object"`
+
+	// ProjectID The id of the project
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
 	// Stripe Stripe type details
-	Stripe *struct {
-		// StripeAccountID Stripe account connected to your RevenueCat account.
-		StripeAccountID *string `json:"stripe_account_id,omitempty"`
-	} `json:"stripe,omitempty"`
+	Stripe StripeApp_Stripe `json:"stripe"`
+
+	// Type The platform of the app
+	//
+	// Example: stripe
+	Type                 StripeAppType          `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
+
+// StripeAppObject String representing the object's type. Objects of the same type share the same value.
+type StripeAppObject string
+
+// StripeApp_Stripe Stripe type details
+type StripeApp_Stripe struct {
+	// StripeAccountID Stripe account connected to your RevenueCat account.
+	StripeAccountID      *string                `json:"stripe_account_id,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// StripeAppType The platform of the app
+//
+// Example: stripe
+type StripeAppType string
 
 // StripeAppCreate defines model for StripeAppCreate.
 type StripeAppCreate struct {
@@ -38461,10 +37611,8 @@ type Subscription struct {
 	// Ownership Ownership of the subscription
 	Ownership Subscription_Ownership `json:"ownership"`
 
-	// PendingChanges Indicates pending product changes. Present if the `auto_renewal_status` is `will_change_product`.
-	PendingChanges *struct {
-		Product *Product `json:"product,omitempty"`
-	} `json:"pending_changes,omitempty"`
+	// PendingChanges Expected changes to the subscription that will occur at the end of the current period. Present when the subscription has a pending product change, has already renewed for the next period, or has a failed upcoming renewal. Only fields that differ from the current subscription state are included.
+	PendingChanges *Subscription_PendingChanges `json:"pending_changes,omitempty"`
 
 	// PendingPayment Determines whether there is a pending payment associated with the subscription
 	//
@@ -38527,6 +37675,58 @@ type Subscription_Ownership struct {
 	union json.RawMessage
 }
 
+// SubscriptionPendingChangesAutoRenewalStatus Expected auto renewal status for the next period. Omitted when unchanged from the current subscription.
+//
+// Example: will_renew
+type SubscriptionPendingChangesAutoRenewalStatus string
+
+// SubscriptionPendingChangesStatus Expected subscription status for the next period. Omitted when unchanged from the current subscription.
+//
+// Example: active
+type SubscriptionPendingChangesStatus string
+
+// Subscription_PendingChanges Expected changes to the subscription that will occur at the end of the current period. Present when the subscription has a pending product change, has already renewed for the next period, or has a failed upcoming renewal. Only fields that differ from the current subscription state are included.
+type Subscription_PendingChanges struct {
+	// AutoRenewalStatus Expected auto renewal status for the next period. Omitted when unchanged from the current subscription.
+	//
+	// Example: will_renew
+	AutoRenewalStatus *SubscriptionPendingChangesAutoRenewalStatus `json:"auto_renewal_status,omitempty"`
+
+	// CurrentPeriodEndsAt Expected end of the next billing period in ms since epoch. Omitted when unchanged from the current subscription.
+	//
+	// Example: 1660991423658
+	CurrentPeriodEndsAt *int64 `json:"current_period_ends_at,omitempty"`
+
+	// CurrentPeriodStartsAt Expected start of the next billing period in ms since epoch. Omitted when unchanged from the current subscription.
+	//
+	// Example: 1658399423658
+	CurrentPeriodStartsAt *int64 `json:"current_period_starts_at,omitempty"`
+
+	// GivesAccess Expected access flag for the next period. Omitted when unchanged from the current subscription.
+	//
+	// Example: true
+	GivesAccess *bool `json:"gives_access,omitempty"`
+
+	// PendingPayment Expected pending payment flag for the next period. Omitted when unchanged from the current subscription.
+	//
+	// Example: false
+	PendingPayment *bool `json:"pending_payment,omitempty"`
+
+	// Product The product that will be active as of the next renewal
+	Product *Product `json:"product,omitempty"`
+
+	// Status Expected subscription status for the next period. Omitted when unchanged from the current subscription.
+	//
+	// Example: active
+	Status *SubscriptionPendingChangesStatus `json:"status,omitempty"`
+
+	// StoreSubscriptionIdentifier Expected store subscription identifier for the next period. Omitted when unchanged from the current subscription.
+	//
+	// Example: 12345679
+	StoreSubscriptionIdentifier *string                `json:"store_subscription_identifier,omitempty"`
+	AdditionalProperties        map[string]interface{} `json:"-"`
+}
+
 // SubscriptionStatus The status of a subscription. Please note that additional states might be added in the future. To determine whether or not a subscription currently provides access to any associated entitlements, use the _gives_access_ field.<br><br>Possible values:<br>• `trialing`: the subscription is in a free trial period<br>• `active`: the subscription is active, in a paid period<br>• `expired`: the subscription is expired and no longer active<br>• `in_grace_period`: the subscription is past its regular expiry date and experienced a billing issue, but is currently still in an access-granting grace period<br>• `in_billing_retry`: the subscription has experienced a billing issue. Billing is being retried, access is suspended.-paused: the subscription is currently paused and should not provide access.<br>• `unknown`: the subscription is in an unknown state. Refer to the _gives_access_ field to determine whether or not to grant access.<br>• `incomplete`: the subscription is in an incomplete state, maybe due to incorrect billing details or because it's scheduled to start in the future.
 //
 // Example: trialing
@@ -38557,7 +37757,8 @@ type SubscriptionProduct struct {
 	// TrialDuration The duration of the subscription's trial period in ISO-8601 standard
 	//
 	// Example: P1W
-	TrialDuration *string `json:"trial_duration"`
+	TrialDuration        *string                `json:"trial_duration"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // SubscriptionTransaction defines model for SubscriptionTransaction.
@@ -38610,10 +37811,54 @@ type SubscriptionTransaction_RevenueInUsd struct {
 	union json.RawMessage
 }
 
+// TestStoreApp defines model for TestStoreApp.
+type TestStoreApp struct {
+	// CreatedAt The date when the app was created in ms since epoch
+	//
+	// Example: 1658399423658
+	CreatedAt int64 `json:"created_at"`
+
+	// CustomURLScheme The custom URL scheme for the app, derived from the app's public ID.
+	//
+	// Example: rc-1a2b3c4
+	CustomURLScheme string `json:"custom_url_scheme"`
+
+	// ID The id of the app
+	//
+	// Example: app1a2b3c4
+	ID string `json:"id"`
+
+	// Name The name of the app
+	Name string `json:"name"`
+
+	// Object String representing the object's type. Objects of the same type share the same value.
+	Object TestStoreAppObject `json:"object"`
+
+	// ProjectID The id of the project
+	//
+	// Example: proj1a2b3c4
+	ProjectID string `json:"project_id"`
+
+	// Type The platform of the app
+	//
+	// Example: test_store
+	Type                 TestStoreAppType       `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// TestStoreAppObject String representing the object's type. Objects of the same type share the same value.
+type TestStoreAppObject string
+
+// TestStoreAppType The platform of the app
+//
+// Example: test_store
+type TestStoreAppType string
+
 // Transfer defines model for Transfer.
 type Transfer struct {
-	SourceCustomer Customer `json:"source_customer"`
-	TargetCustomer Customer `json:"target_customer"`
+	SourceCustomer       Customer               `json:"source_customer"`
+	TargetCustomer       Customer               `json:"target_customer"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // UpdateWebhookIntegrationInput defines model for UpdateWebhookIntegrationInput.
@@ -39221,8 +38466,11 @@ type UnprocessableEntityType string
 
 // ListProjectsParams defines parameters for ListProjects.
 type ListProjectsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListProjects400JSONResponseBodyObject defines parameters for ListProjects.
@@ -39335,8 +38583,11 @@ type CreateProject503JSONResponseBodyType string
 
 // ListAppsParams defines parameters for ListApps.
 type ListAppsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListApps400JSONResponseBodyObject defines parameters for ListApps.
@@ -39717,6 +38968,12 @@ type UpdateApp500JSONResponseBodyObject string
 // UpdateApp500JSONResponseBodyType defines parameters for UpdateApp.
 type UpdateApp500JSONResponseBodyType string
 
+// UpdateApp502JSONResponseBodyObject defines parameters for UpdateApp.
+type UpdateApp502JSONResponseBodyObject string
+
+// UpdateApp502JSONResponseBodyType defines parameters for UpdateApp.
+type UpdateApp502JSONResponseBodyType string
+
 // UpdateApp503JSONResponseBodyObject defines parameters for UpdateApp.
 type UpdateApp503JSONResponseBodyObject string
 
@@ -39829,7 +39086,9 @@ type ListAuditLogsParams struct {
 
 	// EndDate End date for the data range (ISO 8601 format)
 	EndDate *openapi_types.Date `form:"end_date,omitempty" json:"end_date,omitempty"`
-	Limit   *int                `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListAuditLogs400JSONResponseBodyObject defines parameters for ListAuditLogs.
@@ -39880,66 +39139,6 @@ type ListAuditLogs503JSONResponseBodyObject string
 // ListAuditLogs503JSONResponseBodyType defines parameters for ListAuditLogs.
 type ListAuditLogs503JSONResponseBodyType string
 
-// GetBenchmarksParams defines parameters for GetBenchmarks.
-type GetBenchmarksParams struct {
-	// AppID Optional filter that restricts the response to benchmarks for a single app within the project. When omitted, benchmarks for every app in the project are returned.
-	AppID *string `form:"app_id,omitempty" json:"app_id,omitempty"`
-
-	// ComparisonCategory Overrides the default peer group used to compute the benchmark percentiles. When omitted, each app is compared against its own store category.
-	ComparisonCategory *GetBenchmarksParamsComparisonCategory `form:"comparison_category,omitempty" json:"comparison_category,omitempty"`
-}
-
-// GetBenchmarksParamsComparisonCategory defines parameters for GetBenchmarks.
-type GetBenchmarksParamsComparisonCategory string
-
-// GetBenchmarks400JSONResponseBodyObject defines parameters for GetBenchmarks.
-type GetBenchmarks400JSONResponseBodyObject string
-
-// GetBenchmarks400JSONResponseBodyType defines parameters for GetBenchmarks.
-type GetBenchmarks400JSONResponseBodyType string
-
-// GetBenchmarks401JSONResponseBodyObject defines parameters for GetBenchmarks.
-type GetBenchmarks401JSONResponseBodyObject string
-
-// GetBenchmarks401JSONResponseBodyType defines parameters for GetBenchmarks.
-type GetBenchmarks401JSONResponseBodyType string
-
-// GetBenchmarks403JSONResponseBodyObject defines parameters for GetBenchmarks.
-type GetBenchmarks403JSONResponseBodyObject string
-
-// GetBenchmarks403JSONResponseBodyType defines parameters for GetBenchmarks.
-type GetBenchmarks403JSONResponseBodyType string
-
-// GetBenchmarks404JSONResponseBodyObject defines parameters for GetBenchmarks.
-type GetBenchmarks404JSONResponseBodyObject string
-
-// GetBenchmarks404JSONResponseBodyType defines parameters for GetBenchmarks.
-type GetBenchmarks404JSONResponseBodyType string
-
-// GetBenchmarks423JSONResponseBodyObject defines parameters for GetBenchmarks.
-type GetBenchmarks423JSONResponseBodyObject string
-
-// GetBenchmarks423JSONResponseBodyType defines parameters for GetBenchmarks.
-type GetBenchmarks423JSONResponseBodyType string
-
-// GetBenchmarks429JSONResponseBodyObject defines parameters for GetBenchmarks.
-type GetBenchmarks429JSONResponseBodyObject string
-
-// GetBenchmarks429JSONResponseBodyType defines parameters for GetBenchmarks.
-type GetBenchmarks429JSONResponseBodyType string
-
-// GetBenchmarks500JSONResponseBodyObject defines parameters for GetBenchmarks.
-type GetBenchmarks500JSONResponseBodyObject string
-
-// GetBenchmarks500JSONResponseBodyType defines parameters for GetBenchmarks.
-type GetBenchmarks500JSONResponseBodyType string
-
-// GetBenchmarks503JSONResponseBodyObject defines parameters for GetBenchmarks.
-type GetBenchmarks503JSONResponseBodyObject string
-
-// GetBenchmarks503JSONResponseBodyType defines parameters for GetBenchmarks.
-type GetBenchmarks503JSONResponseBodyType string
-
 // GetChartDataParams defines parameters for GetChartData.
 type GetChartDataParams struct {
 	// Realtime Whether to request real-time (v3) charts. Defaults to true. Set to false to request the v2 charts.
@@ -39967,14 +39166,22 @@ type GetChartDataParams struct {
 	// EndDate End date for the data range (ISO 8601 format)
 	EndDate *openapi_types.Date `form:"end_date,omitempty" json:"end_date,omitempty"`
 
-	// Segment Segment the data by this dimension. Use the chart options endpoint
-	// to discover available segments for a chart.
+	// ExpandPeriods Whether to expand the date range so the first period is complete (e.g. snap a weekly range back to the start of the week). Defaults to false, which only includes data from the exact start_date provided. Period labels are always aligned to period boundaries: with expand_periods=false and a mid-period start_date, the first period only aggregates data from start_date onwards and is marked as incomplete. Exception: charts of point-in-time (stock) metrics, such as active subscriptions or MRR, ignore this parameter entirely. Their values are snapshots measured exactly at each period boundary, so the first data point is always measured at the start of the period containing start_date (which can fall before start_date) and is not marked as incomplete, since a snapshot cannot be partial.
+	ExpandPeriods *bool `form:"expand_periods,omitempty" json:"expand_periods,omitempty"`
+
+	// Segment Segment the data by this dimension. Must be one of the segments returned
+	// by the chart options schema endpoint for this chart; segments vary per
+	// chart, and unsupported segments return a 400 `parameter_error` listing
+	// the supported ones.
 	Segment *string `form:"segment,omitempty" json:"segment,omitempty"`
 
 	// LimitNumSegments If set, limits the number of segments returned to the top N by value.
 	// All remaining segments are aggregated into an "Other" segment.
 	// Only applies when a segment is specified.
 	LimitNumSegments *int `form:"limit_num_segments,omitempty" json:"limit_num_segments,omitempty"`
+
+	// IncludeAnnotations When true, includes chart annotations for the project in the response, filtered to the chart's date window.
+	IncludeAnnotations *bool `form:"include_annotations,omitempty" json:"include_annotations,omitempty"`
 }
 
 // GetChartDataParamsAggregate defines parameters for GetChartData.
@@ -40093,8 +39300,11 @@ type GetChartOptions503JSONResponseBodyType string
 
 // ListCollaboratorsParams defines parameters for ListCollaborators.
 type ListCollaboratorsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListCollaborators400JSONResponseBodyObject defines parameters for ListCollaborators.
@@ -40147,10 +39357,13 @@ type ListCollaborators503JSONResponseBodyType string
 
 // ListCustomersParams defines parameters for ListCustomers.
 type ListCustomersParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
 
-	// Search Search term. Currently, only searching by email is supported (searching for exact matches in the $email attribute).
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Search Search term used to find matching customers within the project. The term is matched against, in order: the $email attribute (exact match), the customer's app user IDs, store transaction identifiers (Apple, Google Play and Amazon), and Apple order IDs. Email searches are paginated; all other identifier searches return a single page of matches.
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 }
 
@@ -40286,174 +39499,6 @@ type CreateCustomer503JSONResponseBodyObject string
 
 // CreateCustomer503JSONResponseBodyType defines parameters for CreateCustomer.
 type CreateCustomer503JSONResponseBodyType string
-
-// ListBlockedCustomers400JSONResponseBodyObject defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers400JSONResponseBodyObject string
-
-// ListBlockedCustomers400JSONResponseBodyType defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers400JSONResponseBodyType string
-
-// ListBlockedCustomers401JSONResponseBodyObject defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers401JSONResponseBodyObject string
-
-// ListBlockedCustomers401JSONResponseBodyType defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers401JSONResponseBodyType string
-
-// ListBlockedCustomers403JSONResponseBodyObject defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers403JSONResponseBodyObject string
-
-// ListBlockedCustomers403JSONResponseBodyType defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers403JSONResponseBodyType string
-
-// ListBlockedCustomers404JSONResponseBodyObject defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers404JSONResponseBodyObject string
-
-// ListBlockedCustomers404JSONResponseBodyType defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers404JSONResponseBodyType string
-
-// ListBlockedCustomers423JSONResponseBodyObject defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers423JSONResponseBodyObject string
-
-// ListBlockedCustomers423JSONResponseBodyType defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers423JSONResponseBodyType string
-
-// ListBlockedCustomers429JSONResponseBodyObject defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers429JSONResponseBodyObject string
-
-// ListBlockedCustomers429JSONResponseBodyType defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers429JSONResponseBodyType string
-
-// ListBlockedCustomers500JSONResponseBodyObject defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers500JSONResponseBodyObject string
-
-// ListBlockedCustomers500JSONResponseBodyType defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers500JSONResponseBodyType string
-
-// ListBlockedCustomers503JSONResponseBodyObject defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers503JSONResponseBodyObject string
-
-// ListBlockedCustomers503JSONResponseBodyType defines parameters for ListBlockedCustomers.
-type ListBlockedCustomers503JSONResponseBodyType string
-
-// UnblockCustomer400JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer400JSONResponseBodyObject string
-
-// UnblockCustomer400JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer400JSONResponseBodyType string
-
-// UnblockCustomer401JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer401JSONResponseBodyObject string
-
-// UnblockCustomer401JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer401JSONResponseBodyType string
-
-// UnblockCustomer403JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer403JSONResponseBodyObject string
-
-// UnblockCustomer403JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer403JSONResponseBodyType string
-
-// UnblockCustomer404JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer404JSONResponseBodyObject string
-
-// UnblockCustomer404JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer404JSONResponseBodyType string
-
-// UnblockCustomer409JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer409JSONResponseBodyObject string
-
-// UnblockCustomer409JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer409JSONResponseBodyType string
-
-// UnblockCustomer422JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer422JSONResponseBodyObject string
-
-// UnblockCustomer422JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer422JSONResponseBodyType string
-
-// UnblockCustomer423JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer423JSONResponseBodyObject string
-
-// UnblockCustomer423JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer423JSONResponseBodyType string
-
-// UnblockCustomer429JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer429JSONResponseBodyObject string
-
-// UnblockCustomer429JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer429JSONResponseBodyType string
-
-// UnblockCustomer500JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer500JSONResponseBodyObject string
-
-// UnblockCustomer500JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer500JSONResponseBodyType string
-
-// UnblockCustomer503JSONResponseBodyObject defines parameters for UnblockCustomer.
-type UnblockCustomer503JSONResponseBodyObject string
-
-// UnblockCustomer503JSONResponseBodyType defines parameters for UnblockCustomer.
-type UnblockCustomer503JSONResponseBodyType string
-
-// BlockCustomer400JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer400JSONResponseBodyObject string
-
-// BlockCustomer400JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer400JSONResponseBodyType string
-
-// BlockCustomer401JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer401JSONResponseBodyObject string
-
-// BlockCustomer401JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer401JSONResponseBodyType string
-
-// BlockCustomer403JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer403JSONResponseBodyObject string
-
-// BlockCustomer403JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer403JSONResponseBodyType string
-
-// BlockCustomer404JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer404JSONResponseBodyObject string
-
-// BlockCustomer404JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer404JSONResponseBodyType string
-
-// BlockCustomer409JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer409JSONResponseBodyObject string
-
-// BlockCustomer409JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer409JSONResponseBodyType string
-
-// BlockCustomer422JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer422JSONResponseBodyObject string
-
-// BlockCustomer422JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer422JSONResponseBodyType string
-
-// BlockCustomer423JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer423JSONResponseBodyObject string
-
-// BlockCustomer423JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer423JSONResponseBodyType string
-
-// BlockCustomer429JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer429JSONResponseBodyObject string
-
-// BlockCustomer429JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer429JSONResponseBodyType string
-
-// BlockCustomer500JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer500JSONResponseBodyObject string
-
-// BlockCustomer500JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer500JSONResponseBodyType string
-
-// BlockCustomer503JSONResponseBodyObject defines parameters for BlockCustomer.
-type BlockCustomer503JSONResponseBodyObject string
-
-// BlockCustomer503JSONResponseBodyType defines parameters for BlockCustomer.
-type BlockCustomer503JSONResponseBodyType string
 
 // DeleteCustomer400JSONResponseBodyObject defines parameters for DeleteCustomer.
 type DeleteCustomer400JSONResponseBodyObject string
@@ -40921,8 +39966,11 @@ type TransferCustomerData503JSONResponseBodyType string
 
 // ListCustomerActiveEntitlementsParams defines parameters for ListCustomerActiveEntitlements.
 type ListCustomerActiveEntitlementsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListCustomerActiveEntitlements400JSONResponseBodyObject defines parameters for ListCustomerActiveEntitlements.
@@ -40975,8 +40023,11 @@ type ListCustomerActiveEntitlements503JSONResponseBodyType string
 
 // ListCustomerAliasesParams defines parameters for ListCustomerAliases.
 type ListCustomerAliasesParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListCustomerAliases400JSONResponseBodyObject defines parameters for ListCustomerAliases.
@@ -41029,8 +40080,11 @@ type ListCustomerAliases503JSONResponseBodyType string
 
 // ListCustomerAttributesParams defines parameters for ListCustomerAttributes.
 type ListCustomerAttributesParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListCustomerAttributes400JSONResponseBodyObject defines parameters for ListCustomerAttributes.
@@ -41159,11 +40213,76 @@ type SetCustomerAttributes503JSONResponseBodyObject string
 // SetCustomerAttributes503JSONResponseBodyType defines parameters for SetCustomerAttributes.
 type SetCustomerAttributes503JSONResponseBodyType string
 
+// GetCustomerCenterConfigParams defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfigParams struct {
+	// Platform The platform to process the Customer Center configuration for. When provided, returns the locale-selected, platform-filtered configuration the customer would see. When omitted, returns the full unprocessed configuration for all platforms. Must match a store configured on this project.
+	Platform *GetCustomerCenterConfigParamsPlatform `form:"platform,omitempty" json:"platform,omitempty"`
+
+	// Locale BCP 47 locale string (e.g. en_US) used to select the appropriate localization when platform is provided. When omitted, the configuration's default locale is used. Has no effect if platform is not provided.
+	Locale *string `form:"locale,omitempty" json:"locale,omitempty"`
+}
+
+// GetCustomerCenterConfigParamsPlatform defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfigParamsPlatform string
+
+// GetCustomerCenterConfig400JSONResponseBodyObject defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig400JSONResponseBodyObject string
+
+// GetCustomerCenterConfig400JSONResponseBodyType defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig400JSONResponseBodyType string
+
+// GetCustomerCenterConfig401JSONResponseBodyObject defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig401JSONResponseBodyObject string
+
+// GetCustomerCenterConfig401JSONResponseBodyType defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig401JSONResponseBodyType string
+
+// GetCustomerCenterConfig403JSONResponseBodyObject defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig403JSONResponseBodyObject string
+
+// GetCustomerCenterConfig403JSONResponseBodyType defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig403JSONResponseBodyType string
+
+// GetCustomerCenterConfig404JSONResponseBodyObject defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig404JSONResponseBodyObject string
+
+// GetCustomerCenterConfig404JSONResponseBodyType defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig404JSONResponseBodyType string
+
+// GetCustomerCenterConfig423JSONResponseBodyObject defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig423JSONResponseBodyObject string
+
+// GetCustomerCenterConfig423JSONResponseBodyType defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig423JSONResponseBodyType string
+
+// GetCustomerCenterConfig429JSONResponseBodyObject defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig429JSONResponseBodyObject string
+
+// GetCustomerCenterConfig429JSONResponseBodyType defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig429JSONResponseBodyType string
+
+// GetCustomerCenterConfig500JSONResponseBodyObject defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig500JSONResponseBodyObject string
+
+// GetCustomerCenterConfig500JSONResponseBodyType defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig500JSONResponseBodyType string
+
+// GetCustomerCenterConfig503JSONResponseBodyObject defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig503JSONResponseBodyObject string
+
+// GetCustomerCenterConfig503JSONResponseBodyType defines parameters for GetCustomerCenterConfig.
+type GetCustomerCenterConfig503JSONResponseBodyType string
+
 // ListCustomerEventsParams defines parameters for ListCustomerEvents.
 type ListCustomerEventsParams struct {
-	Environment   *ListCustomerEventsParamsEnvironment `form:"environment,omitempty" json:"environment,omitempty"`
-	StartingAfter *string                              `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int                                 `form:"limit,omitempty" json:"limit,omitempty"`
+	// Environment Filter by environment, omit to include both.
+	Environment *ListCustomerEventsParamsEnvironment `form:"environment,omitempty" json:"environment,omitempty"`
+
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
+	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListCustomerEventsParamsEnvironment defines parameters for ListCustomerEvents.
@@ -41219,8 +40338,11 @@ type ListCustomerEvents503JSONResponseBodyType string
 
 // ListCustomerInvoicesParams defines parameters for ListCustomerInvoices.
 type ListCustomerInvoicesParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListCustomerInvoices400JSONResponseBodyObject defines parameters for ListCustomerInvoices.
@@ -41321,9 +40443,14 @@ type GetInvoice503JSONResponseBodyType string
 
 // ListPurchasesParams defines parameters for ListPurchases.
 type ListPurchasesParams struct {
-	Environment   *ListPurchasesParamsEnvironment `form:"environment,omitempty" json:"environment,omitempty"`
-	StartingAfter *string                         `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int                            `form:"limit,omitempty" json:"limit,omitempty"`
+	// Environment Filter by environment, omit to include both.
+	Environment *ListPurchasesParamsEnvironment `form:"environment,omitempty" json:"environment,omitempty"`
+
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
+	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListPurchasesParamsEnvironment defines parameters for ListPurchases.
@@ -41379,9 +40506,14 @@ type ListPurchases503JSONResponseBodyType string
 
 // ListSubscriptionsParams defines parameters for ListSubscriptions.
 type ListSubscriptionsParams struct {
-	Environment   *ListSubscriptionsParamsEnvironment `form:"environment,omitempty" json:"environment,omitempty"`
-	StartingAfter *string                             `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int                                `form:"limit,omitempty" json:"limit,omitempty"`
+	// Environment Filter by environment, omit to include both.
+	Environment *ListSubscriptionsParamsEnvironment `form:"environment,omitempty" json:"environment,omitempty"`
+
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
+	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListSubscriptionsParamsEnvironment defines parameters for ListSubscriptions.
@@ -41437,9 +40569,14 @@ type ListSubscriptions503JSONResponseBodyType string
 
 // ListVirtualCurrenciesBalancesParams defines parameters for ListVirtualCurrenciesBalances.
 type ListVirtualCurrenciesBalancesParams struct {
-	IncludeEmptyBalances *bool   `form:"include_empty_balances,omitempty" json:"include_empty_balances,omitempty"`
-	StartingAfter        *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit                *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	// IncludeEmptyBalances Whether to include virtual currencies with a zero balance (default false).
+	IncludeEmptyBalances *bool `form:"include_empty_balances,omitempty" json:"include_empty_balances,omitempty"`
+
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
+	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListVirtualCurrenciesBalances400JSONResponseBodyObject defines parameters for ListVirtualCurrenciesBalances.
@@ -41501,9 +40638,10 @@ type CreateVirtualCurrenciesTransactionJSONBody struct {
 
 // CreateVirtualCurrenciesTransactionParams defines parameters for CreateVirtualCurrenciesTransaction.
 type CreateVirtualCurrenciesTransactionParams struct {
+	// IncludeEmptyBalances Whether to include virtual currencies with a zero balance (default false).
 	IncludeEmptyBalances *bool `form:"include_empty_balances,omitempty" json:"include_empty_balances,omitempty"`
 
-	// IdempotencyKey This is an optional idempotency key to ensure exactly once execution of the request.
+	// IdempotencyKey This is an optional idempotency key to ensure exactly once execution of the request. Maximum length is 255 characters.
 	IdempotencyKey *string `json:"Idempotency-Key,omitempty"`
 }
 
@@ -41578,9 +40716,10 @@ type UpdateVirtualCurrenciesBalanceJSONBody struct {
 
 // UpdateVirtualCurrenciesBalanceParams defines parameters for UpdateVirtualCurrenciesBalance.
 type UpdateVirtualCurrenciesBalanceParams struct {
+	// IncludeEmptyBalances Whether to include virtual currencies with a zero balance (default false).
 	IncludeEmptyBalances *bool `form:"include_empty_balances,omitempty" json:"include_empty_balances,omitempty"`
 
-	// IdempotencyKey This is an optional idempotency key to ensure exactly once execution of the request.
+	// IdempotencyKey This is an optional idempotency key to ensure exactly once execution of the request. Maximum length is 255 characters.
 	IdempotencyKey *string `json:"Idempotency-Key,omitempty"`
 }
 
@@ -41644,709 +40783,13 @@ type UpdateVirtualCurrenciesBalance503JSONResponseBodyObject string
 // UpdateVirtualCurrenciesBalance503JSONResponseBodyType defines parameters for UpdateVirtualCurrenciesBalance.
 type UpdateVirtualCurrenciesBalance503JSONResponseBodyType string
 
-// ListDiscountsParams defines parameters for ListDiscounts.
-type ListDiscountsParams struct {
-	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// ListDiscounts400JSONResponseBodyObject defines parameters for ListDiscounts.
-type ListDiscounts400JSONResponseBodyObject string
-
-// ListDiscounts400JSONResponseBodyType defines parameters for ListDiscounts.
-type ListDiscounts400JSONResponseBodyType string
-
-// ListDiscounts401JSONResponseBodyObject defines parameters for ListDiscounts.
-type ListDiscounts401JSONResponseBodyObject string
-
-// ListDiscounts401JSONResponseBodyType defines parameters for ListDiscounts.
-type ListDiscounts401JSONResponseBodyType string
-
-// ListDiscounts403JSONResponseBodyObject defines parameters for ListDiscounts.
-type ListDiscounts403JSONResponseBodyObject string
-
-// ListDiscounts403JSONResponseBodyType defines parameters for ListDiscounts.
-type ListDiscounts403JSONResponseBodyType string
-
-// ListDiscounts404JSONResponseBodyObject defines parameters for ListDiscounts.
-type ListDiscounts404JSONResponseBodyObject string
-
-// ListDiscounts404JSONResponseBodyType defines parameters for ListDiscounts.
-type ListDiscounts404JSONResponseBodyType string
-
-// ListDiscounts423JSONResponseBodyObject defines parameters for ListDiscounts.
-type ListDiscounts423JSONResponseBodyObject string
-
-// ListDiscounts423JSONResponseBodyType defines parameters for ListDiscounts.
-type ListDiscounts423JSONResponseBodyType string
-
-// ListDiscounts429JSONResponseBodyObject defines parameters for ListDiscounts.
-type ListDiscounts429JSONResponseBodyObject string
-
-// ListDiscounts429JSONResponseBodyType defines parameters for ListDiscounts.
-type ListDiscounts429JSONResponseBodyType string
-
-// ListDiscounts500JSONResponseBodyObject defines parameters for ListDiscounts.
-type ListDiscounts500JSONResponseBodyObject string
-
-// ListDiscounts500JSONResponseBodyType defines parameters for ListDiscounts.
-type ListDiscounts500JSONResponseBodyType string
-
-// ListDiscounts503JSONResponseBodyObject defines parameters for ListDiscounts.
-type ListDiscounts503JSONResponseBodyObject string
-
-// ListDiscounts503JSONResponseBodyType defines parameters for ListDiscounts.
-type ListDiscounts503JSONResponseBodyType string
-
-// CreateDiscountJSONBody defines parameters for CreateDiscount.
-type CreateDiscountJSONBody struct {
-	// CustomerFacingName Name displayed to customers for this discount.
-	//
-	// Example: Spring sale
-	CustomerFacingName string `json:"customer_facing_name"`
-
-	// DurationMode The discount duration mode.
-	//
-	// Example: one_time
-	DurationMode CreateDiscountJSONBodyDurationMode `json:"duration_mode"`
-
-	// Eligibility Eligibility criteria for this discount.
-	//
-	// Example: everyone
-	Eligibility CreateDiscountJSONBodyEligibility `json:"eligibility"`
-
-	// FixedAmounts Fixed amount values by currency for fixed amount discounts.
-	FixedAmounts *map[string]struct {
-		// Amount Example: 4.99
-		Amount float64 `json:"amount"`
-
-		// Currency Example: USD
-		Currency string `json:"currency"`
-	} `json:"fixed_amounts,omitempty"`
-
-	// Identifier The customizable discount identifier (developer-defined).
-	//
-	// Example: spring_2026
-	Identifier string `json:"identifier"`
-
-	// Percentage Percentage value for percentage discounts.
-	//
-	// Example: 20
-	Percentage *int `json:"percentage,omitempty"`
-
-	// ProductIdentifiers Product identifiers that this discount applies to.
-	//
-	// Example: ["com.acme.product1","com.acme.product2"]
-	ProductIdentifiers *[]string `json:"product_identifiers,omitempty"`
-
-	// TimeWindow ISO-8601 duration when using time window duration mode.
-	//
-	// Example: P1M
-	TimeWindow *string `json:"time_window,omitempty"`
-
-	// Type The type of discount to apply.
-	//
-	// Example: percentage
-	Type CreateDiscountJSONBodyType `json:"type"`
-}
-
-// CreateDiscountJSONBodyDurationMode defines parameters for CreateDiscount.
-type CreateDiscountJSONBodyDurationMode string
-
-// CreateDiscountJSONBodyEligibility defines parameters for CreateDiscount.
-type CreateDiscountJSONBodyEligibility string
-
-// CreateDiscountJSONBodyType defines parameters for CreateDiscount.
-type CreateDiscountJSONBodyType string
-
-// CreateDiscount400JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount400JSONResponseBodyObject string
-
-// CreateDiscount400JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount400JSONResponseBodyType string
-
-// CreateDiscount401JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount401JSONResponseBodyObject string
-
-// CreateDiscount401JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount401JSONResponseBodyType string
-
-// CreateDiscount403JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount403JSONResponseBodyObject string
-
-// CreateDiscount403JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount403JSONResponseBodyType string
-
-// CreateDiscount404JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount404JSONResponseBodyObject string
-
-// CreateDiscount404JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount404JSONResponseBodyType string
-
-// CreateDiscount409JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount409JSONResponseBodyObject string
-
-// CreateDiscount409JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount409JSONResponseBodyType string
-
-// CreateDiscount422JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount422JSONResponseBodyObject string
-
-// CreateDiscount422JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount422JSONResponseBodyType string
-
-// CreateDiscount423JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount423JSONResponseBodyObject string
-
-// CreateDiscount423JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount423JSONResponseBodyType string
-
-// CreateDiscount429JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount429JSONResponseBodyObject string
-
-// CreateDiscount429JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount429JSONResponseBodyType string
-
-// CreateDiscount500JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount500JSONResponseBodyObject string
-
-// CreateDiscount500JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount500JSONResponseBodyType string
-
-// CreateDiscount503JSONResponseBodyObject defines parameters for CreateDiscount.
-type CreateDiscount503JSONResponseBodyObject string
-
-// CreateDiscount503JSONResponseBodyType defines parameters for CreateDiscount.
-type CreateDiscount503JSONResponseBodyType string
-
-// DeleteDiscount400JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount400JSONResponseBodyObject string
-
-// DeleteDiscount400JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount400JSONResponseBodyType string
-
-// DeleteDiscount401JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount401JSONResponseBodyObject string
-
-// DeleteDiscount401JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount401JSONResponseBodyType string
-
-// DeleteDiscount403JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount403JSONResponseBodyObject string
-
-// DeleteDiscount403JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount403JSONResponseBodyType string
-
-// DeleteDiscount404JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount404JSONResponseBodyObject string
-
-// DeleteDiscount404JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount404JSONResponseBodyType string
-
-// DeleteDiscount409JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount409JSONResponseBodyObject string
-
-// DeleteDiscount409JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount409JSONResponseBodyType string
-
-// DeleteDiscount422JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount422JSONResponseBodyObject string
-
-// DeleteDiscount422JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount422JSONResponseBodyType string
-
-// DeleteDiscount423JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount423JSONResponseBodyObject string
-
-// DeleteDiscount423JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount423JSONResponseBodyType string
-
-// DeleteDiscount429JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount429JSONResponseBodyObject string
-
-// DeleteDiscount429JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount429JSONResponseBodyType string
-
-// DeleteDiscount500JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount500JSONResponseBodyObject string
-
-// DeleteDiscount500JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount500JSONResponseBodyType string
-
-// DeleteDiscount503JSONResponseBodyObject defines parameters for DeleteDiscount.
-type DeleteDiscount503JSONResponseBodyObject string
-
-// DeleteDiscount503JSONResponseBodyType defines parameters for DeleteDiscount.
-type DeleteDiscount503JSONResponseBodyType string
-
-// GetDiscount400JSONResponseBodyObject defines parameters for GetDiscount.
-type GetDiscount400JSONResponseBodyObject string
-
-// GetDiscount400JSONResponseBodyType defines parameters for GetDiscount.
-type GetDiscount400JSONResponseBodyType string
-
-// GetDiscount401JSONResponseBodyObject defines parameters for GetDiscount.
-type GetDiscount401JSONResponseBodyObject string
-
-// GetDiscount401JSONResponseBodyType defines parameters for GetDiscount.
-type GetDiscount401JSONResponseBodyType string
-
-// GetDiscount403JSONResponseBodyObject defines parameters for GetDiscount.
-type GetDiscount403JSONResponseBodyObject string
-
-// GetDiscount403JSONResponseBodyType defines parameters for GetDiscount.
-type GetDiscount403JSONResponseBodyType string
-
-// GetDiscount404JSONResponseBodyObject defines parameters for GetDiscount.
-type GetDiscount404JSONResponseBodyObject string
-
-// GetDiscount404JSONResponseBodyType defines parameters for GetDiscount.
-type GetDiscount404JSONResponseBodyType string
-
-// GetDiscount423JSONResponseBodyObject defines parameters for GetDiscount.
-type GetDiscount423JSONResponseBodyObject string
-
-// GetDiscount423JSONResponseBodyType defines parameters for GetDiscount.
-type GetDiscount423JSONResponseBodyType string
-
-// GetDiscount429JSONResponseBodyObject defines parameters for GetDiscount.
-type GetDiscount429JSONResponseBodyObject string
-
-// GetDiscount429JSONResponseBodyType defines parameters for GetDiscount.
-type GetDiscount429JSONResponseBodyType string
-
-// GetDiscount500JSONResponseBodyObject defines parameters for GetDiscount.
-type GetDiscount500JSONResponseBodyObject string
-
-// GetDiscount500JSONResponseBodyType defines parameters for GetDiscount.
-type GetDiscount500JSONResponseBodyType string
-
-// GetDiscount503JSONResponseBodyObject defines parameters for GetDiscount.
-type GetDiscount503JSONResponseBodyObject string
-
-// GetDiscount503JSONResponseBodyType defines parameters for GetDiscount.
-type GetDiscount503JSONResponseBodyType string
-
-// UpdateDiscountOfferJSONBody defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOfferJSONBody struct {
-	// CustomerFacingName Name displayed to customers for this discount.
-	//
-	// Example: Spring sale 2026
-	CustomerFacingName *string `json:"customer_facing_name,omitempty"`
-
-	// DurationMode The discount duration mode.
-	//
-	// Example: one_time
-	DurationMode *UpdateDiscountOfferJSONBodyDurationMode `json:"duration_mode,omitempty"`
-
-	// Eligibility Eligibility criteria for this discount.
-	//
-	// Example: everyone
-	Eligibility *UpdateDiscountOfferJSONBodyEligibility `json:"eligibility,omitempty"`
-
-	// FixedAmounts Fixed amount values by currency for fixed amount discounts.
-	FixedAmounts *map[string]struct {
-		// Amount Example: 4.99
-		Amount float64 `json:"amount"`
-
-		// Currency Example: USD
-		Currency string `json:"currency"`
-	} `json:"fixed_amounts,omitempty"`
-
-	// Percentage Percentage value for percentage discounts.
-	//
-	// Example: 25
-	Percentage *int `json:"percentage,omitempty"`
-
-	// ProductIdentifiers Product identifiers that this discount applies to.
-	//
-	// Example: ["com.acme.product1","com.acme.product2"]
-	ProductIdentifiers *[]string `json:"product_identifiers,omitempty"`
-
-	// TimeWindow ISO-8601 duration when using time window duration mode.
-	//
-	// Example: P1M
-	TimeWindow *string `json:"time_window,omitempty"`
-
-	// Type The type of discount to apply.
-	//
-	// Example: percentage
-	Type *UpdateDiscountOfferJSONBodyType `json:"type,omitempty"`
-}
-
-// UpdateDiscountOfferJSONBodyDurationMode defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOfferJSONBodyDurationMode string
-
-// UpdateDiscountOfferJSONBodyEligibility defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOfferJSONBodyEligibility string
-
-// UpdateDiscountOfferJSONBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOfferJSONBodyType string
-
-// UpdateDiscountOffer400JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer400JSONResponseBodyObject string
-
-// UpdateDiscountOffer400JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer400JSONResponseBodyType string
-
-// UpdateDiscountOffer401JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer401JSONResponseBodyObject string
-
-// UpdateDiscountOffer401JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer401JSONResponseBodyType string
-
-// UpdateDiscountOffer403JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer403JSONResponseBodyObject string
-
-// UpdateDiscountOffer403JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer403JSONResponseBodyType string
-
-// UpdateDiscountOffer404JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer404JSONResponseBodyObject string
-
-// UpdateDiscountOffer404JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer404JSONResponseBodyType string
-
-// UpdateDiscountOffer409JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer409JSONResponseBodyObject string
-
-// UpdateDiscountOffer409JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer409JSONResponseBodyType string
-
-// UpdateDiscountOffer422JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer422JSONResponseBodyObject string
-
-// UpdateDiscountOffer422JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer422JSONResponseBodyType string
-
-// UpdateDiscountOffer423JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer423JSONResponseBodyObject string
-
-// UpdateDiscountOffer423JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer423JSONResponseBodyType string
-
-// UpdateDiscountOffer429JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer429JSONResponseBodyObject string
-
-// UpdateDiscountOffer429JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer429JSONResponseBodyType string
-
-// UpdateDiscountOffer500JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer500JSONResponseBodyObject string
-
-// UpdateDiscountOffer500JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer500JSONResponseBodyType string
-
-// UpdateDiscountOffer503JSONResponseBodyObject defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer503JSONResponseBodyObject string
-
-// UpdateDiscountOffer503JSONResponseBodyType defines parameters for UpdateDiscountOffer.
-type UpdateDiscountOffer503JSONResponseBodyType string
-
-// DisableDiscount400JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount400JSONResponseBodyObject string
-
-// DisableDiscount400JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount400JSONResponseBodyType string
-
-// DisableDiscount401JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount401JSONResponseBodyObject string
-
-// DisableDiscount401JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount401JSONResponseBodyType string
-
-// DisableDiscount403JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount403JSONResponseBodyObject string
-
-// DisableDiscount403JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount403JSONResponseBodyType string
-
-// DisableDiscount404JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount404JSONResponseBodyObject string
-
-// DisableDiscount404JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount404JSONResponseBodyType string
-
-// DisableDiscount409JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount409JSONResponseBodyObject string
-
-// DisableDiscount409JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount409JSONResponseBodyType string
-
-// DisableDiscount422JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount422JSONResponseBodyObject string
-
-// DisableDiscount422JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount422JSONResponseBodyType string
-
-// DisableDiscount423JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount423JSONResponseBodyObject string
-
-// DisableDiscount423JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount423JSONResponseBodyType string
-
-// DisableDiscount429JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount429JSONResponseBodyObject string
-
-// DisableDiscount429JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount429JSONResponseBodyType string
-
-// DisableDiscount500JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount500JSONResponseBodyObject string
-
-// DisableDiscount500JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount500JSONResponseBodyType string
-
-// DisableDiscount503JSONResponseBodyObject defines parameters for DisableDiscount.
-type DisableDiscount503JSONResponseBodyObject string
-
-// DisableDiscount503JSONResponseBodyType defines parameters for DisableDiscount.
-type DisableDiscount503JSONResponseBodyType string
-
-// EnableDiscount400JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount400JSONResponseBodyObject string
-
-// EnableDiscount400JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount400JSONResponseBodyType string
-
-// EnableDiscount401JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount401JSONResponseBodyObject string
-
-// EnableDiscount401JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount401JSONResponseBodyType string
-
-// EnableDiscount403JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount403JSONResponseBodyObject string
-
-// EnableDiscount403JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount403JSONResponseBodyType string
-
-// EnableDiscount404JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount404JSONResponseBodyObject string
-
-// EnableDiscount404JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount404JSONResponseBodyType string
-
-// EnableDiscount409JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount409JSONResponseBodyObject string
-
-// EnableDiscount409JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount409JSONResponseBodyType string
-
-// EnableDiscount422JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount422JSONResponseBodyObject string
-
-// EnableDiscount422JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount422JSONResponseBodyType string
-
-// EnableDiscount423JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount423JSONResponseBodyObject string
-
-// EnableDiscount423JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount423JSONResponseBodyType string
-
-// EnableDiscount429JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount429JSONResponseBodyObject string
-
-// EnableDiscount429JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount429JSONResponseBodyType string
-
-// EnableDiscount500JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount500JSONResponseBodyObject string
-
-// EnableDiscount500JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount500JSONResponseBodyType string
-
-// EnableDiscount503JSONResponseBodyObject defines parameters for EnableDiscount.
-type EnableDiscount503JSONResponseBodyObject string
-
-// EnableDiscount503JSONResponseBodyType defines parameters for EnableDiscount.
-type EnableDiscount503JSONResponseBodyType string
-
-// ListDiscountCodesParams defines parameters for ListDiscountCodes.
-type ListDiscountCodesParams struct {
-	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// ListDiscountCodes400JSONResponseBodyObject defines parameters for ListDiscountCodes.
-type ListDiscountCodes400JSONResponseBodyObject string
-
-// ListDiscountCodes400JSONResponseBodyType defines parameters for ListDiscountCodes.
-type ListDiscountCodes400JSONResponseBodyType string
-
-// ListDiscountCodes401JSONResponseBodyObject defines parameters for ListDiscountCodes.
-type ListDiscountCodes401JSONResponseBodyObject string
-
-// ListDiscountCodes401JSONResponseBodyType defines parameters for ListDiscountCodes.
-type ListDiscountCodes401JSONResponseBodyType string
-
-// ListDiscountCodes403JSONResponseBodyObject defines parameters for ListDiscountCodes.
-type ListDiscountCodes403JSONResponseBodyObject string
-
-// ListDiscountCodes403JSONResponseBodyType defines parameters for ListDiscountCodes.
-type ListDiscountCodes403JSONResponseBodyType string
-
-// ListDiscountCodes404JSONResponseBodyObject defines parameters for ListDiscountCodes.
-type ListDiscountCodes404JSONResponseBodyObject string
-
-// ListDiscountCodes404JSONResponseBodyType defines parameters for ListDiscountCodes.
-type ListDiscountCodes404JSONResponseBodyType string
-
-// ListDiscountCodes423JSONResponseBodyObject defines parameters for ListDiscountCodes.
-type ListDiscountCodes423JSONResponseBodyObject string
-
-// ListDiscountCodes423JSONResponseBodyType defines parameters for ListDiscountCodes.
-type ListDiscountCodes423JSONResponseBodyType string
-
-// ListDiscountCodes429JSONResponseBodyObject defines parameters for ListDiscountCodes.
-type ListDiscountCodes429JSONResponseBodyObject string
-
-// ListDiscountCodes429JSONResponseBodyType defines parameters for ListDiscountCodes.
-type ListDiscountCodes429JSONResponseBodyType string
-
-// ListDiscountCodes500JSONResponseBodyObject defines parameters for ListDiscountCodes.
-type ListDiscountCodes500JSONResponseBodyObject string
-
-// ListDiscountCodes500JSONResponseBodyType defines parameters for ListDiscountCodes.
-type ListDiscountCodes500JSONResponseBodyType string
-
-// ListDiscountCodes503JSONResponseBodyObject defines parameters for ListDiscountCodes.
-type ListDiscountCodes503JSONResponseBodyObject string
-
-// ListDiscountCodes503JSONResponseBodyType defines parameters for ListDiscountCodes.
-type ListDiscountCodes503JSONResponseBodyType string
-
-// CreateDiscountCodesJSONBody defines parameters for CreateDiscountCodes.
-type CreateDiscountCodesJSONBody struct {
-	// Codes List of discount codes to create and attach to the discount.
-	Codes []string `json:"codes"`
-}
-
-// CreateDiscountCodes400JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes400JSONResponseBodyObject string
-
-// CreateDiscountCodes400JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes400JSONResponseBodyType string
-
-// CreateDiscountCodes401JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes401JSONResponseBodyObject string
-
-// CreateDiscountCodes401JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes401JSONResponseBodyType string
-
-// CreateDiscountCodes403JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes403JSONResponseBodyObject string
-
-// CreateDiscountCodes403JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes403JSONResponseBodyType string
-
-// CreateDiscountCodes404JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes404JSONResponseBodyObject string
-
-// CreateDiscountCodes404JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes404JSONResponseBodyType string
-
-// CreateDiscountCodes409JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes409JSONResponseBodyObject string
-
-// CreateDiscountCodes409JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes409JSONResponseBodyType string
-
-// CreateDiscountCodes422JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes422JSONResponseBodyObject string
-
-// CreateDiscountCodes422JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes422JSONResponseBodyType string
-
-// CreateDiscountCodes423JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes423JSONResponseBodyObject string
-
-// CreateDiscountCodes423JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes423JSONResponseBodyType string
-
-// CreateDiscountCodes429JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes429JSONResponseBodyObject string
-
-// CreateDiscountCodes429JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes429JSONResponseBodyType string
-
-// CreateDiscountCodes500JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes500JSONResponseBodyObject string
-
-// CreateDiscountCodes500JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes500JSONResponseBodyType string
-
-// CreateDiscountCodes503JSONResponseBodyObject defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes503JSONResponseBodyObject string
-
-// CreateDiscountCodes503JSONResponseBodyType defines parameters for CreateDiscountCodes.
-type CreateDiscountCodes503JSONResponseBodyType string
-
-// DeleteDiscountCode400JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode400JSONResponseBodyObject string
-
-// DeleteDiscountCode400JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode400JSONResponseBodyType string
-
-// DeleteDiscountCode401JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode401JSONResponseBodyObject string
-
-// DeleteDiscountCode401JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode401JSONResponseBodyType string
-
-// DeleteDiscountCode403JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode403JSONResponseBodyObject string
-
-// DeleteDiscountCode403JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode403JSONResponseBodyType string
-
-// DeleteDiscountCode404JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode404JSONResponseBodyObject string
-
-// DeleteDiscountCode404JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode404JSONResponseBodyType string
-
-// DeleteDiscountCode409JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode409JSONResponseBodyObject string
-
-// DeleteDiscountCode409JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode409JSONResponseBodyType string
-
-// DeleteDiscountCode422JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode422JSONResponseBodyObject string
-
-// DeleteDiscountCode422JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode422JSONResponseBodyType string
-
-// DeleteDiscountCode423JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode423JSONResponseBodyObject string
-
-// DeleteDiscountCode423JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode423JSONResponseBodyType string
-
-// DeleteDiscountCode429JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode429JSONResponseBodyObject string
-
-// DeleteDiscountCode429JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode429JSONResponseBodyType string
-
-// DeleteDiscountCode500JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode500JSONResponseBodyObject string
-
-// DeleteDiscountCode500JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode500JSONResponseBodyType string
-
-// DeleteDiscountCode503JSONResponseBodyObject defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode503JSONResponseBodyObject string
-
-// DeleteDiscountCode503JSONResponseBodyType defines parameters for DeleteDiscountCode.
-type DeleteDiscountCode503JSONResponseBodyType string
-
 // ListEntitlementsParams defines parameters for ListEntitlements.
 type ListEntitlementsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Expand Specifies which fields in the response should be expanded.
 	//  Accepted values are: `items.product` (requires `project_configuration:products:read` permission).
@@ -42917,8 +41360,11 @@ type UnarchiveEntitlement503JSONResponseBodyType string
 
 // GetProductsFromEntitlementParams defines parameters for GetProductsFromEntitlement.
 type GetProductsFromEntitlementParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetProductsFromEntitlement400JSONResponseBodyObject defines parameters for GetProductsFromEntitlement.
@@ -42971,8 +41417,11 @@ type GetProductsFromEntitlement503JSONResponseBodyType string
 
 // ListWebhookIntegrationsParams defines parameters for ListWebhookIntegrations.
 type ListWebhookIntegrationsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListWebhookIntegrations400JSONResponseBodyObject defines parameters for ListWebhookIntegrations.
@@ -43251,6 +41700,87 @@ type UpdateWebhookIntegration503JSONResponseBodyObject string
 // UpdateWebhookIntegration503JSONResponseBodyType defines parameters for UpdateWebhookIntegration.
 type UpdateWebhookIntegration503JSONResponseBodyType string
 
+// CreateMediaAssetJSONBody defines parameters for CreateMediaAsset.
+type CreateMediaAssetJSONBody struct {
+	// ContentType MIME type for the uploaded image.
+	//
+	// Example: image/webp
+	ContentType CreateMediaAssetJSONBodyContentType `json:"content_type"`
+
+	// FileDataBase64 Base64-encoded image bytes.
+	//
+	// Example: UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA
+	FileDataBase64 string `json:"file_data_base64"`
+
+	// Filename File name for the uploaded image.
+	//
+	// Example: hero.webp
+	Filename string `json:"filename"`
+}
+
+// CreateMediaAssetJSONBodyContentType defines parameters for CreateMediaAsset.
+type CreateMediaAssetJSONBodyContentType string
+
+// CreateMediaAsset400JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset400JSONResponseBodyObject string
+
+// CreateMediaAsset400JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset400JSONResponseBodyType string
+
+// CreateMediaAsset401JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset401JSONResponseBodyObject string
+
+// CreateMediaAsset401JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset401JSONResponseBodyType string
+
+// CreateMediaAsset403JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset403JSONResponseBodyObject string
+
+// CreateMediaAsset403JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset403JSONResponseBodyType string
+
+// CreateMediaAsset404JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset404JSONResponseBodyObject string
+
+// CreateMediaAsset404JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset404JSONResponseBodyType string
+
+// CreateMediaAsset409JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset409JSONResponseBodyObject string
+
+// CreateMediaAsset409JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset409JSONResponseBodyType string
+
+// CreateMediaAsset422JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset422JSONResponseBodyObject string
+
+// CreateMediaAsset422JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset422JSONResponseBodyType string
+
+// CreateMediaAsset423JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset423JSONResponseBodyObject string
+
+// CreateMediaAsset423JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset423JSONResponseBodyType string
+
+// CreateMediaAsset429JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset429JSONResponseBodyObject string
+
+// CreateMediaAsset429JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset429JSONResponseBodyType string
+
+// CreateMediaAsset500JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset500JSONResponseBodyObject string
+
+// CreateMediaAsset500JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset500JSONResponseBodyType string
+
+// CreateMediaAsset503JSONResponseBodyObject defines parameters for CreateMediaAsset.
+type CreateMediaAsset503JSONResponseBodyObject string
+
+// CreateMediaAsset503JSONResponseBodyType defines parameters for CreateMediaAsset.
+type CreateMediaAsset503JSONResponseBodyType string
+
 // GetOverviewMetricsParams defines parameters for GetOverviewMetrics.
 type GetOverviewMetricsParams struct {
 	// Currency The currency to return metrics data in
@@ -43308,10 +41838,86 @@ type GetOverviewMetrics503JSONResponseBodyObject string
 // GetOverviewMetrics503JSONResponseBodyType defines parameters for GetOverviewMetrics.
 type GetOverviewMetrics503JSONResponseBodyType string
 
+// GetRevenueMetricParams defines parameters for GetRevenueMetric.
+type GetRevenueMetricParams struct {
+	// StartDate Start date for the data range (ISO 8601 format)
+	StartDate openapi_types.Date `form:"start_date" json:"start_date"`
+
+	// EndDate End date for the data range (ISO 8601 format)
+	EndDate openapi_types.Date `form:"end_date" json:"end_date"`
+
+	// Currency The currency to return metrics data in
+	Currency *GetRevenueMetricParamsCurrency `form:"currency,omitempty" json:"currency,omitempty"`
+
+	// RevenueType Which revenue definition to return as the metric value:
+	// - `revenue`: gross revenue.
+	// - `revenue_net_of_taxes`: revenue with taxes subtracted.
+	// - `proceeds`: revenue net of both taxes and store commission (the amount the
+	//   developer keeps).
+	RevenueType *GetRevenueMetricParamsRevenueType `form:"revenue_type,omitempty" json:"revenue_type,omitempty"`
+}
+
+// GetRevenueMetricParamsCurrency defines parameters for GetRevenueMetric.
+type GetRevenueMetricParamsCurrency string
+
+// GetRevenueMetricParamsRevenueType defines parameters for GetRevenueMetric.
+type GetRevenueMetricParamsRevenueType string
+
+// GetRevenueMetric400JSONResponseBodyObject defines parameters for GetRevenueMetric.
+type GetRevenueMetric400JSONResponseBodyObject string
+
+// GetRevenueMetric400JSONResponseBodyType defines parameters for GetRevenueMetric.
+type GetRevenueMetric400JSONResponseBodyType string
+
+// GetRevenueMetric401JSONResponseBodyObject defines parameters for GetRevenueMetric.
+type GetRevenueMetric401JSONResponseBodyObject string
+
+// GetRevenueMetric401JSONResponseBodyType defines parameters for GetRevenueMetric.
+type GetRevenueMetric401JSONResponseBodyType string
+
+// GetRevenueMetric403JSONResponseBodyObject defines parameters for GetRevenueMetric.
+type GetRevenueMetric403JSONResponseBodyObject string
+
+// GetRevenueMetric403JSONResponseBodyType defines parameters for GetRevenueMetric.
+type GetRevenueMetric403JSONResponseBodyType string
+
+// GetRevenueMetric404JSONResponseBodyObject defines parameters for GetRevenueMetric.
+type GetRevenueMetric404JSONResponseBodyObject string
+
+// GetRevenueMetric404JSONResponseBodyType defines parameters for GetRevenueMetric.
+type GetRevenueMetric404JSONResponseBodyType string
+
+// GetRevenueMetric423JSONResponseBodyObject defines parameters for GetRevenueMetric.
+type GetRevenueMetric423JSONResponseBodyObject string
+
+// GetRevenueMetric423JSONResponseBodyType defines parameters for GetRevenueMetric.
+type GetRevenueMetric423JSONResponseBodyType string
+
+// GetRevenueMetric429JSONResponseBodyObject defines parameters for GetRevenueMetric.
+type GetRevenueMetric429JSONResponseBodyObject string
+
+// GetRevenueMetric429JSONResponseBodyType defines parameters for GetRevenueMetric.
+type GetRevenueMetric429JSONResponseBodyType string
+
+// GetRevenueMetric500JSONResponseBodyObject defines parameters for GetRevenueMetric.
+type GetRevenueMetric500JSONResponseBodyObject string
+
+// GetRevenueMetric500JSONResponseBodyType defines parameters for GetRevenueMetric.
+type GetRevenueMetric500JSONResponseBodyType string
+
+// GetRevenueMetric503JSONResponseBodyObject defines parameters for GetRevenueMetric.
+type GetRevenueMetric503JSONResponseBodyObject string
+
+// GetRevenueMetric503JSONResponseBodyType defines parameters for GetRevenueMetric.
+type GetRevenueMetric503JSONResponseBodyType string
+
 // ListOfferingsParams defines parameters for ListOfferings.
 type ListOfferingsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Expand Specifies which fields in the response should be expanded.
 	//  Accepted values are: `items.package` (requires `project_configuration:packages:read` permission), `items.package.product` (requires `project_configuration:products:read` permission).
@@ -43771,8 +42377,11 @@ type UnarchiveOffering503JSONResponseBodyType string
 
 // ListPackagesParams defines parameters for ListPackages.
 type ListPackagesParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Expand Specifies which fields in the response should be expanded.
 	//  Accepted values are: `items.product` (requires `project_configuration:products:read` permission).
@@ -44233,8 +42842,11 @@ type DetachProductsFromPackage503JSONResponseBodyType string
 
 // GetProductsFromPackageParams defines parameters for GetProductsFromPackage.
 type GetProductsFromPackageParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetProductsFromPackage400JSONResponseBodyObject defines parameters for GetProductsFromPackage.
@@ -44287,8 +42899,11 @@ type GetProductsFromPackage503JSONResponseBodyType string
 
 // ListPaywallsParams defines parameters for ListPaywalls.
 type ListPaywallsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Expand Specifies which fields in the response should be expanded.
 	//  Accepted values are: `items.offering` (requires `project_configuration:offerings:read` permission).
@@ -44348,6 +42963,16 @@ type ListPaywalls503JSONResponseBodyType string
 
 // CreatePaywallJSONBody defines parameters for CreatePaywall.
 type CreatePaywallJSONBody struct {
+	union json.RawMessage
+}
+
+// CreatePaywallJSONBody0 defines parameters for CreatePaywall.
+type CreatePaywallJSONBody0 struct {
+	// AutomaticallyScaleFontSize Whether font sizes should automatically scale for this paywall. Defaults to true.
+	//
+	// Example: true
+	AutomaticallyScaleFontSize *bool `json:"automatically_scale_font_size,omitempty"`
+
 	// OfferingID The ID of the offering the paywall will be created for.
 	//
 	//
@@ -44533,15 +43158,315 @@ type GetPaywall503JSONResponseBodyObject string
 // GetPaywall503JSONResponseBodyType defines parameters for GetPaywall.
 type GetPaywall503JSONResponseBodyType string
 
+// UpdatePaywall400JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall400JSONResponseBodyObject string
+
+// UpdatePaywall400JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall400JSONResponseBodyType string
+
+// UpdatePaywall401JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall401JSONResponseBodyObject string
+
+// UpdatePaywall401JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall401JSONResponseBodyType string
+
+// UpdatePaywall403JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall403JSONResponseBodyObject string
+
+// UpdatePaywall403JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall403JSONResponseBodyType string
+
+// UpdatePaywall404JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall404JSONResponseBodyObject string
+
+// UpdatePaywall404JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall404JSONResponseBodyType string
+
+// UpdatePaywall409JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall409JSONResponseBodyObject string
+
+// UpdatePaywall409JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall409JSONResponseBodyType string
+
+// UpdatePaywall422JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall422JSONResponseBodyObject string
+
+// UpdatePaywall422JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall422JSONResponseBodyType string
+
+// UpdatePaywall423JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall423JSONResponseBodyObject string
+
+// UpdatePaywall423JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall423JSONResponseBodyType string
+
+// UpdatePaywall429JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall429JSONResponseBodyObject string
+
+// UpdatePaywall429JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall429JSONResponseBodyType string
+
+// UpdatePaywall500JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall500JSONResponseBodyObject string
+
+// UpdatePaywall500JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall500JSONResponseBodyType string
+
+// UpdatePaywall503JSONResponseBodyObject defines parameters for UpdatePaywall.
+type UpdatePaywall503JSONResponseBodyObject string
+
+// UpdatePaywall503JSONResponseBodyType defines parameters for UpdatePaywall.
+type UpdatePaywall503JSONResponseBodyType string
+
+// PublishPaywall400JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall400JSONResponseBodyObject string
+
+// PublishPaywall400JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall400JSONResponseBodyType string
+
+// PublishPaywall401JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall401JSONResponseBodyObject string
+
+// PublishPaywall401JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall401JSONResponseBodyType string
+
+// PublishPaywall403JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall403JSONResponseBodyObject string
+
+// PublishPaywall403JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall403JSONResponseBodyType string
+
+// PublishPaywall404JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall404JSONResponseBodyObject string
+
+// PublishPaywall404JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall404JSONResponseBodyType string
+
+// PublishPaywall409JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall409JSONResponseBodyObject string
+
+// PublishPaywall409JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall409JSONResponseBodyType string
+
+// PublishPaywall422JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall422JSONResponseBodyObject string
+
+// PublishPaywall422JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall422JSONResponseBodyType string
+
+// PublishPaywall423JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall423JSONResponseBodyObject string
+
+// PublishPaywall423JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall423JSONResponseBodyType string
+
+// PublishPaywall429JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall429JSONResponseBodyObject string
+
+// PublishPaywall429JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall429JSONResponseBodyType string
+
+// PublishPaywall500JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall500JSONResponseBodyObject string
+
+// PublishPaywall500JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall500JSONResponseBodyType string
+
+// PublishPaywall503JSONResponseBodyObject defines parameters for PublishPaywall.
+type PublishPaywall503JSONResponseBodyObject string
+
+// PublishPaywall503JSONResponseBodyType defines parameters for PublishPaywall.
+type PublishPaywall503JSONResponseBodyType string
+
+// UnpublishPaywall400JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall400JSONResponseBodyObject string
+
+// UnpublishPaywall400JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall400JSONResponseBodyType string
+
+// UnpublishPaywall401JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall401JSONResponseBodyObject string
+
+// UnpublishPaywall401JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall401JSONResponseBodyType string
+
+// UnpublishPaywall403JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall403JSONResponseBodyObject string
+
+// UnpublishPaywall403JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall403JSONResponseBodyType string
+
+// UnpublishPaywall404JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall404JSONResponseBodyObject string
+
+// UnpublishPaywall404JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall404JSONResponseBodyType string
+
+// UnpublishPaywall409JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall409JSONResponseBodyObject string
+
+// UnpublishPaywall409JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall409JSONResponseBodyType string
+
+// UnpublishPaywall422JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall422JSONResponseBodyObject string
+
+// UnpublishPaywall422JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall422JSONResponseBodyType string
+
+// UnpublishPaywall423JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall423JSONResponseBodyObject string
+
+// UnpublishPaywall423JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall423JSONResponseBodyType string
+
+// UnpublishPaywall429JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall429JSONResponseBodyObject string
+
+// UnpublishPaywall429JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall429JSONResponseBodyType string
+
+// UnpublishPaywall500JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall500JSONResponseBodyObject string
+
+// UnpublishPaywall500JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall500JSONResponseBodyType string
+
+// UnpublishPaywall503JSONResponseBodyObject defines parameters for UnpublishPaywall.
+type UnpublishPaywall503JSONResponseBodyObject string
+
+// UnpublishPaywall503JSONResponseBodyType defines parameters for UnpublishPaywall.
+type UnpublishPaywall503JSONResponseBodyType string
+
+// CreatePaywallVersionJSONBody defines parameters for CreatePaywallVersion.
+type CreatePaywallVersionJSONBody struct {
+	// Name A human-readable name for the paywall version snapshot.
+	//
+	// Example: V2 Orange Accents
+	Name string `json:"name"`
+}
+
+// CreatePaywallVersion400JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion400JSONResponseBodyObject string
+
+// CreatePaywallVersion400JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion400JSONResponseBodyType string
+
+// CreatePaywallVersion401JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion401JSONResponseBodyObject string
+
+// CreatePaywallVersion401JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion401JSONResponseBodyType string
+
+// CreatePaywallVersion403JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion403JSONResponseBodyObject string
+
+// CreatePaywallVersion403JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion403JSONResponseBodyType string
+
+// CreatePaywallVersion404JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion404JSONResponseBodyObject string
+
+// CreatePaywallVersion404JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion404JSONResponseBodyType string
+
+// CreatePaywallVersion409JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion409JSONResponseBodyObject string
+
+// CreatePaywallVersion409JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion409JSONResponseBodyType string
+
+// CreatePaywallVersion422JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion422JSONResponseBodyObject string
+
+// CreatePaywallVersion422JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion422JSONResponseBodyType string
+
+// CreatePaywallVersion423JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion423JSONResponseBodyObject string
+
+// CreatePaywallVersion423JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion423JSONResponseBodyType string
+
+// CreatePaywallVersion429JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion429JSONResponseBodyObject string
+
+// CreatePaywallVersion429JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion429JSONResponseBodyType string
+
+// CreatePaywallVersion500JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion500JSONResponseBodyObject string
+
+// CreatePaywallVersion500JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion500JSONResponseBodyType string
+
+// CreatePaywallVersion503JSONResponseBodyObject defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion503JSONResponseBodyObject string
+
+// CreatePaywallVersion503JSONResponseBodyType defines parameters for CreatePaywallVersion.
+type CreatePaywallVersion503JSONResponseBodyType string
+
+// GetPaywallVersion400JSONResponseBodyObject defines parameters for GetPaywallVersion.
+type GetPaywallVersion400JSONResponseBodyObject string
+
+// GetPaywallVersion400JSONResponseBodyType defines parameters for GetPaywallVersion.
+type GetPaywallVersion400JSONResponseBodyType string
+
+// GetPaywallVersion401JSONResponseBodyObject defines parameters for GetPaywallVersion.
+type GetPaywallVersion401JSONResponseBodyObject string
+
+// GetPaywallVersion401JSONResponseBodyType defines parameters for GetPaywallVersion.
+type GetPaywallVersion401JSONResponseBodyType string
+
+// GetPaywallVersion403JSONResponseBodyObject defines parameters for GetPaywallVersion.
+type GetPaywallVersion403JSONResponseBodyObject string
+
+// GetPaywallVersion403JSONResponseBodyType defines parameters for GetPaywallVersion.
+type GetPaywallVersion403JSONResponseBodyType string
+
+// GetPaywallVersion404JSONResponseBodyObject defines parameters for GetPaywallVersion.
+type GetPaywallVersion404JSONResponseBodyObject string
+
+// GetPaywallVersion404JSONResponseBodyType defines parameters for GetPaywallVersion.
+type GetPaywallVersion404JSONResponseBodyType string
+
+// GetPaywallVersion423JSONResponseBodyObject defines parameters for GetPaywallVersion.
+type GetPaywallVersion423JSONResponseBodyObject string
+
+// GetPaywallVersion423JSONResponseBodyType defines parameters for GetPaywallVersion.
+type GetPaywallVersion423JSONResponseBodyType string
+
+// GetPaywallVersion429JSONResponseBodyObject defines parameters for GetPaywallVersion.
+type GetPaywallVersion429JSONResponseBodyObject string
+
+// GetPaywallVersion429JSONResponseBodyType defines parameters for GetPaywallVersion.
+type GetPaywallVersion429JSONResponseBodyType string
+
+// GetPaywallVersion500JSONResponseBodyObject defines parameters for GetPaywallVersion.
+type GetPaywallVersion500JSONResponseBodyObject string
+
+// GetPaywallVersion500JSONResponseBodyType defines parameters for GetPaywallVersion.
+type GetPaywallVersion500JSONResponseBodyType string
+
+// GetPaywallVersion503JSONResponseBodyObject defines parameters for GetPaywallVersion.
+type GetPaywallVersion503JSONResponseBodyObject string
+
+// GetPaywallVersion503JSONResponseBodyType defines parameters for GetPaywallVersion.
+type GetPaywallVersion503JSONResponseBodyType string
+
 // ListProductsParams defines parameters for ListProducts.
 type ListProductsParams struct {
 	// AppID This is an optional query parameter to get a list of products of a given entitlement associated with a particular app
-	AppID         *string `form:"app_id,omitempty" json:"app_id,omitempty"`
+	AppID *string `form:"app_id,omitempty" json:"app_id,omitempty"`
+
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Expand Specifies which fields in the response should be expanded.
-	//  Accepted values are: `items.app` (requires `project_configuration:apps:read` permission).
+	//  Accepted values are: `items.app` (requires `project_configuration:apps:read` permission), `items.indicative_price` (requires `project_configuration:products:read` permission).
 	Expand *[]ListProductsParamsExpand `form:"expand,omitempty" json:"expand,omitempty"`
 }
 
@@ -44752,7 +43677,7 @@ type DeleteProduct503JSONResponseBodyType string
 // GetProductParams defines parameters for GetProduct.
 type GetProductParams struct {
 	// Expand Specifies which fields in the response should be expanded.
-	//  Accepted values are: `app` (requires `project_configuration:apps:read` permission).
+	//  Accepted values are: `app` (requires `project_configuration:apps:read` permission), `indicative_price` (requires `project_configuration:products:read` permission).
 	Expand *[]GetProductParamsExpand `form:"expand,omitempty" json:"expand,omitempty"`
 }
 
@@ -45234,8 +44159,11 @@ type RefundPurchase503JSONResponseBodyType string
 
 // ListPurchaseEntitlementsParams defines parameters for ListPurchaseEntitlements.
 type ListPurchaseEntitlementsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListPurchaseEntitlements400JSONResponseBodyObject defines parameters for ListPurchaseEntitlements.
@@ -45286,10 +44214,24 @@ type ListPurchaseEntitlements503JSONResponseBodyObject string
 // ListPurchaseEntitlements503JSONResponseBodyType defines parameters for ListPurchaseEntitlements.
 type ListPurchaseEntitlements503JSONResponseBodyType string
 
+// ListProductStoreStatePlansParams defines parameters for ListProductStoreStatePlans.
+type ListProductStoreStatePlansParams struct {
+	// Status Filter plans by status
+	Status        *ListProductStoreStatePlansParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+	StartingAfter *string                                 `form:"starting_after,omitempty" json:"starting_after,omitempty"`
+	Limit         *int                                    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListProductStoreStatePlansParamsStatus defines parameters for ListProductStoreStatePlans.
+type ListProductStoreStatePlansParamsStatus string
+
 // SearchSubscriptionsParams defines parameters for SearchSubscriptions.
 type SearchSubscriptionsParams struct {
 	// StoreSubscriptionIdentifier Store ID associated with the subscription for the current or next period.
 	StoreSubscriptionIdentifier string `form:"store_subscription_identifier" json:"store_subscription_identifier"`
+
+	// IncludeScheduled When true, includes subscriptions scheduled to start in the future in the response.
+	IncludeScheduled *bool `form:"include_scheduled,omitempty" json:"include_scheduled,omitempty"`
 }
 
 // SearchSubscriptions400JSONResponseBodyObject defines parameters for SearchSubscriptions.
@@ -45629,8 +44571,11 @@ type GetAuthorizedSubscriptionManagementURL503JSONResponseBodyType string
 
 // ListSubscriptionEntitlementsParams defines parameters for ListSubscriptionEntitlements.
 type ListSubscriptionEntitlementsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListSubscriptionEntitlements400JSONResponseBodyObject defines parameters for ListSubscriptionEntitlements.
@@ -45683,8 +44628,11 @@ type ListSubscriptionEntitlements503JSONResponseBodyType string
 
 // GetPlayStoreOrAppStoreSubscriptionTransactionsParams defines parameters for GetPlayStoreOrAppStoreSubscriptionTransactions.
 type GetPlayStoreOrAppStoreSubscriptionTransactionsParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Sort Column to sort the result list by.
 	Sort *GetPlayStoreOrAppStoreSubscriptionTransactionsParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
@@ -45747,70 +44695,73 @@ type GetPlayStoreOrAppStoreSubscriptionTransactions503JSONResponseBodyObject str
 // GetPlayStoreOrAppStoreSubscriptionTransactions503JSONResponseBodyType defines parameters for GetPlayStoreOrAppStoreSubscriptionTransactions.
 type GetPlayStoreOrAppStoreSubscriptionTransactions503JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction400JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction400JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction400JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction400JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction400JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction401JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction401JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction401JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction401JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction401JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction403JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction403JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction403JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction403JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction403JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction404JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction404JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction404JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction404JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction404JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction409JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction409JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction409JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction409JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction409JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction422JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction422JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction422JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction422JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction423JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction423JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction423JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction423JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction423JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction429JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction429JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction429JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction429JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction429JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction500JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction500JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction500JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction500JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction500JSONResponseBodyType string
 
-// RefundPlayStoreSubscriptionTransaction503JSONResponseBodyObject defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction503JSONResponseBodyObject string
+// RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyObject defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyObject string
 
-// RefundPlayStoreSubscriptionTransaction503JSONResponseBodyType defines parameters for RefundPlayStoreSubscriptionTransaction.
-type RefundPlayStoreSubscriptionTransaction503JSONResponseBodyType string
+// RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyType defines parameters for RefundPlayStoreOrGalaxySubscriptionTransaction.
+type RefundPlayStoreOrGalaxySubscriptionTransaction503JSONResponseBodyType string
 
 // ListVirtualCurrenciesParams defines parameters for ListVirtualCurrencies.
 type ListVirtualCurrenciesParams struct {
+	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
 	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListVirtualCurrencies400JSONResponseBodyObject defines parameters for ListVirtualCurrencies.
@@ -46282,15 +45233,6 @@ type CreateVirtualCurrenciesTransactionJSONRequestBody CreateVirtualCurrenciesTr
 // UpdateVirtualCurrenciesBalanceJSONRequestBody defines body for UpdateVirtualCurrenciesBalance for application/json ContentType.
 type UpdateVirtualCurrenciesBalanceJSONRequestBody UpdateVirtualCurrenciesBalanceJSONBody
 
-// CreateDiscountJSONRequestBody defines body for CreateDiscount for application/json ContentType.
-type CreateDiscountJSONRequestBody CreateDiscountJSONBody
-
-// UpdateDiscountOfferJSONRequestBody defines body for UpdateDiscountOffer for application/json ContentType.
-type UpdateDiscountOfferJSONRequestBody UpdateDiscountOfferJSONBody
-
-// CreateDiscountCodesJSONRequestBody defines body for CreateDiscountCodes for application/json ContentType.
-type CreateDiscountCodesJSONRequestBody CreateDiscountCodesJSONBody
-
 // CreateEntitlementJSONRequestBody defines body for CreateEntitlement for application/json ContentType.
 type CreateEntitlementJSONRequestBody CreateEntitlementJSONBody
 
@@ -46308,6 +45250,9 @@ type CreateWebhookIntegrationJSONRequestBody = CreateWebhookIntegrationInput
 
 // UpdateWebhookIntegrationJSONRequestBody defines body for UpdateWebhookIntegration for application/json ContentType.
 type UpdateWebhookIntegrationJSONRequestBody = UpdateWebhookIntegrationInput
+
+// CreateMediaAssetJSONRequestBody defines body for CreateMediaAsset for application/json ContentType.
+type CreateMediaAssetJSONRequestBody CreateMediaAssetJSONBody
 
 // CreateOfferingJSONRequestBody defines body for CreateOffering for application/json ContentType.
 type CreateOfferingJSONRequestBody CreateOfferingJSONBody
@@ -46333,6 +45278,12 @@ type DetachProductsFromPackageJSONRequestBody DetachProductsFromPackageJSONBody
 // CreatePaywallJSONRequestBody defines body for CreatePaywall for application/json ContentType.
 type CreatePaywallJSONRequestBody CreatePaywallJSONBody
 
+// UpdatePaywallJSONRequestBody defines body for UpdatePaywall for application/json ContentType.
+type UpdatePaywallJSONRequestBody = PaywallDraftUpdate
+
+// CreatePaywallVersionJSONRequestBody defines body for CreatePaywallVersion for application/json ContentType.
+type CreatePaywallVersionJSONRequestBody CreatePaywallVersionJSONBody
+
 // CreateProductJSONRequestBody defines body for CreateProduct for application/json ContentType.
 type CreateProductJSONRequestBody CreateProductJSONBody
 
@@ -46351,25 +45302,25 @@ type CreateVirtualCurrencyJSONRequestBody CreateVirtualCurrencyJSONBody
 // UpdateVirtualCurrencyJSONRequestBody defines body for UpdateVirtualCurrency for application/json ContentType.
 type UpdateVirtualCurrencyJSONRequestBody UpdateVirtualCurrencyJSONBody
 
-// Getter for additional properties for App. Returns the specified
+// Getter for additional properties for AmazonApp. Returns the specified
 // element and whether it was found
-func (a App) Get(fieldName string) (value interface{}, found bool) {
+func (a AmazonApp) Get(fieldName string) (value interface{}, found bool) {
 	if a.AdditionalProperties != nil {
 		value, found = a.AdditionalProperties[fieldName]
 	}
 	return
 }
 
-// Setter for additional properties for App
-func (a *App) Set(fieldName string, value interface{}) {
+// Setter for additional properties for AmazonApp
+func (a *AmazonApp) Set(fieldName string, value interface{}) {
 	if a.AdditionalProperties == nil {
 		a.AdditionalProperties = make(map[string]interface{})
 	}
 	a.AdditionalProperties[fieldName] = value
 }
 
-// Override default JSON handling for App to handle AdditionalProperties
-func (a *App) UnmarshalJSON(b []byte) error {
+// Override default JSON handling for AmazonApp to handle AdditionalProperties
+func (a *AmazonApp) UnmarshalJSON(b []byte) error {
 	object := make(map[string]json.RawMessage)
 	err := json.Unmarshal(b, &object)
 	if err != nil {
@@ -46384,14 +45335,6 @@ func (a *App) UnmarshalJSON(b []byte) error {
 		delete(object, "amazon")
 	}
 
-	if raw, found := object["app_store"]; found {
-		err = json.Unmarshal(raw, &a.AppStore)
-		if err != nil {
-			return fmt.Errorf("error reading 'app_store': %w", err)
-		}
-		delete(object, "app_store")
-	}
-
 	if raw, found := object["created_at"]; found {
 		err = json.Unmarshal(raw, &a.CreatedAt)
 		if err != nil {
@@ -46400,20 +45343,20 @@ func (a *App) UnmarshalJSON(b []byte) error {
 		delete(object, "created_at")
 	}
 
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
 	if raw, found := object["id"]; found {
 		err = json.Unmarshal(raw, &a.ID)
 		if err != nil {
 			return fmt.Errorf("error reading 'id': %w", err)
 		}
 		delete(object, "id")
-	}
-
-	if raw, found := object["mac_app_store"]; found {
-		err = json.Unmarshal(raw, &a.MacAppStore)
-		if err != nil {
-			return fmt.Errorf("error reading 'mac_app_store': %w", err)
-		}
-		delete(object, "mac_app_store")
 	}
 
 	if raw, found := object["name"]; found {
@@ -46432,52 +45375,12 @@ func (a *App) UnmarshalJSON(b []byte) error {
 		delete(object, "object")
 	}
 
-	if raw, found := object["paddle"]; found {
-		err = json.Unmarshal(raw, &a.Paddle)
-		if err != nil {
-			return fmt.Errorf("error reading 'paddle': %w", err)
-		}
-		delete(object, "paddle")
-	}
-
-	if raw, found := object["play_store"]; found {
-		err = json.Unmarshal(raw, &a.PlayStore)
-		if err != nil {
-			return fmt.Errorf("error reading 'play_store': %w", err)
-		}
-		delete(object, "play_store")
-	}
-
 	if raw, found := object["project_id"]; found {
 		err = json.Unmarshal(raw, &a.ProjectID)
 		if err != nil {
 			return fmt.Errorf("error reading 'project_id': %w", err)
 		}
 		delete(object, "project_id")
-	}
-
-	if raw, found := object["rc_billing"]; found {
-		err = json.Unmarshal(raw, &a.RcBilling)
-		if err != nil {
-			return fmt.Errorf("error reading 'rc_billing': %w", err)
-		}
-		delete(object, "rc_billing")
-	}
-
-	if raw, found := object["roku"]; found {
-		err = json.Unmarshal(raw, &a.Roku)
-		if err != nil {
-			return fmt.Errorf("error reading 'roku': %w", err)
-		}
-		delete(object, "roku")
-	}
-
-	if raw, found := object["stripe"]; found {
-		err = json.Unmarshal(raw, &a.Stripe)
-		if err != nil {
-			return fmt.Errorf("error reading 'stripe': %w", err)
-		}
-		delete(object, "stripe")
 	}
 
 	if raw, found := object["type"]; found {
@@ -46502,23 +45405,14 @@ func (a *App) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Override default JSON handling for App to handle AdditionalProperties
-func (a App) MarshalJSON() ([]byte, error) {
+// Override default JSON handling for AmazonApp to handle AdditionalProperties
+func (a AmazonApp) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
 
-	if a.Amazon != nil {
-		object["amazon"], err = json.Marshal(a.Amazon)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'amazon': %w", err)
-		}
-	}
-
-	if a.AppStore != nil {
-		object["app_store"], err = json.Marshal(a.AppStore)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'app_store': %w", err)
-		}
+	object["amazon"], err = json.Marshal(a.Amazon)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'amazon': %w", err)
 	}
 
 	object["created_at"], err = json.Marshal(a.CreatedAt)
@@ -46526,16 +45420,14 @@ func (a App) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
 	}
 
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
 	object["id"], err = json.Marshal(a.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'id': %w", err)
-	}
-
-	if a.MacAppStore != nil {
-		object["mac_app_store"], err = json.Marshal(a.MacAppStore)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'mac_app_store': %w", err)
-		}
 	}
 
 	object["name"], err = json.Marshal(a.Name)
@@ -46548,18 +45440,227 @@ func (a App) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'object': %w", err)
 	}
 
-	if a.Paddle != nil {
-		object["paddle"], err = json.Marshal(a.Paddle)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'paddle': %w", err)
-		}
+	object["project_id"], err = json.Marshal(a.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
 	}
 
-	if a.PlayStore != nil {
-		object["play_store"], err = json.Marshal(a.PlayStore)
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'play_store': %w", err)
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
 		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for AmazonApp_Amazon. Returns the specified
+// element and whether it was found
+func (a AmazonApp_Amazon) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for AmazonApp_Amazon
+func (a *AmazonApp_Amazon) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for AmazonApp_Amazon to handle AdditionalProperties
+func (a *AmazonApp_Amazon) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["package_name"]; found {
+		err = json.Unmarshal(raw, &a.PackageName)
+		if err != nil {
+			return fmt.Errorf("error reading 'package_name': %w", err)
+		}
+		delete(object, "package_name")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for AmazonApp_Amazon to handle AdditionalProperties
+func (a AmazonApp_Amazon) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["package_name"], err = json.Marshal(a.PackageName)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'package_name': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for AppStoreApp. Returns the specified
+// element and whether it was found
+func (a AppStoreApp) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for AppStoreApp
+func (a *AppStoreApp) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for AppStoreApp to handle AdditionalProperties
+func (a *AppStoreApp) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["app_store"]; found {
+		err = json.Unmarshal(raw, &a.AppStore)
+		if err != nil {
+			return fmt.Errorf("error reading 'app_store': %w", err)
+		}
+		delete(object, "app_store")
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &a.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
+		}
+		delete(object, "project_id")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for AppStoreApp to handle AdditionalProperties
+func (a AppStoreApp) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["app_store"], err = json.Marshal(a.AppStore)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'app_store': %w", err)
+	}
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
 	}
 
 	object["project_id"], err = json.Marshal(a.ProjectID)
@@ -46567,30 +45668,253 @@ func (a App) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
 	}
 
-	if a.RcBilling != nil {
-		object["rc_billing"], err = json.Marshal(a.RcBilling)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'rc_billing': %w", err)
-		}
-	}
-
-	if a.Roku != nil {
-		object["roku"], err = json.Marshal(a.Roku)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'roku': %w", err)
-		}
-	}
-
-	if a.Stripe != nil {
-		object["stripe"], err = json.Marshal(a.Stripe)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'stripe': %w", err)
-		}
-	}
-
 	object["type"], err = json.Marshal(a.Type)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for AppStoreApp_AppStore. Returns the specified
+// element and whether it was found
+func (a AppStoreApp_AppStore) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for AppStoreApp_AppStore
+func (a *AppStoreApp_AppStore) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for AppStoreApp_AppStore to handle AdditionalProperties
+func (a *AppStoreApp_AppStore) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["app_store_connect_api_key_configured"]; found {
+		err = json.Unmarshal(raw, &a.AppStoreConnectAPIKeyConfigured)
+		if err != nil {
+			return fmt.Errorf("error reading 'app_store_connect_api_key_configured': %w", err)
+		}
+		delete(object, "app_store_connect_api_key_configured")
+	}
+
+	if raw, found := object["app_store_connect_vendor_number"]; found {
+		err = json.Unmarshal(raw, &a.AppStoreConnectVendorNumber)
+		if err != nil {
+			return fmt.Errorf("error reading 'app_store_connect_vendor_number': %w", err)
+		}
+		delete(object, "app_store_connect_vendor_number")
+	}
+
+	if raw, found := object["bundle_id"]; found {
+		err = json.Unmarshal(raw, &a.BundleID)
+		if err != nil {
+			return fmt.Errorf("error reading 'bundle_id': %w", err)
+		}
+		delete(object, "bundle_id")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["subscription_key_configured"]; found {
+		err = json.Unmarshal(raw, &a.SubscriptionKeyConfigured)
+		if err != nil {
+			return fmt.Errorf("error reading 'subscription_key_configured': %w", err)
+		}
+		delete(object, "subscription_key_configured")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for AppStoreApp_AppStore to handle AdditionalProperties
+func (a AppStoreApp_AppStore) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["app_store_connect_api_key_configured"], err = json.Marshal(a.AppStoreConnectAPIKeyConfigured)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'app_store_connect_api_key_configured': %w", err)
+	}
+
+	if a.AppStoreConnectVendorNumber != nil {
+		object["app_store_connect_vendor_number"], err = json.Marshal(a.AppStoreConnectVendorNumber)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'app_store_connect_vendor_number': %w", err)
+		}
+	}
+
+	object["bundle_id"], err = json.Marshal(a.BundleID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'bundle_id': %w", err)
+	}
+
+	if a.CustomURLScheme != nil {
+		object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+		}
+	}
+
+	object["subscription_key_configured"], err = json.Marshal(a.SubscriptionKeyConfigured)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'subscription_key_configured': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for ChartFilterOption. Returns the specified
+// element and whether it was found
+func (a ChartFilterOption) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for ChartFilterOption
+func (a *ChartFilterOption) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for ChartFilterOption to handle AdditionalProperties
+func (a *ChartFilterOption) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["display_name"]; found {
+		err = json.Unmarshal(raw, &a.DisplayName)
+		if err != nil {
+			return fmt.Errorf("error reading 'display_name': %w", err)
+		}
+		delete(object, "display_name")
+	}
+
+	if raw, found := object["group_display_name"]; found {
+		err = json.Unmarshal(raw, &a.GroupDisplayName)
+		if err != nil {
+			return fmt.Errorf("error reading 'group_display_name': %w", err)
+		}
+		delete(object, "group_display_name")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["options"]; found {
+		err = json.Unmarshal(raw, &a.Options)
+		if err != nil {
+			return fmt.Errorf("error reading 'options': %w", err)
+		}
+		delete(object, "options")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for ChartFilterOption to handle AdditionalProperties
+func (a ChartFilterOption) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["display_name"], err = json.Marshal(a.DisplayName)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'display_name': %w", err)
+	}
+
+	if a.GroupDisplayName != nil {
+		object["group_display_name"], err = json.Marshal(a.GroupDisplayName)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'group_display_name': %w", err)
+		}
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	if a.Options != nil {
+		object["options"], err = json.Marshal(a.Options)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'options': %w", err)
+		}
 	}
 
 	for fieldName, field := range a.AdditionalProperties {
@@ -46681,44 +46005,53 @@ func (a ChartFilterOption_Options_Item) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
-// Getter for additional properties for ListBlockedCustomers. Returns the specified
+// Getter for additional properties for ChartSegmentOption. Returns the specified
 // element and whether it was found
-func (a ListBlockedCustomers) Get(fieldName string) (value struct {
-	// UpdatedAtMs Timestamp when the customer was blocked, in milliseconds since epoch
-	//
-	// Example: 1758617658369
-	UpdatedAtMs int `json:"updated_at_ms"`
-}, found bool) {
+func (a ChartSegmentOption) Get(fieldName string) (value interface{}, found bool) {
 	if a.AdditionalProperties != nil {
 		value, found = a.AdditionalProperties[fieldName]
 	}
 	return
 }
 
-// Setter for additional properties for ListBlockedCustomers
-func (a *ListBlockedCustomers) Set(fieldName string, value struct {
-	// UpdatedAtMs Timestamp when the customer was blocked, in milliseconds since epoch
-	//
-	// Example: 1758617658369
-	UpdatedAtMs int `json:"updated_at_ms"`
-}) {
+// Setter for additional properties for ChartSegmentOption
+func (a *ChartSegmentOption) Set(fieldName string, value interface{}) {
 	if a.AdditionalProperties == nil {
-		a.AdditionalProperties = make(map[string]struct {
-			// UpdatedAtMs Timestamp when the customer was blocked, in milliseconds since epoch
-			//
-			// Example: 1758617658369
-			UpdatedAtMs int `json:"updated_at_ms"`
-		})
+		a.AdditionalProperties = make(map[string]interface{})
 	}
 	a.AdditionalProperties[fieldName] = value
 }
 
-// Override default JSON handling for ListBlockedCustomers to handle AdditionalProperties
-func (a *ListBlockedCustomers) UnmarshalJSON(b []byte) error {
+// Override default JSON handling for ChartSegmentOption to handle AdditionalProperties
+func (a *ChartSegmentOption) UnmarshalJSON(b []byte) error {
 	object := make(map[string]json.RawMessage)
 	err := json.Unmarshal(b, &object)
 	if err != nil {
 		return err
+	}
+
+	if raw, found := object["display_name"]; found {
+		err = json.Unmarshal(raw, &a.DisplayName)
+		if err != nil {
+			return fmt.Errorf("error reading 'display_name': %w", err)
+		}
+		delete(object, "display_name")
+	}
+
+	if raw, found := object["group_display_name"]; found {
+		err = json.Unmarshal(raw, &a.GroupDisplayName)
+		if err != nil {
+			return fmt.Errorf("error reading 'group_display_name': %w", err)
+		}
+		delete(object, "group_display_name")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
 	}
 
 	if raw, found := object["object"]; found {
@@ -46730,19 +46063,9 @@ func (a *ListBlockedCustomers) UnmarshalJSON(b []byte) error {
 	}
 
 	if len(object) != 0 {
-		a.AdditionalProperties = make(map[string]struct {
-			// UpdatedAtMs Timestamp when the customer was blocked, in milliseconds since epoch
-			//
-			// Example: 1758617658369
-			UpdatedAtMs int `json:"updated_at_ms"`
-		})
+		a.AdditionalProperties = make(map[string]interface{})
 		for fieldName, fieldBuf := range object {
-			var fieldVal struct {
-				// UpdatedAtMs Timestamp when the customer was blocked, in milliseconds since epoch
-				//
-				// Example: 1758617658369
-				UpdatedAtMs int `json:"updated_at_ms"`
-			}
+			var fieldVal interface{}
 			err := json.Unmarshal(fieldBuf, &fieldVal)
 			if err != nil {
 				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
@@ -46753,10 +46076,27 @@ func (a *ListBlockedCustomers) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Override default JSON handling for ListBlockedCustomers to handle AdditionalProperties
-func (a ListBlockedCustomers) MarshalJSON() ([]byte, error) {
+// Override default JSON handling for ChartSegmentOption to handle AdditionalProperties
+func (a ChartSegmentOption) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
+
+	object["display_name"], err = json.Marshal(a.DisplayName)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'display_name': %w", err)
+	}
+
+	if a.GroupDisplayName != nil {
+		object["group_display_name"], err = json.Marshal(a.GroupDisplayName)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'group_display_name': %w", err)
+		}
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
 
 	object["object"], err = json.Marshal(a.Object)
 	if err != nil {
@@ -46772,105 +46112,2654 @@ func (a ListBlockedCustomers) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
-// AsDiscountPercentageVariant returns the union data inside the Discount as a DiscountPercentageVariant
-func (t Discount) AsDiscountPercentageVariant() (DiscountPercentageVariant, error) {
-	var body DiscountPercentageVariant
-	err := json.Unmarshal(t.union, &body)
-	return body, err
+// Getter for additional properties for ChartSeries. Returns the specified
+// element and whether it was found
+func (a ChartSeries) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
 }
 
-// FromDiscountPercentageVariant overwrites any union data inside the Discount as the provided DiscountPercentageVariant
-func (t *Discount) FromDiscountPercentageVariant(v DiscountPercentageVariant) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
+// Setter for additional properties for ChartSeries
+func (a *ChartSeries) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"percentage"}`))
-	t.union = b
-	return err
+	a.AdditionalProperties[fieldName] = value
 }
 
-// MergeDiscountPercentageVariant performs a merge with any union data inside the Discount, using the provided DiscountPercentageVariant
-func (t *Discount) MergeDiscountPercentageVariant(v DiscountPercentageVariant) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"percentage"}`))
+// Override default JSON handling for ChartSeries to handle AdditionalProperties
+func (a *ChartSeries) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
+	if raw, found := object["chartable"]; found {
+		err = json.Unmarshal(raw, &a.Chartable)
+		if err != nil {
+			return fmt.Errorf("error reading 'chartable': %w", err)
+		}
+		delete(object, "chartable")
+	}
+
+	if raw, found := object["decimal_precision"]; found {
+		err = json.Unmarshal(raw, &a.DecimalPrecision)
+		if err != nil {
+			return fmt.Errorf("error reading 'decimal_precision': %w", err)
+		}
+		delete(object, "decimal_precision")
+	}
+
+	if raw, found := object["description"]; found {
+		err = json.Unmarshal(raw, &a.Description)
+		if err != nil {
+			return fmt.Errorf("error reading 'description': %w", err)
+		}
+		delete(object, "description")
+	}
+
+	if raw, found := object["display_name"]; found {
+		err = json.Unmarshal(raw, &a.DisplayName)
+		if err != nil {
+			return fmt.Errorf("error reading 'display_name': %w", err)
+		}
+		delete(object, "display_name")
+	}
+
+	if raw, found := object["is_other"]; found {
+		err = json.Unmarshal(raw, &a.IsOther)
+		if err != nil {
+			return fmt.Errorf("error reading 'is_other': %w", err)
+		}
+		delete(object, "is_other")
+	}
+
+	if raw, found := object["is_total"]; found {
+		err = json.Unmarshal(raw, &a.IsTotal)
+		if err != nil {
+			return fmt.Errorf("error reading 'is_total': %w", err)
+		}
+		delete(object, "is_total")
+	}
+
+	if raw, found := object["nested_measures"]; found {
+		err = json.Unmarshal(raw, &a.NestedMeasures)
+		if err != nil {
+			return fmt.Errorf("error reading 'nested_measures': %w", err)
+		}
+		delete(object, "nested_measures")
+	}
+
+	if raw, found := object["scale"]; found {
+		err = json.Unmarshal(raw, &a.Scale)
+		if err != nil {
+			return fmt.Errorf("error reading 'scale': %w", err)
+		}
+		delete(object, "scale")
+	}
+
+	if raw, found := object["tabulable"]; found {
+		err = json.Unmarshal(raw, &a.Tabulable)
+		if err != nil {
+			return fmt.Errorf("error reading 'tabulable': %w", err)
+		}
+		delete(object, "tabulable")
+	}
+
+	if raw, found := object["unit"]; found {
+		err = json.Unmarshal(raw, &a.Unit)
+		if err != nil {
+			return fmt.Errorf("error reading 'unit': %w", err)
+		}
+		delete(object, "unit")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
 }
 
-// AsDiscountFixedAmountVariant returns the union data inside the Discount as a DiscountFixedAmountVariant
-func (t Discount) AsDiscountFixedAmountVariant() (DiscountFixedAmountVariant, error) {
-	var body DiscountFixedAmountVariant
-	err := json.Unmarshal(t.union, &body)
-	return body, err
+// Override default JSON handling for ChartSeries to handle AdditionalProperties
+func (a ChartSeries) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Chartable != nil {
+		object["chartable"], err = json.Marshal(a.Chartable)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'chartable': %w", err)
+		}
+	}
+
+	if a.DecimalPrecision != nil {
+		object["decimal_precision"], err = json.Marshal(a.DecimalPrecision)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'decimal_precision': %w", err)
+		}
+	}
+
+	if a.Description != nil {
+		object["description"], err = json.Marshal(a.Description)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'description': %w", err)
+		}
+	}
+
+	object["display_name"], err = json.Marshal(a.DisplayName)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'display_name': %w", err)
+	}
+
+	if a.IsOther != nil {
+		object["is_other"], err = json.Marshal(a.IsOther)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'is_other': %w", err)
+		}
+	}
+
+	if a.IsTotal != nil {
+		object["is_total"], err = json.Marshal(a.IsTotal)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'is_total': %w", err)
+		}
+	}
+
+	if a.NestedMeasures != nil {
+		object["nested_measures"], err = json.Marshal(a.NestedMeasures)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'nested_measures': %w", err)
+		}
+	}
+
+	if a.Scale != nil {
+		object["scale"], err = json.Marshal(a.Scale)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'scale': %w", err)
+		}
+	}
+
+	if a.Tabulable != nil {
+		object["tabulable"], err = json.Marshal(a.Tabulable)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'tabulable': %w", err)
+		}
+	}
+
+	if a.Unit != nil {
+		object["unit"], err = json.Marshal(a.Unit)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'unit': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
 }
 
-// FromDiscountFixedAmountVariant overwrites any union data inside the Discount as the provided DiscountFixedAmountVariant
-func (t *Discount) FromDiscountFixedAmountVariant(v DiscountFixedAmountVariant) error {
-	b, err := json.Marshal(v)
+// Getter for additional properties for MacAppStoreApp. Returns the specified
+// element and whether it was found
+func (a MacAppStoreApp) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for MacAppStoreApp
+func (a *MacAppStoreApp) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for MacAppStoreApp to handle AdditionalProperties
+func (a *MacAppStoreApp) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"fixed_amount"}`))
-	t.union = b
-	return err
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["mac_app_store"]; found {
+		err = json.Unmarshal(raw, &a.MacAppStore)
+		if err != nil {
+			return fmt.Errorf("error reading 'mac_app_store': %w", err)
+		}
+		delete(object, "mac_app_store")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &a.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
+		}
+		delete(object, "project_id")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
 }
 
-// MergeDiscountFixedAmountVariant performs a merge with any union data inside the Discount, using the provided DiscountFixedAmountVariant
-func (t *Discount) MergeDiscountFixedAmountVariant(v DiscountFixedAmountVariant) error {
-	b, err := json.Marshal(v)
+// Override default JSON handling for MacAppStoreApp to handle AdditionalProperties
+func (a MacAppStoreApp) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["mac_app_store"], err = json.Marshal(a.MacAppStore)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'mac_app_store': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["project_id"], err = json.Marshal(a.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for MacAppStoreApp_MacAppStore. Returns the specified
+// element and whether it was found
+func (a MacAppStoreApp_MacAppStore) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for MacAppStoreApp_MacAppStore
+func (a *MacAppStoreApp_MacAppStore) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for MacAppStoreApp_MacAppStore to handle AdditionalProperties
+func (a *MacAppStoreApp_MacAppStore) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
 	if err != nil {
 		return err
 	}
-	b, err = runtime.JSONMerge(b, []byte(`{"type":"fixed_amount"}`))
+
+	if raw, found := object["bundle_id"]; found {
+		err = json.Unmarshal(raw, &a.BundleID)
+		if err != nil {
+			return fmt.Errorf("error reading 'bundle_id': %w", err)
+		}
+		delete(object, "bundle_id")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for MacAppStoreApp_MacAppStore to handle AdditionalProperties
+func (a MacAppStoreApp_MacAppStore) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["bundle_id"], err = json.Marshal(a.BundleID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'bundle_id': %w", err)
+	}
+
+	if a.CustomURLScheme != nil {
+		object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for MonetaryAmount. Returns the specified
+// element and whether it was found
+func (a MonetaryAmount) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for MonetaryAmount
+func (a *MonetaryAmount) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for MonetaryAmount to handle AdditionalProperties
+func (a *MonetaryAmount) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
 	if err != nil {
 		return err
 	}
 
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t Discount) Discriminator() (string, error) {
-	var discriminator struct {
-		Discriminator string `json:"type"`
+	if raw, found := object["commission"]; found {
+		err = json.Unmarshal(raw, &a.Commission)
+		if err != nil {
+			return fmt.Errorf("error reading 'commission': %w", err)
+		}
+		delete(object, "commission")
 	}
-	err := json.Unmarshal(t.union, &discriminator)
-	return discriminator.Discriminator, err
+
+	if raw, found := object["currency"]; found {
+		err = json.Unmarshal(raw, &a.Currency)
+		if err != nil {
+			return fmt.Errorf("error reading 'currency': %w", err)
+		}
+		delete(object, "currency")
+	}
+
+	if raw, found := object["gross"]; found {
+		err = json.Unmarshal(raw, &a.Gross)
+		if err != nil {
+			return fmt.Errorf("error reading 'gross': %w", err)
+		}
+		delete(object, "gross")
+	}
+
+	if raw, found := object["proceeds"]; found {
+		err = json.Unmarshal(raw, &a.Proceeds)
+		if err != nil {
+			return fmt.Errorf("error reading 'proceeds': %w", err)
+		}
+		delete(object, "proceeds")
+	}
+
+	if raw, found := object["tax"]; found {
+		err = json.Unmarshal(raw, &a.Tax)
+		if err != nil {
+			return fmt.Errorf("error reading 'tax': %w", err)
+		}
+		delete(object, "tax")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
 }
 
-func (t Discount) ValueByDiscriminator() (interface{}, error) {
-	discriminator, err := t.Discriminator()
+// Override default JSON handling for MonetaryAmount to handle AdditionalProperties
+func (a MonetaryAmount) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Commission != nil {
+		object["commission"], err = json.Marshal(a.Commission)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'commission': %w", err)
+		}
+	}
+
+	object["currency"], err = json.Marshal(a.Currency)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error marshaling 'currency': %w", err)
 	}
-	switch discriminator {
-	case "fixed_amount":
-		return t.AsDiscountFixedAmountVariant()
-	case "percentage":
-		return t.AsDiscountPercentageVariant()
-	default:
-		return nil, errors.New("unknown discriminator value: " + discriminator)
+
+	object["gross"], err = json.Marshal(a.Gross)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'gross': %w", err)
 	}
+
+	object["proceeds"], err = json.Marshal(a.Proceeds)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'proceeds': %w", err)
+	}
+
+	object["tax"], err = json.Marshal(a.Tax)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'tax': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
 }
 
-func (t Discount) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
+// Getter for additional properties for OneTimeProduct. Returns the specified
+// element and whether it was found
+func (a OneTimeProduct) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
 }
 
-func (t *Discount) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
+// Setter for additional properties for OneTimeProduct
+func (a *OneTimeProduct) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for OneTimeProduct to handle AdditionalProperties
+func (a *OneTimeProduct) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["is_consumable"]; found {
+		err = json.Unmarshal(raw, &a.IsConsumable)
+		if err != nil {
+			return fmt.Errorf("error reading 'is_consumable': %w", err)
+		}
+		delete(object, "is_consumable")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for OneTimeProduct to handle AdditionalProperties
+func (a OneTimeProduct) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["is_consumable"], err = json.Marshal(a.IsConsumable)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'is_consumable': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for PackageProductAssociation. Returns the specified
+// element and whether it was found
+func (a PackageProductAssociation) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for PackageProductAssociation
+func (a *PackageProductAssociation) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for PackageProductAssociation to handle AdditionalProperties
+func (a *PackageProductAssociation) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["eligibility_criteria"]; found {
+		err = json.Unmarshal(raw, &a.EligibilityCriteria)
+		if err != nil {
+			return fmt.Errorf("error reading 'eligibility_criteria': %w", err)
+		}
+		delete(object, "eligibility_criteria")
+	}
+
+	if raw, found := object["product"]; found {
+		err = json.Unmarshal(raw, &a.Product)
+		if err != nil {
+			return fmt.Errorf("error reading 'product': %w", err)
+		}
+		delete(object, "product")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for PackageProductAssociation to handle AdditionalProperties
+func (a PackageProductAssociation) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["eligibility_criteria"], err = json.Marshal(a.EligibilityCriteria)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'eligibility_criteria': %w", err)
+	}
+
+	object["product"], err = json.Marshal(a.Product)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'product': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for PaddleApp. Returns the specified
+// element and whether it was found
+func (a PaddleApp) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for PaddleApp
+func (a *PaddleApp) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for PaddleApp to handle AdditionalProperties
+func (a *PaddleApp) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["paddle"]; found {
+		err = json.Unmarshal(raw, &a.Paddle)
+		if err != nil {
+			return fmt.Errorf("error reading 'paddle': %w", err)
+		}
+		delete(object, "paddle")
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &a.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
+		}
+		delete(object, "project_id")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for PaddleApp to handle AdditionalProperties
+func (a PaddleApp) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["paddle"], err = json.Marshal(a.Paddle)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'paddle': %w", err)
+	}
+
+	object["project_id"], err = json.Marshal(a.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for PaddleApp_Paddle. Returns the specified
+// element and whether it was found
+func (a PaddleApp_Paddle) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for PaddleApp_Paddle
+func (a *PaddleApp_Paddle) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for PaddleApp_Paddle to handle AdditionalProperties
+func (a *PaddleApp_Paddle) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["paddle_api_key"]; found {
+		err = json.Unmarshal(raw, &a.PaddleAPIKey)
+		if err != nil {
+			return fmt.Errorf("error reading 'paddle_api_key': %w", err)
+		}
+		delete(object, "paddle_api_key")
+	}
+
+	if raw, found := object["paddle_is_sandbox"]; found {
+		err = json.Unmarshal(raw, &a.PaddleIsSandbox)
+		if err != nil {
+			return fmt.Errorf("error reading 'paddle_is_sandbox': %w", err)
+		}
+		delete(object, "paddle_is_sandbox")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for PaddleApp_Paddle to handle AdditionalProperties
+func (a PaddleApp_Paddle) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.PaddleAPIKey != nil {
+		object["paddle_api_key"], err = json.Marshal(a.PaddleAPIKey)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'paddle_api_key': %w", err)
+		}
+	}
+
+	if a.PaddleIsSandbox != nil {
+		object["paddle_is_sandbox"], err = json.Marshal(a.PaddleIsSandbox)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'paddle_is_sandbox': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for PaywallVersion. Returns the specified
+// element and whether it was found
+func (a PaywallVersion) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for PaywallVersion
+func (a *PaywallVersion) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for PaywallVersion to handle AdditionalProperties
+func (a *PaywallVersion) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["automatically_scale_font_size"]; found {
+		err = json.Unmarshal(raw, &a.AutomaticallyScaleFontSize)
+		if err != nil {
+			return fmt.Errorf("error reading 'automatically_scale_font_size': %w", err)
+		}
+		delete(object, "automatically_scale_font_size")
+	}
+
+	if raw, found := object["components_config"]; found {
+		err = json.Unmarshal(raw, &a.ComponentsConfig)
+		if err != nil {
+			return fmt.Errorf("error reading 'components_config': %w", err)
+		}
+		delete(object, "components_config")
+	}
+
+	if raw, found := object["components_localizations"]; found {
+		err = json.Unmarshal(raw, &a.ComponentsLocalizations)
+		if err != nil {
+			return fmt.Errorf("error reading 'components_localizations': %w", err)
+		}
+		delete(object, "components_localizations")
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["default_locale"]; found {
+		err = json.Unmarshal(raw, &a.DefaultLocale)
+		if err != nil {
+			return fmt.Errorf("error reading 'default_locale': %w", err)
+		}
+		delete(object, "default_locale")
+	}
+
+	if raw, found := object["exit_offers"]; found {
+		err = json.Unmarshal(raw, &a.ExitOffers)
+		if err != nil {
+			return fmt.Errorf("error reading 'exit_offers': %w", err)
+		}
+		delete(object, "exit_offers")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["play_store_product_change_mode"]; found {
+		err = json.Unmarshal(raw, &a.PlayStoreProductChangeMode)
+		if err != nil {
+			return fmt.Errorf("error reading 'play_store_product_change_mode': %w", err)
+		}
+		delete(object, "play_store_product_change_mode")
+	}
+
+	if raw, found := object["revision"]; found {
+		err = json.Unmarshal(raw, &a.Revision)
+		if err != nil {
+			return fmt.Errorf("error reading 'revision': %w", err)
+		}
+		delete(object, "revision")
+	}
+
+	if raw, found := object["state_declarations"]; found {
+		err = json.Unmarshal(raw, &a.StateDeclarations)
+		if err != nil {
+			return fmt.Errorf("error reading 'state_declarations': %w", err)
+		}
+		delete(object, "state_declarations")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for PaywallVersion to handle AdditionalProperties
+func (a PaywallVersion) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["automatically_scale_font_size"], err = json.Marshal(a.AutomaticallyScaleFontSize)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'automatically_scale_font_size': %w", err)
+	}
+
+	if a.ComponentsConfig != nil {
+		object["components_config"], err = json.Marshal(a.ComponentsConfig)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'components_config': %w", err)
+		}
+	}
+
+	if a.ComponentsLocalizations != nil {
+		object["components_localizations"], err = json.Marshal(a.ComponentsLocalizations)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'components_localizations': %w", err)
+		}
+	}
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["default_locale"], err = json.Marshal(a.DefaultLocale)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'default_locale': %w", err)
+	}
+
+	if a.ExitOffers != nil {
+		object["exit_offers"], err = json.Marshal(a.ExitOffers)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'exit_offers': %w", err)
+		}
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	if a.PlayStoreProductChangeMode != nil {
+		object["play_store_product_change_mode"], err = json.Marshal(a.PlayStoreProductChangeMode)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'play_store_product_change_mode': %w", err)
+		}
+	}
+
+	object["revision"], err = json.Marshal(a.Revision)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'revision': %w", err)
+	}
+
+	if a.StateDeclarations != nil {
+		object["state_declarations"], err = json.Marshal(a.StateDeclarations)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'state_declarations': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for PlayStoreApp. Returns the specified
+// element and whether it was found
+func (a PlayStoreApp) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for PlayStoreApp
+func (a *PlayStoreApp) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for PlayStoreApp to handle AdditionalProperties
+func (a *PlayStoreApp) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["play_store"]; found {
+		err = json.Unmarshal(raw, &a.PlayStore)
+		if err != nil {
+			return fmt.Errorf("error reading 'play_store': %w", err)
+		}
+		delete(object, "play_store")
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &a.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
+		}
+		delete(object, "project_id")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for PlayStoreApp to handle AdditionalProperties
+func (a PlayStoreApp) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["play_store"], err = json.Marshal(a.PlayStore)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'play_store': %w", err)
+	}
+
+	object["project_id"], err = json.Marshal(a.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for PlayStoreApp_PlayStore. Returns the specified
+// element and whether it was found
+func (a PlayStoreApp_PlayStore) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for PlayStoreApp_PlayStore
+func (a *PlayStoreApp_PlayStore) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for PlayStoreApp_PlayStore to handle AdditionalProperties
+func (a *PlayStoreApp_PlayStore) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["package_name"]; found {
+		err = json.Unmarshal(raw, &a.PackageName)
+		if err != nil {
+			return fmt.Errorf("error reading 'package_name': %w", err)
+		}
+		delete(object, "package_name")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for PlayStoreApp_PlayStore to handle AdditionalProperties
+func (a PlayStoreApp_PlayStore) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.CustomURLScheme != nil {
+		object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+		}
+	}
+
+	object["package_name"], err = json.Marshal(a.PackageName)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'package_name': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for RCBillingApp. Returns the specified
+// element and whether it was found
+func (a RCBillingApp) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for RCBillingApp
+func (a *RCBillingApp) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for RCBillingApp to handle AdditionalProperties
+func (a *RCBillingApp) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &a.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
+		}
+		delete(object, "project_id")
+	}
+
+	if raw, found := object["rc_billing"]; found {
+		err = json.Unmarshal(raw, &a.RcBilling)
+		if err != nil {
+			return fmt.Errorf("error reading 'rc_billing': %w", err)
+		}
+		delete(object, "rc_billing")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for RCBillingApp to handle AdditionalProperties
+func (a RCBillingApp) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["project_id"], err = json.Marshal(a.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
+	}
+
+	object["rc_billing"], err = json.Marshal(a.RcBilling)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'rc_billing': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for RCBillingApp_RcBilling. Returns the specified
+// element and whether it was found
+func (a RCBillingApp_RcBilling) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for RCBillingApp_RcBilling
+func (a *RCBillingApp_RcBilling) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for RCBillingApp_RcBilling to handle AdditionalProperties
+func (a *RCBillingApp_RcBilling) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["app_name"]; found {
+		err = json.Unmarshal(raw, &a.AppName)
+		if err != nil {
+			return fmt.Errorf("error reading 'app_name': %w", err)
+		}
+		delete(object, "app_name")
+	}
+
+	if raw, found := object["default_currency"]; found {
+		err = json.Unmarshal(raw, &a.DefaultCurrency)
+		if err != nil {
+			return fmt.Errorf("error reading 'default_currency': %w", err)
+		}
+		delete(object, "default_currency")
+	}
+
+	if raw, found := object["seller_company_name"]; found {
+		err = json.Unmarshal(raw, &a.SellerCompanyName)
+		if err != nil {
+			return fmt.Errorf("error reading 'seller_company_name': %w", err)
+		}
+		delete(object, "seller_company_name")
+	}
+
+	if raw, found := object["seller_company_support_email"]; found {
+		err = json.Unmarshal(raw, &a.SellerCompanySupportEmail)
+		if err != nil {
+			return fmt.Errorf("error reading 'seller_company_support_email': %w", err)
+		}
+		delete(object, "seller_company_support_email")
+	}
+
+	if raw, found := object["stripe_account_id"]; found {
+		err = json.Unmarshal(raw, &a.StripeAccountID)
+		if err != nil {
+			return fmt.Errorf("error reading 'stripe_account_id': %w", err)
+		}
+		delete(object, "stripe_account_id")
+	}
+
+	if raw, found := object["support_email"]; found {
+		err = json.Unmarshal(raw, &a.SupportEmail)
+		if err != nil {
+			return fmt.Errorf("error reading 'support_email': %w", err)
+		}
+		delete(object, "support_email")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for RCBillingApp_RcBilling to handle AdditionalProperties
+func (a RCBillingApp_RcBilling) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.AppName != nil {
+		object["app_name"], err = json.Marshal(a.AppName)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'app_name': %w", err)
+		}
+	}
+
+	object["default_currency"], err = json.Marshal(a.DefaultCurrency)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'default_currency': %w", err)
+	}
+
+	object["seller_company_name"], err = json.Marshal(a.SellerCompanyName)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'seller_company_name': %w", err)
+	}
+
+	if a.SellerCompanySupportEmail != nil {
+		object["seller_company_support_email"], err = json.Marshal(a.SellerCompanySupportEmail)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'seller_company_support_email': %w", err)
+		}
+	}
+
+	if a.StripeAccountID != nil {
+		object["stripe_account_id"], err = json.Marshal(a.StripeAccountID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'stripe_account_id': %w", err)
+		}
+	}
+
+	if a.SupportEmail != nil {
+		object["support_email"], err = json.Marshal(a.SupportEmail)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'support_email': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for RokuApp. Returns the specified
+// element and whether it was found
+func (a RokuApp) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for RokuApp
+func (a *RokuApp) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for RokuApp to handle AdditionalProperties
+func (a *RokuApp) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &a.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
+		}
+		delete(object, "project_id")
+	}
+
+	if raw, found := object["roku"]; found {
+		err = json.Unmarshal(raw, &a.Roku)
+		if err != nil {
+			return fmt.Errorf("error reading 'roku': %w", err)
+		}
+		delete(object, "roku")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for RokuApp to handle AdditionalProperties
+func (a RokuApp) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["project_id"], err = json.Marshal(a.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
+	}
+
+	object["roku"], err = json.Marshal(a.Roku)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'roku': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for RokuApp_Roku. Returns the specified
+// element and whether it was found
+func (a RokuApp_Roku) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for RokuApp_Roku
+func (a *RokuApp_Roku) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for RokuApp_Roku to handle AdditionalProperties
+func (a *RokuApp_Roku) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["roku_channel_id"]; found {
+		err = json.Unmarshal(raw, &a.RokuChannelID)
+		if err != nil {
+			return fmt.Errorf("error reading 'roku_channel_id': %w", err)
+		}
+		delete(object, "roku_channel_id")
+	}
+
+	if raw, found := object["roku_channel_name"]; found {
+		err = json.Unmarshal(raw, &a.RokuChannelName)
+		if err != nil {
+			return fmt.Errorf("error reading 'roku_channel_name': %w", err)
+		}
+		delete(object, "roku_channel_name")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for RokuApp_Roku to handle AdditionalProperties
+func (a RokuApp_Roku) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.RokuChannelID != nil {
+		object["roku_channel_id"], err = json.Marshal(a.RokuChannelID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'roku_channel_id': %w", err)
+		}
+	}
+
+	if a.RokuChannelName != nil {
+		object["roku_channel_name"], err = json.Marshal(a.RokuChannelName)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'roku_channel_name': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for StripeApp. Returns the specified
+// element and whether it was found
+func (a StripeApp) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for StripeApp
+func (a *StripeApp) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for StripeApp to handle AdditionalProperties
+func (a *StripeApp) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &a.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
+		}
+		delete(object, "project_id")
+	}
+
+	if raw, found := object["stripe"]; found {
+		err = json.Unmarshal(raw, &a.Stripe)
+		if err != nil {
+			return fmt.Errorf("error reading 'stripe': %w", err)
+		}
+		delete(object, "stripe")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for StripeApp to handle AdditionalProperties
+func (a StripeApp) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["project_id"], err = json.Marshal(a.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
+	}
+
+	object["stripe"], err = json.Marshal(a.Stripe)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'stripe': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for StripeApp_Stripe. Returns the specified
+// element and whether it was found
+func (a StripeApp_Stripe) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for StripeApp_Stripe
+func (a *StripeApp_Stripe) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for StripeApp_Stripe to handle AdditionalProperties
+func (a *StripeApp_Stripe) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["stripe_account_id"]; found {
+		err = json.Unmarshal(raw, &a.StripeAccountID)
+		if err != nil {
+			return fmt.Errorf("error reading 'stripe_account_id': %w", err)
+		}
+		delete(object, "stripe_account_id")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for StripeApp_Stripe to handle AdditionalProperties
+func (a StripeApp_Stripe) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.StripeAccountID != nil {
+		object["stripe_account_id"], err = json.Marshal(a.StripeAccountID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'stripe_account_id': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for Subscription_PendingChanges. Returns the specified
+// element and whether it was found
+func (a Subscription_PendingChanges) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for Subscription_PendingChanges
+func (a *Subscription_PendingChanges) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for Subscription_PendingChanges to handle AdditionalProperties
+func (a *Subscription_PendingChanges) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["auto_renewal_status"]; found {
+		err = json.Unmarshal(raw, &a.AutoRenewalStatus)
+		if err != nil {
+			return fmt.Errorf("error reading 'auto_renewal_status': %w", err)
+		}
+		delete(object, "auto_renewal_status")
+	}
+
+	if raw, found := object["current_period_ends_at"]; found {
+		err = json.Unmarshal(raw, &a.CurrentPeriodEndsAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'current_period_ends_at': %w", err)
+		}
+		delete(object, "current_period_ends_at")
+	}
+
+	if raw, found := object["current_period_starts_at"]; found {
+		err = json.Unmarshal(raw, &a.CurrentPeriodStartsAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'current_period_starts_at': %w", err)
+		}
+		delete(object, "current_period_starts_at")
+	}
+
+	if raw, found := object["gives_access"]; found {
+		err = json.Unmarshal(raw, &a.GivesAccess)
+		if err != nil {
+			return fmt.Errorf("error reading 'gives_access': %w", err)
+		}
+		delete(object, "gives_access")
+	}
+
+	if raw, found := object["pending_payment"]; found {
+		err = json.Unmarshal(raw, &a.PendingPayment)
+		if err != nil {
+			return fmt.Errorf("error reading 'pending_payment': %w", err)
+		}
+		delete(object, "pending_payment")
+	}
+
+	if raw, found := object["product"]; found {
+		err = json.Unmarshal(raw, &a.Product)
+		if err != nil {
+			return fmt.Errorf("error reading 'product': %w", err)
+		}
+		delete(object, "product")
+	}
+
+	if raw, found := object["status"]; found {
+		err = json.Unmarshal(raw, &a.Status)
+		if err != nil {
+			return fmt.Errorf("error reading 'status': %w", err)
+		}
+		delete(object, "status")
+	}
+
+	if raw, found := object["store_subscription_identifier"]; found {
+		err = json.Unmarshal(raw, &a.StoreSubscriptionIdentifier)
+		if err != nil {
+			return fmt.Errorf("error reading 'store_subscription_identifier': %w", err)
+		}
+		delete(object, "store_subscription_identifier")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for Subscription_PendingChanges to handle AdditionalProperties
+func (a Subscription_PendingChanges) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.AutoRenewalStatus != nil {
+		object["auto_renewal_status"], err = json.Marshal(a.AutoRenewalStatus)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'auto_renewal_status': %w", err)
+		}
+	}
+
+	if a.CurrentPeriodEndsAt != nil {
+		object["current_period_ends_at"], err = json.Marshal(a.CurrentPeriodEndsAt)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'current_period_ends_at': %w", err)
+		}
+	}
+
+	if a.CurrentPeriodStartsAt != nil {
+		object["current_period_starts_at"], err = json.Marshal(a.CurrentPeriodStartsAt)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'current_period_starts_at': %w", err)
+		}
+	}
+
+	if a.GivesAccess != nil {
+		object["gives_access"], err = json.Marshal(a.GivesAccess)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'gives_access': %w", err)
+		}
+	}
+
+	if a.PendingPayment != nil {
+		object["pending_payment"], err = json.Marshal(a.PendingPayment)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'pending_payment': %w", err)
+		}
+	}
+
+	if a.Product != nil {
+		object["product"], err = json.Marshal(a.Product)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'product': %w", err)
+		}
+	}
+
+	if a.Status != nil {
+		object["status"], err = json.Marshal(a.Status)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'status': %w", err)
+		}
+	}
+
+	if a.StoreSubscriptionIdentifier != nil {
+		object["store_subscription_identifier"], err = json.Marshal(a.StoreSubscriptionIdentifier)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'store_subscription_identifier': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for SubscriptionProduct. Returns the specified
+// element and whether it was found
+func (a SubscriptionProduct) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for SubscriptionProduct
+func (a *SubscriptionProduct) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for SubscriptionProduct to handle AdditionalProperties
+func (a *SubscriptionProduct) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["duration"]; found {
+		err = json.Unmarshal(raw, &a.Duration)
+		if err != nil {
+			return fmt.Errorf("error reading 'duration': %w", err)
+		}
+		delete(object, "duration")
+	}
+
+	if raw, found := object["grace_period_duration"]; found {
+		err = json.Unmarshal(raw, &a.GracePeriodDuration)
+		if err != nil {
+			return fmt.Errorf("error reading 'grace_period_duration': %w", err)
+		}
+		delete(object, "grace_period_duration")
+	}
+
+	if raw, found := object["trial_duration"]; found {
+		err = json.Unmarshal(raw, &a.TrialDuration)
+		if err != nil {
+			return fmt.Errorf("error reading 'trial_duration': %w", err)
+		}
+		delete(object, "trial_duration")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for SubscriptionProduct to handle AdditionalProperties
+func (a SubscriptionProduct) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["duration"], err = json.Marshal(a.Duration)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'duration': %w", err)
+	}
+
+	object["grace_period_duration"], err = json.Marshal(a.GracePeriodDuration)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'grace_period_duration': %w", err)
+	}
+
+	object["trial_duration"], err = json.Marshal(a.TrialDuration)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'trial_duration': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for TestStoreApp. Returns the specified
+// element and whether it was found
+func (a TestStoreApp) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for TestStoreApp
+func (a *TestStoreApp) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for TestStoreApp to handle AdditionalProperties
+func (a *TestStoreApp) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["created_at"]; found {
+		err = json.Unmarshal(raw, &a.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'created_at': %w", err)
+		}
+		delete(object, "created_at")
+	}
+
+	if raw, found := object["custom_url_scheme"]; found {
+		err = json.Unmarshal(raw, &a.CustomURLScheme)
+		if err != nil {
+			return fmt.Errorf("error reading 'custom_url_scheme': %w", err)
+		}
+		delete(object, "custom_url_scheme")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["project_id"]; found {
+		err = json.Unmarshal(raw, &a.ProjectID)
+		if err != nil {
+			return fmt.Errorf("error reading 'project_id': %w", err)
+		}
+		delete(object, "project_id")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for TestStoreApp to handle AdditionalProperties
+func (a TestStoreApp) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["created_at"], err = json.Marshal(a.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'created_at': %w", err)
+	}
+
+	object["custom_url_scheme"], err = json.Marshal(a.CustomURLScheme)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'custom_url_scheme': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["project_id"], err = json.Marshal(a.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'project_id': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for Transfer. Returns the specified
+// element and whether it was found
+func (a Transfer) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for Transfer
+func (a *Transfer) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for Transfer to handle AdditionalProperties
+func (a *Transfer) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["source_customer"]; found {
+		err = json.Unmarshal(raw, &a.SourceCustomer)
+		if err != nil {
+			return fmt.Errorf("error reading 'source_customer': %w", err)
+		}
+		delete(object, "source_customer")
+	}
+
+	if raw, found := object["target_customer"]; found {
+		err = json.Unmarshal(raw, &a.TargetCustomer)
+		if err != nil {
+			return fmt.Errorf("error reading 'target_customer': %w", err)
+		}
+		delete(object, "target_customer")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for Transfer to handle AdditionalProperties
+func (a Transfer) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["source_customer"], err = json.Marshal(a.SourceCustomer)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'source_customer': %w", err)
+	}
+
+	object["target_customer"], err = json.Marshal(a.TargetCustomer)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'target_customer': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
 }
 
 // AsOwnership returns the union data inside the Purchase_Ownership as a Ownership
@@ -47245,6 +49134,68 @@ func (t SetCustomerAttributesJSONBody_Attributes_Name) MarshalJSON() ([]byte, er
 }
 
 func (t *SetCustomerAttributesJSONBody_Attributes_Name) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCreatePaywallJSONBody0 returns the union data inside the CreatePaywallJSONBody as a CreatePaywallJSONBody0
+func (t CreatePaywallJSONBody) AsCreatePaywallJSONBody0() (CreatePaywallJSONBody0, error) {
+	var body CreatePaywallJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCreatePaywallJSONBody0 overwrites any union data inside the CreatePaywallJSONBody as the provided CreatePaywallJSONBody0
+func (t *CreatePaywallJSONBody) FromCreatePaywallJSONBody0(v CreatePaywallJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCreatePaywallJSONBody0 performs a merge with any union data inside the CreatePaywallJSONBody, using the provided CreatePaywallJSONBody0
+func (t *CreatePaywallJSONBody) MergeCreatePaywallJSONBody0(v CreatePaywallJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPaywallDraftCreate returns the union data inside the CreatePaywallJSONBody as a PaywallDraftCreate
+func (t CreatePaywallJSONBody) AsPaywallDraftCreate() (PaywallDraftCreate, error) {
+	var body PaywallDraftCreate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPaywallDraftCreate overwrites any union data inside the CreatePaywallJSONBody as the provided PaywallDraftCreate
+func (t *CreatePaywallJSONBody) FromPaywallDraftCreate(v PaywallDraftCreate) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePaywallDraftCreate performs a merge with any union data inside the CreatePaywallJSONBody, using the provided PaywallDraftCreate
+func (t *CreatePaywallJSONBody) MergePaywallDraftCreate(v PaywallDraftCreate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CreatePaywallJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CreatePaywallJSONBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

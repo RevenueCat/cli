@@ -16,26 +16,63 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
-	"github.com/revenuecat/cli/internal/astra"
+	"github.com/revenuecat/cli/internal/config"
+	"github.com/revenuecat/cli/internal/paywallai"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
-// astraSession is the state file round-tripped between editor turns. The
+// paywallAISession is the state file round-tripped between editor turns. The
 // Paywall AI editor keeps no server-side paywall state between requests: the client must resend
 // the full paywall plus the opaque session blobs every turn, so the CLI
 // persists them here (the dashboard holds the same data in builder state).
-type astraSession struct {
-	Version          int               `json:"version"`
-	ProjectID        string            `json:"project_id"`
-	PaywallID        string            `json:"paywall_id"`
-	SessionID        string            `json:"session_id,omitempty"`
-	TraceID          string            `json:"trace_id,omitempty"`
-	Revision         *int              `json:"revision"`
-	Paywall          astra.PaywallData `json:"paywall"`
-	UIConfig         json.RawMessage   `json:"ui_config"`
-	ProductVariables map[string]string `json:"product_variables"`
-	SessionItems     json.RawMessage   `json:"__unstable_session_items"`
-	AppContext       json.RawMessage   `json:"app_context,omitempty"`
+type paywallAISession struct {
+	Version          int                   `json:"version"`
+	ProjectID        string                `json:"project_id"`
+	PaywallID        string                `json:"paywall_id"`
+	SessionID        string                `json:"session_id,omitempty"`
+	TraceID          string                `json:"trace_id,omitempty"`
+	Revision         *int                  `json:"revision"`
+	Paywall          paywallai.PaywallData `json:"paywall"`
+	UIConfig         json.RawMessage       `json:"ui_config"`
+	ProductVariables map[string]string     `json:"product_variables"`
+	SessionItems     json.RawMessage       `json:"__unstable_session_items"`
+	AppContext       json.RawMessage       `json:"app_context,omitempty"`
+}
+
+const paywallSessionSuffix = ".paywall.json"
+
+func screenshotBase(sessionPath string) string {
+	if strings.HasSuffix(sessionPath, paywallSessionSuffix) {
+		return strings.TrimSuffix(sessionPath, paywallSessionSuffix)
+	}
+	return strings.TrimSuffix(sessionPath, filepath.Ext(sessionPath))
+}
+
+func defaultPaywallSessionPath(projectID, paywallID string) (string, error) {
+	dir, err := config.Dir()
+	if err != nil {
+		return "", err
+	}
+	sessionDir := filepath.Join(dir, "paywalls", projectID, paywallID)
+	if err := os.MkdirAll(sessionDir, 0o700); err != nil {
+		return "", err
+	}
+	return filepath.Join(sessionDir, "session"+paywallSessionSuffix), nil
+}
+
+func pickOfferingOrStandalone(ctx context.Context, rt *Runtime, client *api.Client, projectID string) (string, error) {
+	if rt.Globals.NoInput || !tui.IsInteractive() {
+		return "", nil
+	}
+	offerings, err := offeringPickerItems(ctx, client, projectID)
+	if err != nil {
+		return "", err
+	}
+	items := append([]PickerItem{{ID: "", Label: "Standalone (no offering)"}}, offerings...)
+	if len(items) == 1 {
+		return "", nil
+	}
+	return selectID(rt, "offering", items, "")
 }
 
 // Minimal valid editor state for a brand-new paywall, mirroring the
@@ -76,7 +113,7 @@ func newPaywallsGenerateCmd() *cobra.Command {
 	opts := paywallAIOptions{
 		prompt:     os.Getenv("RC_PAYWALL_PROMPT"),
 		offeringID: os.Getenv("RC_OFFERING_ID"),
-		baseURL:    envOrDefault("RC_ASTRA_BASE_URL", astra.DefaultBaseURL),
+		baseURL:    envOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
 		timeout:    12 * time.Minute,
 	}
 	cmd := &cobra.Command{
@@ -92,9 +129,9 @@ Each completed turn saves the design onto the RevenueCat paywall draft, and
 the editor state is also kept in a session file so follow-up edits retain the
 conversation: pass the same --session to rc paywalls edit. The editor may
 answer with a clarifying question instead of a design — reply with another
-edit turn. Each completed turn also writes a preview screenshot
-(<paywall-id>.light.png, plus .dark.png when the design has dark mode) next to
-the session file — look at it after every turn and keep iterating with edit
+edit turn. Each completed turn also writes a preview screenshot next to the
+session file (plus a dark-mode one when the design has dark mode); its path is
+shown in the output — look at it after every turn and keep iterating with edit
 turns until the design is right. The draft stays unpublished; review it and
 run rc paywalls publish.`,
 		Example: `  rc paywalls generate
@@ -114,6 +151,12 @@ run rc paywalls publish.`,
 			if err := requirePaywallAIPrompt(rt, &opts.prompt, "Describe the paywall you want"); err != nil {
 				return err
 			}
+			if opts.offeringID == "" {
+				opts.offeringID, err = pickOfferingOrStandalone(cmd.Context(), rt, client, projectID)
+				if err != nil {
+					return err
+				}
+			}
 
 			paywall, err := client.Paywalls.CreateFromComponents(cmd.Context(), projectID, api.PaywallComponentsCreate{
 				OfferingID:              opts.offeringID,
@@ -127,9 +170,10 @@ run rc paywalls publish.`,
 				// that as a bare 409.
 				var apiErr *api.APIError
 				if opts.offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
-					rt.Out.Hint("Generate against another offering, or omit --offering-id to create a standalone draft and attach it in the dashboard later")
-					rt.Out.Hint("Or delete the existing paywall:  rc paywalls list, then rc paywalls delete <id>")
-					return fmt.Errorf("creating draft paywall: offering %s already has a paywall (an offering can only have one): %w", opts.offeringID, err)
+					return WithHint(
+						fmt.Errorf("creating draft paywall: offering %s already has a paywall (an offering can only have one): %w", opts.offeringID, err),
+						"Generate against another offering, omit --offering-id to create a standalone draft and attach it in the dashboard later, or delete the existing paywall (rc paywalls list, then rc paywalls delete <id>).",
+					)
 				}
 				return fmt.Errorf("creating draft paywall: %w", err)
 			}
@@ -147,12 +191,12 @@ run rc paywalls publish.`,
 			if opts.offeringID != "" {
 				offeringID = &opts.offeringID
 			}
-			session := &astraSession{
+			session := &paywallAISession{
 				Version:   1,
 				ProjectID: projectID,
 				PaywallID: paywall.ID,
 				Revision:  &revision,
-				Paywall: astra.PaywallData{
+				Paywall: paywallai.PaywallData{
 					DefaultLocale:           "en_US",
 					OfferingID:              offeringID,
 					ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
@@ -163,13 +207,16 @@ run rc paywalls publish.`,
 				SessionItems:     json.RawMessage(`{}`),
 			}
 			if opts.sessionPath == "" {
-				opts.sessionPath = paywall.ID + ".astra.json"
+				opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywall.ID)
+				if err != nil {
+					return err
+				}
 			}
 			return runPaywallAI(cmd.Context(), rt, opts, session)
 		},
 	}
 	addPaywallAIFlags(cmd, &opts)
-	cmd.Flags().StringVar(&opts.offeringID, "offering-id", opts.offeringID, "offering to attach (or RC_OFFERING_ID)")
+	cmd.Flags().StringVar(&opts.offeringID, "offering-id", opts.offeringID, "offering to attach (or RC_OFFERING_ID); prompts if omitted in a TTY")
 	cmd.Flags().StringVar(&opts.name, "name", "", "paywall name")
 	return cmd
 }
@@ -177,7 +224,7 @@ run rc paywalls publish.`,
 func newPaywallsEditCmd() *cobra.Command {
 	opts := paywallAIOptions{
 		prompt:  os.Getenv("RC_PAYWALL_PROMPT"),
-		baseURL: envOrDefault("RC_ASTRA_BASE_URL", astra.DefaultBaseURL),
+		baseURL: envOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
 		timeout: 10 * time.Minute,
 	}
 	cmd := &cobra.Command{
@@ -207,25 +254,25 @@ Using it well:
   - The Paywall AI editor may reply with a clarifying question instead of a design (it
     appears in the streamed activity / the --json activity array). Answer it
     with another edit turn on the same session.
-  - Each completed turn writes <paywall-id>.light.png (and .dark.png when
-    the design has dark mode) next to the session file. Look at it after
-    every turn: judge the result against the direction, then follow up
-    with more edit turns until it looks right.
+  - Each completed turn writes a preview screenshot next to the session file
+    (and a dark-mode one when the design has dark mode); its path is shown in
+    the output. Look at it after every turn: judge the result against the
+    direction, then follow up with more edit turns until it looks right.
   - Turns take one to several minutes and stream progress; run with an
     extended timeout (--timeout) or in the background rather than polling.
   - Undo the last turn:  rc paywalls rewind --session <file>`,
 		Example: `  rc paywalls edit                       # picker, then it asks what to change
   rc paywalls edit pw_abc --prompt "Background #0E1B2A, bolder CTA, keep the layout"
   rc paywalls edit pw_abc --prompt "match this" --attachment DESIGN.md --image home.png
-  rc paywalls edit --session pw_abc.astra.json --prompt "Push the gradient harder" --json --no-input`,
+  rc paywalls edit --session pw_abc.paywall.json --prompt "Push the gradient harder" --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			var session *astraSession
+			var session *paywallAISession
 			var err error
 			switch {
 			case opts.sessionPath != "":
-				session, err = loadAstraSession(rt, opts.sessionPath)
+				session, err = loadPaywallAISession(rt, opts.sessionPath)
 				if err == nil {
 					session, err = preflightSessionRevision(cmd.Context(), rt, session)
 				}
@@ -245,7 +292,9 @@ Using it well:
 					return perr
 				}
 				session, err = seedSessionFromServer(cmd.Context(), rt, projectID, paywallID)
-				opts.sessionPath = paywallID + ".astra.json"
+				if err == nil {
+					opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywallID)
+				}
 			default:
 				return fmt.Errorf("pass a paywall ID or --session <file>")
 			}
@@ -267,7 +316,7 @@ Using it well:
 // turn is spent on it. A diverged session can't continue — the prompt targets
 // state that no longer exists — so the only way forward is consent to start
 // fresh from the server's draft, losing the conversation.
-func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSession) (*astraSession, error) {
+func preflightSessionRevision(ctx context.Context, rt *Runtime, session *paywallAISession) (*paywallAISession, error) {
 	client, err := rt.API()
 	if err != nil {
 		return nil, err
@@ -290,7 +339,7 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *astraSe
 
 // seedSessionFromServer starts an editor session from the paywall's current
 // RevenueCat state (draft components, falling back to published).
-func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, paywallID string) (*astraSession, error) {
+func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, paywallID string) (*paywallAISession, error) {
 	client, err := rt.API()
 	if err != nil {
 		return nil, err
@@ -327,12 +376,12 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 	if version.Revision != nil {
 		revision = *version.Revision
 	}
-	return &astraSession{
+	return &paywallAISession{
 		Version:   1,
 		ProjectID: projectID,
 		PaywallID: paywall.ID,
 		Revision:  &revision,
-		Paywall: astra.PaywallData{
+		Paywall: paywallai.PaywallData{
 			DefaultLocale:           locale,
 			OfferingID:              offeringID,
 			ComponentsConfig:        version.ComponentsConfig,
@@ -346,7 +395,7 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 
 func newPaywallsRewindCmd() *cobra.Command {
 	var sessionPath string
-	baseURL := envOrDefault("RC_ASTRA_BASE_URL", astra.DefaultBaseURL)
+	baseURL := envOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:   "rewind --session <file>",
 		Short: "Undo the last Paywall AI editor action",
@@ -356,14 +405,14 @@ func newPaywallsRewindCmd() *cobra.Command {
 			if sessionPath == "" {
 				return fmt.Errorf("--session is required")
 			}
-			session, err := loadAstraSession(rt, sessionPath)
+			session, err := loadPaywallAISession(rt, sessionPath)
 			if err != nil {
 				return err
 			}
 			if session.SessionID == "" || session.TraceID == "" {
 				return fmt.Errorf("session file has no completed run to rewind")
 			}
-			client, err := astraClient(rt, baseURL)
+			client, err := paywallAIClient(rt, baseURL)
 			if err != nil {
 				return err
 			}
@@ -371,7 +420,7 @@ func newPaywallsRewindCmd() *cobra.Command {
 				return err
 			}
 			// Drop saved screenshots — they show the pre-rewind design.
-			base := strings.TrimSuffix(sessionPath, ".astra.json")
+			base := screenshotBase(sessionPath)
 			os.Remove(base + ".light.png")
 			os.Remove(base + ".dark.png")
 			rt.Out.Success("Rewound last editor action")
@@ -379,7 +428,7 @@ func newPaywallsRewindCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&sessionPath, "session", "", "editor session file")
-	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "Paywall AI editor endpoint (or RC_ASTRA_BASE_URL)")
+	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "Paywall AI editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	return cmd
 }
 
@@ -387,15 +436,18 @@ func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "natural-language direction (or RC_PAYWALL_PROMPT)")
 	cmd.Flags().StringVar(&opts.context, "context", "", "product/audience/brand context sent alongside the direction")
 	cmd.Flags().StringArrayVar(&opts.attachments, "attachment", nil, "design reference file: images (png/jpeg/webp) attach visually, text files (DESIGN.md, style guides) travel with the direction")
-	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: <paywall-id>.astra.json)")
+	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: in the CLI data dir, per project and paywall)")
 	cmd.Flags().StringArrayVar(&opts.images, "image", nil, "reference image to attach (png/jpeg/webp, max 3)")
-	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Paywall AI editor endpoint (or RC_ASTRA_BASE_URL)")
+	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Paywall AI editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait")
 }
 
 // runPaywallAI streams one editor turn and persists the updated session file.
-func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *astraSession) error {
-	client, err := astraClient(rt, opts.baseURL)
+func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession) error {
+	if abs, err := filepath.Abs(opts.sessionPath); err == nil {
+		opts.sessionPath = abs
+	}
+	client, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
 		return err
 	}
@@ -408,7 +460,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	defer cancel()
 
 	rt.Out.Info("Designing with the Paywall AI editor — this can take a few minutes…")
-	stream, err := client.Stream(ctx, astra.EditorRequest{
+	stream, err := client.Stream(ctx, paywallai.EditorRequest{
 		ProjectID:        session.ProjectID,
 		PaywallID:        session.PaywallID,
 		Revision:         session.Revision,
@@ -432,26 +484,26 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	for {
 		event, err := stream.Next()
 		if err == io.EOF {
-			return fmt.Errorf("astra closed the stream without completing the run")
+			return fmt.Errorf("the Paywall AI editor closed the stream without completing the run")
 		}
 		if err != nil {
 			return err
 		}
 		switch event.Type {
-		case astra.EventRunStarted:
+		case paywallai.EventRunStarted:
 			session.SessionID = event.SessionID
-		case astra.EventTurnSnapshot:
+		case paywallai.EventTurnSnapshot:
 			reportedActivity = reportPaywallAIActivity(rt, event.Activity, reportedActivity)
-		case astra.EventRunFailed:
+		case paywallai.EventRunFailed:
 			return fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message)
-		case astra.EventRunCompleted:
+		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			return finishPaywallAI(ctx, rt, opts, session, event)
 		}
 	}
 }
 
-func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *astraSession, event *astra.Event) error {
+func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession, event *paywallai.Event) error {
 	session.SessionID = event.SessionID
 	session.TraceID = event.TraceID
 	if event.Paywall != nil {
@@ -469,7 +521,7 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	if len(event.AppContext) > 0 {
 		session.AppContext = event.AppContext
 	}
-	if err := saveAstraSession(opts.sessionPath, session); err != nil {
+	if err := savePaywallAISession(opts.sessionPath, session); err != nil {
 		return err
 	}
 	// Saved even when the draft PATCH below fails — the screenshot shows
@@ -489,7 +541,7 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		saved = true
 		// Persisting refreshed the revision and offering from the server;
 		// re-save so the next turn starts from them.
-		if err := saveAstraSession(opts.sessionPath, session); err != nil {
+		if err := savePaywallAISession(opts.sessionPath, session); err != nil {
 			return err
 		}
 		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
@@ -529,9 +581,9 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 // savePaywallScreenshots writes the run's rendered previews next to the
 // session file (<base>.light.png / .dark.png) and returns the paths by color
 // scheme. Best-effort: a decode or write failure warns, never fails the turn.
-func savePaywallScreenshots(rt *Runtime, sessionPath string, shots []astra.ResultScreenshot) map[string]string {
+func savePaywallScreenshots(rt *Runtime, sessionPath string, shots []paywallai.ResultScreenshot) map[string]string {
 	paths := map[string]string{}
-	base := strings.TrimSuffix(sessionPath, ".astra.json")
+	base := screenshotBase(sessionPath)
 	for _, shot := range shots {
 		data, err := base64.StdEncoding.DecodeString(shot.DataBase64)
 		if err == nil {
@@ -562,7 +614,7 @@ func paywallBuilderURL(projectID, paywallID string) string {
 // persistPaywallDesign PATCHes the designed components onto the RevenueCat
 // paywall draft, guarded by the session's own revision: a draft that changed
 // outside the session comes back as a 409 instead of being overwritten.
-func persistPaywallDesign(ctx context.Context, rt *Runtime, session *astraSession) error {
+func persistPaywallDesign(ctx context.Context, rt *Runtime, session *paywallAISession) error {
 	client, err := rt.API()
 	if err != nil {
 		return err
@@ -611,7 +663,7 @@ func currentDraftRevision(ctx context.Context, client *api.Client, projectID, pa
 
 // reportPaywallAIActivity prints activity items not yet shown; snapshots carry
 // the full list each time, so it resumes from the previous count.
-func reportPaywallAIActivity(rt *Runtime, activity []astra.ToolActivity, alreadyReported int) int {
+func reportPaywallAIActivity(rt *Runtime, activity []paywallai.ToolActivity, alreadyReported int) int {
 	for _, item := range activity[min(alreadyReported, len(activity)):] {
 		switch item.Type {
 		case "assistant_message":
@@ -634,12 +686,12 @@ func reportPaywallAIActivity(rt *Runtime, activity []astra.ToolActivity, already
 	return alreadyReported
 }
 
-func loadAstraSession(rt *Runtime, path string) (*astraSession, error) {
+func loadPaywallAISession(rt *Runtime, path string) (*paywallAISession, error) {
 	payload, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading session file: %w", err)
 	}
-	var session astraSession
+	var session paywallAISession
 	if err := json.Unmarshal(payload, &session); err != nil {
 		return nil, fmt.Errorf("parsing session file %s: %w", path, err)
 	}
@@ -655,7 +707,7 @@ func loadAstraSession(rt *Runtime, path string) (*astraSession, error) {
 	return &session, nil
 }
 
-func saveAstraSession(path string, session *astraSession) error {
+func savePaywallAISession(path string, session *paywallAISession) error {
 	payload, err := json.MarshalIndent(session, "", "  ")
 	if err != nil {
 		return err
@@ -670,11 +722,11 @@ var paywallAIImageTypes = map[string]string{
 	".webp": "image/webp",
 }
 
-func loadPaywallAIImages(paths []string) ([]astra.InputAttachment, error) {
+func loadPaywallAIImages(paths []string) ([]paywallai.InputAttachment, error) {
 	if len(paths) > 3 {
 		return nil, fmt.Errorf("at most 3 images can be attached, got %d", len(paths))
 	}
-	var attachments []astra.InputAttachment
+	var attachments []paywallai.InputAttachment
 	for _, path := range paths {
 		mimeType, ok := paywallAIImageTypes[strings.ToLower(filepath.Ext(path))]
 		if !ok {
@@ -687,7 +739,7 @@ func loadPaywallAIImages(paths []string) ([]astra.InputAttachment, error) {
 		if len(data) > 10<<20 {
 			return nil, fmt.Errorf("image %s exceeds the 10MB limit", path)
 		}
-		attachments = append(attachments, astra.InputAttachment{
+		attachments = append(attachments, paywallai.InputAttachment{
 			Type:       "image",
 			Filename:   filepath.Base(path),
 			MimeType:   mimeType,
@@ -697,15 +749,16 @@ func loadPaywallAIImages(paths []string) ([]astra.InputAttachment, error) {
 	return attachments, nil
 }
 
-func astraClient(rt *Runtime, baseURL string) (*astra.Client, error) {
+func paywallAIClient(rt *Runtime, baseURL string) (*paywallai.Client, error) {
 	// rt.API() refreshes the OAuth token if needed and enforces login.
 	if _, err := rt.API(); err != nil {
 		return nil, err
 	}
-	return astra.NewClient(astra.Options{
-		BaseURL:   baseURL,
-		Token:     agentAuthToken(rt),
-		UserAgent: userAgent(rt.Globals.Version),
+	return paywallai.NewClient(paywallai.Options{
+		BaseURL:      baseURL,
+		Token:        agentAuthToken(rt),
+		UserAgent:    userAgent(rt.Globals.Version),
+		ExtraHeaders: customHeaders(),
 	}), nil
 }
 
@@ -731,7 +784,7 @@ func withPaywallContext(prompt, context string) string {
 	return "Context: " + context + "\n\nDirection: " + prompt
 }
 
-func countErroredActivity(activity []astra.ToolActivity) int {
+func countErroredActivity(activity []paywallai.ToolActivity) int {
 	n := 0
 	for _, item := range activity {
 		if item.Status == "error" {
@@ -746,7 +799,7 @@ func countErroredActivity(activity []astra.ToolActivity) int {
 // png/jpeg/webp, max 3, 10MB); text design references (DESIGN.md, style
 // guides) are folded into the message, which is the only channel the editor
 // API has for them today. Anything else (fonts, binaries) errors clearly.
-func loadPaywallAIAttachments(images, attachments []string) ([]astra.InputAttachment, string, error) {
+func loadPaywallAIAttachments(images, attachments []string) ([]paywallai.InputAttachment, string, error) {
 	imagePaths := append([]string(nil), images...)
 	var textBlocks []string
 	for _, path := range attachments {

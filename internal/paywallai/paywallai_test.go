@@ -1,4 +1,4 @@
-package astra
+package paywallai
 
 import (
 	"context"

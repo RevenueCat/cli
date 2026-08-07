@@ -47,13 +47,13 @@ type PaywallDraftUpdate struct {
 
 func (s *PaywallsService) List(ctx context.Context, projectID string) (*Page[Paywall], error) {
 	var out Page[Paywall]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "paywalls"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathPaywalls(projectID), nil, &out)
 	return &out, err
 }
 
 func (s *PaywallsService) Get(ctx context.Context, projectID, id string) (*Paywall, error) {
 	var out Paywall
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "paywalls", id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathPaywall(projectID, id), nil, &out)
 	return &out, err
 }
 
@@ -61,7 +61,7 @@ func (s *PaywallsService) Get(ctx context.Context, projectID, id string) (*Paywa
 // component versions.
 func (s *PaywallsService) GetWithComponents(ctx context.Context, projectID, id string) (*Paywall, error) {
 	var out Paywall
-	path := encodePath("projects", projectID, "paywalls", id) + "?expand=components"
+	path := pathPaywall(projectID, id) + "?expand=components"
 	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
 	return &out, err
 }
@@ -69,7 +69,7 @@ func (s *PaywallsService) GetWithComponents(ctx context.Context, projectID, id s
 // UpdateDraft saves component state onto the paywall draft.
 func (s *PaywallsService) UpdateDraft(ctx context.Context, projectID, id string, body PaywallDraftUpdate) (*Paywall, error) {
 	var out Paywall
-	err := s.c.do(ctx, http.MethodPatch, encodePath("projects", projectID, "paywalls", id), body, &out)
+	err := s.c.do(ctx, http.MethodPatch, pathPaywall(projectID, id), body, &out)
 	return &out, err
 }
 
@@ -85,24 +85,24 @@ type PaywallComponentsCreate struct {
 
 func (s *PaywallsService) CreateFromComponents(ctx context.Context, projectID string, body PaywallComponentsCreate) (*Paywall, error) {
 	var out Paywall
-	err := s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "paywalls"), body, &out)
+	err := s.c.do(ctx, http.MethodPost, pathPaywalls(projectID), body, &out)
 	return &out, err
 }
 
 func (s *PaywallsService) Publish(ctx context.Context, projectID, id string) (*Paywall, error) {
 	var out Paywall
-	path := encodePath("projects", projectID, "paywalls", id, "actions") + "/publish"
+	path := pathPaywallActionsPublish(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
 
 func (s *PaywallsService) Unpublish(ctx context.Context, projectID, id string) (*Paywall, error) {
 	var out Paywall
-	path := encodePath("projects", projectID, "paywalls", id, "actions") + "/unpublish"
+	path := pathPaywallActionsUnpublish(projectID, id)
 	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
 	return &out, err
 }
 
 func (s *PaywallsService) Delete(ctx context.Context, projectID, id string) error {
-	return s.c.do(ctx, http.MethodDelete, encodePath("projects", projectID, "paywalls", id), nil, nil)
+	return s.c.do(ctx, http.MethodDelete, pathPaywall(projectID, id), nil, nil)
 }

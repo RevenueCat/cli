@@ -46,3 +46,17 @@ func TestLoadPaywallAIAttachments(t *testing.T) {
 		t.Fatal("unsupported attachment type should error")
 	}
 }
+
+func TestScreenshotBase(t *testing.T) {
+	cases := map[string]string{
+		"pw_abc.paywall.json":      "pw_abc",
+		"/tmp/pw_abc.paywall.json": "/tmp/pw_abc",
+		"mywall.json":              "mywall",
+		"design":                   "design",
+	}
+	for in, want := range cases {
+		if got := screenshotBase(in); got != want {
+			t.Errorf("screenshotBase(%q) = %q, want %q", in, want, got)
+		}
+	}
+}

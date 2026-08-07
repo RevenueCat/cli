@@ -1,0 +1,1018 @@
+'# NOTE': 'Hand-maintained beta overlay — see DX-880. Seeded from the backend''s openapi-dev.yaml
+  (x-release-status: development endpoints the CLI uses). Merged onto the public spec
+  by scripts/preprocess-spec.py. Remove entries here once they graduate into the public
+  spec.'
+openapi: 3.0.3
+info:
+  title: RevenueCat v2 — beta overlay
+  version: overlay
+paths:
+  /projects/{project_id}/products/{product_id}/test_store_prices:
+    get:
+      summary: 'List product prices (deprecated: use /prices instead)'
+      operationId: list-product-prices
+      deprecated: true
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+      description: 'This endpoint requires the following permission(s): <code>project_configuration:products:read</code>.
+        This endpoint belongs to the <strong>Project Configuration</strong> domain,
+        which has a default rate limit of <strong>60 requests per minute</strong>.'
+    post:
+      summary: Create product prices
+      operationId: create-product-prices
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-description: 'Configure prices for a product. This tool only
+        works with products configured in an app type test_store.
+
+        Calling this tool on products belonging to any other app type will cause an
+        error'
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+      description: 'This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.
+        This endpoint belongs to the <strong>Project Configuration</strong> domain,
+        which has a default rate limit of <strong>60 requests per minute</strong>.'
+  /projects/{project_id}/products/{product_id}/prices:
+    get:
+      summary: List product prices
+      operationId: list-prices
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-description: List prices for a product. Works for both Web
+        Billing and Test Store products.
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+      description: 'This endpoint requires the following permission(s): <code>project_configuration:products:read</code>.
+        This endpoint belongs to the <strong>Project Configuration</strong> domain,
+        which has a default rate limit of <strong>60 requests per minute</strong>.'
+  /projects/{project_id}/products/{product_id}/prices/{currency}:
+    patch:
+      summary: Update a product price for a currency
+      operationId: update-product-price
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Update an existing Test Store product price for
+        one currency.
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      - in: path
+        name: currency
+        required: true
+        schema:
+          $ref: '#/components/schemas/Currency'
+        description: ISO 4217 currency code for this product price.
+      responses:
+        '200':
+          description: OK
+      description: 'This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.
+        This endpoint belongs to the <strong>Project Configuration</strong> domain,
+        which has a default rate limit of <strong>60 requests per minute</strong>.'
+  /projects/{project_id}/products/{product_id}/store_state:
+    get:
+      summary: Get a product store state
+      description: "Returns the live ProductStoreState by reading data from the store.\n\
+        \nPricing reflects the next effective price per territory. When App Store\n\
+        Connect has a scheduled price change, this endpoint returns the scheduled\n\
+        price instead of the current one and includes `start_date`.\n This endpoint\
+        \ requires the following permission(s): <code>project_configuration:products:read</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: get-product-store-state
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-mcp-description: "Returns live ProductStoreState data from the\
+        \ target store (App Store Connect or Google Play Store).\nSubscription pricing\
+        \ note: App Store subscriptions typically require territory-level pricing\
+        \ coverage; partial pricing can leave metadata incomplete until remaining\
+        \ territories are configured.\nResponse shape — read directly from the returned\
+        \ JSON. - `store` (`app_store` | `play_store`) and `store_status.status`\n\
+        \  (e.g. `ok`, `needs_action`, `not_found`) tell you which store this came\n\
+        \  from and the overall product health.\n- `common.availability.territories[<region>]`\
+        \ — boolean: whether the\n  product is available in that region (e.g. `common.availability.territories.US`).\n\
+        - `common.pricing.territory_prices[<region>]` — `{ amount_micros, currency,\n\
+        \  start_date? }` for that region. For App Store this is the next effective\n\
+        \  price (scheduled changes include `start_date`).\n- `common.localizations[<locale>]`\
+        \ — `{ name, description }` per locale\n  (e.g. `en-US`).\n- App Store-specific\
+        \ (`store_state` when `store == app_store`):\n  `subscription_group_localizations`,\
+        \ `trial_offer`, `privacy_policy_url`,\n  `review_information.screenshot`,\
+        \ `review_information.notes`.\n- Play Store-specific (`store_state` when `store\
+        \ == play_store`):\n  `base_plans[<base_plan_id>]` is keyed by base plan id\
+        \ and contains\n  `state` (`ACTIVE` | `DRAFT` | `INACTIVE`), exactly one of\n\
+        \  `auto_renewing_base_plan_type` (fields: `billing_period_duration`\n  (e.g.\
+        \ `P1M`), `grace_period_duration`, `account_hold_duration`,\n  `proration_mode`,\
+        \ `resubscribe_state`, `legacy_compatible`,\n  `legacy_compatible_subscription_offer_id`),\n\
+        \  `prepaid_base_plan_type`, or `installments_base_plan_type`,\n  `regional_configs[<region>].new_subscriber_availability`\
+        \ and\n  `regional_configs[<region>].price`, `offers`, and `offer_tags`."
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Set a product store state
+      description: "Accepts desired store metadata for a product and enqueues an asynchronous\n\
+        apply operation. Supports partial updates: only provided fields are applied,\n\
+        omitted fields leave the existing state in App Store Connect unchanged.\n\
+        For map fields, keys follow patch semantics:\n- omitted key: no-op (preserves\
+        \ existing state)\n- key with null value: delete that entry in App Store Connect\n\
+        - key with object value: create or update\n`territories` uses `true`/`false`\
+        \ instead of null (true = available,\nfalse = remove). `territory_prices`\
+        \ does not support deletion because\nApple does not allow removing individual\
+        \ territory prices — override\nwith a new `amount_micros` value instead.\n\
+        Exception: a placeholder review screenshot is always uploaded if the product\n\
+        does not have one, regardless of whether review_information is provided.\n\
+        \n`store_state.trial_offer` requires at least one available territory.\nIf\
+        \ availability is omitted, the current territories in App Store Connect\n\
+        are used. If no territories exist, the request will fail.\n\nIf the product\
+        \ does not exist yet in the target store, the apply flow will\ncreate it first\
+        \ and then apply availability, pricing, and localization state.\nFor subscription\
+        \ create-if-missing flows, provide `common.duration`.\nOptionally set `store_state.subscription_group_name`\
+        \ to choose the target\nsubscription group name at creation time.\n This endpoint\
+        \ requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: set-product-store-state
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-mcp-description: 'Creates or updates desired store metadata for
+        a product and returns an async operation_id.
+
+        Recommended flow: 1) Call get-product-store-state first. 2) Optional: if user
+        provides a review screenshot, call upload-product-store-state-screenshot and
+        upload bytes to Apple. 3) Call this tool with store=''app_store'' and the
+        fields to change. 4) Poll get-product-store-state-operation until status is
+        ''succeeded'' or ''failed''.
+
+        This endpoint uses patch semantics: omitted fields are not changed.
+
+        Pricing guidance: - In-app purchases can often start from a base territory
+        price. - Subscriptions may require territory-by-territory pricing coverage
+        in App Store Connect, otherwise validation/missing-metadata issues can remain.
+        - Inspect `warnings` from `get-product-store-state`; if it indicates incomplete
+        subscription territory pricing, call `equalize-subscription-prices` to fill
+        missing territories.
+
+        Subscription-group guidance for subscription products: - Prefer reusing an
+        existing subscription group when available. - If no subscription group exists,
+        create a new one. - If the user explicitly asks for a different group, use
+        that group instead (set `store_state.subscription_group_name` accordingly).
+
+        If available, include review_information.notes, privacy_policy_url (especially
+        for subscriptions), and trial_offer for subscription products.'
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/products/{product_id}/store_state/actions/equalize_subscription_prices:
+    post:
+      summary: Equalize subscription prices for missing territories
+      description: "Enqueues an asynchronous operation that fills missing App Store\
+        \ subscription\nterritory prices using Apple's equalized price points derived\
+        \ from the\ncurrent price configured in a base territory.\n\nThis action does\
+        \ not modify sale availability. It only creates missing\nsubscription prices.\n\
+        \ This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: equalize-subscription-prices
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-description: 'Fills missing App Store subscription territory
+        prices by applying Apple equalizations from the current price configured in
+        `base_territory`.
+
+        Recommended flow: 1) Call get-product-store-state and inspect `warnings`.
+        2) If warnings indicate missing territory pricing coverage, call this endpoint.
+        3) Poll get-product-store-state-operation until status is ''succeeded'' or
+        ''failed''.'
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/products/{product_id}/store_state/{operation_id}:
+    get:
+      summary: Get a product store state operation
+      description: "Polls status/result of async operation started by POST /store_state.\n\
+        \ This endpoint requires the following permission(s): <code>project_configuration:products:read</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: get-product-store-state-operation
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-mcp-description: 'Polls the async operation created by set-product-store-state.
+
+        Keep polling until terminal status: - succeeded: operation completed - failed:
+        inspect error_message, adjust input, and retry the set call'
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      - name: operation_id
+        description: ID of the operation
+        required: true
+        in: path
+        schema:
+          type: string
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/products/{product_id}/store_state/screenshot_upload:
+    post:
+      summary: Reserve a product store state screenshot upload
+      description: "Reserves an App Store Connect review screenshot upload slot for\
+        \ an existing\nproduct and returns upload operations that the client can use\
+        \ to upload\nscreenshot bytes directly to Apple.\n\nAfter upload, pass `screenshot_id`\
+        \ and `source_file_checksum` in\n`POST /store_state` under `store_state.review_information.screenshot`.\n\
+        \ This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: upload-product-store-state-screenshot
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: true
+      x-revenuecat-mcp-description: 'Reserves an App Store Connect review screenshot
+        slot and returns upload_operations.
+
+        Important: this tool does not upload bytes. Use each returned upload operation
+        to upload the file (including chunked uploads when multiple operations are
+        returned).
+
+        After upload completes, pass screenshot_id and source_file_checksum to set-product-store-state
+        under store_state.review_information.screenshot.'
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: product_id
+        description: ID of the product
+        required: true
+        in: path
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: prod1a2b3c4d5
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans:
+    get:
+      summary: List product store state plans
+      description: "Lists product store state plans for the project, optionally filtered\
+        \ by status.\n This endpoint requires the following permission(s): <code>project_configuration:products:read</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: list-product-store-state-plans
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Lists product store state plans for a project.
+        Use this to find an existing draft, planned, errored, applied, or discarded
+        plan before creating a new one, or to resume a previous plan workflow. Filter
+        by `status` when the user is looking for a specific stage, then call get-product-store-state-plan
+        with the returned `id` to inspect available actions, desired states, diffs,
+        warnings, and apply results.
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: status
+        in: query
+        description: Filter plans by status
+        required: false
+        schema:
+          type: string
+          enum:
+          - draft
+          - plan_queued
+          - planning
+          - planned
+          - planned_and_finished
+          - plan_errored
+          - apply_queued
+          - applying
+          - applied
+          - apply_errored
+          - discarded
+          - cancelled
+          - expired
+      - name: starting_after
+        in: query
+        required: false
+        schema:
+          type: string
+          example: ent12354
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          example: 10
+          default: 20
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create a product store state plan
+      description: "Creates a draft product store state plan by storing the provided\
+        \ desired states.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: create-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: 'Creates a draft plan to create or update products
+        in RevenueCat and the app stores from one or more desired product store states.  Prefer
+        this over set-product-store-state when the user wants to preview changes,
+        modify multiple products, create missing RevenueCat products, or safely review
+        store metadata before applying it. Provide `product_id` when the RevenueCat
+        product ID is known. Alternatively, provide `create_revenuecat_product` with
+        the app, store identifier, and product metadata; if a RevenueCat product already
+        exists for that app and store identifier, the plan will target the existing
+        product, otherwise the plan keeps it as a new RevenueCat product to create
+        when applied. Set `store` to `app_store` or `play_store` and populate the
+        matching `store_state` payload. For App Store subscriptions, include `common.pricing.equalize_missing_subscription_prices`
+        with a `base_territory` such as `US` when missing subscription territory prices
+        should be filled using Apple''s equalized price points. For App Store subscription
+        creation, provide `common.duration` using canonical ISO-like values such as
+        `P1M`. Play Store currently supports subscriptions only (no consumables or
+        non-consumables). For Play Store subscriptions: (1) provide at least one localization
+        in `common.localizations` (keyed by locale, e.g. `en-US`) with a `name` (and
+        optional `description`); (2) populate `store_state.play_store.base_plans`
+        with an entry keyed by `base_plan_id` — typically a single entry for the targeted
+        plan — and set `state` to `ACTIVE` by default (use `DRAFT` only when the user
+        explicitly wants the base plan held back; `INACTIVE` is not yet supported
+        on apply); (3) include a billing plan type on the base plan — exactly one
+        of `auto_renewing_base_plan_type`, `prepaid_base_plan_type`, or `installments_base_plan_type`.
+        This is required when creating a new subscription. On modify, if the caller
+        omits the billing plan type it is carried forward from the live Play Store
+        state, but always ask the user for the billing period upfront. The most common
+        is `auto_renewing_base_plan_type`, e.g. `{ "billing_period_duration": "P1M",
+        "grace_period_duration": "P3D", "account_hold_duration": "P30D", "proration_mode":
+        "SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE", "resubscribe_state":
+        "RESUBSCRIBE_STATE_ACTIVE", "legacy_compatible": false, "legacy_compatible_subscription_offer_id":
+        null }`. Only `billing_period_duration` (ISO-8601, e.g. `P1M`) is required;
+        the rest are optional and default to Google''s defaults when omitted. `prepaid_base_plan_type`
+        requires `billing_period_duration` (optional `time_extension`). `installments_base_plan_type`
+        additionally requires `committed_payments_count` and `renewal_type` (one of
+        `RENEWAL_TYPE_RENEWS_WITHOUT_COMMITMENT`, `RENEWAL_TYPE_RENEWS_WITH_COMMITMENT`).
+        (4) ensure every region that is available has a price, either in `common.pricing.territory_prices[region]`
+        or in `store_state.play_store.base_plans[base_plan_id].regional_configs[region].price`
+        (each price needs `amount_micros` and `currency`). When using `create_revenuecat_product`
+        for Play Store, `store_identifier` must be in the form `<subscription_id>:<base_plan_id>`
+        (e.g. `pro_monthly:monthly`). After creating the draft, call plan-product-store-state-plan,
+        then poll get-product-store-state-plan until it reaches `planned`, `planned_and_finished`,
+        or `plan_errored`.'
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans/{plan_id}:
+    get:
+      summary: Get a product store state plan
+      description: "Retrieves the current state of a product store state plan, including\
+        \ available actions,\nplanning summary, timestamps, and per-item planning/apply\
+        \ details when available.\n This endpoint requires the following permission(s):\
+        \ <code>project_configuration:products:read</code>. This endpoint belongs\
+        \ to the <strong>Project Configuration</strong> domain, which has a default\
+        \ rate limit of <strong>60 requests per minute</strong>."
+      operationId: get-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: "Returns the full product store state plan. Use\
+        \ this to poll asynchronous planning or apply work, inspect `actions` before\
+        \ choosing the next step, and review `plan_items` for per-product create/modify/unchanged\
+        \ actions, diffs, warnings, and apply status. After planning, review warnings\
+        \ and blocker messages before applying. After applying, poll this tool until\
+        \ the plan reaches `applied` or `apply_errored`; if planning errored, inspect\
+        \ `error_message` and per-item `error_message`; if applying errored, inspect\
+        \ per-item `apply_error_message`.\nResponse shape — read directly from the\
+        \ returned JSON. - `status` is the plan-level lifecycle state (`draft`, `plan_queued`,\n\
+        \  `planning`, `planned`, `planned_and_finished`, `plan_errored`,\n  `apply_queued`,\
+        \ `applying`, `applied`, `apply_errored`, `discarded`,\n  `cancelled`, `expired`).\
+        \ Use this when polling.\n- `actions` lists the next valid actions (`edit`,\
+        \ `plan`, `apply`,\n  `discard`) — pick the next step from this list.\n- `summary`\
+        \ has `products_added`, `products_modified`,\n  `products_unchanged` for a\
+        \ quick rollup.\n- `plan_items[*]` is the per-product detail. For each item:\n\
+        \  - `action` is `create` | `modify` | `unchanged`.\n  - `diff[*]` lists `{\
+        \ field, from_value, to_value }` where `field` is a\n    dotted path into\
+        \ the desired state (e.g.\n    `common.pricing.territory_prices.US`,\n   \
+        \ `store_state.base_plans.monthly.state`).\n  - `warnings[*]` is `{ severity,\
+        \ field, message }` where `severity` is\n    `info` | `warning` | `blocker`.\
+        \ Treat any `blocker` as something the\n    user must fix before applying.\n\
+        \  - `error_message` is the per-item planning error (if planning failed\n\
+        \    for that item).\n  - `apply_status` is `pending` | `running` | `applied`\
+        \ | `failed` |\n    `skipped`, and `apply_error_message` is set when `apply_status\
+        \ ==\n    failed`.\n- Plan-level `error_message` is set when the whole plan\
+        \ failed planning. - `timestamps` has `created_at`, `planning_at`, `planned_at`,\n\
+        \  `applied_at`, `discarded_at`, `cancelled_at`, `expired_at` (ms since\n\
+        \  epoch)."
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
+          type: string
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+    put:
+      summary: Update a product store state plan
+      description: "Replaces all desired states in a plan and returns the plan in\
+        \ draft status.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: update-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: 'Replaces all desired states in an editable product
+        store state plan and moves it back to draft status. This is a full replacement,
+        not a patch: include the complete desired_states array that should remain
+        in the plan. Use this to fix warnings, add or remove products, adjust metadata,
+        or add `common.pricing.equalize_missing_subscription_prices` for App Store
+        subscriptions before re-planning. After updating, call plan-product-store-state-plan
+        again and poll get-product-store-state-plan.'
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
+          type: string
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans/{plan_id}/actions/plan:
+    post:
+      summary: Trigger product store state plan generation
+      description: "Queues asynchronous planning for the specified product store state\
+        \ plan.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: plan-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Queues asynchronous planning for a draft or replannable
+        product store state plan. Planning validates the desired states, compares
+        them to the current store state, computes per-product diffs and warnings,
+        and resolves `common.pricing.equalize_missing_subscription_prices` for App
+        Store subscriptions when that directive is present. Call this after creating
+        or updating a plan, then poll get-product-store-state-plan until status is
+        `planned`, `planned_and_finished`, or `plan_errored`. If planning fails or
+        returns blocker warnings, update the plan and run this action again.
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
+          type: string
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans/{plan_id}/actions/apply:
+    post:
+      summary: Trigger product store state plan apply
+      description: "Queues asynchronous apply for the specified planned product store\
+        \ state plan.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: apply-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Queues asynchronous apply for a planned or retryable
+        product store state plan. Before calling this, call get-product-store-state-plan
+        and confirm the plan has an `apply` action, review the diffs and warnings,
+        and make sure the user wants the changes applied to the store. Applying may
+        create products, update App Store metadata, availability, pricing, localizations,
+        screenshots, and fill missing subscription territory prices when `common.pricing.equalize_missing_subscription_prices`
+        was included. After queueing apply, poll get-product-store-state-plan until
+        status is `applied` or `apply_errored`; if a 423 lock occurs, inspect the
+        referenced object ids and retry after the conflicting operation finishes.
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
+          type: string
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/store_state/plans/{plan_id}/actions/discard:
+    post:
+      summary: Discard a product store state plan
+      description: "Discards the specified product store state plan when it is in\
+        \ a discardable state.\n This endpoint requires the following permission(s):\
+        \ <code>project_configuration:products:read_write</code>. This endpoint belongs\
+        \ to the <strong>Project Configuration</strong> domain, which has a default\
+        \ rate limit of <strong>60 requests per minute</strong>."
+      operationId: discard-product-store-state-plan
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-mcp-description: Discards a product store state plan that is no
+        longer needed and is in a discardable state. Use this to clean up drafts,
+        planned changes, or errored plans that the user does not want to apply. Discarding
+        does not apply any store changes and does not undo a plan that has already
+        been applied.
+      x-revenuecat-mcp-return-as-json: true
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      - name: plan_id
+        description: ID of the product store state plan
+        required: true
+        in: path
+        schema:
+          type: string
+          format: uuid
+          example: 4d5c046e-fadd-4d91-bd78-744fe44d314d
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Currency:
+      type: string
+      description: ISO 4217 currency code
+      nullable: false
+      example: USD
+      enum:
+      - AED
+      - AFN
+      - ALL
+      - AMD
+      - ANG
+      - AOA
+      - ARS
+      - AUD
+      - AWG
+      - AZN
+      - BAM
+      - BBD
+      - BDT
+      - BGN
+      - BHD
+      - BIF
+      - BMD
+      - BND
+      - BOB
+      - BRL
+      - BSD
+      - BTC
+      - BTN
+      - BWP
+      - BYN
+      - BZD
+      - CAD
+      - CDF
+      - CHF
+      - CLF
+      - CLP
+      - CNH
+      - CNY
+      - COP
+      - CRC
+      - CUC
+      - CUP
+      - CVE
+      - CZK
+      - DJF
+      - DKK
+      - DOP
+      - DZD
+      - EGP
+      - ERN
+      - ETB
+      - EUR
+      - FJD
+      - FKP
+      - GBP
+      - GEL
+      - GGP
+      - GHS
+      - GIP
+      - GMD
+      - GNF
+      - GTQ
+      - GYD
+      - HKD
+      - HNL
+      - HRK
+      - HTG
+      - HUF
+      - IDR
+      - ILS
+      - IMP
+      - INR
+      - IQD
+      - IRR
+      - ISK
+      - JEP
+      - JMD
+      - JOD
+      - JPY
+      - KES
+      - KGS
+      - KHR
+      - KMF
+      - KPW
+      - KRW
+      - KWD
+      - KYD
+      - KZT
+      - LAK
+      - LBP
+      - LKR
+      - LRD
+      - LSL
+      - LYD
+      - MAD
+      - MDL
+      - MGA
+      - MKD
+      - MMK
+      - MNT
+      - MOP
+      - MRU
+      - MUR
+      - MVR
+      - MWK
+      - MXN
+      - MYR
+      - MZN
+      - NAD
+      - NGN
+      - NIO
+      - NOK
+      - NPR
+      - NZD
+      - OMR
+      - PAB
+      - PEN
+      - PGK
+      - PHP
+      - PKR
+      - PLN
+      - PYG
+      - QAR
+      - RON
+      - RSD
+      - RUB
+      - RWF
+      - SAR
+      - SBD
+      - SCR
+      - SDG
+      - SEK
+      - SGD
+      - SHP
+      - SLL
+      - SOS
+      - SRD
+      - SSP
+      - STD
+      - STN
+      - SVC
+      - SYP
+      - SZL
+      - THB
+      - TJS
+      - TMT
+      - TND
+      - TOP
+      - TRY
+      - TTD
+      - TWD
+      - TZS
+      - UAH
+      - UGX
+      - USD
+      - UYU
+      - UZS
+      - VEF
+      - VES
+      - VND
+      - VUV
+      - WST
+      - XAF
+      - XAG
+      - XAU
+      - XCD
+      - XDR
+      - XOF
+      - XPD
+      - XPF
+      - XPT
+      - YER
+      - ZAR
+      - ZMW
+      - ZWL

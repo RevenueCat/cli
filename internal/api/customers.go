@@ -36,7 +36,7 @@ func (o *ListCustomersOptions) query() string {
 // GET /projects/{project_id}/customers
 func (s *CustomersService) List(ctx context.Context, projectID string, opts *ListCustomersOptions) (*Page[Customer], error) {
 	var out Page[Customer]
-	if err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers")+opts.query(), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathCustomers(projectID)+opts.query(), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -45,7 +45,7 @@ func (s *CustomersService) List(ctx context.Context, projectID string, opts *Lis
 // GET /projects/{project_id}/customers/{customer_id}
 func (s *CustomersService) Get(ctx context.Context, projectID, customerID string) (*Customer, error) {
 	var out Customer
-	if err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathCustomer(projectID, customerID), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -54,7 +54,7 @@ func (s *CustomersService) Get(ctx context.Context, projectID, customerID string
 // GET /projects/{project_id}/customers/{customer_id}/subscriptions
 func (s *CustomersService) Subscriptions(ctx context.Context, projectID, customerID string) (*Page[Subscription], error) {
 	var out Page[Subscription]
-	if err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "subscriptions"), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathCustomerSubscriptions(projectID, customerID), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -63,7 +63,7 @@ func (s *CustomersService) Subscriptions(ctx context.Context, projectID, custome
 // GET /projects/{project_id}/customers/{customer_id}/purchases
 func (s *CustomersService) Purchases(ctx context.Context, projectID, customerID string) (*Page[Purchase], error) {
 	var out Page[Purchase]
-	if err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "purchases"), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathCustomerPurchases(projectID, customerID), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -74,7 +74,7 @@ func (s *CustomersService) Purchases(ctx context.Context, projectID, customerID 
 // NOTE: also embedded in the customer GET response.
 func (s *CustomersService) ActiveEntitlements(ctx context.Context, projectID, customerID string) (*Page[CustomerEntitlement], error) {
 	var out Page[CustomerEntitlement]
-	if err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "active_entitlements"), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathCustomerActiveEntitlements(projectID, customerID), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -88,7 +88,7 @@ func (s *CustomersService) ActiveEntitlements(ctx context.Context, projectID, cu
 func (s *CustomersService) GrantEntitlement(ctx context.Context, projectID, customerID, entitlementID string, expiresAt int64) (*Customer, error) {
 	body := map[string]any{"entitlement_id": entitlementID, "expires_at": expiresAt}
 	var out Customer
-	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/grant_entitlement"
+	path := pathCustomerActionsGrantEntitlement(projectID, customerID)
 	if err := s.c.do(ctx, http.MethodPost, path, body, &out); err != nil {
 		return nil, err
 	}
@@ -98,14 +98,14 @@ func (s *CustomersService) GrantEntitlement(ctx context.Context, projectID, cust
 // POST /projects/{project_id}/customers/{customer_id}/actions/revoke_granted_entitlement
 func (s *CustomersService) RevokeEntitlement(ctx context.Context, projectID, customerID, entitlementID string) error {
 	body := map[string]any{"entitlement_id": entitlementID}
-	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/revoke_granted_entitlement"
+	path := pathCustomerActionsRevokeGrantedEntitlement(projectID, customerID)
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
 // GET /projects/{project_id}/customers/{customer_id}/aliases
 func (s *CustomersService) Aliases(ctx context.Context, projectID, customerID string) (*Page[map[string]any], error) {
 	var out Page[map[string]any]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "aliases"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathCustomerAliases(projectID, customerID), nil, &out)
 	return &out, err
 }
 
@@ -115,7 +115,7 @@ func (s *CustomersService) Aliases(ctx context.Context, projectID, customerID st
 // not a flat key→value map as one might guess from the name.
 func (s *CustomersService) Attributes(ctx context.Context, projectID, customerID string) (*Page[map[string]any], error) {
 	var out Page[map[string]any]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "attributes"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathCustomerAttributes(projectID, customerID), nil, &out)
 	return &out, err
 }
 
@@ -132,13 +132,13 @@ func (s *CustomersService) SetAttributes(ctx context.Context, projectID, custome
 		items = append(items, attrItem{Name: k, Value: v})
 	}
 	body := map[string]any{"attributes": items}
-	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "attributes"), body, nil)
+	return s.c.do(ctx, http.MethodPost, pathCustomerAttributes(projectID, customerID), body, nil)
 }
 
 // POST /projects/{project_id}/customers/{customer_id}/actions/transfer
 func (s *CustomersService) Transfer(ctx context.Context, projectID, sourceCustomerID, destCustomerID string) error {
 	body := map[string]any{"destination_customer_id": destCustomerID}
-	path := encodePath("projects", projectID, "customers", sourceCustomerID, "actions") + "/transfer"
+	path := pathCustomerActionsTransfer(projectID, sourceCustomerID)
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
@@ -151,32 +151,32 @@ func (s *CustomersService) OverrideOffering(ctx context.Context, projectID, cust
 		id = &offeringID
 	}
 	body := map[string]any{"offering_id": id}
-	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/assign_offering"
+	path := pathCustomerActionsAssignOffering(projectID, customerID)
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
 // POST /projects/{project_id}/customers/{customer_id}/actions/restore_purchase_by_order_id
 func (s *CustomersService) RestoreGooglePlay(ctx context.Context, projectID, customerID, token string) error {
 	body := map[string]any{"fetch_token": token}
-	path := encodePath("projects", projectID, "customers", customerID, "actions") + "/restore_purchase_by_order_id"
+	path := pathCustomerActionsRestorePurchaseByOrderID(projectID, customerID)
 	return s.c.do(ctx, http.MethodPost, path, body, nil)
 }
 
 // GET /projects/{project_id}/customers/{customer_id}/virtual_currencies
 func (s *CustomersService) Wallet(ctx context.Context, projectID, customerID string) (*Page[map[string]any], error) {
 	var out Page[map[string]any]
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "customers", customerID, "virtual_currencies"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathCustomerVirtualCurrencies(projectID, customerID), nil, &out)
 	return &out, err
 }
 
 // POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/update_balance
 func (s *CustomersService) WalletAdjustBalance(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
 	body := map[string]any{"currency_code": currencyCode, "amount": amount}
-	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "virtual_currencies", "update_balance"), body, nil)
+	return s.c.do(ctx, http.MethodPost, pathCustomerVirtualCurrenciesUpdateBalance(projectID, customerID), body, nil)
 }
 
 // POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/transactions
 func (s *CustomersService) WalletTransaction(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
 	body := map[string]any{"currency_code": currencyCode, "amount": amount}
-	return s.c.do(ctx, http.MethodPost, encodePath("projects", projectID, "customers", customerID, "virtual_currencies", "transactions"), body, nil)
+	return s.c.do(ctx, http.MethodPost, pathCustomerVirtualCurrenciesTransactions(projectID, customerID), body, nil)
 }

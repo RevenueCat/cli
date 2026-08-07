@@ -69,7 +69,7 @@ type ChartShowOptions struct {
 }
 
 func (s *ChartsService) Show(ctx context.Context, projectID, name string, opts ChartShowOptions) (*ChartData, error) {
-	path := encodePath("projects", projectID, "charts", name)
+	path := pathChart(projectID, name)
 	q := url.Values{}
 	if opts.Resolution != "" {
 		q.Set("resolution", opts.Resolution)
@@ -93,7 +93,7 @@ func (s *ChartsService) Show(ctx context.Context, projectID, name string, opts C
 
 func (s *ChartsService) Options(ctx context.Context, projectID, name string) (map[string]any, error) {
 	var out map[string]any
-	err := s.c.do(ctx, http.MethodGet, encodePath("projects", projectID, "charts", name, "options"), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, pathChartOptions(projectID, name), nil, &out)
 	return out, err
 }
 
