@@ -11,6 +11,36 @@ import (
 	"github.com/revenuecat/cli/internal/api"
 )
 
+func TestMediaAssetsList(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/projects/proj/media_assets" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if q := r.URL.Query(); q.Get("limit") != "5" || q.Get("starting_after") != "medas_prev" {
+			t.Fatalf("unexpected query: %s", r.URL.RawQuery)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"object":"list","items":[{"id":"medas_abc","object_name":"media/proj/hero.png","original_name":"hero.png","original_width":1024,"original_height":768,"asset_base_url":"https://assets.example.com","asset_type":"image"}],"next_page":"/v2/projects/proj/media_assets?starting_after=medas_abc","url":"/v2/projects/proj/media_assets"}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	client := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+	page, err := client.MediaAssets.List(context.Background(), "proj", &api.ListMediaAssetsOptions{Limit: 5, StartingAfter: "medas_prev"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Items) != 1 {
+		t.Fatalf("items = %d, want 1", len(page.Items))
+	}
+	a := page.Items[0]
+	if a.ID != "medas_abc" || a.OriginalName != "hero.png" || a.OriginalWidth == nil || *a.OriginalWidth != 1024 {
+		t.Fatalf("unexpected asset: %+v", a)
+	}
+	if page.NextPage == "" {
+		t.Fatal("next_page not decoded")
+	}
+}
+
 func TestMediaAssetsCreate(t *testing.T) {
 	raw := []byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a}
 	body := api.CreateMediaAssetJSONBody{

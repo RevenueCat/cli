@@ -61,6 +61,52 @@ func TestMediaAssetsUpload(t *testing.T) {
 	}
 }
 
+func runMediaAssetsList(t *testing.T, extra ...string) (stdout, stderr string, err error) {
+	t.Helper()
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	var out, errb bytes.Buffer
+	root := NewRootCmd("test")
+	root.SetOut(&out)
+	root.SetErr(&errb)
+	args := []string{"media-assets", "list", "--no-input", "--api-key", "sk_test", "--project-id", "proj"}
+	root.SetArgs(append(args, extra...))
+	err = root.ExecuteContext(context.Background())
+	return out.String(), errb.String(), err
+}
+
+func TestMediaAssetsList(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/projects/proj/media_assets" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"list","items":[{"id":"medas_abc","object_name":"media/proj/hero.png","original_name":"hero.png","original_width":1024,"original_height":768,"asset_base_url":"https://assets.example.com","asset_type":"image"}],"next_page":"/v2/projects/proj/media_assets?starting_after=medas_abc","url":"/v2/projects/proj/media_assets"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+
+	stdout, stderr, err := runMediaAssetsList(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"medas_abc", "hero.png", "1024x768", "https://assets.example.com/media/proj/hero.png"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("stdout missing %q: %s", want, stdout)
+		}
+	}
+	if !strings.Contains(stderr, "--cursor medas_abc") {
+		t.Fatalf("stderr missing pagination hint: %s", stderr)
+	}
+
+	stdout, _, err = runMediaAssetsList(t, "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(stdout, `"next_page"`) {
+		t.Fatalf("json output missing envelope: %s", stdout)
+	}
+}
+
 func TestMediaAssetsUpload_ValidationErrors(t *testing.T) {
 	cases := []struct {
 		name, file string

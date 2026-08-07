@@ -160,6 +160,18 @@ endpoints:
   - method: DELETE
     path: /projects/{project_id}/paywalls/{paywall_id}
 
+  # Media assets
+  - method: GET
+    path: /projects/{project_id}/media_assets
+  - method: POST
+    path: /projects/{project_id}/media_assets
+
+  # Fonts
+  - method: GET
+    path: /projects/{project_id}/fonts
+  - method: POST
+    path: /projects/{project_id}/fonts
+
   # Webhooks
   - method: GET
     path: /projects/{project_id}/integrations/webhooks
