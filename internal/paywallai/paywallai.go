@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/revenuecat/cli/internal/httpx"
 	"github.com/revenuecat/cli/internal/sse"
 )
 
@@ -103,11 +104,12 @@ func (e *Event) Terminal() bool {
 }
 
 type Client struct {
-	baseURL   string
-	token     string
-	userAgent string
-	rest      *http.Client
-	stream    *http.Client
+	baseURL      string
+	token        string
+	userAgent    string
+	extraHeaders http.Header
+	rest         *http.Client
+	stream       *http.Client
 }
 
 type Options struct {
@@ -115,7 +117,8 @@ type Options struct {
 	Token     string
 	UserAgent string
 	// HTTPClient overrides both REST and streaming transports (tests).
-	HTTPClient *http.Client
+	HTTPClient   *http.Client
+	ExtraHeaders http.Header
 }
 
 func NewClient(opts Options) *Client {
@@ -132,11 +135,12 @@ func NewClient(opts Options) *Client {
 		stream = &http.Client{} // editor runs stream for minutes; ctx cancels
 	}
 	return &Client{
-		baseURL:   baseURL,
-		token:     opts.Token,
-		userAgent: opts.UserAgent,
-		rest:      rest,
-		stream:    stream,
+		baseURL:      baseURL,
+		token:        opts.Token,
+		userAgent:    opts.UserAgent,
+		extraHeaders: opts.ExtraHeaders,
+		rest:         rest,
+		stream:       stream,
 	}
 }
 
@@ -167,6 +171,7 @@ func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.R
 	if c.userAgent != "" {
 		req.Header.Set("User-Agent", c.userAgent)
 	}
+	httpx.Apply(req, c.extraHeaders)
 	return req, nil
 }
 

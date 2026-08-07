@@ -20,15 +20,18 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/revenuecat/cli/internal/httpx"
 )
 
 const DefaultBaseURL = "https://api.revenuecat.com/v2"
 
 type Options struct {
-	APIKey     string
-	BaseURL    string
-	HTTPClient *http.Client
-	UserAgent  string
+	APIKey       string
+	BaseURL      string
+	HTTPClient   *http.Client
+	UserAgent    string
+	ExtraHeaders http.Header
 }
 
 type cacheEntry struct {
@@ -37,11 +40,12 @@ type cacheEntry struct {
 }
 
 type Client struct {
-	baseURL   *url.URL
-	apiKey    string
-	http      *http.Client
-	userAgent string
-	cache     sync.Map // url string → cacheEntry; GET-only, session-scoped
+	baseURL      *url.URL
+	apiKey       string
+	http         *http.Client
+	userAgent    string
+	extraHeaders http.Header
+	cache        sync.Map // url string → cacheEntry; GET-only, session-scoped
 
 	Projects        *ProjectsService
 	Customers       *CustomersService
@@ -83,7 +87,7 @@ func NewClient(opts Options) *Client {
 	if ua == "" {
 		ua = "revenuecat-cli/dev"
 	}
-	c := &Client{baseURL: u, apiKey: opts.APIKey, http: hc, userAgent: ua}
+	c := &Client{baseURL: u, apiKey: opts.APIKey, http: hc, userAgent: ua, extraHeaders: opts.ExtraHeaders}
 	c.Projects = &ProjectsService{c: c}
 	c.Customers = &CustomersService{c: c}
 	c.Entitlements = &EntitlementsService{c: c}
@@ -130,6 +134,7 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	httpx.Apply(req, c.extraHeaders)
 
 	// ETag cache: send If-None-Match on repeat GETs.
 	if method == http.MethodGet {
@@ -237,6 +242,7 @@ func (c *Client) Raw(ctx context.Context, method, path string, body []byte) ([]b
 	if len(body) > 0 {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	httpx.Apply(req, c.extraHeaders)
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, 0, err

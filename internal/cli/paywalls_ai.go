@@ -755,9 +755,10 @@ func paywallAIClient(rt *Runtime, baseURL string) (*paywallai.Client, error) {
 		return nil, err
 	}
 	return paywallai.NewClient(paywallai.Options{
-		BaseURL:   baseURL,
-		Token:     agentAuthToken(rt),
-		UserAgent: userAgent(rt.Globals.Version),
+		BaseURL:      baseURL,
+		Token:        agentAuthToken(rt),
+		UserAgent:    userAgent(rt.Globals.Version),
+		ExtraHeaders: customHeaders(),
 	}), nil
 }
 

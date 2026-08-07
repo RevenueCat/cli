@@ -331,6 +331,18 @@ without raw API calls.
 | `--no-color` | Disable ANSI color (also respects `$NO_COLOR`) |
 | `--format <expr>` | jq expression applied to `--json` output |
 
+## Custom request headers
+
+`RC_HEADERS` sends extra HTTP headers on every RevenueCat request (v2 API, Rico,
+and the Paywall AI editor) — newline-separated `Name: Value` pairs. Use it to
+route or tag traffic without baking anything into the binary:
+
+```bash
+RC_HEADERS=$'X-Some-Header: value' rc offerings list
+```
+
+One header per line; supplied headers override the CLI's defaults.
+
 ## Exit codes
 
 | Code | Meaning |
