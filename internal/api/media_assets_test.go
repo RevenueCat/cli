@@ -13,16 +13,16 @@ import (
 
 func TestMediaAssetsCreate(t *testing.T) {
 	raw := []byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a}
-	body := api.MediaAssetCreate{
+	body := api.CreateMediaAssetJSONBody{
 		Filename:       "logo.png",
-		ContentType:    "image/png",
+		ContentType:    api.ImagePng,
 		FileDataBase64: base64.StdEncoding.EncodeToString(raw),
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/media_assets" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
-		var got api.MediaAssetCreate
+		var got api.CreateMediaAssetJSONBody
 		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
 			t.Fatal(err)
 		}
@@ -43,7 +43,10 @@ func TestMediaAssetsCreate(t *testing.T) {
 	if asset.ID != "medas_abc" {
 		t.Fatalf("id = %q, want medas_abc", asset.ID)
 	}
-	f, ok := asset.Formats["webp"]
+	if asset.Formats == nil {
+		t.Fatal("formats = nil")
+	}
+	f, ok := (*asset.Formats)["webp"]
 	if !ok || f.ObjectName != "media/proj/logo.webp" || f.Size != 512 || f.Object != "media_asset_format" {
 		t.Fatalf("unexpected formats: %+v", asset.Formats)
 	}
