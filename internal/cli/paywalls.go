@@ -20,7 +20,7 @@ func newPaywallsCmd() *cobra.Command {
 		Short:   "Create and inspect paywalls",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			if !guidedMode() || rt.Globals.NoInput || !tui.IsInteractive() {
+			if !guidedMode() || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
 				return cmd.Help()
 			}
 			if err := ensureAuthInteractive(cmd); err != nil {
