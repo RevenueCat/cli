@@ -30,6 +30,22 @@ type Globals struct {
 	Version   string
 }
 
+const gettingStarted = `rc — the RevenueCat CLI
+
+New here? Two steps:
+  rc auth login          log in (browser or API key)
+  rc projects use        pick a project
+
+Try it:
+  rc paywalls            design a paywall with AI
+  rc customer show <id>  look up a customer
+  rc charts show mrr     see your MRR
+
+More:
+  rc --help              all commands
+  rc <command> --help    details for any command
+`
+
 func NewRootCmd(version string) *cobra.Command {
 	g := &Globals{Version: version}
 
@@ -114,10 +130,10 @@ Agent-friendly entrypoints:
 	whoamiAlias.Use = "whoami"
 	whoamiAlias.Hidden = true
 
-	// Bare `rc` shows help, which leads with the getting-started intro. The
-	// guided setup orchestrator is still available explicitly as `rc setup`.
-	root.RunE = func(cmd *cobra.Command, args []string) error {
-		return cmd.Help()
+	// bare rc → getting-started; rc --help lists every command
+	root.RunE = func(cmd *cobra.Command, _ []string) error {
+		fmt.Fprint(cmd.OutOrStdout(), gettingStarted)
+		return nil
 	}
 
 	root.AddCommand(
