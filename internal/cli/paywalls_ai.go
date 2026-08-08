@@ -492,7 +492,6 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 			session.SessionID = event.SessionID
 		case paywallai.EventTurnSnapshot:
 			reportedActivity = reportPaywallAIActivity(rt, event.Activity, reportedActivity)
-			// checkpoint so a dropped stream can be resumed
 			applySessionEvent(session, event)
 			if err := savePaywallAISession(opts.sessionPath, session); err == nil {
 				checkpointed = true
@@ -506,8 +505,6 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	}
 }
 
-// applySessionEvent folds an editor event's paywall/session state into the
-// session. The editor may echo offering_id as null, so the CLI's is kept.
 func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 	if event.SessionID != "" {
 		session.SessionID = event.SessionID
@@ -516,6 +513,7 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 		session.TraceID = event.TraceID
 	}
 	if event.Paywall != nil {
+		// the editor echoes offering_id as null; keep the CLI's
 		offeringID := session.Paywall.OfferingID
 		session.Paywall = *event.Paywall
 		if session.Paywall.OfferingID == nil {
@@ -530,8 +528,6 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 	}
 }
 
-// streamDropError turns a mid-stream failure into an actionable message,
-// pointing at the checkpointed session when one was saved.
 func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
 	base := fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", err)
 	if checkpointed {
