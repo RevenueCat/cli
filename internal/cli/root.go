@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -201,4 +203,9 @@ func suggestFlag(cmd *cobra.Command, err error) error {
 		return err
 	}
 	return fmt.Errorf("%s (did you mean --%s?)", msg, best)
+}
+
+// guidedMode is set by the npm launcher for npx runs (RC_GUIDED).
+func guidedMode() bool {
+	return os.Getenv("RC_GUIDED") != ""
 }

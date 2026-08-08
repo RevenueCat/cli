@@ -10,6 +10,7 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
+	"github.com/revenuecat/cli/internal/tui"
 )
 
 func newPaywallsCmd() *cobra.Command {
@@ -17,6 +18,29 @@ func newPaywallsCmd() *cobra.Command {
 		Use:     "paywalls",
 		Aliases: []string{"paywall"},
 		Short:   "Create and inspect paywalls",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			if !guidedMode() || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+				return cmd.Help()
+			}
+			if err := ensureAuthInteractive(cmd); err != nil {
+				return err
+			}
+			action, err := decide(rt, "What would you like to do?", nil, []Choice[string]{
+				{Value: "generate", Label: "Generate a paywall with AI", Flag: "rc paywalls generate"},
+				{Value: "edit", Label: "Edit an existing paywall with AI", Flag: "rc paywalls edit"},
+			})
+			if err != nil {
+				return err
+			}
+			for _, sub := range cmd.Commands() {
+				if sub.Name() == action {
+					sub.SetContext(cmd.Context())
+					return sub.RunE(sub, nil)
+				}
+			}
+			return cmd.Help()
+		},
 	}
 	cmd.AddCommand(
 		newPaywallsListCmd(),
@@ -29,6 +53,21 @@ func newPaywallsCmd() *cobra.Command {
 		newPaywallsDeleteCmd(),
 	)
 	return cmd
+}
+
+// ensureAuthInteractive runs the login flow when no credential is stored yet.
+func ensureAuthInteractive(cmd *cobra.Command) error {
+	rt := RuntimeFrom(cmd.Context())
+	if rt.Config.BearerToken() != "" {
+		return nil
+	}
+	rt.Out.Hint("You're not logged in yet — let's do that first.")
+	login, _, err := cmd.Root().Find([]string{"auth", "login"})
+	if err != nil || login == nil {
+		return ErrNotAuthenticated
+	}
+	login.SetContext(cmd.Context())
+	return login.RunE(login, nil)
 }
 
 func newPaywallsListCmd() *cobra.Command {

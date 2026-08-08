@@ -4,6 +4,12 @@
 // and hands over execution. No JavaScript runs beyond this dispatch.
 "use strict";
 const { execFileSync } = require("child_process");
+const path = require("path");
+
+// True when launched via npx (npm's ephemeral `_npx` cache), not a real install.
+function runViaNpx() {
+  return __dirname.includes(`${path.sep}_npx${path.sep}`) || process.env.npm_command === "exec";
+}
 
 function binaryPath() {
   const key = `${process.platform}-${process.arch}`;
@@ -25,8 +31,9 @@ function binaryPath() {
   }
 }
 
+const env = runViaNpx() ? { ...process.env, RC_GUIDED: "1" } : process.env;
 try {
-  execFileSync(binaryPath(), process.argv.slice(2), { stdio: "inherit" });
+  execFileSync(binaryPath(), process.argv.slice(2), { stdio: "inherit", env });
 } catch (err) {
   if (typeof err.status === "number") process.exit(err.status);
   throw err;
