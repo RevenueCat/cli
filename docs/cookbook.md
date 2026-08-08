@@ -33,7 +33,7 @@ Grant a one-month promotional entitlement:
 rc customer grant --customer-id cus_abc --entitlement-id pro --duration monthly --yes
 ```
 
-Refund a Web Billing subscription (this is `--yes` by intent — confirmation
+Refund a RevenueCat Billing subscription (this is `--yes` by intent — confirmation
 matters):
 
 ```bash

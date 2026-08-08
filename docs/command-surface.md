@@ -197,7 +197,7 @@ rc products delete <id>
 rc products archive <id>
 rc products restore <id>
 rc products push <id>                                    # push to store
-rc products prices [product-id]                         # list Test Store / Web Billing prices
+rc products prices [product-id]                         # list Test Store / RevenueCat Billing prices
 rc products prices set [product-id] --price USD=9.99    # idempotently create or update Test Store prices
 rc products store sync [app-id]                          # human flow: input → plan → review → confirm → apply
 rc products store plan [app-id]                          # persist desired state + diff on the backend; accepts --file <path|->
@@ -225,9 +225,9 @@ rc rico feedback <run-id> <good|bad>
 
 # Subscriptions
 rc subscriptions show <id>
-rc subscriptions cancel <id>                             # Web Billing only
+rc subscriptions cancel <id>                             # RevenueCat Billing only
 rc subscriptions extend <id> --by <duration>
-rc subscriptions refund <id>                             # Web Billing only
+rc subscriptions refund <id>                             # RevenueCat Billing only
 rc subscriptions transactions <id>
 rc subscriptions entitlements <id>
 rc subscriptions management-url <id>
@@ -235,7 +235,7 @@ rc subscriptions management-url <id>
 # Purchases
 rc purchases show <id>
 rc purchases entitlements <id>
-rc purchases refund <id>                                 # Web Billing only
+rc purchases refund <id>                                 # RevenueCat Billing only
 
 # Invoices
 rc invoices show <id>
