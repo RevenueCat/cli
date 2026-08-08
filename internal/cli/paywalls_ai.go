@@ -118,7 +118,7 @@ func newPaywallsGenerateCmd() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate a paywall draft with the Paywall AI editor",
+		Short: "Generate a Paywall draft with the Paywall AI editor",
 		Long: `Creates a draft paywall and designs it from a natural-language prompt using
 the Paywall AI editor — the same engine behind the dashboard's AI mode.
 
@@ -229,7 +229,7 @@ func newPaywallsEditCmd() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "edit [paywall-id]",
-		Short: "Edit a paywall with the Paywall AI editor",
+		Short: "Edit a Paywall with the Paywall AI editor",
 		Long: `Applies a natural-language edit to a paywall.
 
 Given a paywall ID, the current draft (or published) components are fetched
@@ -397,9 +397,10 @@ func newPaywallsRewindCmd() *cobra.Command {
 	var sessionPath string
 	baseURL := envOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL)
 	cmd := &cobra.Command{
-		Use:   "rewind --session <file>",
-		Short: "Undo the last Paywall AI editor action",
-		Args:  cobra.NoArgs,
+		Use:     "rewind --session <file>",
+		Short:   "Rewind the last Paywall AI editor action",
+		Example: "  rc paywalls rewind --session ./paywall-session.json",
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if sessionPath == "" {

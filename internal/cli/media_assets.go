@@ -119,7 +119,9 @@ func newMediaAssetsUploadCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "upload <file>",
 		Short: "Upload an image to the project Media Gallery",
-		Args:  cobra.ExactArgs(1),
+		Example: `  rc media-assets upload ./hero.png
+  rc media-assets upload ./hero.png --json`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

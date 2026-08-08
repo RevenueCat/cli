@@ -33,7 +33,7 @@ it grants, or refund it. For recurring subscriptions use 'rc subscriptions'.`,
 func newPurchasesShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "show <id>",
-		Short:   "Show a purchase",
+		Short:   "Show a Purchase",
 		Long:    `Shows a Non-Subscription Purchase: its Product, store, purchase time, and the Customer (App User ID) it belongs to. In a terminal this opens the interactive browser.`,
 		Example: "  rc purchases show pur_abc\n  rc purchases show pur_abc --json | jq '.store'",
 		Args:    cobra.ExactArgs(1),
@@ -63,7 +63,7 @@ func newPurchasesShowCmd() *cobra.Command {
 func newPurchasesEntitlementsCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "entitlements <id>",
-		Short:   "List Entitlements granted by a purchase",
+		Short:   "List Entitlements granted by a Purchase",
 		Long:    `Lists the Entitlements a Non-Subscription Purchase grants the Customer — lifetime access, for example.`,
 		Example: "  rc purchases entitlements pur_abc\n  rc purchases entitlements pur_abc --json | jq '.data.items[].lookup_key'",
 		Args:    cobra.ExactArgs(1),
