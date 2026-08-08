@@ -305,8 +305,8 @@ store exactly (required).
 func newProductsPricesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "prices [product-id]",
-		Short: "List Test Store or Web Billing Product prices",
-		Long: `Lists configured prices for a Test Store or Web Billing Product. Omit the
+		Short: "List Test Store or RevenueCat Billing Product prices",
+		Long: `Lists configured prices for a Test Store or RevenueCat Billing Product. Omit the
 ID in a terminal to pick from a list.
 
 Use ` + "`rc products prices set`" + ` to idempotently create missing currencies or
