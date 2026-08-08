@@ -25,7 +25,7 @@ func TestMediaAssetsList(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	client := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	page, err := client.MediaAssets.List(context.Background(), "proj", &api.ListMediaAssetsOptions{Limit: 5, StartingAfter: "medas_prev"})
+	page, err := client.MediaAssets.List(context.Background(), "proj", &api.ListOptions{Limit: 5, StartingAfter: "medas_prev"})
 	if err != nil {
 		t.Fatal(err)
 	}
