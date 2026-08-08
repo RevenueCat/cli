@@ -68,6 +68,39 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 
 func (r *Renderer) IsJSON() bool { return r.json }
 
+// Tone names a semantic style for callers that compose their own multi-line
+// output (e.g. the bare-`rc` home screen) instead of going through the
+// Info/Title helpers. It keeps lipgloss out of those callers so all color
+// stays in this package.
+type Tone int
+
+const (
+	ToneAccent  Tone = iota // brand landmark (bar, identity)
+	ToneTitle               // bold section label
+	ToneDim                 // secondary/description text
+	ToneSuccess             // affirmative (logged in)
+	ToneCommand             // a command the user can type
+)
+
+// Paint renders text in the given tone, or returns it unstyled when color is
+// disabled — the single color gate for composed output.
+func (r *Renderer) Paint(t Tone, text string) string {
+	var s lipgloss.Style
+	switch t {
+	case ToneAccent:
+		s = StyleAccent
+	case ToneTitle:
+		s = StyleTitle
+	case ToneSuccess:
+		s = StyleSuccess
+	case ToneCommand:
+		s = StyleCommand
+	default:
+		s = StyleDim
+	}
+	return r.style(s, text)
+}
+
 // style returns either the styled rendering of s, or s unmodified when colors
 // are disabled. This is the single place we make that choice — every styled
 // write goes through here.
