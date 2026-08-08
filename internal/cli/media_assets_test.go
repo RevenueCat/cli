@@ -80,7 +80,7 @@ func TestMediaAssetsList(t *testing.T) {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"object":"list","items":[{"id":"medas_abc","object_name":"media/proj/hero.png","original_name":"hero.png","original_width":1024,"original_height":768,"asset_base_url":"https://assets.example.com","asset_type":"image"}],"next_page":"/v2/projects/proj/media_assets?starting_after=medas_abc","url":"/v2/projects/proj/media_assets"}`)
+		_, _ = io.WriteString(w, `{"object":"list","items":[{"id":"medas_abc","object_name":"media/proj/hero.png","original_name":"hero.png","original_width":1024,"original_height":768,"asset_base_url":"https://assets.example.com","asset_type":"image"}],"next_page":"/v2/projects/proj/media_assets?starting_after=medas_next","url":"/v2/projects/proj/media_assets"}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -94,16 +94,20 @@ func TestMediaAssetsList(t *testing.T) {
 			t.Fatalf("stdout missing %q: %s", want, stdout)
 		}
 	}
-	if !strings.Contains(stderr, "--cursor medas_abc") {
+	// The cursor comes from next_page's starting_after, not the item ID.
+	if !strings.Contains(stderr, "--cursor medas_next") {
 		t.Fatalf("stderr missing pagination hint: %s", stderr)
 	}
 
-	stdout, _, err = runMediaAssetsList(t, "--json")
+	stdout, stderr, err = runMediaAssetsList(t, "--json")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(stdout, `"next_page"`) {
 		t.Fatalf("json output missing envelope: %s", stdout)
+	}
+	if strings.Contains(stderr, "--cursor") {
+		t.Fatalf("hint must be suppressed under --json: %s", stderr)
 	}
 }
 

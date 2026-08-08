@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-// ListOptions are the shared cursor-pagination params for list endpoints.
+// ListOptions are shared cursor-pagination params.
 type ListOptions struct {
 	Limit         int
 	StartingAfter string
