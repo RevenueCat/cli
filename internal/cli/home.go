@@ -17,9 +17,9 @@ type homeGroup struct {
 // discoverable slice of the surface, not the full tree (that's `rc --help`).
 var homeMap = []homeGroup{
 	{"Build", [][2]string{
-		{"rc paywalls", "design a paywall with AI ✨"},
 		{"rc offerings list", "offerings & their packages"},
 		{"rc products list", "products across your stores"},
+		{"rc entitlements list", "entitlements & their products"},
 	}},
 	{"Inspect", [][2]string{
 		{"rc customer show <id>", "a full customer view"},
@@ -57,6 +57,16 @@ func writeHomeScreen(w io.Writer, rt *Runtime) {
 			b.WriteString(homeRows(paint, [][2]string{{"rc projects use", "choose a default project"}}, 0))
 			b.WriteString("\n")
 		}
+
+		// The hero: paywalls is the reason to reach for the CLI, so feature it
+		// on its own with both entry points rather than as one row in a group.
+		b.WriteString(paint(output.ToneAccent, "✨ Paywalls — design with AI") + "\n")
+		b.WriteString(homeRows(paint, [][2]string{
+			{"rc paywalls generate", "start from a prompt"},
+			{"rc paywalls edit", "refine an existing paywall"},
+		}, 0))
+		b.WriteString("\n")
+
 		mapWidth := 0
 		for _, g := range homeMap {
 			for _, r := range g.rows {
