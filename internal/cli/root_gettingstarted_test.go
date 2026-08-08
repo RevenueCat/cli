@@ -10,16 +10,15 @@ func TestBareRC_LoggedOut_ShowsSetupSteps(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"New here?", "rc auth login", "rc projects use", "rc paywalls", "rc --help"} {
+	for _, want := range []string{"rc · RevenueCat", "not logged in", "New here?", "rc auth login", "rc projects use"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("logged-out home missing %q:\n%s", want, out)
 		}
 	}
-	if strings.Contains(out, "Logged in") {
-		t.Fatalf("logged-out home should not claim a session:\n%s", out)
-	}
-	if strings.Contains(out, "Available Commands") {
-		t.Fatalf("bare rc should not dump the full command list:\n%s", out)
+	// Logged out doesn't show the command map (commands need auth) or the
+	// full cobra dump.
+	if strings.Contains(out, "Build") || strings.Contains(out, "Available Commands") {
+		t.Fatalf("logged-out home should stay lean:\n%s", out)
 	}
 
 	// --help still lists the full command surface.
@@ -37,7 +36,7 @@ func TestBareRC_LoggedInNoProject_NudgesProject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"Logged in", "pick a project", "rc projects use", "rc paywalls"} {
+	for _, want := range []string{"logged in", "no project selected", "Pick a project", "rc projects use", "Build", "rc paywalls"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("logged-in/no-project home missing %q:\n%s", want, out)
 		}
@@ -47,17 +46,22 @@ func TestBareRC_LoggedInNoProject_NudgesProject(t *testing.T) {
 	}
 }
 
-func TestBareRC_LoggedInWithProject_ShowsThingsToDo(t *testing.T) {
+func TestBareRC_LoggedInWithProject_ShowsCommandMap(t *testing.T) {
 	out, _, err := runCmd(t, "--no-color", "--api-key", "sk_test", "--project-id", "proj_abc")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"Logged in", "project proj_abc", "Do something", "rc paywalls"} {
+	for _, want := range []string{
+		"project proj_abc",
+		"app.revenuecat.com/projects/abc", // dashboard deep-link (prefix stripped)
+		"Build", "Inspect", "Automate & set up",
+		"rc paywalls", "rc customer show <id>",
+	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("logged-in/project home missing %q:\n%s", want, out)
 		}
 	}
-	if strings.Contains(out, "New here?") || strings.Contains(out, "pick a project") {
+	if strings.Contains(out, "New here?") || strings.Contains(out, "Pick a project") {
 		t.Fatalf("home with an active project should not nudge setup:\n%s", out)
 	}
 }

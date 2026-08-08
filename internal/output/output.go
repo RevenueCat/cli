@@ -80,6 +80,7 @@ const (
 	ToneDim                 // secondary/description text
 	ToneSuccess             // affirmative (logged in)
 	ToneCommand             // a command the user can type
+	ToneLink                // a URL to open
 )
 
 // Paint renders text in the given tone, or returns it unstyled when color is
@@ -95,10 +96,24 @@ func (r *Renderer) Paint(t Tone, text string) string {
 		s = StyleSuccess
 	case ToneCommand:
 		s = StyleCommand
+	case ToneLink:
+		s = StyleInfo
 	default:
 		s = StyleDim
 	}
 	return r.style(s, text)
+}
+
+// Panel wraps pre-styled lines in a rounded border box sized to fit its
+// content. Callers style the lines (via Paint); Panel only draws the frame,
+// so all color decisions stay in one place. The frame is drawn uncolored
+// when color is disabled.
+func (r *Renderer) Panel(lines ...string) string {
+	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
+	if !r.noColor {
+		box = box.BorderForeground(NeutralGray)
+	}
+	return box.Render(strings.Join(lines, "\n"))
 }
 
 // style returns either the styled rendering of s, or s unmodified when colors
