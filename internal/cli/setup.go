@@ -486,42 +486,26 @@ func setupAuthenticate(cmd *cobra.Command, rt *Runtime) error {
 	const (
 		optLogin = iota
 		optSignup
-		optSkip
 	)
 	choice := optLogin
 	if err := tui.Form(false).
 		Field(huh.NewSelect[int]().
-			Title("You're not logged in. What would you like to do?").
+			Title("You're not logged in. Setup logs you in, then launches the agent.").
+			Description("Browser sign-in is a human step — the agent can't do it. To get the prompt without logging in, run rc skills prompts instead.").
 			Options(
 				huh.NewOption("Log in (opens your browser)", optLogin),
 				huh.NewOption("Create a RevenueCat account", optSignup),
-				huh.NewOption("Skip — the agent can handle it later", optSkip),
 			).
 			Value(&choice)).
 		Run(); err != nil {
 		return err
 	}
-	switch choice {
-	case optLogin:
-		if err := loginWithOAuth(cmd.Context(), rt); err != nil {
-			return err
-		}
-	case optSignup:
+	if choice == optSignup {
 		signup := newAuthSignupCmd()
 		signup.SetContext(cmd.Context())
-		if err := signup.RunE(signup, nil); err != nil {
-			return err
-		}
-	default:
-		rt.Out.Answer("Account", "skipped — the agent will sign you in or up")
-		return nil
+		return signup.RunE(signup, nil)
 	}
-	account := "logged in"
-	if rt.Config != nil && rt.Config.AccountEmail != "" {
-		account = rt.Config.AccountEmail
-	}
-	rt.Out.Answer("Account", account)
-	return nil
+	return loginWithOAuth(cmd.Context(), rt)
 }
 
 func starterPromptByID(id string) string {
