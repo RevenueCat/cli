@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -111,7 +110,7 @@ the step-by-step commands in the docs.`,
 		Annotations: map[string]string{
 			"surface":               "punted",
 			"requires_human":        "true",
-			"requires_human_reason": "launches the user's local AI agent in an interactive terminal; agents should follow the RevenueCat skills directly instead",
+			"requires_human_reason": "interactively it launches a local AI agent; run non-interactively (rc setup --json) to get the setup prompt to follow directly",
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runSetup(cmd)
@@ -123,7 +122,7 @@ the step-by-step commands in the docs.`,
 func runSetup(cmd *cobra.Command) error {
 	rt := RuntimeFrom(cmd.Context())
 	if rt.Globals.NoInput || !tui.IsInteractive() {
-		return errors.New("rc setup is interactive: it verifies the directory and launches your AI agent. Agents should use the RevenueCat skills directly (rc skills prompts --json)")
+		return runSetupAgentPrompt(cmd, rt)
 	}
 
 	dir, err := os.Getwd()
@@ -359,6 +358,46 @@ func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool) string 
 		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
 	}
 	return prompt
+}
+
+// runSetupAgentPrompt handles `rc setup` run non-interactively (by an agent):
+// instead of launching a nested agent, it emits the stage-aware setup prompt
+// for the caller to follow, with the human-only steps called out.
+func runSetupAgentPrompt(cmd *cobra.Command, rt *Runtime) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	projectLabel, _ := detectAppProject(dir)
+	platform := platformFromLabel(projectLabel)
+	stage := detectSetupStage(cmd, rt, platform)
+	authed := rt.Config != nil && rt.Config.BearerToken() != ""
+	applePending := (platform == "ios" || platform == "cross") &&
+		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
+
+	prompt := setupAgentPrompt(rt, stage, applePending) + setupAuthHandbackNote(authed)
+
+	if rt.Globals.JSON {
+		return rt.Out.Render(map[string]any{
+			"prompt":         prompt,
+			"stage":          stage.PromptID,
+			"authenticated":  authed,
+			"apple_deferred": applePending,
+			"platform":       platform,
+		})
+	}
+	fmt.Fprintln(cmd.OutOrStdout(), prompt)
+	return nil
+}
+
+// setupAuthHandbackNote tells an agent how to handle auth: it can create a new
+// account without a browser, but logging in to an existing one is a human step
+// it must hand back.
+func setupAuthHandbackNote(authed bool) string {
+	if authed {
+		return ""
+	}
+	return "\n\nAuth: you are not logged in. If the user has no RevenueCat account, create one without a browser: `rc auth signup --email <user's email> --name \"<user's name>\" --generate-password --save-password --accept-terms --no-input --json` — but only after the user explicitly agrees to the RevenueCat Terms of Service and Privacy Policy. If the user already has an account, STOP and ask them to run `rc auth login` (a browser sign-in you cannot perform), then continue."
 }
 
 // setupStage is where this project stands in the onboarding journey; it
