@@ -90,7 +90,7 @@ func ProfileName(p string) string {
 	if p != "" {
 		return p
 	}
-	// ignore an invalid RC_PROFILE / .active (e.g. a residual dotted name) instead of failing every command
+	// tolerate a residual/invalid RC_PROFILE or .active pointer
 	if env := os.Getenv("RC_PROFILE"); env != "" && validateProfileName(env) == nil {
 		return env
 	}
