@@ -152,7 +152,7 @@ func runSetup(cmd *cobra.Command) error {
 	}
 
 	if rt.Config != nil && rt.Config.BearerToken() != "" {
-		if err := confirmSetupAccount(cmd, rt); err != nil {
+		if err := confirmSetupAccount(cmd, rt, dir); err != nil {
 			return err
 		}
 	}
@@ -303,31 +303,30 @@ var skillsScopeLabels = map[string]string{
 	"global":  "global",
 }
 
-// confirmSetupAccount gates the flow on the right account/project before the
-// agent creates anything under them. Loops until the user continues; switching
-// account clears the cached label (it can be stale) so a wrong email is never
-// shown as confirmed.
-func confirmSetupAccount(cmd *cobra.Command, rt *Runtime) error {
+// confirmSetupAccount confirms the account and picks the project for this app
+// before handing off. A new app defaults to a fresh project rather than the
+// CLI's globally-active one, which would otherwise set this app up under an
+// unrelated project.
+func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 	const (
-		optContinue = iota
+		optNewProject = iota
+		optExistingProject
 		optSwitchAccount
-		optSwitchProject
 	)
 	for {
-		title := "Set up as " + setupAccountLabel(rt)
+		existing := "Use an existing project"
 		if rt.Config != nil && rt.Config.ProjectID != "" {
-			title += " in " + setupProjectLabel(cmd, rt)
+			existing += " (currently " + setupProjectLabel(cmd, rt) + ")"
 		}
-		title += "?"
 
-		choice := optContinue
+		choice := optNewProject
 		if err := tui.Form(false).
 			Field(huh.NewSelect[int]().
-				Title(title).
+				Title("Set up as "+setupAccountLabel(rt)+"?").
 				Options(
-					huh.NewOption("Yes, continue", optContinue),
-					huh.NewOption("Switch account (log out and back in)", optSwitchAccount),
-					huh.NewOption("Switch project", optSwitchProject),
+					huh.NewOption("New project for "+filepath.Base(dir), optNewProject),
+					huh.NewOption(existing, optExistingProject),
+					huh.NewOption("No — switch account", optSwitchAccount),
 				).
 				Value(&choice)).
 			Run(); err != nil {
@@ -335,15 +334,10 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime) error {
 		}
 
 		switch choice {
-		case optContinue:
+		case optNewProject:
+			rt.Config.ProjectID = "" // agent (or Apple prep) creates a fresh project
 			return nil
-		case optSwitchAccount:
-			rt.Config.AccountEmail = ""
-			rt.Config.AccountName = ""
-			if err := loginWithOAuth(cmd.Context(), rt); err != nil {
-				return err
-			}
-		case optSwitchProject:
+		case optExistingProject:
 			use, _, err := cmd.Root().Find([]string{"projects", "use"})
 			if err != nil || use == nil {
 				rt.Out.Warn("Couldn't open the project picker — run `rc projects use` and start again.")
@@ -352,6 +346,14 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime) error {
 			use.SetContext(cmd.Context())
 			if err := use.RunE(use, nil); err != nil {
 				rt.Out.Warn("Project not changed: " + err.Error())
+				continue
+			}
+			return nil
+		case optSwitchAccount:
+			rt.Config.AccountEmail = ""
+			rt.Config.AccountName = ""
+			if err := loginWithOAuth(cmd.Context(), rt); err != nil {
+				return err
 			}
 		}
 	}
