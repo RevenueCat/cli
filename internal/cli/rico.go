@@ -243,9 +243,7 @@ func ricoConversationPickerItems(ctx context.Context, rt *Runtime, client *rico.
 	var state ricoState
 	_ = config.LoadState(rt.Globals.Profile, "rico", &state)
 
-	// Align the age into a fixed-width gutter so summaries line up in a clean
-	// column (the way Claude Code / Codex render their session pickers) rather
-	// than running age and summary together on a ragged line.
+	// age in a fixed-width gutter so summaries align in a column
 	type row struct {
 		id, age, summary string
 		recent           bool
