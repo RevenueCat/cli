@@ -314,15 +314,14 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 		}
 		choice := optNewProject
 		if active {
-			// resuming a project: continuing keeps it (a new project here would orphan the old one)
-			title = "Continue setting up under your active project, or start fresh?"
+			// New stays the default: the active project is profile-global, not this dir's
+			title = "Set up " + filepath.Base(dir) + " — new project, or continue an existing one?"
 			opts = []huh.Option[int]{
-				huh.NewOption("Continue with "+activeProjectLabel(cmd, rt), optContinue),
 				huh.NewOption("New project for "+filepath.Base(dir), optNewProject),
+				huh.NewOption("Continue with "+activeProjectLabel(cmd, rt), optContinue),
 				huh.NewOption("Use a different project", optExistingProject),
 				huh.NewOption("Switch account", optSwitchAccount),
 			}
-			choice = optContinue
 		}
 		if err := tui.Form(false).
 			Field(huh.NewSelect[int]().Title(title).Options(opts...).Value(&choice)).
