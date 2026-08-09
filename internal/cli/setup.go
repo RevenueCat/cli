@@ -302,23 +302,37 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 		optNewProject = iota
 		optExistingProject
 		optSwitchAccount
+		optContinue
 	)
 	for {
+		active := rt.Config != nil && rt.Config.ProjectID != ""
+		title := "Create a new RevenueCat project for " + filepath.Base(dir) + "?"
+		opts := []huh.Option[int]{
+			huh.NewOption("Yes — new project", optNewProject),
+			huh.NewOption("Use an existing project", optExistingProject),
+			huh.NewOption("Switch account", optSwitchAccount),
+		}
 		choice := optNewProject
+		if active {
+			// resuming a project: continuing keeps it (a new project here would orphan the old one)
+			title = "Continue setting up under your active project, or start fresh?"
+			opts = []huh.Option[int]{
+				huh.NewOption("Continue with "+activeProjectLabel(cmd, rt), optContinue),
+				huh.NewOption("New project for "+filepath.Base(dir), optNewProject),
+				huh.NewOption("Use a different project", optExistingProject),
+				huh.NewOption("Switch account", optSwitchAccount),
+			}
+			choice = optContinue
+		}
 		if err := tui.Form(false).
-			Field(huh.NewSelect[int]().
-				Title("Create a new RevenueCat project for "+filepath.Base(dir)+"?").
-				Options(
-					huh.NewOption("Yes — new project", optNewProject),
-					huh.NewOption("Use an existing project", optExistingProject),
-					huh.NewOption("Switch account", optSwitchAccount),
-				).
-				Value(&choice)).
+			Field(huh.NewSelect[int]().Title(title).Options(opts...).Value(&choice)).
 			Run(); err != nil {
 			return err
 		}
 
 		switch choice {
+		case optContinue:
+			return nil
 		case optNewProject:
 			// persist the clear so the agent's fresh rc process doesn't reload the old active project
 			rt.Config.ProjectID = ""
@@ -343,6 +357,20 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 			}
 		}
 	}
+}
+
+// activeProjectLabel resolves the active project's name via the API, falling
+// back to the ID.
+func activeProjectLabel(cmd *cobra.Command, rt *Runtime) string {
+	id := rt.Config.ProjectID
+	client, err := rt.API()
+	if err != nil {
+		return id
+	}
+	if p, err := client.Projects.Get(cmd.Context(), id); err == nil && p.Name != "" {
+		return p.Name + " (" + id + ")"
+	}
+	return id
 }
 
 // setupAgentPrompt is the starter prompt handed to the agent, with the
