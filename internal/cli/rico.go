@@ -243,18 +243,43 @@ func ricoConversationPickerItems(ctx context.Context, rt *Runtime, client *rico.
 	var state ricoState
 	_ = config.LoadState(rt.Globals.Profile, "rico", &state)
 
-	items := make([]PickerItem, 0, len(conversations))
+	// Align the age into a fixed-width gutter so summaries line up in a clean
+	// column (the way Claude Code / Codex render their session pickers) rather
+	// than running age and summary together on a ragged line.
+	type row struct {
+		id, age, summary string
+		recent           bool
+	}
+	rows := make([]row, 0, len(conversations))
+	ageWidth := 0
 	for _, conversation := range conversations {
 		summary := conversation.Summary
 		if summary == "" {
 			summary = "(no summary)"
 		}
-		item := PickerItem{
-			ID:    conversation.ID,
-			Label: fmt.Sprintf("%s  ·  %s", summary, lastActivity(conversation.UpdatedAt)),
+		age := lastActivity(conversation.UpdatedAt)
+		if len(age) > ageWidth {
+			ageWidth = len(age)
 		}
-		if conversation.ID == state.LastConversationID {
-			item.Label = "↩ " + item.Label
+		rows = append(rows, row{
+			id:      conversation.ID,
+			age:     age,
+			summary: summary,
+			recent:  conversation.ID == state.LastConversationID,
+		})
+	}
+
+	items := make([]PickerItem, 0, len(rows))
+	for _, r := range rows {
+		marker := "  "
+		if r.recent {
+			marker = "↩ "
+		}
+		item := PickerItem{
+			ID:    r.id,
+			Label: fmt.Sprintf("%s%-*s   %s", marker, ageWidth, r.age, r.summary),
+		}
+		if r.recent {
 			items = append([]PickerItem{item}, items...)
 			continue
 		}
