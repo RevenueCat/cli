@@ -33,6 +33,23 @@ func TestBareRC_LoggedOut_ShowsSetupSteps(t *testing.T) {
 	}
 }
 
+func TestBareRC_AllShowsFullHelpNotHome(t *testing.T) {
+	out, _, err := runCmd(t, "--all", "--no-color")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// `rc --all` falls through to help (the full grouped command list), which
+	// is what the help footer points at — not the home screen.
+	for _, want := range []string{"Getting started", "customer", "paywalls"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("rc --all should show the full command list, missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "New here?") {
+		t.Fatalf("rc --all should not show the home screen:\n%s", out)
+	}
+}
+
 func TestBareRC_LoggedInNoProject_NudgesProject(t *testing.T) {
 	out, _, err := runCmd(t, "--no-color", "--api-key", "sk_test")
 	if err != nil {
