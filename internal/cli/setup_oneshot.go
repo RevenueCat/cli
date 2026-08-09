@@ -58,19 +58,18 @@ func firstBundleID(path string, pattern *regexp.Regexp) string {
 	return ""
 }
 
-// offerProductionApple connects the Apple account for the real App Store. It's
-// the last mile — offered only at the production stage — and runs before the
-// agent launches so the run never stops for sign-in or 2FA. Creates the
-// project and App Store app records if missing, then runs the guided Apple
-// setup inline.
-func offerProductionApple(cmd *cobra.Command, rt *Runtime, dir, platform string) bool {
+// offerApple optionally connects the Apple account for the real App Store.
+// Apple sign-in is a human 2FA action the launched agent can't perform, so it
+// runs here, before the handoff. Creates the project and App Store app records
+// if missing, then runs the guided Apple setup inline.
+func offerApple(cmd *cobra.Command, rt *Runtime, dir, platform string) bool {
 	if platform != "ios" && platform != "cross" {
 		return false
 	}
 	if rt.Config == nil || rt.Config.BearerToken() == "" {
 		return false
 	}
-	rt.Out.Info("You've done everything the Test Store covers. Connecting Apple lets you sync products to the real App Store — it signs in to your Apple account (2FA) and creates App Store Connect keys.")
+	rt.Out.Info("Connecting Apple lets the agent set up the real App Store too — it signs in to your Apple account (2FA) and creates App Store Connect keys. Skip it and the agent builds everything on the Test Store; connect Apple later with rc apps apple setup.")
 	ok, err := tui.ConfirmDefault(false, "Connect your Apple account now?", false)
 	if err != nil || !ok {
 		return false

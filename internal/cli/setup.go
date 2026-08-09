@@ -134,7 +134,7 @@ func runSetup(cmd *cobra.Command) error {
 	agents := detectAgents()
 
 	rt.Out.Title("RevenueCat setup — " + filepath.Base(dir))
-	rt.Out.Lead("Installs RevenueCat's skills into an AI agent and lets it build your Test Store catalog, paywall, and SDK integration — you approve each step. Connecting Apple for the real App Store comes later, when you're ready to ship.")
+	rt.Out.Lead("Installs RevenueCat's skills into an AI agent and lets it build your Test Store catalog, paywall, and SDK integration — you approve each step. Connecting Apple for the real App Store is optional; skip it to build on the Test Store first.")
 	rt.Out.Field("Directory", collapseHome(dir), projectLabel)
 	rt.Out.Field("Account", setupAccountLabel(rt))
 	if len(agents) > 0 {
@@ -223,11 +223,13 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	rt.Out.Answer("Skills", skillsScopeLabels[skillsScope])
 
-	// Only at the production stage, opt-in, defaulting to No.
+	// Apple is a human 2FA action the agent can't do, so it happens here,
+	// before the handoff — optional and defaulting to No. Skipping defers it:
+	// the agent builds on the Test Store and lists the Apple steps for later.
 	appleDeferred := applePending
-	if stage.PromptID == "connect-apple" {
+	if applePending {
 		rt.Out.Title("Step 4 · Apple (optional)")
-		if offerProductionApple(cmd, rt, dir, platform) {
+		if offerApple(cmd, rt, dir, platform) {
 			appleDeferred = false
 			stage = detectSetupStage(cmd, rt, platform)
 			rt.Out.Field("Stage", stage.Label)
