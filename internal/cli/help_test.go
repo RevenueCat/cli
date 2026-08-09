@@ -28,6 +28,23 @@ func TestSubcommandHelp_CollapsesGlobalFlags(t *testing.T) {
 	}
 }
 
+func TestNestedSubcommandHelp_KeepsMidLevelInheritedFlags(t *testing.T) {
+	// `rc rico conversations` defines a persistent --base-url, inherited by its
+	// leaves. It's not a root global, so the root pointer wouldn't document it —
+	// it must show in full, not get folded into the "Global flags:" summary.
+	out, _, err := runCmd(t, "rico", "conversations", "show", "--help", "--no-color")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "--base-url") || !strings.Contains(out, "Rico endpoint") {
+		t.Fatalf("nested help dropped the mid-level inherited --base-url description:\n%s", out)
+	}
+	// Root globals are still collapsed.
+	if !strings.Contains(out, "Global flags: ") {
+		t.Fatalf("nested help missing the global-flags summary:\n%s", out)
+	}
+}
+
 func TestRootHelp_KeepsFullGlobalFlagDescriptions(t *testing.T) {
 	out, _, err := runCmd(t, "--help", "--no-color")
 	if err != nil {

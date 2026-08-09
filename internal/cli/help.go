@@ -103,14 +103,31 @@ func applyHelpStyling(root *cobra.Command) {
 // described in full. The full block appears only at the root, where these
 // flags are local rather than inherited.
 func globalFlagsSummary(c *cobra.Command) string {
-	var names []string
+	rootFlags := c.Root().PersistentFlags()
+	var globals []string
+	midLevel := pflag.NewFlagSet("inherited", pflag.ContinueOnError)
 	c.InheritedFlags().VisitAll(func(f *pflag.Flag) {
 		if f.Hidden {
 			return
 		}
-		names = append(names, "--"+f.Name)
+		if rootFlags.Lookup(f.Name) != nil {
+			globals = append(globals, "--"+f.Name)
+			return
+		}
+		// Inherited from an intermediate parent (a group's persistent flag),
+		// not a root global — the root help doesn't document it, so show it in
+		// full rather than collapsing it into the pointer below.
+		midLevel.AddFlag(f)
 	})
-	return output.HelpHeader(helpColor, "Global flags:") + " " +
-		output.HelpDim(helpColor, strings.Join(names, ", ")) + "\n" +
-		output.HelpDim(helpColor, "Run `"+c.Root().Name()+" --help` for what each global flag does.")
+
+	var b strings.Builder
+	if usage := strings.TrimRight(midLevel.FlagUsages(), "\n"); usage != "" {
+		b.WriteString(usage + "\n\n")
+	}
+	if len(globals) > 0 {
+		b.WriteString(output.HelpHeader(helpColor, "Global flags:") + " " +
+			output.HelpDim(helpColor, strings.Join(globals, ", ")) + "\n" +
+			output.HelpDim(helpColor, "Run `"+c.Root().Name()+" --help` for what each global flag does."))
+	}
+	return b.String()
 }
