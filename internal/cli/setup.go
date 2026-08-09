@@ -133,24 +133,16 @@ func runSetup(cmd *cobra.Command) error {
 	platform := platformFromLabel(projectLabel)
 	agents := detectAgents()
 
-	account := "not logged in"
-	if rt.Config != nil && rt.Config.BearerToken() != "" {
-		account = "logged in"
-		if rt.Config.AccountEmail != "" {
-			account = rt.Config.AccountEmail
-		}
-	}
-
 	rt.Out.Title("RevenueCat setup — " + filepath.Base(dir))
-	rt.Out.Lead("Hands your app's RevenueCat onboarding to an AI agent with RevenueCat's skills installed — nothing runs without your OK.")
+	rt.Out.Lead("Installs RevenueCat's skills into an AI agent and lets it build your Test Store catalog, paywall, and SDK integration — you approve each step. Connecting Apple for the real App Store comes later, when you're ready to ship.")
 	rt.Out.Field("Directory", collapseHome(dir), projectLabel)
-	rt.Out.Field("Account", account)
-	agentNames := make([]string, 0, len(agents))
-	for _, a := range agents {
-		agentNames = append(agentNames, a.Name)
-	}
-	if len(agentNames) > 0 {
-		rt.Out.Field("Agents found", strings.Join(agentNames, ", "))
+	rt.Out.Field("Account", setupAccountLabel(rt))
+	if len(agents) > 0 {
+		names := make([]string, 0, len(agents))
+		for _, a := range agents {
+			names = append(names, a.Name)
+		}
+		rt.Out.Field("Agents found", strings.Join(names, ", "))
 	} else {
 		rt.Out.Field("Agents found", "none", "install Claude Code, Codex, Cursor, or Gemini CLI for agent-driven setup")
 	}
@@ -165,18 +157,6 @@ func runSetup(cmd *cobra.Command) error {
 	stage := detectSetupStage(cmd, rt, platform)
 	rt.Out.Field("Stage", stage.Label)
 
-	// Everything that would interrupt the agent mid-run (Apple sign-in, 2FA)
-	// happens before the handoff.
-	appleDeferred := false
-	if stage.PromptID == "connect-apple" || (stage.PromptID == "test-store-ready" && rt.Config != nil && rt.Config.BearerToken() != "") {
-		if offerOneShotApple(cmd, rt, dir, platform) {
-			stage = detectSetupStage(cmd, rt, platform)
-			rt.Out.Field("Stage", stage.Label)
-		} else if platform == "ios" || platform == "cross" {
-			appleDeferred = true
-		}
-	}
-
 	if !projectDetected {
 		cont, err := tui.ConfirmDefault(false, "No app project detected in this directory. Set up here anyway?", false)
 		if err != nil {
@@ -189,48 +169,50 @@ func runSetup(cmd *cobra.Command) error {
 		}
 	}
 
-	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
-	if appleDeferred {
-		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
-	}
+	// Apple is the last mile — the agent builds everything on the Test Store
+	// first; it's connected only at the production stage, and until then the
+	// agent is told not to wait for it.
+	applePending := (platform == "ios" || platform == "cross") &&
+		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
+
+	rt.Out.Title("Step 1 · Choose your agent")
 	choice, err := pickSetupAgent(agents)
 	if err != nil {
 		return err
 	}
 	if choice == nil {
-		rt.Out.Answer("Agent", "none — manual prompt")
+		rt.Out.Answer("Agent", "none — copy the prompt")
 		rt.Out.Blank()
-		rt.Out.Info("Paste this into any agent after running rc skills install:")
-		rt.Out.Info(prompt)
+		rt.Out.Info("Run rc skills install, then paste this into any agent:")
+		rt.Out.Info(setupAgentPrompt(rt, stage, applePending))
 		rt.Out.Hint("more starter prompts:  rc skills prompts")
 		return nil
 	}
 	rt.Out.Answer("Agent", choice.Name)
 
+	rt.Out.Title("Step 2 · Autonomy")
 	autonomy := autonomyTrusted
 	if err := tui.Form(false).
 		Field(huh.NewSelect[string]().
-			Title("How much should "+choice.Name+" do without asking?").
+			Title("How much can "+choice.Name+" do without stopping to ask?").
+			Description("You can interrupt anytime. \"Run freely\" pre-approves rc commands, file edits, and builds.").
 			Options(
-				huh.NewOption("Run the setup freely (pre-approves rc, file edits, and builds)", autonomyTrusted),
+				huh.NewOption("Run freely — pre-approve rc, file edits, and builds", autonomyTrusted),
 				huh.NewOption("Ask me before each step", autonomyManual),
-				huh.NewOption("Everything, no approvals at all", autonomyFull),
+				huh.NewOption("No approvals at all", autonomyFull),
 			).
 			Value(&autonomy)).
 		Run(); err != nil {
 		return err
 	}
-	autonomyLabels := map[string]string{
-		autonomyTrusted: "run freely (rc, edits, builds pre-approved)",
-		autonomyManual:  "ask before each step",
-		autonomyFull:    "no approvals",
-	}
 	rt.Out.Answer("Autonomy", autonomyLabels[autonomy])
 
+	rt.Out.Title("Step 3 · Skills")
 	skillsScope := "project"
 	if err := tui.Form(false).
 		Field(huh.NewSelect[string]().
-			Title("Install the RevenueCat skills for this project or globally?").
+			Title("Install the RevenueCat skills here or globally?").
+			Description("Project keeps them with this repo; global shares them across every project on this machine.").
 			Options(
 				huh.NewOption("This project only", "project"),
 				huh.NewOption("Globally (all projects on this machine)", "global"),
@@ -239,13 +221,29 @@ func runSetup(cmd *cobra.Command) error {
 		Run(); err != nil {
 		return err
 	}
-	rt.Out.Answer("Skills", map[string]string{"project": "this project only", "global": "global"}[skillsScope])
+	rt.Out.Answer("Skills", skillsScopeLabels[skillsScope])
+
+	// Only at the production stage, opt-in, defaulting to No.
+	appleDeferred := applePending
+	if stage.PromptID == "connect-apple" {
+		rt.Out.Title("Step 4 · Apple (optional)")
+		if offerProductionApple(cmd, rt, dir, platform) {
+			appleDeferred = false
+			stage = detectSetupStage(cmd, rt, platform)
+			rt.Out.Field("Stage", stage.Label)
+		}
+	}
+
+	prompt := setupAgentPrompt(rt, stage, appleDeferred)
 
 	rt.Out.Plan([]string{
-		"Install/update the RevenueCat AI Toolkit skills for " + choice.Name,
+		"Install the RevenueCat AI Toolkit skills for " + choice.Name,
 		"Configure the RevenueCat MCP for " + choice.Name,
-		"Launch " + choice.Name + " with the \"" + stage.PromptID + "\" prompt (takes over this terminal)",
+		"Launch " + choice.Name + " to build your Test Store catalog, paywall, and SDK integration",
 	})
+	if appleDeferred {
+		rt.Out.Info("Apple is deferred — the agent finishes everything that doesn't need it, then hands you the exact commands to connect App Store Connect when you're ready to ship.")
+	}
 	if err := confirmOrAbort(rt, "Launch "+choice.Name+" now?"); err != nil {
 		return err
 	}
@@ -286,6 +284,38 @@ func runSetup(cmd *cobra.Command) error {
 	agent := exec.CommandContext(cmd.Context(), choice.Binary, choice.LaunchArgs(prompt, autonomy)...)
 	agent.Stdin, agent.Stdout, agent.Stderr = os.Stdin, os.Stdout, os.Stderr
 	return agent.Run()
+}
+
+var autonomyLabels = map[string]string{
+	autonomyTrusted: "run freely (rc, edits, builds pre-approved)",
+	autonomyManual:  "ask before each step",
+	autonomyFull:    "no approvals",
+}
+
+var skillsScopeLabels = map[string]string{
+	"project": "this project only",
+	"global":  "global",
+}
+
+func setupAccountLabel(rt *Runtime) string {
+	if rt.Config == nil || rt.Config.BearerToken() == "" {
+		return "not logged in"
+	}
+	if rt.Config.AccountEmail != "" {
+		return rt.Config.AccountEmail
+	}
+	return "logged in"
+}
+
+// setupAgentPrompt is the starter prompt handed to the agent. When Apple is
+// deferred it tells the agent to finish everything else and list the Apple
+// steps as remaining work rather than waiting on sign-in.
+func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool) string {
+	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
+	if appleDeferred {
+		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
+	}
+	return prompt
 }
 
 // setupStage is where this project stands in the onboarding journey; it

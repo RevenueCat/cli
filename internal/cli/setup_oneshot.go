@@ -58,18 +58,20 @@ func firstBundleID(path string, pattern *regexp.Regexp) string {
 	return ""
 }
 
-// offerOneShotApple connects the Apple account before the agent launches so
-// the run never stops for sign-in or 2FA. Creates the project and App Store
-// app records if they don't exist yet (deterministic work the agent would
-// otherwise redo), then runs the full guided Apple setup inline.
-func offerOneShotApple(cmd *cobra.Command, rt *Runtime, dir, platform string) bool {
+// offerProductionApple connects the Apple account for the real App Store. It's
+// the last mile — offered only at the production stage — and runs before the
+// agent launches so the run never stops for sign-in or 2FA. Creates the
+// project and App Store app records if missing, then runs the guided Apple
+// setup inline.
+func offerProductionApple(cmd *cobra.Command, rt *Runtime, dir, platform string) bool {
 	if platform != "ios" && platform != "cross" {
 		return false
 	}
 	if rt.Config == nil || rt.Config.BearerToken() == "" {
 		return false
 	}
-	ok, err := tui.ConfirmDefault(false, "Connect your Apple account now so the agent can run end to end without stopping?", true)
+	rt.Out.Info("You've done everything the Test Store covers. Connecting Apple lets you sync products to the real App Store — it signs in to your Apple account (2FA) and creates App Store Connect keys.")
+	ok, err := tui.ConfirmDefault(false, "Connect your Apple account now?", false)
 	if err != nil || !ok {
 		return false
 	}
