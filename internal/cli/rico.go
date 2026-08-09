@@ -197,7 +197,7 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 	if err := chat.RunChat(); err != nil {
 		return err
 	}
-	s.rt.Out.Hint("Continue this conversation:  rc rico --continue")
+	s.rt.Out.Hint("Continue this conversation:  rc rico --conversation " + s.conversationID)
 	return nil
 }
 
