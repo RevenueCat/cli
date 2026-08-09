@@ -92,7 +92,8 @@ them unless --approve-tools is passed (destructive tools also require --yes).`,
 			if session.conversationID == "" {
 				session.conversationID = rico.NewConversationID()
 			}
-			if opts.prompt != "" || opts.print || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+			oneShot := opts.print || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive()
+			if oneShot || (opts.plain && opts.prompt != "") {
 				if opts.prompt == "" {
 					return fmt.Errorf("message is required; pass it as an argument or set RC_RICO_PROMPT")
 				}
@@ -101,6 +102,7 @@ them unless --approve-tools is passed (destructive tools also require --yes).`,
 			if opts.plain {
 				return session.repl(cmd.Context())
 			}
+			// interactive: a message seeds the chat window, no message opens it empty
 			return session.chatWindow(cmd.Context())
 		},
 	}
@@ -180,6 +182,7 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 		Subtitle:         "conversation " + s.conversationID,
 		Placeholder:      "Ask Rico anything about your RevenueCat projects…",
 		Transcript:       transcript,
+		Initial:          s.opts.prompt,
 		RelativeLinkBase: envOrDefault("RC_DASHBOARD_URL", "https://app.revenuecat.com"),
 		Send: func(turnCtx context.Context, message string, emit *tui.ChatEmitter) {
 			turnCtx, cancel := context.WithTimeout(turnCtx, s.opts.timeout)
@@ -201,7 +204,7 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 // pickRicoConversation shows the --resume picker in the alternate screen (so
 // nothing lingers on the primary screen once the chat window exits).
 func pickRicoConversation(ctx context.Context, rt *Runtime, client *rico.Client) (string, error) {
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if rt.Globals.NoInput || rt.Globals.JSON || !tui.IsInteractive() {
 		return "", fmt.Errorf("conversation ID is required; --resume needs a terminal (use --conversation <id>)")
 	}
 	items, err := ricoConversationPickerItems(ctx, rt, client)
