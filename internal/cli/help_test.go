@@ -36,6 +36,9 @@ func TestNestedSubcommandHelp_KeepsMidLevelInheritedFlags(t *testing.T) {
 	if !strings.Contains(out, "--base-url") || !strings.Contains(out, "Rico endpoint") {
 		t.Fatalf("nested help dropped the mid-level inherited --base-url description:\n%s", out)
 	}
+	if !strings.Contains(out, "Inherited flags:") {
+		t.Fatalf("mid-level inherited flags need a header, not an unlabeled block:\n%s", out)
+	}
 	// Root globals are still collapsed.
 	if !strings.Contains(out, "Global flags: ") {
 		t.Fatalf("nested help missing the global-flags summary:\n%s", out)

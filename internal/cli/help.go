@@ -107,7 +107,7 @@ func globalFlagsSummary(c *cobra.Command) string {
 
 	var b strings.Builder
 	if usage := strings.TrimRight(midLevel.FlagUsages(), "\n"); usage != "" {
-		b.WriteString(usage + "\n\n")
+		b.WriteString(output.HelpHeader(helpColor, "Inherited flags:") + "\n" + usage + "\n\n")
 	}
 	if len(globals) > 0 {
 		b.WriteString(output.HelpHeader(helpColor, "Global flags:") + " " +
