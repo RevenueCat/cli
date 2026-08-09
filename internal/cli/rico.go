@@ -671,7 +671,7 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 	}), nil
 }
 
-// agentAuthToken returns the credential sent to the Rico/Paywall AI backends —
+// agentAuthToken returns the credential sent to the Rico/Paywalls AI backends —
 // the CLI's own bearer token; both backends accept CLI OAuth tokens
 // (verified live 2026-07-17).
 func agentAuthToken(rt *Runtime) string {
