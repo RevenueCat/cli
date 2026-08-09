@@ -56,7 +56,7 @@ Agent-friendly entrypoints:
   rc <cmd> --no-input    fail rather than prompt
   rc <cmd> --yes         skip confirmations`,
 		Example: `  # Human use
-  rc login
+  rc auth login
   rc customer show cus_abc
 
   # Scripted use
@@ -157,6 +157,7 @@ Agent-friendly entrypoints:
 	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		return usageError{suggestFlag(cmd, err)}
 	})
+	applyCommandGroups(root)
 	applySurfaceProfile(root)
 	applyHelpStyling(root)
 
