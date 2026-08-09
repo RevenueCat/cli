@@ -761,7 +761,6 @@ func TestPaywallsGenerate_MidStreamDropCheckpoints(t *testing.T) {
 		t.Fatalf("want mid-stream drop error, got %v", err)
 	}
 
-	// The snapshot was checkpointed to disk, so the work is recoverable.
 	payload, rerr := os.ReadFile(sessionPath)
 	if rerr != nil {
 		t.Fatalf("session not checkpointed: %v", rerr)
