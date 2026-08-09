@@ -9,16 +9,10 @@ import (
 	"github.com/revenuecat/cli/internal/output"
 )
 
-// helpColor reflects whether help output should be styled (driven by the
-// --no-color flag). Cobra's template funcs are process-global, so this is a
-// package var the root help func sets just before each render; lipgloss then
-// drops styling on non-TTY output and when NO_COLOR is set.
+// helpColor gates help styling; the root help func sets it before each render.
 var helpColor = true
 
-// rcUsageTemplate is cobra's default usage template with two changes: section
-// headers and command names are styled, and the inherited-flag block — which
-// cobra repeats in full on every subcommand — is collapsed to a one-liner by
-// rcGlobalFlags.
+// rcUsageTemplate styles the usage sections and collapses inherited flags via rcGlobalFlags.
 const rcUsageTemplate = `{{rcHead "Usage:"}}{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
@@ -59,8 +53,7 @@ var commandGroups = []*cobra.Group{
 }
 
 // commandGroupByName maps each top-level command to its group. Hidden aliases
-// (login, whoami) are mapped too so every child has a group and no empty
-// "Additional Commands" header renders.
+// are included so no empty "Additional Commands" section renders.
 var commandGroupByName = map[string]string{
 	"auth": "start", "login": "start", "whoami": "start", "projects": "start",
 	"profiles": "start", "browse": "start", "open": "start", "setup": "start",
@@ -74,9 +67,7 @@ var commandGroupByName = map[string]string{
 	"commands": "advanced", "version": "advanced",
 }
 
-// applyCommandGroups registers the groups on the root and assigns each command
-// (and the generated help/completion commands) to one, so `rc --help` renders
-// as labeled sections instead of one flat list.
+// applyCommandGroups registers the groups and assigns every command to one.
 func applyCommandGroups(root *cobra.Command) {
 	root.AddGroup(commandGroups...)
 	for _, c := range root.Commands() {
@@ -88,8 +79,7 @@ func applyCommandGroups(root *cobra.Command) {
 	root.SetCompletionCommandGroupID("advanced")
 }
 
-// applyHelpStyling registers the help template funcs and installs the styled
-// usage template on the root; cobra inherits it to every subcommand.
+// applyHelpStyling installs the styled usage template and its template funcs.
 func applyHelpStyling(root *cobra.Command) {
 	cobra.AddTemplateFunc("rcHead", func(s string) string { return output.HelpHeader(helpColor, s) })
 	cobra.AddTemplateFunc("rcCmd", func(s string) string { return output.HelpCommand(helpColor, s) })
@@ -98,10 +88,8 @@ func applyHelpStyling(root *cobra.Command) {
 	root.SetUsageTemplate(rcUsageTemplate)
 }
 
-// globalFlagsSummary collapses the inherited-flag block into a compact dimmed
-// line — the flag names plus a pointer to the root help, where each is
-// described in full. The full block appears only at the root, where these
-// flags are local rather than inherited.
+// globalFlagsSummary collapses root global flags to a one-line pointer; other
+// inherited flags are shown in full.
 func globalFlagsSummary(c *cobra.Command) string {
 	rootFlags := c.Root().PersistentFlags()
 	var globals []string
@@ -114,10 +102,7 @@ func globalFlagsSummary(c *cobra.Command) string {
 			globals = append(globals, "--"+f.Name)
 			return
 		}
-		// Inherited from an intermediate parent (a group's persistent flag),
-		// not a root global — the root help doesn't document it, so show it in
-		// full rather than collapsing it into the pointer below.
-		midLevel.AddFlag(f)
+		midLevel.AddFlag(f) // not a root global — show in full
 	})
 
 	var b strings.Builder

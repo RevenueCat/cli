@@ -1,10 +1,7 @@
 package output
 
-// Help* style the sections of a cobra help/usage page. The color argument
-// reflects the --no-color flag; lipgloss additionally drops styling on
-// non-TTY output and when NO_COLOR is set, so piped help stays plain. They
-// live here so the cli package styles help through the same palette as
-// everything else without importing lipgloss directly.
+// Help* style cobra help sections, gated by the color arg. They live here so
+// the cli package styles help without importing lipgloss directly.
 
 func HelpHeader(color bool, s string) string {
 	if !color {

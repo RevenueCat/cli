@@ -19,8 +19,7 @@ func TestSubcommandHelp_CollapsesGlobalFlags(t *testing.T) {
 			t.Fatalf("subcommand help missing %q:\n%s", want, out)
 		}
 	}
-	// The full inherited-flag descriptions must NOT be repeated on subcommands
-	// — that's the block we collapsed.
+	// collapsed subcommands don't repeat the full global-flag descriptions
 	for _, unwanted := range []string{"RevenueCat API key", "emit machine-readable JSON output"} {
 		if strings.Contains(out, unwanted) {
 			t.Fatalf("subcommand help should not repeat global-flag descriptions, found %q:\n%s", unwanted, out)
@@ -29,9 +28,7 @@ func TestSubcommandHelp_CollapsesGlobalFlags(t *testing.T) {
 }
 
 func TestNestedSubcommandHelp_KeepsMidLevelInheritedFlags(t *testing.T) {
-	// `rc rico conversations` defines a persistent --base-url, inherited by its
-	// leaves. It's not a root global, so the root pointer wouldn't document it —
-	// it must show in full, not get folded into the "Global flags:" summary.
+	// rico conversations' persistent --base-url is inherited but isn't a root global
 	out, _, err := runCmd(t, "rico", "conversations", "show", "--help", "--no-color")
 	if err != nil {
 		t.Fatal(err)

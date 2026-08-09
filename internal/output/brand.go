@@ -34,7 +34,6 @@ var (
 	StyleError   = lipgloss.NewStyle().Foreground(ErrorRed).Bold(true)
 	StyleInfo    = lipgloss.NewStyle().Foreground(InfoBlue)
 	StyleDim     = lipgloss.NewStyle().Faint(true)
-	// StyleCommand marks a command the user can type — the interaction accent,
-	// distinct from brand red so command text doesn't read as an error.
+	// StyleCommand is the interaction accent for commands the user can type.
 	StyleCommand = lipgloss.NewStyle().Foreground(AccentViolet)
 )
