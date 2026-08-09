@@ -115,8 +115,7 @@ Agent-friendly entrypoints:
 	whoamiAlias.Hidden = true
 
 	// bare rc → state-aware getting-started; rc --help lists every command.
-	// `rc --all` means "show me everything", so fall through to help (where
-	// --all reveals experimental commands) rather than the home screen.
+	// --all falls through to help instead of the home screen
 	root.RunE = func(cmd *cobra.Command, _ []string) error {
 		if RuntimeFrom(cmd.Context()).Globals.ShowAll {
 			return cmd.Help()

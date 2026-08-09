@@ -68,8 +68,7 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 
 func (r *Renderer) IsJSON() bool { return r.json }
 
-// Tone names a semantic style for callers that compose their own output,
-// keeping lipgloss out of those callers.
+// Tone is a semantic style for callers that compose their own output.
 type Tone int
 
 const (
@@ -81,8 +80,7 @@ const (
 	ToneLink                // a URL to open
 )
 
-// Paint renders text in the given tone, or returns it unstyled when color is
-// disabled — the single color gate for composed output.
+// Paint renders text in the given tone, unstyled when color is disabled.
 func (r *Renderer) Paint(t Tone, text string) string {
 	var s lipgloss.Style
 	switch t {
