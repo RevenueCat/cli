@@ -135,7 +135,7 @@ func newSubsManagementURLCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "management-url <id>",
 		Short:   "Get a Subscription's store management URL",
-		Long:    `Returns the store-specific URL where the Customer manages this subscription (App Store, Play Store, or RevenueCat Billing). Send it to a Customer who wants to update or cancel on their own.`,
+		Long:    `Returns the store-specific URL where the Customer manages this subscription (App Store, Play Store, or Web Billing). Send it to a Customer who wants to update or cancel on their own.`,
 		Example: "  rc subscriptions management-url sub_x\n  rc subscriptions management-url sub_x --json | jq -r '.url'",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -162,7 +162,7 @@ func newSubsCancelCmd() *cobra.Command {
 		Use:   "cancel <id>",
 		Short: "Cancel a Subscription",
 		Long: `Cancels a subscription so it stops renewing at the end of the current period.
-RevenueCat Billing only — App Store and Play Store subscriptions must be
+Web Billing only — App Store and Play Store subscriptions must be
 cancelled through the store.
 
 Reversibility: a cancelled subscription cannot be uncancelled via API; the
@@ -238,7 +238,7 @@ func newSubsRefundCmd() *cobra.Command {
 		Use:   "refund <id>",
 		Short: "Refund a Subscription's latest payment",
 		Long: `Refunds the most recent payment on a subscription and emits a CANCELLATION.
-Only Google Play and RevenueCat Billing purchases can be refunded directly;
+Only Google Play and Web Billing purchases can be refunded directly;
 App Store refunds must be issued through Apple. The refund immediately
 expires the subscription and removes Entitlement access.
 

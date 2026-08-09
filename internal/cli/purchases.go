@@ -99,7 +99,7 @@ func newPurchasesRefundCmd() *cobra.Command {
 		Use:   "refund <id>",
 		Short: "Refund a Non-Subscription Purchase",
 		Long: `Refunds a Non-Subscription Purchase and emits a CANCELLATION, removing any
-Entitlement access it granted. Only Google Play and RevenueCat Billing
+Entitlement access it granted. Only Google Play and Web Billing
 purchases can be refunded directly; App Store refunds must be issued through
 Apple.
 

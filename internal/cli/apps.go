@@ -23,7 +23,7 @@ var appTypes = []huh.Option[string]{
 	huh.NewOption("Mac App Store", "mac_app_store"),
 	huh.NewOption("Roku", "roku"),
 	huh.NewOption("Stripe", "stripe"),
-	huh.NewOption("RevenueCat Billing", "rc_billing"),
+	huh.NewOption("Web Billing", "rc_billing"),
 	huh.NewOption("Paddle", "paddle"),
 }
 
@@ -33,7 +33,7 @@ func newAppsCmd() *cobra.Command {
 		Aliases: []string{"app"},
 		Short:   "Manage apps in a Project",
 		Long: `An App is a per-platform connection in a Project — one App Store, Play Store,
-Amazon, Stripe, RevenueCat Billing, Roku, or Paddle app each. Apps hold the store
+Amazon, Stripe, Web Billing, Roku, or Paddle app each. Apps hold the store
 credentials RevenueCat uses to validate purchases and the public SDK keys your
 client apps configure with.`,
 		Example: `  rc apps list
