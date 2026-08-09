@@ -497,7 +497,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 				checkpointed = true
 			}
 		case paywallai.EventRunFailed:
-			return fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message)
+			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRecoveryHint(opts, checkpointed))
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			return finishPaywallAI(ctx, rt, opts, session, event)
@@ -528,12 +528,15 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 	}
 }
 
-func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
-	base := fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", err)
+func paywallRecoveryHint(opts paywallAIOptions, checkpointed bool) string {
 	if checkpointed {
-		return WithHint(base, "Progress so far is saved — continue with: rc paywalls edit --session "+opts.sessionPath)
+		return "Progress so far is saved — continue with: rc paywalls edit --session " + opts.sessionPath
 	}
-	return WithHint(base, "Nothing was saved yet — re-run the command to try again.")
+	return "Nothing was saved yet — re-run the command to try again."
+}
+
+func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
+	return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", err), paywallRecoveryHint(opts, checkpointed))
 }
 
 func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession, event *paywallai.Event) error {
