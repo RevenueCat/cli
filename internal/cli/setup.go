@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -133,9 +134,13 @@ func runSetup(cmd *cobra.Command) error {
 	platform := platformFromLabel(projectLabel)
 	agents := detectAgents()
 
-	rt.Out.Title("RevenueCat setup — " + filepath.Base(dir))
+	paint := rt.Out.Paint
+	rt.Out.Blank()
+	fmt.Fprintln(cmd.ErrOrStderr(), rt.Out.Panel(
+		paint(output.ToneAccent, "RevenueCat setup")+paint(output.ToneDim, "  ·  "+filepath.Base(dir)),
+		paint(output.ToneDim, projectLabel+"  ·  "+collapseHome(dir)),
+	))
 	rt.Out.Lead("An AI agent with RevenueCat's skills sets up your paywall and in-app purchases here — you approve each step. Apple is optional and comes later.")
-	rt.Out.Field("Directory", collapseHome(dir), projectLabel)
 	if len(agents) == 0 {
 		rt.Out.Field("Agents", "none found", "install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below")
 	}
