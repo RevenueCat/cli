@@ -134,17 +134,10 @@ func runSetup(cmd *cobra.Command) error {
 	agents := detectAgents()
 
 	rt.Out.Title("RevenueCat setup — " + filepath.Base(dir))
-	rt.Out.Lead("Installs RevenueCat's skills into an AI agent and lets it build your Test Store catalog, paywall, and SDK integration — you approve each step. Connecting Apple for the real App Store is optional; skip it to build on the Test Store first.")
+	rt.Out.Lead("An AI agent with RevenueCat's skills sets up your paywall and in-app purchases here — you approve each step. Apple is optional and comes later.")
 	rt.Out.Field("Directory", collapseHome(dir), projectLabel)
-	rt.Out.Field("Account", setupAccountLabel(rt))
-	if len(agents) > 0 {
-		names := make([]string, 0, len(agents))
-		for _, a := range agents {
-			names = append(names, a.Name)
-		}
-		rt.Out.Field("Agents found", strings.Join(names, ", "))
-	} else {
-		rt.Out.Field("Agents found", "none", "install Claude Code, Codex, Cursor, or Gemini CLI for agent-driven setup")
+	if len(agents) == 0 {
+		rt.Out.Field("Agents", "none found", "install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below")
 	}
 
 	if rt.Config == nil || rt.Config.BearerToken() == "" {
@@ -316,15 +309,16 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime) error {
 		optSwitchProject
 	)
 	for {
-		rt.Out.Title("Confirm your account")
-		rt.Out.Field("Account", setupAccountLabel(rt))
-		rt.Out.Field("Project", setupProjectLabel(cmd, rt))
+		title := "Set up as " + setupAccountLabel(rt)
+		if rt.Config != nil && rt.Config.ProjectID != "" {
+			title += " in " + setupProjectLabel(cmd, rt)
+		}
+		title += "?"
 
 		choice := optContinue
 		if err := tui.Form(false).
 			Field(huh.NewSelect[int]().
-				Title("Set up under this account?").
-				Description("Everything the agent creates — project, apps, catalog — lands here.").
+				Title(title).
 				Options(
 					huh.NewOption("Yes, continue", optContinue),
 					huh.NewOption("Switch account (log out and back in)", optSwitchAccount),
