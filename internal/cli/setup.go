@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
@@ -121,7 +122,7 @@ the step-by-step commands in the docs.`,
 
 func runSetup(cmd *cobra.Command) error {
 	rt := RuntimeFrom(cmd.Context())
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
 		return runSetupAgentPrompt(cmd, rt)
 	}
 
@@ -319,13 +320,14 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 
 		switch choice {
 		case optNewProject:
-			rt.Config.ProjectID = "" // agent (or Apple prep) creates a fresh project
+			// persist the clear so the agent's fresh rc process doesn't reload the old active project
+			rt.Config.ProjectID = ""
+			_ = config.Save(rt.Globals.Profile, rt.Config)
 			return nil
 		case optExistingProject:
 			use, _, err := cmd.Root().Find([]string{"projects", "use"})
 			if err != nil || use == nil {
-				rt.Out.Warn("Couldn't open the project picker — run `rc projects use` and start again.")
-				return nil
+				return fmt.Errorf("couldn't open the project picker — run `rc projects use`, then rerun setup")
 			}
 			use.SetContext(cmd.Context())
 			if err := use.RunE(use, nil); err != nil {
