@@ -32,7 +32,7 @@ func Run(version string) int {
 	if errors.As(err, &silent) {
 		return silent.Code
 	}
-	// Cancelling a prompt (Esc / Ctrl-C) is a choice, not a failure.
+	// user-cancelled prompt: exit cleanly, not as an error
 	if errors.Is(err, huh.ErrUserAborted) {
 		if mode, _ := root.PersistentFlags().GetBool("json"); !mode {
 			fmt.Fprintln(os.Stderr, output.StyleDim.Render("Cancelled."))

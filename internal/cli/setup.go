@@ -168,9 +168,7 @@ func runSetup(cmd *cobra.Command) error {
 		}
 	}
 
-	// Apple is the last mile — the agent builds everything on the Test Store
-	// first; it's connected only at the production stage, and until then the
-	// agent is told not to wait for it.
+	// Apple runs before the handoff (the agent can't do 2FA); deferred until then.
 	applePending := (platform == "ios" || platform == "cross") &&
 		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
 
@@ -222,9 +220,7 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	rt.Out.Answer("Skills", skillsScopeLabels[skillsScope])
 
-	// Apple is a human 2FA action the agent can't do, so it happens here,
-	// before the handoff — optional and defaulting to No. Skipping defers it:
-	// the agent builds on the Test Store and lists the Apple steps for later.
+	// human-only (2FA), optional, offered pre-handoff and defaulting to No
 	appleDeferred := applePending
 	if applePending {
 		rt.Out.Title("Step 4 · Apple (optional)")
@@ -298,10 +294,8 @@ var skillsScopeLabels = map[string]string{
 	"global":  "global",
 }
 
-// confirmSetupAccount confirms the account and picks the project for this app
-// before handing off. A new app defaults to a fresh project rather than the
-// CLI's globally-active one, which would otherwise set this app up under an
-// unrelated project.
+// confirmSetupAccount confirms the account and picks the project for this app,
+// defaulting a new app to a fresh project rather than the active one.
 func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 	const (
 		optNewProject = iota
@@ -349,9 +343,8 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 	}
 }
 
-// setupAgentPrompt is the starter prompt handed to the agent. When Apple is
-// deferred it tells the agent to finish everything else and list the Apple
-// steps as remaining work rather than waiting on sign-in.
+// setupAgentPrompt is the starter prompt handed to the agent, with the
+// Apple-deferred instruction appended when relevant.
 func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool) string {
 	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
 	if appleDeferred {
@@ -360,9 +353,8 @@ func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool) string 
 	return prompt
 }
 
-// runSetupAgentPrompt handles `rc setup` run non-interactively (by an agent):
-// instead of launching a nested agent, it emits the stage-aware setup prompt
-// for the caller to follow, with the human-only steps called out.
+// runSetupAgentPrompt emits the stage-aware setup prompt for a non-interactive
+// (agent) run instead of launching a nested agent.
 func runSetupAgentPrompt(cmd *cobra.Command, rt *Runtime) error {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -390,9 +382,8 @@ func runSetupAgentPrompt(cmd *cobra.Command, rt *Runtime) error {
 	return nil
 }
 
-// setupAuthHandbackNote tells an agent how to handle auth: it can create a new
-// account without a browser, but logging in to an existing one is a human step
-// it must hand back.
+// setupAuthHandbackNote appends auth guidance when logged out: headless signup
+// is fine, but existing-account login is a human step to hand back.
 func setupAuthHandbackNote(authed bool) string {
 	if authed {
 		return ""

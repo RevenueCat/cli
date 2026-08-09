@@ -58,10 +58,8 @@ func firstBundleID(path string, pattern *regexp.Regexp) string {
 	return ""
 }
 
-// offerApple optionally connects the Apple account for the real App Store.
-// Apple sign-in is a human 2FA action the launched agent can't perform, so it
-// runs here, before the handoff. Creates the project and App Store app records
-// if missing, then runs the guided Apple setup inline.
+// offerApple optionally connects the Apple account (human 2FA) before the
+// handoff, creating the project and App Store app records if missing.
 func offerApple(cmd *cobra.Command, rt *Runtime, dir, platform string) bool {
 	if platform != "ios" && platform != "cross" {
 		return false
