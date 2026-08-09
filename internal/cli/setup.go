@@ -134,12 +134,8 @@ func runSetup(cmd *cobra.Command) error {
 	platform := platformFromLabel(projectLabel)
 	agents := detectAgents()
 
-	paint := rt.Out.Paint
-	rt.Out.Blank()
-	fmt.Fprintln(cmd.ErrOrStderr(), rt.Out.Panel(
-		paint(output.ToneAccent, "RevenueCat setup")+paint(output.ToneDim, "  ·  "+filepath.Base(dir)),
-		paint(output.ToneDim, projectLabel+"  ·  "+collapseHome(dir)),
-	))
+	rt.Out.Title("RevenueCat setup  ·  " + filepath.Base(dir))
+	fmt.Fprintln(cmd.ErrOrStderr(), "  "+rt.Out.Paint(output.ToneDim, projectLabel+"  ·  "+collapseHome(dir)))
 	rt.Out.Lead("An AI agent with RevenueCat's skills sets up your paywall and in-app purchases here — you approve each step. Apple is optional and comes later.")
 	if len(agents) == 0 {
 		rt.Out.Field("Agents", "none found", "install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below")
@@ -314,19 +310,14 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 		optSwitchAccount
 	)
 	for {
-		existing := "Use an existing project"
-		if rt.Config != nil && rt.Config.ProjectID != "" {
-			existing += " (currently " + setupProjectLabel(cmd, rt) + ")"
-		}
-
 		choice := optNewProject
 		if err := tui.Form(false).
 			Field(huh.NewSelect[int]().
-				Title("Set up as "+setupAccountLabel(rt)+"?").
+				Title("Create a new RevenueCat project for "+filepath.Base(dir)+"?").
 				Options(
-					huh.NewOption("New project for "+filepath.Base(dir), optNewProject),
-					huh.NewOption(existing, optExistingProject),
-					huh.NewOption("No — switch account", optSwitchAccount),
+					huh.NewOption("Yes — new project", optNewProject),
+					huh.NewOption("Use an existing project", optExistingProject),
+					huh.NewOption("Switch account", optSwitchAccount),
 				).
 				Value(&choice)).
 			Run(); err != nil {
@@ -357,33 +348,6 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 			}
 		}
 	}
-}
-
-// setupProjectLabel resolves the active project's name via the API, which also
-// verifies the token can reach it. Falls back to the ID when it can't.
-func setupProjectLabel(cmd *cobra.Command, rt *Runtime) string {
-	if rt.Config == nil || rt.Config.ProjectID == "" {
-		return "none selected"
-	}
-	client, err := rt.API()
-	if err != nil {
-		return rt.Config.ProjectID
-	}
-	p, err := client.Projects.Get(cmd.Context(), rt.Config.ProjectID)
-	if err != nil {
-		return rt.Config.ProjectID + " (can't verify — check the account)"
-	}
-	return p.Name + " (" + rt.Config.ProjectID + ")"
-}
-
-func setupAccountLabel(rt *Runtime) string {
-	if rt.Config == nil || rt.Config.BearerToken() == "" {
-		return "not logged in"
-	}
-	if rt.Config.AccountEmail != "" {
-		return rt.Config.AccountEmail
-	}
-	return "logged in"
 }
 
 // setupAgentPrompt is the starter prompt handed to the agent. When Apple is
