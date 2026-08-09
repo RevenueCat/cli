@@ -21,13 +21,15 @@ func TestBareRC_LoggedOut_ShowsSetupSteps(t *testing.T) {
 		t.Fatalf("logged-out home should stay lean:\n%s", out)
 	}
 
-	// --help still lists the full command surface.
+	// --help still lists the full command surface (grouped into sections).
 	help, _, err := runCmd(t, "--help")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(help, "Available Commands") {
-		t.Fatalf("rc --help should list commands:\n%s", help)
+	for _, want := range []string{"customer", "paywalls", "webhooks"} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("rc --help should list command %q:\n%s", want, help)
+		}
 	}
 }
 
