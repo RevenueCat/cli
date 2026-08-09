@@ -251,7 +251,7 @@ func ricoConversationPickerItems(ctx context.Context, rt *Runtime, client *rico.
 		}
 		item := PickerItem{
 			ID:    conversation.ID,
-			Label: fmt.Sprintf("%s — %s (%s)", summary, lastActivity(conversation.UpdatedAt), conversation.ID),
+			Label: fmt.Sprintf("%s  ·  %s", summary, lastActivity(conversation.UpdatedAt)),
 		}
 		if conversation.ID == state.LastConversationID {
 			item.Label = "↩ " + item.Label
