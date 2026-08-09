@@ -170,6 +170,15 @@ func TestRicoChat_RequiresPromptNonInteractive(t *testing.T) {
 	}
 }
 
+// --json is a non-interactive signal: `rc rico --json` with no message must
+// require one rather than opening the chat UI.
+func TestRico_JSONWithoutMessageRequiresMessage(t *testing.T) {
+	_, _, err := runCmd(t, "rico", "--json", "--api-key", "sk_test")
+	if err == nil || !strings.Contains(err.Error(), "message is required") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestRicoConversations_ListJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/conversations" {

@@ -92,7 +92,7 @@ them unless --approve-tools is passed (destructive tools also require --yes).`,
 			if session.conversationID == "" {
 				session.conversationID = rico.NewConversationID()
 			}
-			if opts.prompt != "" || opts.print || rt.Globals.NoInput || !tui.IsInteractive() {
+			if opts.prompt != "" || opts.print || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
 				if opts.prompt == "" {
 					return fmt.Errorf("message is required; pass it as an argument or set RC_RICO_PROMPT")
 				}
