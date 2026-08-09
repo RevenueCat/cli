@@ -153,6 +153,12 @@ func runSetup(cmd *cobra.Command) error {
 		}
 	}
 
+	if rt.Config != nil && rt.Config.BearerToken() != "" {
+		if err := confirmSetupAccount(cmd, rt); err != nil {
+			return err
+		}
+	}
+
 	rt.Out.Info("Checking where this project stands…")
 	stage := detectSetupStage(cmd, rt, platform)
 	rt.Out.Field("Stage", stage.Label)
@@ -297,6 +303,76 @@ var autonomyLabels = map[string]string{
 var skillsScopeLabels = map[string]string{
 	"project": "this project only",
 	"global":  "global",
+}
+
+// confirmSetupAccount gates the flow on the right account/project before the
+// agent creates anything under them. Loops until the user continues; switching
+// account clears the cached label (it can be stale) so a wrong email is never
+// shown as confirmed.
+func confirmSetupAccount(cmd *cobra.Command, rt *Runtime) error {
+	const (
+		optContinue = iota
+		optSwitchAccount
+		optSwitchProject
+	)
+	for {
+		rt.Out.Title("Confirm your account")
+		rt.Out.Field("Account", setupAccountLabel(rt))
+		rt.Out.Field("Project", setupProjectLabel(cmd, rt))
+
+		choice := optContinue
+		if err := tui.Form(false).
+			Field(huh.NewSelect[int]().
+				Title("Set up under this account?").
+				Description("Everything the agent creates — project, apps, catalog — lands here.").
+				Options(
+					huh.NewOption("Yes, continue", optContinue),
+					huh.NewOption("Switch account (log out and back in)", optSwitchAccount),
+					huh.NewOption("Switch project", optSwitchProject),
+				).
+				Value(&choice)).
+			Run(); err != nil {
+			return err
+		}
+
+		switch choice {
+		case optContinue:
+			return nil
+		case optSwitchAccount:
+			rt.Config.AccountEmail = ""
+			rt.Config.AccountName = ""
+			if err := loginWithOAuth(cmd.Context(), rt); err != nil {
+				return err
+			}
+		case optSwitchProject:
+			use, _, err := cmd.Root().Find([]string{"projects", "use"})
+			if err != nil || use == nil {
+				rt.Out.Warn("Couldn't open the project picker — run `rc projects use` and start again.")
+				return nil
+			}
+			use.SetContext(cmd.Context())
+			if err := use.RunE(use, nil); err != nil {
+				rt.Out.Warn("Project not changed: " + err.Error())
+			}
+		}
+	}
+}
+
+// setupProjectLabel resolves the active project's name via the API, which also
+// verifies the token can reach it. Falls back to the ID when it can't.
+func setupProjectLabel(cmd *cobra.Command, rt *Runtime) string {
+	if rt.Config == nil || rt.Config.ProjectID == "" {
+		return "none selected"
+	}
+	client, err := rt.API()
+	if err != nil {
+		return rt.Config.ProjectID
+	}
+	p, err := client.Projects.Get(cmd.Context(), rt.Config.ProjectID)
+	if err != nil {
+		return rt.Config.ProjectID + " (can't verify — check the account)"
+	}
+	return p.Name + " (" + rt.Config.ProjectID + ")"
 }
 
 func setupAccountLabel(rt *Runtime) string {
