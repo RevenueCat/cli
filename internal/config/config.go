@@ -14,9 +14,8 @@ import (
 // from --profile, RC_PROFILE, or the .active file, so an unchecked name like
 // "../../x" would read/write outside ~/.config/revenuecat.
 func validateProfileName(name string) error {
-	if name == "" || name == "." || name == ".." ||
-		strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") {
-		return fmt.Errorf("invalid profile name %q: must not be empty or contain path separators", name)
+	if name == "" || strings.ContainsAny(name, `/\`) || strings.Contains(name, ".") {
+		return fmt.Errorf("invalid profile name %q: must be non-empty and contain no '.' or path separators", name)
 	}
 	return nil
 }
@@ -169,7 +168,12 @@ func ListProfiles() ([]string, error) {
 		if !filepathIsJSON(n) {
 			continue
 		}
-		names = append(names, n[:len(n)-5])
+		base := n[:len(n)-5]
+		// dotted base = state file (<profile>.<name>.json), not a profile
+		if strings.Contains(base, ".") {
+			continue
+		}
+		names = append(names, base)
 	}
 	return names, nil
 }
