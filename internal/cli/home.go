@@ -28,7 +28,7 @@ var homeMap = []homeGroup{
 	{"Automate & set up", [][2]string{
 		{"rc apps", "connect App Store & Google Play"},
 		{"rc skills install", "AI workflows for coding agents"},
-		{"rc rico chat", "ask RevenueCat's AI ✨"},
+		{"rc rico", "ask RevenueCat's AI ✨"},
 	}},
 }
 

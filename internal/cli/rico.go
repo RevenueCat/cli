@@ -25,40 +25,6 @@ import (
 const ricoResumeRounds = 10
 
 func newRicoCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "rico",
-		Short: "Chat with Rico, RevenueCat's AI assistant",
-		Long: `Rico answers questions about your projects, metrics, and configuration, and
-can run RevenueCat tools on your behalf. Tool calls that change data pause for
-approval before executing.
-
-Conversations are stored server-side; continue one with --conversation.`,
-	}
-	cmd.AddCommand(
-		newRicoChatCmd(),
-		newRicoConversationsCmd(),
-		newRicoFeedbackCmd(),
-	)
-	return cmd
-}
-
-type ricoChatOptions struct {
-	prompt         string
-	conversationID string
-	resume         bool
-	approveTools   bool
-	plain          bool
-	timeout        time.Duration
-	baseURL        string
-}
-
-// ricoState is the per-profile memory of the last CLI conversation; the
-// --resume picker floats it to the top.
-type ricoState struct {
-	LastConversationID string `json:"last_conversation_id"`
-}
-
-func newRicoChatCmd() *cobra.Command {
 	opts := ricoChatOptions{
 		prompt:         os.Getenv("RC_RICO_PROMPT"),
 		conversationID: os.Getenv("RC_RICO_CONVERSATION_ID"),
@@ -66,21 +32,26 @@ func newRicoChatCmd() *cobra.Command {
 		timeout:        10 * time.Minute,
 	}
 	cmd := &cobra.Command{
-		Use:   "chat [message]",
-		Short: "Send a message to Rico",
-		Long: `Sends a message and streams Rico's reply. In a terminal with no message
-given, opens a full-screen chat window; with a message (or --prompt) it
-answers once and exits. Pass --plain for a line-based prompt loop instead of
-the chat window.
+		Use:   "rico [message]",
+		Short: "Chat with Rico, RevenueCat's AI assistant",
+		Long: `Rico answers questions about your projects, metrics, and configuration, and
+can run RevenueCat tools on your behalf. Tool calls that change data pause for
+approval before executing.
 
-Tool calls that modify data pause the run for approval. Interactive terminals
-prompt; non-interactive runs reject them unless --approve-tools is passed
-(destructive tools additionally require --yes).`,
-		Example: `  rc rico chat
-  rc rico chat "why did trial conversions drop this week?"
-  rc rico chat "delete the test offering" --approve-tools --yes --json --no-input
-  rc rico chat --resume
-  rc rico chat --conversation NQ7bGmww8rLcPT9d`,
+With no message in a terminal, opens a full-screen chat window; with a message
+(or --prompt) it answers once and exits. Pass --print to force a single answer
+for scripts and agents, or --plain for a line-based loop.
+
+Conversations are stored server-side: --continue resumes the most recent one,
+--resume picks from a list, and --conversation <id> continues a specific one.
+Tool calls that modify data pause for approval; non-interactive runs reject
+them unless --approve-tools is passed (destructive tools also require --yes).`,
+		Example: `  rc rico
+  rc rico "why did trial conversions drop this week?"
+  rc rico --continue
+  rc rico --resume
+  rc rico --print "how many active subscriptions do we have?" --json
+  rc rico "delete the test offering" --approve-tools --yes --no-input`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -93,6 +64,14 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 			client, err := ricoClient(rt, opts.baseURL)
 			if err != nil {
 				return err
+			}
+			if opts.continueLast && opts.conversationID == "" {
+				var state ricoState
+				_ = config.LoadState(rt.Globals.Profile, "rico", &state)
+				if state.LastConversationID == "" {
+					return fmt.Errorf("no recent conversation to continue — start one with `rc rico`, or pick one with --resume")
+				}
+				opts.conversationID = state.LastConversationID
 			}
 			if opts.resume && opts.conversationID == "" {
 				opts.conversationID, err = pickRicoConversation(cmd.Context(), rt, client)
@@ -113,7 +92,7 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 			if session.conversationID == "" {
 				session.conversationID = rico.NewConversationID()
 			}
-			if opts.prompt != "" || rt.Globals.NoInput || !tui.IsInteractive() {
+			if opts.prompt != "" || opts.print || rt.Globals.NoInput || !tui.IsInteractive() {
 				if opts.prompt == "" {
 					return fmt.Errorf("message is required; pass it as an argument or set RC_RICO_PROMPT")
 				}
@@ -126,13 +105,37 @@ prompt; non-interactive runs reject them unless --approve-tools is passed
 		},
 	}
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "message to send (or RC_RICO_PROMPT)")
-	cmd.Flags().StringVarP(&opts.conversationID, "conversation", "c", opts.conversationID, "conversation to continue (or RC_RICO_CONVERSATION_ID)")
+	cmd.Flags().StringVar(&opts.conversationID, "conversation", opts.conversationID, "continue a specific conversation by ID (or RC_RICO_CONVERSATION_ID)")
+	cmd.Flags().BoolVarP(&opts.continueLast, "continue", "c", false, "continue the most recent conversation")
 	cmd.Flags().BoolVarP(&opts.resume, "resume", "r", false, "pick a past conversation to resume (most recent first)")
+	cmd.Flags().BoolVarP(&opts.print, "print", "p", false, "print a single answer and exit (for scripts and agents)")
 	cmd.Flags().BoolVar(&opts.approveTools, "approve-tools", false, "approve tool calls without prompting (destructive ones still need --yes)")
 	cmd.Flags().BoolVar(&opts.plain, "plain", false, "line-based prompt loop instead of the chat window")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait for a reply")
 	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Rico endpoint (or RC_RICO_BASE_URL)")
+	cmd.AddCommand(
+		newRicoConversationsCmd(),
+		newRicoFeedbackCmd(),
+	)
 	return cmd
+}
+
+type ricoChatOptions struct {
+	prompt         string
+	conversationID string
+	continueLast   bool
+	resume         bool
+	print          bool
+	approveTools   bool
+	plain          bool
+	timeout        time.Duration
+	baseURL        string
+}
+
+// ricoState is the per-profile memory of the last CLI conversation; the
+// --resume picker floats it to the top.
+type ricoState struct {
+	LastConversationID string `json:"last_conversation_id"`
 }
 
 // ricoSession drives chat turns: streaming, interrupt approval, and resumes.
@@ -191,7 +194,7 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 	if err := chat.RunChat(); err != nil {
 		return err
 	}
-	s.rt.Out.Hint("Resume this conversation:  rc rico chat -r")
+	s.rt.Out.Hint("Continue this conversation:  rc rico --continue")
 	return nil
 }
 
@@ -206,7 +209,7 @@ func pickRicoConversation(ctx context.Context, rt *Runtime, client *rico.Client)
 		return "", err
 	}
 	if len(items) == 0 {
-		return "", fmt.Errorf("no conversations found — start one with rc rico chat")
+		return "", fmt.Errorf("no conversations found — start one with rc rico")
 	}
 	options := make([]huh.Option[string], len(items))
 	for i, item := range items {
