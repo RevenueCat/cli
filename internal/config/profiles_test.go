@@ -29,6 +29,27 @@ func TestListProfiles_SkipsStateFiles(t *testing.T) {
 	}
 }
 
+func TestProfileName_IgnoresInvalidActiveAndEnv(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("RC_CONFIG_DIR", dir)
+	t.Setenv("RC_PROFILE", "")
+	// residual dotted name from the old phantom-profile bug
+	if err := os.WriteFile(filepath.Join(dir, ".active"), []byte("default.rico\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := ProfileName(""); got != "default" {
+		t.Fatalf("ProfileName = %q, want default (invalid .active must be ignored)", got)
+	}
+	if _, err := Load(""); err != nil {
+		t.Fatalf("Load errored on invalid .active instead of self-healing: %v", err)
+	}
+
+	t.Setenv("RC_PROFILE", "bad.name")
+	if got := ProfileName(""); got != "default" {
+		t.Fatalf("ProfileName = %q, want default (invalid RC_PROFILE must be ignored)", got)
+	}
+}
+
 func TestValidateProfileName_RejectsDotted(t *testing.T) {
 	if err := validateProfileName("default"); err != nil {
 		t.Fatalf("plain name rejected: %v", err)

@@ -90,10 +90,11 @@ func ProfileName(p string) string {
 	if p != "" {
 		return p
 	}
-	if env := os.Getenv("RC_PROFILE"); env != "" {
+	// ignore an invalid RC_PROFILE / .active (e.g. a residual dotted name) instead of failing every command
+	if env := os.Getenv("RC_PROFILE"); env != "" && validateProfileName(env) == nil {
 		return env
 	}
-	if name := readActivePointer(); name != "" {
+	if name := readActivePointer(); name != "" && validateProfileName(name) == nil {
 		return name
 	}
 	return defaultProfile
