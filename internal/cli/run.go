@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/huh"
+
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
 )
@@ -29,6 +31,13 @@ func Run(version string) int {
 	var silent *SilentExitError
 	if errors.As(err, &silent) {
 		return silent.Code
+	}
+	// Cancelling a prompt (Esc / Ctrl-C) is a choice, not a failure.
+	if errors.Is(err, huh.ErrUserAborted) {
+		if mode, _ := root.PersistentFlags().GetBool("json"); !mode {
+			fmt.Fprintln(os.Stderr, output.StyleDim.Render("Cancelled."))
+		}
+		return 130
 	}
 	jsonMode, _ := root.PersistentFlags().GetBool("json")
 	if jsonMode {
