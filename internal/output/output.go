@@ -68,10 +68,8 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 
 func (r *Renderer) IsJSON() bool { return r.json }
 
-// Tone names a semantic style for callers that compose their own multi-line
-// output (e.g. the bare-`rc` home screen) instead of going through the
-// Info/Title helpers. It keeps lipgloss out of those callers so all color
-// stays in this package.
+// Tone names a semantic style for callers that compose their own output,
+// keeping lipgloss out of those callers.
 type Tone int
 
 const (
@@ -105,9 +103,7 @@ func (r *Renderer) Paint(t Tone, text string) string {
 }
 
 // Panel wraps pre-styled lines in a rounded border box sized to fit its
-// content. Callers style the lines (via Paint); Panel only draws the frame,
-// so all color decisions stay in one place. The frame is drawn uncolored
-// when color is disabled.
+// content. The frame is drawn uncolored when color is disabled.
 func (r *Renderer) Panel(lines ...string) string {
 	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
 	if !r.noColor {

@@ -13,8 +13,7 @@ type homeGroup struct {
 	rows  [][2]string // {command, description}
 }
 
-// homeMap is the curated command catalog shown once authenticated — a
-// discoverable slice of the surface, not the full tree (that's `rc --help`).
+// homeMap is the curated command catalog shown once authenticated.
 var homeMap = []homeGroup{
 	{"Build", [][2]string{
 		{"rc offerings list", "offerings & their packages"},
@@ -33,10 +32,7 @@ var homeMap = []homeGroup{
 	}},
 }
 
-// writeHomeScreen renders the bare-`rc` landing screen. It reads only local
-// config — never the network — so bare `rc` stays instant, and tailors itself
-// to where the user is: setup steps when logged out, a project nudge and the
-// full command map once authenticated.
+// writeHomeScreen renders the bare-`rc` landing screen from local config only.
 func writeHomeScreen(w io.Writer, rt *Runtime) {
 	paint := rt.Out.Paint
 	label := func(s string) string { return paint(output.ToneTitle, s) }
@@ -58,8 +54,6 @@ func writeHomeScreen(w io.Writer, rt *Runtime) {
 			b.WriteString("\n")
 		}
 
-		// The hero: paywalls is the reason to reach for the CLI, so feature it
-		// on its own with both entry points rather than as one row in a group.
 		b.WriteString(paint(output.ToneAccent, "✨ Paywalls — design with AI") + "\n")
 		b.WriteString(homeRows(paint, [][2]string{
 			{"rc paywalls generate", "start from a prompt"},
@@ -89,8 +83,7 @@ func writeHomeScreen(w io.Writer, rt *Runtime) {
 	fmt.Fprint(w, b.String())
 }
 
-// homePanel is the boxed status header: identity, project, and a dashboard
-// deep-link when they're known.
+// homePanel is the boxed status header: identity, project, dashboard link.
 func homePanel(rt *Runtime) string {
 	paint := rt.Out.Paint
 	lines := []string{paint(output.ToneAccent, "rc · RevenueCat")}
@@ -123,10 +116,8 @@ func accountIdentity(rt *Runtime) string {
 	return rt.Config.AccountName
 }
 
-// homeRows renders command/description pairs as an aligned two-column block:
-// the command in the interaction accent (with <placeholders> dimmed so they
-// read as fill-ins), the description dimmed. Pass width to align the
-// description column across several blocks; 0 fits each block on its own.
+// homeRows renders command/description pairs as an aligned two-column block.
+// width aligns the description column across blocks; 0 fits each on its own.
 func homeRows(paint func(output.Tone, string) string, rows [][2]string, width int) string {
 	for _, r := range rows {
 		if len(r[0]) > width {

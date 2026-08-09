@@ -15,8 +15,7 @@ func TestBareRC_LoggedOut_ShowsSetupSteps(t *testing.T) {
 			t.Fatalf("logged-out home missing %q:\n%s", want, out)
 		}
 	}
-	// Logged out doesn't show the command map (commands need auth) or the
-	// full cobra dump.
+	// logged out shows neither the command map nor the full cobra dump
 	if strings.Contains(out, "Build") || strings.Contains(out, "Available Commands") {
 		t.Fatalf("logged-out home should stay lean:\n%s", out)
 	}
@@ -38,8 +37,7 @@ func TestBareRC_AllShowsFullHelpNotHome(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// `rc --all` falls through to help (the full grouped command list), which
-	// is what the help footer points at — not the home screen.
+	// --all falls through to help, not the home screen
 	for _, want := range []string{"Getting started", "customer", "paywalls"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("rc --all should show the full command list, missing %q:\n%s", want, out)
