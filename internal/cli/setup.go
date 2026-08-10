@@ -24,11 +24,13 @@ type agentClient struct {
 	LaunchArgs func(prompt, autonomy string) []string
 }
 
-// Autonomy levels for the launched agent. "trusted" pre-approves the tools
-// the setup journey actually uses (rc, file edits, builds) so the human
-// isn't asked to approve every step of a run they already consented to;
-// "full" removes approvals entirely; "manual" is the agent's default.
+// Autonomy levels for the launched agent. "auto" maps to each agent's own
+// auto-approval mode; "trusted" pre-approves the tools the setup journey
+// actually uses (rc, file edits, builds) so the human isn't asked to approve
+// every step of a run they already consented to; "full" removes approvals
+// entirely; "manual" is the agent's default.
 const (
+	autonomyAuto    = "auto"
 	autonomyTrusted = "trusted"
 	autonomyFull    = "full"
 	autonomyManual  = "manual"
@@ -53,6 +55,8 @@ var agentClients = []agentClient{
 	{"Claude Code", "claude", "claude-code", func(p, autonomy string) []string {
 		name := setupSessionName()
 		switch autonomy {
+		case autonomyAuto:
+			return []string{"-n", name, "--permission-mode", "auto", p}
 		case autonomyTrusted:
 			// Prompt first — --allowedTools is variadic and would swallow a
 			// trailing positional. Patterns must be SEPARATE args: a
@@ -68,7 +72,7 @@ var agentClients = []agentClient{
 	}},
 	{"Codex", "codex", "codex", func(p, autonomy string) []string {
 		switch autonomy {
-		case autonomyTrusted:
+		case autonomyAuto, autonomyTrusted:
 			return []string{"--full-auto", p}
 		case autonomyFull:
 			return []string{"--dangerously-bypass-approvals-and-sandbox", p}
@@ -77,14 +81,14 @@ var agentClients = []agentClient{
 		}
 	}},
 	{"Cursor", "cursor-agent", "cursor", func(p, autonomy string) []string {
-		if autonomy == autonomyTrusted || autonomy == autonomyFull {
+		if autonomy == autonomyAuto || autonomy == autonomyTrusted || autonomy == autonomyFull {
 			return []string{"--force", p}
 		}
 		return []string{p}
 	}},
 	{"Gemini CLI", "gemini", "gemini-cli", func(p, autonomy string) []string {
 		switch autonomy {
-		case autonomyTrusted:
+		case autonomyAuto, autonomyTrusted:
 			return []string{"--approval-mode", "auto_edit", "-i", p}
 		case autonomyFull:
 			return []string{"--yolo", "-i", p}
@@ -196,12 +200,13 @@ func runSetup(cmd *cobra.Command) error {
 	rt.Out.Answer("Agent", choice.Name)
 
 	rt.Out.Title("Step 2 · Autonomy")
-	autonomy := autonomyFull
+	autonomy := autonomyAuto
 	if err := tui.Form(false).
 		Field(huh.NewSelect[string]().
 			Title("How much can "+choice.Name+" do without stopping to ask?").
 			Description("You can interrupt anytime.").
 			Options(
+				huh.NewOption("Auto — use "+choice.Name+"'s built-in auto-approve mode", autonomyAuto),
 				huh.NewOption("Run freely — no approval prompts", autonomyFull),
 				huh.NewOption("Pre-approve rc, edits, and builds; ask for anything unusual", autonomyTrusted),
 				huh.NewOption("Ask me before each step", autonomyManual),
@@ -291,6 +296,7 @@ func runSetup(cmd *cobra.Command) error {
 }
 
 var autonomyLabels = map[string]string{
+	autonomyAuto:    "the agent's built-in auto-approve mode",
 	autonomyTrusted: "pre-approve rc, edits, builds; ask for the rest",
 	autonomyManual:  "ask before each step",
 	autonomyFull:    "run freely (no approval prompts)",
