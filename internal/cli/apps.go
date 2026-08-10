@@ -23,7 +23,7 @@ var appTypes = []huh.Option[string]{
 	huh.NewOption("Mac App Store", "mac_app_store"),
 	huh.NewOption("Roku", "roku"),
 	huh.NewOption("Stripe", "stripe"),
-	huh.NewOption("Web Billing (RC Billing)", "rc_billing"),
+	huh.NewOption("Web Billing", "rc_billing"),
 	huh.NewOption("Paddle", "paddle"),
 }
 

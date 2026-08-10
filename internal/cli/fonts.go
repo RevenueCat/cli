@@ -106,8 +106,10 @@ func newFontsListCmd() *cobra.Command {
 func newFontsUploadCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "upload <file>",
-		Short: "Upload a font to the project for use in paywalls",
-		Args:  cobra.ExactArgs(1),
+		Short: "Upload a font to the project for use in Paywalls",
+		Example: `  rc fonts upload ./Inter-Bold.ttf
+  rc fonts upload ./Inter-Bold.ttf --json`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

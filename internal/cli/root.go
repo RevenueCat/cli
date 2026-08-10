@@ -56,7 +56,7 @@ Agent-friendly entrypoints:
   rc <cmd> --no-input    fail rather than prompt
   rc <cmd> --yes         skip confirmations`,
 		Example: `  # Human use
-  rc login
+  rc auth login
   rc customer show cus_abc
 
   # Scripted use
@@ -157,13 +157,16 @@ Agent-friendly entrypoints:
 	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		return usageError{suggestFlag(cmd, err)}
 	})
+	applyCommandGroups(root)
 	applySurfaceProfile(root)
+	applyHelpStyling(root)
 
 	// --help skips PersistentPreRunE, so re-apply the surface from the parsed
 	// --all flag right before help renders, and footer the hidden count so a
 	// human (or a skill-less agent) knows there's more.
 	defaultHelp := root.HelpFunc()
 	root.SetHelpFunc(func(c *cobra.Command, args []string) {
+		helpColor = !g.NoColor && os.Getenv("NO_COLOR") == ""
 		applySurfaceProfile(root)
 		defaultHelp(c, args)
 		if c == root && !showAllSurface(root) && !testing.Testing() {

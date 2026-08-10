@@ -478,7 +478,7 @@ Confirmation: no prompt — idempotent (re-running with the same token is safe).
 func newCustomerWalletCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "wallet <customer-id>",
-		Short: "Show a Customer's virtual currency balances",
+		Short: "Show a Customer's Virtual Currency balances",
 		Long: `Shows the Customer's wallet: per-currency virtual currency balances for
 the project.`,
 		Example: `  rc customer wallet cus_abc
