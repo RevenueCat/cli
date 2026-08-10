@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -329,18 +330,23 @@ To remove the profile entirely, use: rc profiles delete <name>`,
 }
 
 func newAuthStatusCmd() *cobra.Command {
-	return &cobra.Command{
+	var showScopes bool
+	cmd := &cobra.Command{
 		Use:     "status",
 		Aliases: []string{"whoami"},
 		Short:   "Show the current authentication state",
-		Long:    `Displays the active profile, cached account identity when known, auth method, and project context. If a project is configured, validates that it is still accessible.`,
+		Long: `Displays the active profile, cached account identity when known, auth method, and project context. If a project is configured, validates that it is still accessible.
+
+Shows which credential is in control (the OAuth login, an RC_API_KEY env var, the --api-key flag, or a stored key) and warns when more than one is present. Pass --scopes to surface the active credential's scopes before attempting writes.`,
 		Example: `  rc auth status
-  rc auth status --json`,
+  rc auth status --json
+  rc auth status --scopes --json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 
 			profileName := config.ProfileName(rt.Globals.Profile)
-			authenticated := rt.Config.BearerToken() != ""
+			token, credSource := rt.Config.Credential()
+			authenticated := token != ""
 			projectStatus := "not_configured"
 			if authenticated && rt.Config.ProjectID != "" {
 				projectStatus = "unavailable"
@@ -354,8 +360,8 @@ func newAuthStatusCmd() *cobra.Command {
 			}
 
 			var method string
-			switch {
-			case rt.Config.IsOAuth():
+			switch credSource {
+			case config.SourceOAuth:
 				if rt.Config.TokenExpiresAt.IsZero() {
 					method = "oauth"
 				} else if time.Now().After(rt.Config.TokenExpiresAt) {
@@ -363,10 +369,32 @@ func newAuthStatusCmd() *cobra.Command {
 				} else {
 					method = fmt.Sprintf("oauth (expires %s)", rt.Config.TokenExpiresAt.Local().Format("2006-01-02 15:04"))
 				}
-			case rt.Config.APIKey != "":
+			case config.SourceFlag, config.SourceEnv, config.SourceProfile:
 				method = "api_key"
 			default:
 				method = "none"
+			}
+
+			present := rt.Config.PresentCredentialSources()
+			var conflict map[string]any
+			if len(present) > 1 {
+				ignored := make([]string, 0, len(present)-1)
+				for _, s := range present {
+					if s != credSource {
+						ignored = append(ignored, string(s))
+					}
+				}
+				conflict = map[string]any{
+					"active_source":   string(credSource),
+					"ignored_sources": ignored,
+					"message":         credentialConflictMessage(credSource, present),
+				}
+			}
+
+			var scopes []string
+			scopesKnown := false
+			if showScopes && authenticated {
+				scopes, scopesKnown = credentialScopes(token)
 			}
 
 			identity := rt.Config.AccountEmail
@@ -385,6 +413,20 @@ func newAuthStatusCmd() *cobra.Command {
 				rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", profileName))
 				rt.Out.Info("Account identity is not cached for this login")
 			}
+			if authenticated {
+				rt.Out.Field("Credential", credSource.Describe())
+			}
+			if conflict != nil {
+				rt.Out.Warn(conflict["message"].(string))
+			}
+			if showScopes && authenticated {
+				if scopesKnown {
+					rt.Out.Field("Scopes", strings.Join(scopes, ", "))
+				} else {
+					rt.Out.Field("Scopes", "unknown")
+					rt.Out.Hint("Scopes can't be read locally for this credential; the API exposes no token-introspection endpoint yet. A write that needs a missing scope will name it.")
+				}
+			}
 			if projectStatus == "not_found" {
 				rt.Out.Warn(fmt.Sprintf("Configured project %s is no longer accessible; run `rc projects use`", rt.Config.ProjectID))
 			} else if projectStatus == "unavailable" {
@@ -394,18 +436,79 @@ func newAuthStatusCmd() *cobra.Command {
 			if !rt.Out.IsJSON() {
 				return nil
 			}
-			return rt.Out.Render(map[string]any{
-				"profile":        profileName,
-				"authenticated":  authenticated,
-				"account_email":  rt.Config.AccountEmail,
-				"account_name":   rt.Config.AccountName,
-				"method":         method,
-				"project_id":     rt.Config.ProjectID,
-				"project_status": projectStatus,
-				"base_url":       rt.Config.BaseURL,
-			})
+			out := map[string]any{
+				"profile":           profileName,
+				"authenticated":     authenticated,
+				"account_email":     rt.Config.AccountEmail,
+				"account_name":      rt.Config.AccountName,
+				"method":            method,
+				"credential_source": string(credSource),
+				"project_id":        rt.Config.ProjectID,
+				"project_status":    projectStatus,
+				"base_url":          rt.Config.BaseURL,
+			}
+			if conflict != nil {
+				out["credential_conflict"] = conflict
+			}
+			if showScopes {
+				if scopesKnown {
+					out["scopes"] = scopes
+				} else {
+					out["scopes"] = nil
+					out["scopes_available"] = false
+				}
+			}
+			return rt.Out.Render(out)
 		},
 	}
+	cmd.Flags().BoolVar(&showScopes, "scopes", false, "show the active credential's scopes (when determinable)")
+	return cmd
+}
+
+// credentialScopes best-effort reports the scopes of the active credential.
+//
+// TODO(DX-940): read authoritative scopes once the API gains a token-introspection endpoint.
+func credentialScopes(token string) (scopes []string, ok bool) {
+	return jwtScopes(token)
+}
+
+// jwtScopes extracts scopes from a JWT's scope/scp/scopes claim; ok=false for non-JWTs.
+func jwtScopes(token string) (scopes []string, ok bool) {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil, false
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, false
+	}
+	var claims map[string]any
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return nil, false
+	}
+	for _, key := range []string{"scope", "scp", "scopes"} {
+		v, present := claims[key]
+		if !present {
+			continue
+		}
+		switch t := v.(type) {
+		case string:
+			if fields := strings.Fields(t); len(fields) > 0 {
+				return fields, true
+			}
+		case []any:
+			var out []string
+			for _, item := range t {
+				if s, isStr := item.(string); isStr && s != "" {
+					out = append(out, s)
+				}
+			}
+			if len(out) > 0 {
+				return out, true
+			}
+		}
+	}
+	return nil, false
 }
 
 func loginWithAPIKeyInteractive(ctx context.Context, rt *Runtime) error {
@@ -424,7 +527,7 @@ func loginWithAPIKeyInteractive(ctx context.Context, rt *Runtime) error {
 }
 
 func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
-	rt.Config.APIKey = key
+	rt.Config.SetAPIKey(key)
 	rt.Config.TokenType = ""
 	rt.Config.AccessToken = ""
 	rt.Config.RefreshToken = ""
