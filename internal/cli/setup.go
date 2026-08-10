@@ -149,8 +149,11 @@ func runSetup(cmd *cobra.Command) error {
 		justAuthed = true
 	}
 
+	newProjectPending := false
 	if rt.Config != nil && rt.Config.BearerToken() != "" {
-		if err := confirmSetupAccount(cmd, rt, dir, justAuthed); err != nil {
+		var err error
+		newProjectPending, err = confirmSetupAccount(cmd, rt, dir, justAuthed)
+		if err != nil {
 			return err
 		}
 	}
@@ -240,6 +243,13 @@ func runSetup(cmd *cobra.Command) error {
 		return err
 	}
 
+	// deferred to here so canceling setup above doesn't wipe the active project
+	if newProjectPending {
+		if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+			rt.Out.Warn("Couldn't save the cleared project to your profile: " + err.Error())
+		}
+	}
+
 	rt.Out.Info("Installing the RevenueCat AI Toolkit skills…")
 	toolkitSource := officialToolkitSource
 	if branch := os.Getenv("RC_SKILLS_BRANCH"); branch != "" {
@@ -291,7 +301,7 @@ var skillsScopeLabels = map[string]string{
 
 // confirmSetupAccount confirms the account and picks the project for this app,
 // defaulting a new app to a fresh project rather than the active one.
-func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string, justAuthed bool) error {
+func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string, justAuthed bool) (newProjectPending bool, err error) {
 	const (
 		optNewProject = iota
 		optExistingProject
@@ -322,33 +332,32 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string, justAuthed
 		if err := tui.Form(false).
 			Field(huh.NewSelect[int]().Title(title).Options(opts...).Value(&choice)).
 			Run(); err != nil {
-			return err
+			return false, err
 		}
 
 		switch choice {
 		case optContinue:
-			return nil
+			return false, nil
 		case optNewProject:
-			// persist the clear so the agent's fresh rc process doesn't reload the old active project
+			// persisted after launch is confirmed, not here
 			rt.Config.ProjectID = ""
-			_ = config.Save(rt.Globals.Profile, rt.Config)
-			return nil
+			return true, nil
 		case optExistingProject:
 			use, _, err := cmd.Root().Find([]string{"projects", "use"})
 			if err != nil || use == nil {
-				return fmt.Errorf("couldn't open the project picker — run `rc projects use`, then rerun setup")
+				return false, fmt.Errorf("couldn't open the project picker — run `rc projects use`, then rerun setup")
 			}
 			use.SetContext(cmd.Context())
 			if err := use.RunE(use, nil); err != nil {
 				rt.Out.Warn("Project not changed: " + err.Error())
 				continue
 			}
-			return nil
+			return false, nil
 		case optSwitchAccount:
 			rt.Config.AccountEmail = ""
 			rt.Config.AccountName = ""
 			if err := loginWithOAuth(cmd.Context(), rt); err != nil {
-				return err
+				return false, err
 			}
 		}
 	}
