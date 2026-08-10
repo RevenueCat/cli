@@ -120,7 +120,9 @@ Agent-friendly entrypoints:
 		if RuntimeFrom(cmd.Context()).Globals.ShowAll {
 			return cmd.Help()
 		}
-		writeHomeScreen(cmd.OutOrStdout(), RuntimeFrom(cmd.Context()))
+		rt := RuntimeFrom(cmd.Context())
+		writeHomeScreen(cmd.OutOrStdout(), rt)
+		maybeNudgeSkillsInstall(rt)
 		return nil
 	}
 
