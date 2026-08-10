@@ -31,7 +31,12 @@ function binaryPath() {
   }
 }
 
-const env = runViaNpx() ? { ...process.env, RC_GUIDED: "1" } : process.env;
+// thoth bug-bash build only (never merges): default testers to the unreleased skills branch.
+const SKILLS_BRANCH = "rc-cli-project-setup-workflows";
+
+const env = { ...process.env };
+if (runViaNpx()) env.RC_GUIDED = "1";
+if (SKILLS_BRANCH && !env.RC_SKILLS_BRANCH) env.RC_SKILLS_BRANCH = SKILLS_BRANCH;
 try {
   execFileSync(binaryPath(), process.argv.slice(2), { stdio: "inherit", env });
 } catch (err) {
