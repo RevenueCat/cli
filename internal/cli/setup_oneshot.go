@@ -1,25 +1,14 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
-
-	"github.com/revenuecat/cli/internal/api"
-	"github.com/revenuecat/cli/internal/config"
-	"github.com/revenuecat/cli/internal/tui"
 )
-
-// One-shot preparation: everything that would interrupt the agent mid-run is
-// a human/auth action, and those happen BEFORE the terminal is handed over —
-// RevenueCat login (already handled), Apple sign-in with 2FA, and MCP
-// authentication for the chosen agent.
 
 const revenueCatMCPURL = "https://mcp.revenuecat.ai/mcp"
 
@@ -56,92 +45,6 @@ func firstBundleID(path string, pattern *regexp.Regexp) string {
 		return id
 	}
 	return ""
-}
-
-// offerApple optionally connects the Apple account (human 2FA) before the
-// handoff, creating the project and App Store app records if missing.
-func offerApple(cmd *cobra.Command, rt *Runtime, dir, platform string) bool {
-	if platform != "ios" && platform != "cross" {
-		return false
-	}
-	if rt.Config == nil || rt.Config.BearerToken() == "" {
-		return false
-	}
-	rt.Out.Info("Connecting Apple lets the agent set up the real App Store too — it signs in to your Apple account (2FA) and creates App Store Connect keys. Skip it and the agent builds everything on the Test Store; connect Apple later with rc apps apple setup.")
-	ok, err := tui.ConfirmDefault(false, "Connect your Apple account now?", false)
-	if err != nil || !ok {
-		return false
-	}
-
-	client, err := rt.API()
-	if err != nil {
-		rt.Out.Warn("Couldn't reach RevenueCat (" + err.Error() + ") — the agent will handle Apple later.")
-		return false
-	}
-	ctx := cmd.Context()
-
-	projectID := rt.Config.ProjectID
-	if projectID == "" {
-		name := filepath.Base(dir)
-		if err := tui.Form(false).
-			Field(huh.NewInput().Title("Project name").Value(&name).Validate(tui.Required("name"))).
-			Run(); err != nil {
-			return false
-		}
-		project, err := client.Projects.Create(ctx, api.ProjectCreate{Name: name})
-		if err != nil {
-			rt.Out.Warn("Couldn't create the project (" + err.Error() + ") — the agent will handle it.")
-			return false
-		}
-		projectID = project.ID
-		rt.Config.ProjectID = projectID
-		if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
-			rt.Out.Info(fmt.Sprintf("note: couldn't save profile: %v", err))
-		}
-		rt.Out.Answer("Project", name+"  ("+projectID+")")
-	}
-
-	appID, appName := "", ""
-	if apps, err := client.Apps.List(ctx, projectID); err == nil {
-		for _, app := range apps.Items {
-			if app.Type == "app_store" {
-				appID = app.ID
-				break
-			}
-		}
-	}
-	if appID == "" {
-		bundleID := detectBundleID(dir)
-		if err := tui.Form(false).
-			Field(huh.NewInput().Title("Bundle ID").Description("detected from the Xcode project").Value(&bundleID).Validate(tui.Required("bundle ID"))).
-			Run(); err != nil {
-			return false
-		}
-		app, err := client.Apps.Create(ctx, projectID, api.AppCreate{
-			Name:     filepath.Base(dir) + " (App Store)",
-			Type:     "app_store",
-			AppStore: &api.AppStoreAppConfig{BundleID: bundleID},
-		})
-		if err != nil {
-			rt.Out.Warn("Couldn't create the App Store app (" + err.Error() + ") — the agent will handle it.")
-			return false
-		}
-		appID, appName = app.ID, app.Name
-		rt.Out.Answer("App Store app", appName+"  ("+bundleID+")")
-	}
-
-	rt.Out.Blank()
-	apple := newAppsAppleCmd()
-	setupSub, _, err := apple.Find([]string{"setup"})
-	if err != nil {
-		return false
-	}
-	setupSub.SetContext(cmd.Context())
-	if err := setupSub.RunE(setupSub, []string{appID}); err != nil {
-		rt.Out.Warn("Apple setup didn't finish (" + err.Error() + ") — rerun with: rc apps apple setup " + appID)
-		return false
-	}
-	return true
 }
 
 // configureAgentMCP registers the RevenueCat MCP server for the chosen agent

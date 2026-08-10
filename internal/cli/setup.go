@@ -191,15 +191,15 @@ func runSetup(cmd *cobra.Command) error {
 	rt.Out.Answer("Agent", choice.Name)
 
 	rt.Out.Title("Step 2 · Autonomy")
-	autonomy := autonomyTrusted
+	autonomy := autonomyFull
 	if err := tui.Form(false).
 		Field(huh.NewSelect[string]().
 			Title("How much can "+choice.Name+" do without stopping to ask?").
-			Description("You can interrupt anytime. \"Run freely\" pre-approves rc commands, file edits, and builds.").
+			Description("You can interrupt anytime.").
 			Options(
-				huh.NewOption("Run freely — pre-approve rc, file edits, and builds", autonomyTrusted),
+				huh.NewOption("Run freely — no approval prompts", autonomyFull),
+				huh.NewOption("Pre-approve rc, edits, and builds; ask for anything unusual", autonomyTrusted),
 				huh.NewOption("Ask me before each step", autonomyManual),
-				huh.NewOption("No approvals at all", autonomyFull),
 			).
 			Value(&autonomy)).
 		Run(); err != nil {
@@ -223,16 +223,8 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	rt.Out.Answer("Skills", skillsScopeLabels[skillsScope])
 
-	// human-only (2FA), optional, offered pre-handoff and defaulting to No
+	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
 	appleDeferred := applePending
-	if applePending {
-		rt.Out.Title("Step 4 · Apple (optional)")
-		if offerApple(cmd, rt, dir, platform) {
-			appleDeferred = false
-			stage = detectSetupStage(cmd, rt, platform)
-			rt.Out.Field("Stage", stage.Label)
-		}
-	}
 
 	prompt := setupAgentPrompt(rt, stage, appleDeferred)
 
@@ -287,9 +279,9 @@ func runSetup(cmd *cobra.Command) error {
 }
 
 var autonomyLabels = map[string]string{
-	autonomyTrusted: "run freely (rc, edits, builds pre-approved)",
+	autonomyTrusted: "pre-approve rc, edits, builds; ask for the rest",
 	autonomyManual:  "ask before each step",
-	autonomyFull:    "no approvals",
+	autonomyFull:    "run freely (no approval prompts)",
 }
 
 var skillsScopeLabels = map[string]string{
