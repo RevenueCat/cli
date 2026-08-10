@@ -39,6 +39,7 @@ func NewRootCmd(version string) *cobra.Command {
 		Long: `rc is the RevenueCat command line interface.
 
 Getting started:
+  rc setup               set up RevenueCat for the app in this directory
   rc auth login          log in (browser or an API key)
   rc projects use        choose a default project
   rc <command> --help    explore any command group

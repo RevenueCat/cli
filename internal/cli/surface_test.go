@@ -1,36 +1,37 @@
 package cli
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/spf13/cobra"
+)
 
 // The command surface splits by output channel: humans see the curated set in
 // --help, agents/JSON see everything. These guard the two invariants that
 // keep that honest.
 
-// Agent discovery (rc commands --schemas) must include agent-only commands —
-// hidden from --help but present here — while excluding the punted tier.
-// Hiding from humans must not hide from agents.
-func TestCommandSurface_SchemaIncludesAgentOnlyExcludesPunted(t *testing.T) {
+// Agent discovery (rc commands --schemas) must include every non-punted
+// command, including setup (agents run it non-interactively for the prompt).
+func TestCommandSurface_SchemaIncludesAgentCommands(t *testing.T) {
 	root := NewRootCmd("test")
 	tree := commandTreeWithSchemas(root)
 	names := map[string]bool{}
 	for _, c := range tree["commands"].([]map[string]any) {
 		names[c["name"].(string)] = true
 	}
-	for _, agentOnly := range []string{"customer", "offerings", "entitlements", "packages"} {
-		if !names[agentOnly] {
-			t.Errorf("agent-only command %q missing from schema surface", agentOnly)
+	for _, want := range []string{"customer", "offerings", "entitlements", "packages", "setup"} {
+		if !names[want] {
+			t.Errorf("command %q missing from schema surface", want)
 		}
-	}
-	if names["setup"] {
-		t.Error("punted command 'setup' should not appear in the schema surface")
 	}
 }
 
 // The human-help curation runs behind a testing.Testing() short-circuit, so
-// this drives curateSurface directly: the full surface shows by default, only
-// punted is held back, aliases stay hidden, and --all reveals punted too.
+// this drives curateSurface directly: the full surface shows by default, a
+// punted command is held back until --all, and aliases stay hidden.
 func TestCurateSurface(t *testing.T) {
 	root := NewRootCmd("test")
+	root.AddCommand(&cobra.Command{Use: "x-punted", Annotations: map[string]string{annotationSurface: surfacePunted}})
 	hidden := func(name string) bool {
 		for _, c := range root.Commands() {
 			if c.Name() == name {
@@ -48,15 +49,18 @@ func TestCurateSurface(t *testing.T) {
 	if hidden("customer") {
 		t.Error("'customer' should be visible in --help (full surface)")
 	}
+	if hidden("setup") {
+		t.Error("'setup' should be visible in --help")
+	}
 	if !hidden("login") {
 		t.Error("the back-compat 'login' alias should stay hidden")
 	}
-	if !hidden("setup") {
-		t.Error("punted 'setup' should be hidden by default")
+	if !hidden("x-punted") {
+		t.Error("a punted command should be hidden by default")
 	}
 
 	curateSurface(root, true) // rc --all
-	if hidden("setup") {
-		t.Error("--all should reveal punted 'setup'")
+	if hidden("x-punted") {
+		t.Error("--all should reveal a punted command")
 	}
 }

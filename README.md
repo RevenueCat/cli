@@ -32,6 +32,14 @@ npx @revenuecat/cli capital setup        # connect App Store Connect for Revenue
 
 ## Quick start
 
+The fastest way in: from your app's directory, let an AI agent set up RevenueCat for you (you approve each step). It also emits a prompt for coding agents to run non-interactively.
+
+```bash
+rc setup
+```
+
+Prefer to do it by hand:
+
 ```bash
 # 1. Log in (browser OAuth or paste an API key)
 rc auth login
