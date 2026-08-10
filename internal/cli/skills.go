@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/revenuecat/cli/internal/config"
+	"github.com/revenuecat/cli/internal/tui"
 )
 
 const (
@@ -69,6 +73,76 @@ func revenueCatStarterPrompts() []starterPrompt {
 			Prompt: "Use the revenuecat-status skill to audit my RevenueCat project, identify missing or inconsistent configuration, and give me exact recovery steps without changing anything first.",
 		},
 	}
+}
+
+// skillsNudgeState persists whether the one-time install nudge has been shown.
+type skillsNudgeState struct {
+	Shown bool `json:"skills_nudge_shown"`
+}
+
+// revenueCatSkillDirs returns the skill dirs rc can inspect for an agent; nil when the layout is unknown (e.g. Gemini).
+func revenueCatSkillDirs(toolkitKey string) []string {
+	var rel string
+	switch toolkitKey {
+	case "claude-code":
+		rel = filepath.Join(".claude", "skills")
+	case "codex":
+		rel = filepath.Join(".codex", "skills")
+	case "cursor":
+		rel = filepath.Join(".cursor", "skills-cursor")
+	default:
+		return nil
+	}
+	var dirs []string
+	if home, err := os.UserHomeDir(); err == nil {
+		dirs = append(dirs, filepath.Join(home, rel))
+	}
+	if cwd, err := os.Getwd(); err == nil {
+		dirs = append(dirs, filepath.Join(cwd, rel))
+	}
+	return dirs
+}
+
+// revenueCatSkillsInstalledFor reports whether the skills are installed; checkable is false when rc can't inspect the agent.
+func revenueCatSkillsInstalledFor(a agentClient) (checkable, installed bool) {
+	dirs := revenueCatSkillDirs(a.ToolkitKey)
+	if len(dirs) == 0 {
+		return false, false
+	}
+	for _, d := range dirs {
+		if _, err := os.Stat(filepath.Join(d, "create-revenuecat-project")); err == nil {
+			return true, true
+		}
+	}
+	return true, false
+}
+
+// maybeNudgeSkillsInstall shows the install-skills hint once, for humans only, when a supported agent has no skills.
+func maybeNudgeSkillsInstall(rt *Runtime) {
+	if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+		return
+	}
+	missing := false
+	for _, a := range detectAgents() {
+		checkable, installed := revenueCatSkillsInstalledFor(a)
+		if !checkable {
+			continue
+		}
+		if installed {
+			return
+		}
+		missing = true
+	}
+	if !missing {
+		return
+	}
+	var st skillsNudgeState
+	if err := config.LoadState(rt.Globals.Profile, "hints", &st); err != nil || st.Shown {
+		return
+	}
+	rt.Out.Hint("Coding with an AI agent? Install the RevenueCat skills:  rc skills install")
+	st.Shown = true
+	_ = config.SaveState(rt.Globals.Profile, "hints", &st)
 }
 
 func showStarterPrompts(rt *Runtime) {
