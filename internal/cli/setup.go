@@ -51,18 +51,19 @@ var trustedClaudeTools = []string{
 
 var agentClients = []agentClient{
 	{"Claude Code", "claude", "claude-code", func(p, autonomy string) []string {
+		name := setupSessionName()
 		switch autonomy {
 		case autonomyTrusted:
 			// Prompt first — --allowedTools is variadic and would swallow a
 			// trailing positional. Patterns must be SEPARATE args: a
 			// comma-joined value registers as one bogus pattern that
 			// matches nothing (live-debugged: nothing was pre-approved).
-			args := []string{p, "--permission-mode", "acceptEdits", "--allowedTools"}
+			args := []string{"-n", name, p, "--permission-mode", "acceptEdits", "--allowedTools"}
 			return append(args, trustedClaudeTools...)
 		case autonomyFull:
-			return []string{"--dangerously-skip-permissions", p}
+			return []string{"-n", name, "--dangerously-skip-permissions", p}
 		default:
-			return []string{p}
+			return []string{"-n", name, p}
 		}
 	}},
 	{"Codex", "codex", "codex", func(p, autonomy string) []string {
@@ -656,6 +657,15 @@ func detectAppProject(dir string) (label string, ok bool) {
 		}
 	}
 	return "no app project detected", false
+}
+
+// setupSessionName names the launched agent's session after the app directory.
+func setupSessionName() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "RevenueCat setup"
+	}
+	return "RevenueCat setup (" + filepath.Base(dir) + ")"
 }
 
 func collapseHome(dir string) string {
