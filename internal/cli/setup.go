@@ -216,22 +216,6 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	rt.Out.Answer("Autonomy", autonomyLabels[autonomy])
 
-	rt.Out.Title("Step 3 · Skills")
-	skillsScope := "project"
-	if err := tui.Form(false).
-		Field(huh.NewSelect[string]().
-			Title("Install the RevenueCat skills here or globally?").
-			Description("Project keeps them with this repo; global shares them across every project on this machine.").
-			Options(
-				huh.NewOption("This project only", "project"),
-				huh.NewOption("Globally (all projects on this machine)", "global"),
-			).
-			Value(&skillsScope)).
-		Run(); err != nil {
-		return err
-	}
-	rt.Out.Answer("Skills", skillsScopeLabels[skillsScope])
-
 	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
 	appleDeferred := applePending
 
@@ -262,20 +246,20 @@ func runSetup(cmd *cobra.Command) error {
 		toolkitSource = "https://github.com/RevenueCat/ai-toolkit/tree/" + branch
 		rt.Out.Info("Using toolkit branch " + branch + " (RC_SKILLS_BRANCH)")
 	}
-	installArgs := []string{"--yes", "skills", "add", toolkitSource, "--agent", choice.ToolkitKey}
-	if skillsScope == "global" {
-		installArgs = append(installArgs, "--global")
-	}
-	installArgs = append(installArgs, "--skill")
+	// Global so the agent finds the skills on first launch; project scope lands under
+	// the repo's .claude dir, which the agent won't load until it trusts the directory.
+	installArgs := []string{"--yes", "skills", "add", toolkitSource, "--global", "--agent", choice.ToolkitKey, "--skill"}
 	installArgs = append(installArgs, defaultToolkitSkills...)
-	// The skills CLI is a whole guided UI of its own; inside setup it runs
-	// silently — our flow owns the questions, its output appears only on
-	// failure.
 	npxPath, err := exec.LookPath("npx")
 	if err != nil {
 		return fmt.Errorf("npx is required to install the RevenueCat AI Toolkit: %w", err)
 	}
 	install := exec.CommandContext(cmd.Context(), npxPath, installArgs...)
+	// Run from a temp dir so the global install can't drop a lockfile in the app repo.
+	if tmp, err := os.MkdirTemp("", "rc-skills-"); err == nil {
+		install.Dir = tmp
+		defer os.RemoveAll(tmp)
+	}
 	if out, err := install.CombinedOutput(); err != nil {
 		tail := string(out)
 		if len(tail) > 1200 {
@@ -283,7 +267,7 @@ func runSetup(cmd *cobra.Command) error {
 		}
 		return fmt.Errorf("install skills: %w\n%s", err, strings.TrimSpace(tail))
 	}
-	rt.Out.Info("Skills installed")
+	rt.Out.Info("Skills installed globally")
 
 	configureAgentMCP(cmd, rt, choice)
 
@@ -299,11 +283,6 @@ var autonomyLabels = map[string]string{
 	autonomyTrusted: "pre-approve rc, edits, builds; ask for the rest",
 	autonomyManual:  "ask before each step",
 	autonomyFull:    "run freely (no approval prompts)",
-}
-
-var skillsScopeLabels = map[string]string{
-	"project": "this project only",
-	"global":  "global",
 }
 
 // confirmSetupAccount confirms the account and picks the project for this app,
