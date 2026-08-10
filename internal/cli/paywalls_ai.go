@@ -509,9 +509,8 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 	if event.SessionID != "" {
 		session.SessionID = event.SessionID
 	}
-	if event.TraceID != "" {
-		session.TraceID = event.TraceID
-	}
+	// snapshot omits TraceID; clear a prior run's stale trace rather than keep it
+	session.TraceID = event.TraceID
 	if event.Paywall != nil {
 		// the editor echoes offering_id as null; keep the CLI's
 		offeringID := session.Paywall.OfferingID
