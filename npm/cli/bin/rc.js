@@ -32,7 +32,7 @@ function binaryPath() {
 }
 
 // thoth bug-bash build only (never merges): default testers to the unreleased skills branch.
-const SKILLS_BRANCH = "rc-cli-project-setup-workflows";
+const SKILLS_BRANCH = "rc-cli-astra-paywall-workflows";
 
 const env = { ...process.env };
 if (runViaNpx()) env.RC_GUIDED = "1";
