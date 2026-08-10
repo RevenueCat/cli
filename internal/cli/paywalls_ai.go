@@ -323,9 +323,9 @@ Using it well:
 				if perr != nil {
 					return perr
 				}
-				session, err = seedSessionFromServer(cmd.Context(), rt, projectID, paywallID)
+				opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywallID)
 				if err == nil {
-					opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywallID)
+					session, err = resumeOrSeedSession(cmd.Context(), rt, projectID, paywallID, opts.sessionPath)
 				}
 			default:
 				return fmt.Errorf("pass a paywall ID or --session <file>")
@@ -367,6 +367,27 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *paywall
 		return nil, err
 	}
 	return seedSessionFromServer(ctx, rt, session.ProjectID, session.PaywallID)
+}
+
+// resumeOrSeedSession reuses the default-path session for an `edit` turn without
+// an explicit --session when it still matches the server's draft, else seeds fresh.
+func resumeOrSeedSession(ctx context.Context, rt *Runtime, projectID, paywallID, sessionPath string) (*paywallAISession, error) {
+	stored, err := loadPaywallAISession(rt, sessionPath)
+	if err != nil {
+		return seedSessionFromServer(ctx, rt, projectID, paywallID)
+	}
+	client, err := rt.API()
+	if err != nil {
+		return nil, err
+	}
+	revision, err := currentDraftRevision(ctx, client, projectID, paywallID)
+	if err != nil {
+		return nil, err
+	}
+	if stored.Revision != nil && revision == *stored.Revision {
+		return stored, nil
+	}
+	return seedSessionFromServer(ctx, rt, projectID, paywallID)
 }
 
 // seedSessionFromServer starts an editor session from the paywall's current
@@ -527,7 +548,11 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 		}
 		switch event.Type {
 		case paywallai.EventRunStarted:
-			session.SessionID = event.SessionID
+			// An empty id must not wipe a stored one, or the next turn forks a new session.
+			if event.SessionID != "" {
+				session.SessionID = event.SessionID
+			}
+			_ = savePaywallAISession(opts.sessionPath, session)
 		case paywallai.EventTurnSnapshot:
 			reportedActivity = reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			applySessionEvent(session, event)
@@ -535,6 +560,8 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 				checkpointed = true
 			}
 		case paywallai.EventRunFailed:
+			applySessionEvent(session, event)
+			_ = savePaywallAISession(opts.sessionPath, session)
 			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRunFailedHint(opts, checkpointed))
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
