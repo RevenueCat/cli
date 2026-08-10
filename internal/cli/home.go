@@ -26,6 +26,7 @@ var homeMap = []homeGroup{
 		{"rc metrics", "project overview at a glance"},
 	}},
 	{"Automate & set up", [][2]string{
+		{"rc setup", "set up RevenueCat for a new app"},
 		{"rc apps", "connect App Store & Google Play"},
 		{"rc skills install", "AI workflows for coding agents"},
 		{"rc rico", "ask RevenueCat's AI ✨"},
@@ -43,7 +44,9 @@ func writeHomeScreen(w io.Writer, rt *Runtime) {
 	authed := rt.Config.BearerToken() != ""
 	switch {
 	case !authed:
-		b.WriteString(label("New here? Two steps to get going:") + "\n")
+		b.WriteString(label("New here? One command sets everything up:") + "\n")
+		b.WriteString("  " + paint(output.ToneCommand, "rc setup") + "   " + paint(output.ToneDim, "an AI agent sets up RevenueCat for this app (you approve each step)") + "\n\n")
+		b.WriteString(label("Prefer to wire it up yourself?") + "\n")
 		b.WriteString("  " + paint(output.ToneCommand, "1  rc auth login") + "     " + paint(output.ToneDim, "log in (browser or API key)") + "\n")
 		b.WriteString("  " + paint(output.ToneCommand, "2  rc projects use") + "   " + paint(output.ToneDim, "pick a project") + "\n")
 

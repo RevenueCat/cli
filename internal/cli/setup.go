@@ -114,7 +114,6 @@ the step-by-step commands in the docs.`,
   npx @revenuecat/cli setup`,
 		Args: cobra.NoArgs,
 		Annotations: map[string]string{
-			"surface":               "punted",
 			"requires_human":        "true",
 			"requires_human_reason": "interactively it launches a local AI agent; run non-interactively (rc setup --json) to get the setup prompt to follow directly",
 		},
