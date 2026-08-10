@@ -503,7 +503,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 				checkpointed = true
 			}
 		case paywallai.EventRunFailed:
-			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRecoveryHint(opts, checkpointed))
+			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRunFailedHint(opts, checkpointed))
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			return finishPaywallAI(ctx, rt, opts, session, event)
@@ -541,6 +541,13 @@ func paywallRecoveryHint(opts paywallAIOptions, checkpointed bool) string {
 		return "The draft was created. Continue editing it with: rc paywalls edit --session " + opts.sessionPath
 	}
 	return "Nothing was saved yet. Re-run the command to try again."
+}
+
+func paywallRunFailedHint(opts paywallAIOptions, checkpointed bool) string {
+	if checkpointed || opts.createdDraft {
+		return paywallRecoveryHint(opts, checkpointed)
+	}
+	return "This looks like a transient failure. Wait a moment and re-run the command to try again."
 }
 
 func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
