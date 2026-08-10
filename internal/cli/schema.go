@@ -150,38 +150,62 @@ func addHumanRequirement(schema map[string]any, c *cobra.Command) {
 	}
 }
 
-// inferCapabilities returns CRUD-style capability labels by inspecting subcommand names.
-// This lets agents know what operations are available without reading every subcommand.
+// inferCapabilities lists runnable descendants as `group:verb` labels relative to c.
 func inferCapabilities(c *cobra.Command) []string {
-	known := map[string]string{
-		"list":      "list",
-		"show":      "show",
-		"get":       "show",
-		"create":    "create",
-		"update":    "update",
-		"delete":    "delete",
-		"archive":   "archive",
-		"restore":   "restore",
-		"push":      "push",
-		"attach":    "attach",
-		"detach":    "detach",
-		"publish":   "publish",
-		"unpublish": "unpublish",
-		"verify":    "verify",
-		"preview":   "preview",
+	acc := &capAccumulator{seen: map[string]bool{}}
+	if c.Runnable() {
+		acc.add(canonicalVerb(c.Name()))
 	}
-	seen := map[string]bool{}
-	var caps []string
 	for _, sc := range c.Commands() {
 		if puntedFromSchema(sc) {
 			continue
 		}
-		if cap, ok := known[sc.Name()]; ok && !seen[cap] {
-			seen[cap] = true
-			caps = append(caps, cap)
-		}
+		collectCapabilities(sc, []string{sc.Name()}, acc)
 	}
-	return caps
+	return acc.caps
+}
+
+func collectCapabilities(c *cobra.Command, path []string, acc *capAccumulator) {
+	if c.Runnable() {
+		acc.add(capLabel(path))
+	}
+	for _, sc := range c.Commands() {
+		if puntedFromSchema(sc) {
+			continue
+		}
+		collectCapabilities(sc, append(append([]string{}, path...), sc.Name()), acc)
+	}
+}
+
+func capLabel(path []string) string {
+	if len(path) == 0 {
+		return ""
+	}
+	out := append([]string{}, path[:len(path)-1]...)
+	out = append(out, canonicalVerb(path[len(path)-1]))
+	return strings.Join(out, ":")
+}
+
+func canonicalVerb(name string) string {
+	switch name {
+	case "get":
+		return "show"
+	default:
+		return name
+	}
+}
+
+type capAccumulator struct {
+	seen map[string]bool
+	caps []string
+}
+
+func (a *capAccumulator) add(label string) {
+	if label == "" || a.seen[label] {
+		return
+	}
+	a.seen[label] = true
+	a.caps = append(a.caps, label)
 }
 
 // parseArgsFromUse extracts <required> and [optional] tokens from a cobra Use
