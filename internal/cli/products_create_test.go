@@ -1,0 +1,183 @@
+package cli
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/revenuecat/cli/internal/api"
+)
+
+func runProductsCreate(t *testing.T, appType string, args ...string) (requests []string, createBody map[string]any, err error) {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/projects/proj/apps/app":
+			_, _ = io.WriteString(w, `{"id":"app","name":"App","type":"`+appType+`","object":"app","project_id":"proj","created_at":1}`)
+		case r.Method == http.MethodPost && r.URL.Path == "/projects/proj/products":
+			raw, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(raw, &createBody)
+			w.WriteHeader(http.StatusCreated)
+			_, _ = io.WriteString(w, `{"id":"prod_1","store_identifier":"sid","type":"one_time","app_id":"app","object":"product","created_at":1}`)
+		default:
+			http.Error(w, "unexpected request", http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	t.Setenv("RC_BASE_URL", srv.URL)
+	var out, errOut bytes.Buffer
+	root := NewRootCmd("test")
+	root.SetOut(&out)
+	root.SetErr(&errOut)
+	base := []string{"products", "create", "--api-key", "sk_test", "--project-id", "proj", "--no-input", "--json"}
+	root.SetArgs(append(base, args...))
+	err = root.ExecuteContext(context.Background())
+	return requests, createBody, err
+}
+
+func postedProducts(requests []string) bool {
+	for _, r := range requests {
+		if r == "POST /projects/proj/products" {
+			return true
+		}
+	}
+	return false
+}
+
+func TestProductsCreate_TypeAcceptanceByStore(t *testing.T) {
+	cases := []struct {
+		name        string
+		appType     string
+		productType string
+		accepted    bool
+	}{
+		{"test_store subscription", "test_store", "subscription", true},
+		{"test_store consumable", "test_store", "consumable", true},
+		{"test_store non_consumable", "test_store", "non_consumable", true},
+		{"test_store one_time", "test_store", "one_time", false},
+		{"test_store non_renewing_subscription", "test_store", "non_renewing_subscription", false},
+
+		{"app_store subscription", "app_store", "subscription", true},
+		{"app_store one_time", "app_store", "one_time", true},
+		{"app_store non_renewing_subscription", "app_store", "non_renewing_subscription", true},
+		{"app_store consumable", "app_store", "consumable", false},
+		{"app_store non_consumable", "app_store", "non_consumable", false},
+
+		{"play_store subscription", "play_store", "subscription", true},
+		{"play_store one_time", "play_store", "one_time", true},
+		{"play_store non_renewing_subscription", "play_store", "non_renewing_subscription", true},
+		{"play_store consumable", "play_store", "consumable", false},
+		{"play_store non_consumable", "play_store", "non_consumable", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			requests, body, err := runProductsCreate(t, tc.appType,
+				"--store-id", "sid", "--type", tc.productType, "--app-id", "app", "--title", "T")
+			if tc.accepted {
+				if err != nil {
+					t.Fatalf("expected accept, got error: %v", err)
+				}
+				if !postedProducts(requests) {
+					t.Fatalf("accepted type did not reach the create endpoint: %v", requests)
+				}
+				if got, _ := body["type"].(string); got != tc.productType {
+					t.Fatalf("outgoing type = %q, want %q", got, tc.productType)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatal("expected client-side rejection, got nil error")
+			}
+			if postedProducts(requests) {
+				t.Fatalf("rejected type still reached the create endpoint: %v", requests)
+			}
+		})
+	}
+}
+
+func TestProductTypeStoreSetsCoverEnum(t *testing.T) {
+	stores := []api.AppType{
+		api.AppType(api.TestStoreAppTypeTestStore),
+		api.AppType(api.AppStoreAppTypeAppStore),
+		api.AppType(api.PlayStoreAppTypePlayStore),
+	}
+	seen := map[api.ProductType]bool{}
+	for _, s := range stores {
+		for _, pt := range productTypesForStore(s) {
+			if !pt.Valid() {
+				t.Errorf("store %s offers invalid product type %q", s, pt)
+			}
+			seen[pt] = true
+		}
+	}
+	enum := []api.ProductType{
+		api.ProductTypeConsumable,
+		api.ProductTypeNonConsumable,
+		api.ProductTypeNonRenewingSubscription,
+		api.ProductTypeOneTime,
+		api.ProductTypeSubscription,
+	}
+	for _, pt := range enum {
+		if !seen[pt] {
+			t.Errorf("ProductType %q is in the catalog enum but no store offers it", pt)
+		}
+	}
+	if len(seen) != len(enum) {
+		t.Errorf("store sets offer %d distinct types, catalog enum has %d", len(seen), len(enum))
+	}
+}
+
+func TestProductsCreate_DurationRejectedOnAppStore(t *testing.T) {
+	requests, _, err := runProductsCreate(t, "app_store",
+		"--store-id", "sid", "--type", "subscription", "--app-id", "app", "--title", "T", "--duration", "P1M")
+	if err == nil {
+		t.Fatal("expected client-side rejection for --duration on an App Store app")
+	}
+	if !strings.Contains(err.Error(), "Test Store") {
+		t.Fatalf("error should explain Test Store restriction, got: %v", err)
+	}
+	if postedProducts(requests) {
+		t.Fatalf("--duration reached the server on an App Store app: %v", requests)
+	}
+}
+
+func TestProductsCreate_DurationAcceptedOnTestStore(t *testing.T) {
+	requests, body, err := runProductsCreate(t, "test_store",
+		"--store-id", "sid", "--type", "subscription", "--app-id", "app", "--title", "T", "--duration", "P1M")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !postedProducts(requests) {
+		t.Fatalf("create did not reach the server: %v", requests)
+	}
+	sub, ok := body["subscription"].(map[string]any)
+	if !ok {
+		t.Fatalf("outgoing body missing subscription: %v", body)
+	}
+	if sub["duration"] != "P1M" {
+		t.Fatalf("outgoing duration = %v, want P1M", sub["duration"])
+	}
+}
+
+func TestProductsCreate_TitleRequiredForTestStore(t *testing.T) {
+	requests, _, err := runProductsCreate(t, "test_store",
+		"--store-id", "sid", "--type", "subscription", "--app-id", "app")
+	if err == nil {
+		t.Fatal("expected client-side rejection for missing --title on a Test Store app")
+	}
+	if !strings.Contains(err.Error(), "--title") {
+		t.Fatalf("error should mention --title, got: %v", err)
+	}
+	if postedProducts(requests) {
+		t.Fatalf("missing --title still reached the server: %v", requests)
+	}
+}

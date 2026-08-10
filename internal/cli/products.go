@@ -226,12 +226,17 @@ func newProductsCreateCmd() *cobra.Command {
 
 --store-id is the Product identifier on the platform store; it must match the
 store exactly (required).
---type must be "subscription" or "one_time" (Non-Subscription Purchases)
-(required; picker shown in a terminal).
---app-id is the RevenueCat app ID (required; picker shown in a terminal).
---title is the Customer-facing Product title required by Test Store Products.
---duration (subscriptions only) is an ISO 8601 duration, e.g. P1M, P1Y.`,
-		Example: `  rc products create --store-id premium_monthly --type subscription --app-id app_x --title "Premium Monthly" --duration P1M
+--app-id is the RevenueCat app ID (required; picker shown in a terminal). The
+app's store decides which --type values are valid.
+--type is the Product type; valid values depend on the app's store. Test Store
+accepts subscription, consumable, non_consumable; App Store and Play Store
+accept subscription, one_time, non_renewing_subscription (required; picker shown
+in a terminal).
+--title is the Customer-facing Product title (required for Test Store Products).
+--duration is an ISO 8601 duration, e.g. P1M, P1Y. Subscription parameters are
+only supported for Test Store products.`,
+		Example: `  rc products create --store-id premium_monthly --type subscription --app-id test_app --title "Premium Monthly" --duration P1M
+  rc products create --store-id coins_100 --type consumable --app-id test_app --title "100 Coins"
   rc products create --store-id com.example.once --type one_time --app-id app_x --display-name "Unlock Everything"`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -241,21 +246,6 @@ store exactly (required).
 			}
 			if storeID == "" {
 				return fmt.Errorf("--store-id is required")
-			}
-			if productType == "" {
-				if rt.Globals.NoInput || !tui.IsInteractive() {
-					return fmt.Errorf("--type is required (subscription or one_time)")
-				}
-				sel := huh.NewSelect[string]().Title("Type").Options(
-					huh.NewOption("Subscription", "subscription"),
-					huh.NewOption("One-time purchase", "one_time"),
-				).Value(&productType)
-				if err := tui.Form(false).Field(sel).Run(); err != nil {
-					return err
-				}
-			}
-			if productType != "subscription" && productType != "one_time" {
-				return fmt.Errorf("--type must be 'subscription' or 'one_time', got %q", productType)
 			}
 			client, err := rt.API()
 			if err != nil {
@@ -275,12 +265,41 @@ store exactly (required).
 			if err != nil {
 				return err
 			}
+			app, err := client.Apps.Get(cmd.Context(), projectID, appID)
+			if err != nil {
+				return err
+			}
+			allowed := productTypesForStore(app.Type)
+			if productType == "" {
+				if rt.Globals.NoInput || !tui.IsInteractive() {
+					return fmt.Errorf("--type is required (%s)", strings.Join(productTypeValues(allowed), ", "))
+				}
+				opts := make([]huh.Option[string], len(allowed))
+				for i, t := range allowed {
+					opts[i] = huh.NewOption(productTypeLabel(t), string(t))
+				}
+				sel := huh.NewSelect[string]().Title("Type").Options(opts...).Value(&productType)
+				if err := tui.Form(false).Field(sel).Run(); err != nil {
+					return err
+				}
+			}
+			if !containsProductType(allowed, productType) {
+				return fmt.Errorf("--type must be one of %s for a %s app, got %q", strings.Join(productTypeValues(allowed), ", "), app.Type, productType)
+			}
+			if isTestStoreApp(app) && title == "" {
+				return fmt.Errorf("--title is required for Test Store products")
+			}
+			if duration != "" && !isTestStoreApp(app) {
+				return fmt.Errorf("--duration and other subscription parameters are only supported for Test Store products, but app %s is a %s app", appID, app.Type)
+			}
 			body := api.ProductCreate{
 				StoreIdentifier: storeID,
-				Type:            productType,
-				AppID:           appID,
-				DisplayName:     displayName,
-				Title:           title,
+				// Sent verbatim: Test Store takes consumable/non_consumable but reads back
+				// as one_time + is_consumable, so the sent type is the authoritative one.
+				Type:        productType,
+				AppID:       appID,
+				DisplayName: displayName,
+				Title:       title,
 			}
 			if productType == "subscription" && duration != "" {
 				body.Subscription = &api.ProductSubscriptionInput{Duration: api.Duration(duration)}
@@ -294,12 +313,68 @@ store exactly (required).
 		},
 	}
 	cmd.Flags().StringVar(&storeID, "store-id", "", "store product identifier (required)")
-	cmd.Flags().StringVar(&productType, "type", "", "product type: subscription or one_time (picker shown in TTY if omitted)")
+	cmd.Flags().StringVar(&productType, "type", "", "product type (valid values depend on the app's store; picker shown in TTY if omitted)")
 	cmd.Flags().StringVar(&appID, "app-id", "", "app ID to associate with (picker shown in TTY if omitted)")
 	cmd.Flags().StringVar(&displayName, "display-name", "", "human-readable display name")
 	cmd.Flags().StringVar(&title, "title", "", "user-facing product title (required for Test Store products)")
-	cmd.Flags().StringVar(&duration, "duration", "", "subscription duration as ISO 8601 (e.g. P1M, P1Y)")
+	cmd.Flags().StringVar(&duration, "duration", "", "subscription duration as ISO 8601 (e.g. P1M, P1Y); Test Store products only")
 	return cmd
+}
+
+// productTypesForStore returns the ProductType values accepted for an app's
+// store. Test Store takes granular consumable/non_consumable; the App/Play
+// stores take one_time and non_renewing_subscription. The union across stores
+// must cover the ProductType enum (see TestProductTypeStoreSetsCoverEnum).
+func productTypesForStore(appType api.AppType) []api.ProductType {
+	if string(appType) == string(api.TestStoreAppTypeTestStore) {
+		return []api.ProductType{
+			api.ProductTypeSubscription,
+			api.ProductTypeConsumable,
+			api.ProductTypeNonConsumable,
+		}
+	}
+	return []api.ProductType{
+		api.ProductTypeSubscription,
+		api.ProductTypeOneTime,
+		api.ProductTypeNonRenewingSubscription,
+	}
+}
+
+func productTypeValues(types []api.ProductType) []string {
+	out := make([]string, len(types))
+	for i, t := range types {
+		out[i] = string(t)
+	}
+	return out
+}
+
+func containsProductType(types []api.ProductType, value string) bool {
+	for _, t := range types {
+		if string(t) == value {
+			return true
+		}
+	}
+	return false
+}
+
+func productTypeLabel(t api.ProductType) string {
+	switch t {
+	case api.ProductTypeSubscription:
+		return "Subscription"
+	case api.ProductTypeOneTime:
+		return "One-time purchase"
+	case api.ProductTypeConsumable:
+		return "Consumable"
+	case api.ProductTypeNonConsumable:
+		return "Non-consumable"
+	case api.ProductTypeNonRenewingSubscription:
+		return "Non-renewing subscription"
+	}
+	return string(t)
+}
+
+func isTestStoreApp(app *api.App) bool {
+	return app != nil && string(app.Type) == string(api.TestStoreAppTypeTestStore)
 }
 
 func newProductsPricesCmd() *cobra.Command {
