@@ -12,7 +12,6 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/config"
-	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -135,20 +134,23 @@ func runSetup(cmd *cobra.Command) error {
 	agents := detectAgents()
 
 	rt.Out.Title("RevenueCat setup  ·  " + filepath.Base(dir))
-	fmt.Fprintln(cmd.ErrOrStderr(), "  "+rt.Out.Paint(output.ToneDim, projectLabel+"  ·  "+collapseHome(dir)))
-	rt.Out.Lead("An AI agent with RevenueCat's skills sets up your paywall and in-app purchases here — you approve each step. Apple is optional and comes later.")
+	rt.Out.Lead("An AI agent sets up RevenueCat for this app — you approve each step.")
+	rt.Out.Field("Project", projectLabel)
+	rt.Out.Field("Location", collapseHome(dir))
 	if len(agents) == 0 {
 		rt.Out.Field("Agents", "none found", "install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below")
 	}
 
+	justAuthed := false
 	if rt.Config == nil || rt.Config.BearerToken() == "" {
 		if err := setupAuthenticate(cmd, rt); err != nil {
 			return err
 		}
+		justAuthed = true
 	}
 
 	if rt.Config != nil && rt.Config.BearerToken() != "" {
-		if err := confirmSetupAccount(cmd, rt, dir); err != nil {
+		if err := confirmSetupAccount(cmd, rt, dir, justAuthed); err != nil {
 			return err
 		}
 	}
@@ -297,7 +299,7 @@ var skillsScopeLabels = map[string]string{
 
 // confirmSetupAccount confirms the account and picks the project for this app,
 // defaulting a new app to a fresh project rather than the active one.
-func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
+func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string, justAuthed bool) error {
 	const (
 		optNewProject = iota
 		optExistingProject
@@ -310,7 +312,6 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 		opts := []huh.Option[int]{
 			huh.NewOption("Yes — new project", optNewProject),
 			huh.NewOption("Use an existing project", optExistingProject),
-			huh.NewOption("Switch account", optSwitchAccount),
 		}
 		choice := optNewProject
 		if active {
@@ -320,8 +321,11 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string) error {
 				huh.NewOption("New project for "+filepath.Base(dir), optNewProject),
 				huh.NewOption("Continue with "+activeProjectLabel(cmd, rt), optContinue),
 				huh.NewOption("Use a different project", optExistingProject),
-				huh.NewOption("Switch account", optSwitchAccount),
 			}
+		}
+		// Switching accounts only makes sense if we didn't just log them in.
+		if !justAuthed {
+			opts = append(opts, huh.NewOption("Switch account", optSwitchAccount))
 		}
 		if err := tui.Form(false).
 			Field(huh.NewSelect[int]().Title(title).Options(opts...).Value(&choice)).
@@ -549,8 +553,7 @@ func setupAuthenticate(cmd *cobra.Command, rt *Runtime) error {
 	choice := optLogin
 	if err := tui.Form(false).
 		Field(huh.NewSelect[int]().
-			Title("You're not logged in. Setup logs you in, then launches the agent.").
-			Description("Browser sign-in is a human step — the agent can't do it. To get the prompt without logging in, run rc skills prompts instead.").
+			Title("You're not logged in — how would you like to sign in?").
 			Options(
 				huh.NewOption("Log in (opens your browser)", optLogin),
 				huh.NewOption("Create a RevenueCat account", optSignup),
