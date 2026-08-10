@@ -202,7 +202,7 @@ func newProductsListCmd() *cobra.Command {
 			for _, p := range page.Items {
 				dur := ""
 				if p.Subscription != nil && p.Subscription.Duration != nil {
-					dur = *p.Subscription.Duration
+					dur = formatISODuration(*p.Subscription.Duration)
 				}
 				rows = append(rows, []string{p.ID, derefStr(p.DisplayName), string(p.Type), p.StoreIdentifier, dur, string(p.State)})
 			}
@@ -622,9 +622,9 @@ func productPickerItems(ctx context.Context, client *api.Client, projectID strin
 func productToItem(p api.Product) tui.BrowserItem {
 	dur, grace, trial := "", "", ""
 	if p.Subscription != nil {
-		dur = derefStr(p.Subscription.Duration)
-		grace = derefStr(p.Subscription.GracePeriodDuration)
-		trial = derefStr(p.Subscription.TrialDuration)
+		dur = formatISODuration(derefStr(p.Subscription.Duration))
+		grace = formatISODuration(derefStr(p.Subscription.GracePeriodDuration))
+		trial = formatISODuration(derefStr(p.Subscription.TrialDuration))
 	}
 	displayName := derefStr(p.DisplayName)
 	return tui.BrowserItem{
