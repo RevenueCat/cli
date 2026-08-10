@@ -725,3 +725,55 @@ func TestPaywallsEdit_RequiresSessionOrID(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+func TestPaywallsGenerate_MidStreamDropCheckpoints(t *testing.T) {
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/paywalls"):
+			io.WriteString(w, `{"id":"pw_new","offering_id":"ofrng_default","created_at":1720000000000,"published_at":null}`)
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/paywalls/pw_new"):
+			io.WriteString(w, paywallResponseJSON(`"ofrng_default"`, 3))
+		default:
+			t.Errorf("unexpected API request %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	t.Cleanup(apiServer.Close)
+
+	// Editor streams one snapshot, then closes without run.completed (a drop).
+	paywallAIServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		io.WriteString(w, "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n")
+		io.WriteString(w, "data: {\"type\":\"turn.snapshot\",\"session_id\":\"sess1\",\"paywall\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"stack\":true},\"components_localizations\":{\"en_US\":{}}},\"activity\":[{\"id\":\"a1\",\"type\":\"tool\",\"tool_name\":\"edit_components\",\"status\":\"success\",\"display\":{\"text\":\"Built hero\"}}],\"__unstable_session_items\":[{\"k\":1}]}\n\n")
+	}))
+	t.Cleanup(paywallAIServer.Close)
+
+	t.Setenv("RC_BASE_URL", apiServer.URL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", paywallAIServer.URL)
+
+	sessionPath := filepath.Join(t.TempDir(), "session.json")
+	_, _, err := runAgentCmd(t,
+		"paywalls", "generate", "--offering-id", "ofrng_default", "--name", "Drop test",
+		"--prompt", "a paywall", "--session", sessionPath, "--project-id", "proj1",
+		"--no-input", "--api-key", "sk_test",
+	)
+	if err == nil || !strings.Contains(err.Error(), "stream ended before the run finished") {
+		t.Fatalf("want mid-stream drop error, got %v", err)
+	}
+
+	payload, rerr := os.ReadFile(sessionPath)
+	if rerr != nil {
+		t.Fatalf("session not checkpointed: %v", rerr)
+	}
+	var session map[string]any
+	if err := json.Unmarshal(payload, &session); err != nil {
+		t.Fatal(err)
+	}
+	if session["paywall_id"] != "pw_new" {
+		t.Fatalf("session paywall_id = %v", session["paywall_id"])
+	}
+	items, ok := session["__unstable_session_items"].([]any)
+	if !ok || len(items) == 0 || items[0].(map[string]any)["k"] != 1.0 {
+		t.Fatalf("snapshot not checkpointed: %v", session["__unstable_session_items"])
+	}
+}

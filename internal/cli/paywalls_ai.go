@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -98,15 +97,16 @@ const minimalComponentsConfig = `{
 const minimalUIConfig = `{"fonts": {}, "presets": {"saved_colors": []}}`
 
 type paywallAIOptions struct {
-	context     string
-	attachments []string
-	prompt      string
-	offeringID  string
-	name        string
-	sessionPath string
-	images      []string
-	baseURL     string
-	timeout     time.Duration
+	context      string
+	attachments  []string
+	prompt       string
+	offeringID   string
+	name         string
+	sessionPath  string
+	images       []string
+	baseURL      string
+	timeout      time.Duration
+	createdDraft bool
 }
 
 func newPaywallsGenerateCmd() *cobra.Command {
@@ -211,6 +211,11 @@ run rc paywalls publish.`,
 				if err != nil {
 					return err
 				}
+			}
+			opts.createdDraft = true
+			// save up front so a drop before the first checkpoint still leaves a resumable session
+			if err := savePaywallAISession(opts.sessionPath, session); err != nil {
+				return err
 			}
 			return runPaywallAI(cmd.Context(), rt, opts, session)
 		},
@@ -482,21 +487,23 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	defer stream.Close()
 
 	reportedActivity := 0
+	checkpointed := false
 	for {
 		event, err := stream.Next()
-		if err == io.EOF {
-			return fmt.Errorf("the Paywalls AI Editor closed the stream without completing the run")
-		}
 		if err != nil {
-			return err
+			return streamDropError(opts, checkpointed, err)
 		}
 		switch event.Type {
 		case paywallai.EventRunStarted:
 			session.SessionID = event.SessionID
 		case paywallai.EventTurnSnapshot:
 			reportedActivity = reportPaywallAIActivity(rt, event.Activity, reportedActivity)
+			applySessionEvent(session, event)
+			if err := savePaywallAISession(opts.sessionPath, session); err == nil {
+				checkpointed = true
+			}
 		case paywallai.EventRunFailed:
-			return fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message)
+			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRecoveryHint(opts, checkpointed))
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			return finishPaywallAI(ctx, rt, opts, session, event)
@@ -504,12 +511,14 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	}
 }
 
-func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession, event *paywallai.Event) error {
-	session.SessionID = event.SessionID
+func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
+	if event.SessionID != "" {
+		session.SessionID = event.SessionID
+	}
+	// snapshot omits TraceID; clear a prior run's stale trace rather than keep it
 	session.TraceID = event.TraceID
 	if event.Paywall != nil {
-		// The AI editor doesn't manage offering attachment and may echo
-		// offering_id as null — keep what the CLI established.
+		// the editor echoes offering_id as null; keep the CLI's
 		offeringID := session.Paywall.OfferingID
 		session.Paywall = *event.Paywall
 		if session.Paywall.OfferingID == nil {
@@ -522,6 +531,24 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	if len(event.AppContext) > 0 {
 		session.AppContext = event.AppContext
 	}
+}
+
+func paywallRecoveryHint(opts paywallAIOptions, checkpointed bool) string {
+	if checkpointed {
+		return "Progress so far is saved. Continue with: rc paywalls edit --session " + opts.sessionPath
+	}
+	if opts.createdDraft {
+		return "The draft was created. Continue editing it with: rc paywalls edit --session " + opts.sessionPath
+	}
+	return "Nothing was saved yet. Re-run the command to try again."
+}
+
+func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
+	return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", err), paywallRecoveryHint(opts, checkpointed))
+}
+
+func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession, event *paywallai.Event) error {
+	applySessionEvent(session, event)
 	if err := savePaywallAISession(opts.sessionPath, session); err != nil {
 		return err
 	}
