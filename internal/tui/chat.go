@@ -80,6 +80,12 @@ func (e *ChatEmitter) Approve(prompt string, destructive bool) bool {
 // RunChat opens the window and blocks until the user exits.
 func (c Chat) RunChat() error {
 	model := newChatModel(c)
+	// Probe the background before Bubble Tea owns stdin; a later auto-probe leaks
+	// the terminal's OSC 11 / cursor-report replies into the textarea.
+	model.markdownStyle = "light"
+	if lipgloss.HasDarkBackground() {
+		model.markdownStyle = "dark"
+	}
 	program := tea.NewProgram(model, tea.WithAltScreen())
 	model.program = program
 	_, err := program.Run()
@@ -100,10 +106,11 @@ type chatModel struct {
 	cfg     Chat
 	program *tea.Program
 
-	viewport viewport.Model
-	input    textarea.Model
-	spin     spinner.Model
-	markdown *glamour.TermRenderer
+	viewport      viewport.Model
+	input         textarea.Model
+	spin          spinner.Model
+	markdown      *glamour.TermRenderer
+	markdownStyle string
 
 	entries   []ChatEntry
 	streaming bool
@@ -341,7 +348,7 @@ func (m *chatModel) layout() {
 	}
 	m.input.SetWidth(max(m.width-6, 10)) // border + padding
 	renderer, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
+		glamour.WithStandardStyle(m.markdownStyle),
 		glamour.WithWordWrap(max(m.width-4, 20)),
 		glamour.WithEmoji(),
 	)
