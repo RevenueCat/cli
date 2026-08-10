@@ -114,10 +114,14 @@ Agent-friendly entrypoints:
 	whoamiAlias.Use = "whoami"
 	whoamiAlias.Hidden = true
 
-	// Bare `rc` shows help, which leads with the getting-started intro. The
-	// guided setup orchestrator is still available explicitly as `rc setup`.
-	root.RunE = func(cmd *cobra.Command, args []string) error {
-		return cmd.Help()
+	// bare rc → state-aware getting-started; rc --help lists every command.
+	// --all falls through to help instead of the home screen
+	root.RunE = func(cmd *cobra.Command, _ []string) error {
+		if RuntimeFrom(cmd.Context()).Globals.ShowAll {
+			return cmd.Help()
+		}
+		writeHomeScreen(cmd.OutOrStdout(), RuntimeFrom(cmd.Context()))
+		return nil
 	}
 
 	root.AddCommand(

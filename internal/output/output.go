@@ -68,6 +68,48 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 
 func (r *Renderer) IsJSON() bool { return r.json }
 
+// Tone is a semantic style for callers that compose their own output.
+type Tone int
+
+const (
+	ToneAccent  Tone = iota // brand landmark (bar, identity)
+	ToneTitle               // bold section label
+	ToneDim                 // secondary/description text
+	ToneSuccess             // affirmative (logged in)
+	ToneCommand             // a command the user can type
+	ToneLink                // a URL to open
+)
+
+// Paint renders text in the given tone, unstyled when color is disabled.
+func (r *Renderer) Paint(t Tone, text string) string {
+	var s lipgloss.Style
+	switch t {
+	case ToneAccent:
+		s = StyleAccent
+	case ToneTitle:
+		s = StyleTitle
+	case ToneSuccess:
+		s = StyleSuccess
+	case ToneCommand:
+		s = StyleCommand
+	case ToneLink:
+		s = StyleInfo
+	default:
+		s = StyleDim
+	}
+	return r.style(s, text)
+}
+
+// Panel wraps pre-styled lines in a rounded border box sized to fit its
+// content. The frame is drawn uncolored when color is disabled.
+func (r *Renderer) Panel(lines ...string) string {
+	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
+	if !r.noColor {
+		box = box.BorderForeground(NeutralGray)
+	}
+	return box.Render(strings.Join(lines, "\n"))
+}
+
 // style returns either the styled rendering of s, or s unmodified when colors
 // are disabled. This is the single place we make that choice — every styled
 // write goes through here.
