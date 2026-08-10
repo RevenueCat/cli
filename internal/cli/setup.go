@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/huh"
@@ -422,7 +423,11 @@ func setupAuthHandbackNote(authed bool) string {
 	if authed {
 		return ""
 	}
-	return "\n\nAuth: you are not logged in. If the user has no RevenueCat account, create one without a browser: `rc auth signup --email <user's email> --name \"<user's name>\" --generate-password --save-password --accept-terms --no-input --json` — but only after the user explicitly agrees to the RevenueCat Terms of Service and Privacy Policy. If the user already has an account, STOP and ask them to run `rc auth login` (a browser sign-in you cannot perform), then continue."
+	savePassword := ""
+	if runtime.GOOS == "darwin" {
+		savePassword = " --save-password"
+	}
+	return "\n\nAuth: you are not logged in. If the user has no RevenueCat account, create one without a browser: `rc auth signup --email <user's email> --name \"<user's name>\" --generate-password" + savePassword + " --accept-terms --no-input --json` — but only after the user explicitly agrees to the RevenueCat Terms of Service and Privacy Policy. If the user already has an account, STOP and ask them to run `rc auth login` (a browser sign-in you cannot perform), then continue."
 }
 
 // setupStage is where this project stands in the onboarding journey; it
