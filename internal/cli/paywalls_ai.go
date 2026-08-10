@@ -97,15 +97,16 @@ const minimalComponentsConfig = `{
 const minimalUIConfig = `{"fonts": {}, "presets": {"saved_colors": []}}`
 
 type paywallAIOptions struct {
-	context     string
-	attachments []string
-	prompt      string
-	offeringID  string
-	name        string
-	sessionPath string
-	images      []string
-	baseURL     string
-	timeout     time.Duration
+	context      string
+	attachments  []string
+	prompt       string
+	offeringID   string
+	name         string
+	sessionPath  string
+	images       []string
+	baseURL      string
+	timeout      time.Duration
+	createdDraft bool
 }
 
 func newPaywallsGenerateCmd() *cobra.Command {
@@ -210,6 +211,11 @@ run rc paywalls publish.`,
 				if err != nil {
 					return err
 				}
+			}
+			opts.createdDraft = true
+			// save up front so a drop before the first checkpoint still leaves a resumable session
+			if err := savePaywallAISession(opts.sessionPath, session); err != nil {
+				return err
 			}
 			return runPaywallAI(cmd.Context(), rt, opts, session)
 		},
@@ -529,9 +535,12 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 
 func paywallRecoveryHint(opts paywallAIOptions, checkpointed bool) string {
 	if checkpointed {
-		return "Progress so far is saved — continue with: rc paywalls edit --session " + opts.sessionPath
+		return "Progress so far is saved. Continue with: rc paywalls edit --session " + opts.sessionPath
 	}
-	return "Nothing was saved yet — re-run the command to try again."
+	if opts.createdDraft {
+		return "The draft was created. Continue editing it with: rc paywalls edit --session " + opts.sessionPath
+	}
+	return "Nothing was saved yet. Re-run the command to try again."
 }
 
 func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
