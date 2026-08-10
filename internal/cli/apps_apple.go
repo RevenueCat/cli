@@ -89,16 +89,34 @@ func ensureAppStoreAppRecord(ctx context.Context, rt *Runtime, apple appleConnec
 		Run(); err != nil {
 		return err
 	}
+	return createAppStoreAppRecord(ctx, rt, apple, session, bundleID, name, sku)
+}
+
+// createAppStoreAppRecord registers the bundle ID and creates the ASC app.
+// Failures here never abort: keys are account-level, so key setup still
+// proceeds — the caller only warns.
+func createAppStoreAppRecord(ctx context.Context, rt *Runtime, apple appleConnectClient, session *appleconnect.Session, bundleID, name, sku string) error {
 	rt.Out.Info("Registering bundle ID " + bundleID + " in the Developer Portal…")
 	if err := apple.RegisterBundleID(ctx, session, bundleID, name); err != nil {
-		return err
+		warnAppRecordFailed(rt, bundleID, err)
+		return nil
 	}
 	rt.Out.Info("Creating the App Store Connect app…")
 	if err := apple.CreateApp(ctx, session, name, bundleID, sku); err != nil {
-		return err
+		warnAppRecordFailed(rt, bundleID, err)
+		return nil
 	}
 	rt.Out.Success("Created App Store Connect app " + name + " (" + bundleID + ")")
 	return nil
+}
+
+func warnAppRecordFailed(rt *Runtime, bundleID string, err error) {
+	if strings.Contains(strings.ToLower(err.Error()), "not available") {
+		rt.Out.Warn("Bundle ID " + bundleID + " is not available — it is likely already registered under another Apple team or reserved, so the app record could not be created here.")
+	} else {
+		rt.Out.Warn("Could not create the App Store Connect app record: " + err.Error())
+	}
+	rt.Out.Warn("Continuing with key setup. The earlier check looks for the App Store Connect app record, not Developer Portal bundle registration — create the app in App Store Connect before configuring products.")
 }
 
 // keyDecisionLabel names the user's choice for a key so the transcript

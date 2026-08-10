@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 
@@ -149,6 +150,72 @@ func (f *fakeAppleCheckClient) RegisterBundleID(context.Context, *appleconnect.S
 func (f *fakeAppleCheckClient) CreateApp(context.Context, *appleconnect.Session, string, string, string) error {
 	f.mutated = true
 	return errors.New("unexpected App Store Connect app creation")
+}
+
+func TestCreateAppStoreAppRecord_NonFatalOnAppleFailure(t *testing.T) {
+	cases := []struct {
+		name        string
+		registerErr error
+		createErr   error
+		wantCreate  bool
+		wantWarn    string
+	}{
+		{
+			name:        "register bundle id fails",
+			registerErr: errors.New(`An App ID with Identifier 'com.example.app' is not available.`),
+			wantCreate:  false,
+			wantWarn:    "is not available",
+		},
+		{
+			name:       "create app fails",
+			createErr:  errors.New("boom"),
+			wantCreate: true,
+			wantWarn:   "Could not create the App Store Connect app record: boom",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			apple := &fakeAppleSetupClient{registerErr: tc.registerErr, createErr: tc.createErr}
+			var stdout, stderr bytes.Buffer
+			rt := &Runtime{
+				Globals: &Globals{},
+				Out:     output.NewRenderer(&stdout, &stderr, false, true, false, ""),
+			}
+			if err := createAppStoreAppRecord(context.Background(), rt, apple, &appleconnect.Session{}, "com.example.app", "Example", "com.example.app"); err != nil {
+				t.Fatalf("createAppStoreAppRecord returned error, want nil (non-fatal): %v", err)
+			}
+			if !apple.registerCalled {
+				t.Fatal("RegisterBundleID was not called")
+			}
+			if apple.createCalled != tc.wantCreate {
+				t.Fatalf("CreateApp called = %v, want %v", apple.createCalled, tc.wantCreate)
+			}
+			if !strings.Contains(stderr.String(), tc.wantWarn) {
+				t.Fatalf("warning = %q, want it to contain %q", stderr.String(), tc.wantWarn)
+			}
+			if !strings.Contains(stderr.String(), "Continuing with key setup") {
+				t.Fatalf("warning = %q, want it to mention continuing with key setup", stderr.String())
+			}
+		})
+	}
+}
+
+type fakeAppleSetupClient struct {
+	fakeAppleCheckClient
+	registerErr    error
+	createErr      error
+	registerCalled bool
+	createCalled   bool
+}
+
+func (f *fakeAppleSetupClient) RegisterBundleID(context.Context, *appleconnect.Session, string, string) error {
+	f.registerCalled = true
+	return f.registerErr
+}
+
+func (f *fakeAppleSetupClient) CreateApp(context.Context, *appleconnect.Session, string, string, string) error {
+	f.createCalled = true
+	return f.createErr
 }
 
 func equalStrings(left, right []string) bool {
