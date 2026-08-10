@@ -53,7 +53,7 @@ func TestRicoChat_JSONApprovesDestructiveToolWithYes(t *testing.T) {
 	t.Setenv("RC_RICO_BASE_URL", server.URL)
 
 	stdout, stderr, err := runCmd(t,
-		"rico", "chat", "delete the test offering",
+		"rico", "delete the test offering",
 		"--conversation", "conv1",
 		"--approve-tools", "--yes", "--no-input", "--json",
 		"--api-key", "sk_test",
@@ -101,7 +101,7 @@ func TestRicoChat_JSONRejectsDestructiveToolWithoutYes(t *testing.T) {
 	t.Setenv("RC_RICO_BASE_URL", server.URL)
 
 	stdout, _, err := runCmd(t,
-		"rico", "chat", "delete the test offering",
+		"rico", "delete the test offering",
 		"--conversation", "conv1",
 		"--approve-tools", "--no-input", "--json",
 		"--api-key", "sk_test",
@@ -134,7 +134,7 @@ func TestRicoChat_RemembersLastConversationForResume(t *testing.T) {
 
 	configDir := t.TempDir()
 	_, _, err := runCmdInConfigDir(t, configDir,
-		"rico", "chat", "delete the test offering",
+		"rico", "delete the test offering",
 		"--conversation", "conv1",
 		"--approve-tools", "--yes", "--no-input", "--json", "--api-key", "sk_test",
 	)
@@ -157,14 +157,22 @@ func TestRicoChat_RemembersLastConversationForResume(t *testing.T) {
 }
 
 func TestRicoChat_ResumeRequiresInteractivePicker(t *testing.T) {
-	_, _, err := runCmd(t, "rico", "chat", "hi", "--resume", "--no-input", "--api-key", "sk_test")
+	_, _, err := runCmd(t, "rico", "hi", "--resume", "--no-input", "--api-key", "sk_test")
 	if err == nil || !strings.Contains(err.Error(), "conversation ID is required") {
 		t.Fatalf("err = %v", err)
 	}
 }
 
 func TestRicoChat_RequiresPromptNonInteractive(t *testing.T) {
-	_, _, err := runCmd(t, "rico", "chat", "--no-input", "--api-key", "sk_test")
+	_, _, err := runCmd(t, "rico", "--no-input", "--api-key", "sk_test")
+	if err == nil || !strings.Contains(err.Error(), "message is required") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+// --json is non-interactive: no message must error, not open the chat UI.
+func TestRico_JSONWithoutMessageRequiresMessage(t *testing.T) {
+	_, _, err := runCmd(t, "rico", "--json", "--api-key", "sk_test")
 	if err == nil || !strings.Contains(err.Error(), "message is required") {
 		t.Fatalf("err = %v", err)
 	}

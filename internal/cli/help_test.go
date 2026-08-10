@@ -11,7 +11,7 @@ func TestSubcommandHelp_CollapsesGlobalFlags(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		"Available Commands:", "chat",
+		"Available Commands:", "conversations",
 		"Global flags: ", "--api-key", "--json",
 		"Run `rc --help` for what each global flag does.",
 	} {
