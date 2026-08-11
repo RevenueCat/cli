@@ -106,7 +106,7 @@ func TestInferCapabilities_DriftGuard(t *testing.T) {
 		if len(c.Commands()) > 0 {
 			caps := inferCapabilities(c)
 			for _, sc := range c.Commands() {
-				if puntedFromSchema(sc) || !sc.Runnable() {
+				if puntedFromSchema(sc) || !isDiscoverableRunnable(sc) {
 					continue
 				}
 				want := canonicalVerb(sc.Name())

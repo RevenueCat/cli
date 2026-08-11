@@ -165,6 +165,7 @@ Agent-friendly entrypoints:
 		return usageError{suggestFlag(cmd, err)}
 	})
 	applyCommandGroups(root)
+	guardUnknownSubcommands(root)
 	applySurfaceProfile(root)
 	applyHelpStyling(root)
 
@@ -181,6 +182,44 @@ Agent-friendly entrypoints:
 		}
 	})
 	return root
+}
+
+// guardUnknownSubcommands makes every command group reject an unknown
+// subcommand instead of cobra's default — printing group help and exiting 0,
+// which reads as success to scripts and agents. cobra only guards the root:
+// other parents short-circuit to help before arg validation runs, so a
+// non-runnable group also gets a help-only RunE to reach validation. A bare
+// group (no args) still falls through to help or the group's own RunE, and
+// groups that set their own Args (e.g. rico takes a message) are left alone.
+func guardUnknownSubcommands(cmd *cobra.Command) {
+	for _, sub := range cmd.Commands() {
+		guardUnknownSubcommands(sub)
+	}
+	if !cmd.HasSubCommands() {
+		return
+	}
+	if cmd.SuggestionsMinimumDistance <= 0 {
+		cmd.SuggestionsMinimumDistance = 2 // SuggestionsFor reads this directly; cobra only defaults it inside its own help path.
+	}
+	if cmd.Args == nil {
+		cmd.Args = func(c *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return nil
+			}
+			e := &unknownSubcommandError{parent: c.CommandPath(), name: args[0]}
+			if s := c.SuggestionsFor(args[0]); len(s) > 0 {
+				e.suggestion = s[0]
+			}
+			return e
+		}
+	}
+	if !cmd.Runnable() {
+		cmd.RunE = func(c *cobra.Command, _ []string) error { return c.Help() }
+		if cmd.Annotations == nil {
+			cmd.Annotations = map[string]string{}
+		}
+		cmd.Annotations["help_only"] = "true"
+	}
 }
 
 // suggestFlag appends a did-you-mean to unknown-flag errors: agents guess

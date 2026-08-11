@@ -13,7 +13,7 @@ import (
 var helpColor = true
 
 // rcUsageTemplate styles the usage sections and collapses inherited flags via rcGlobalFlags.
-const rcUsageTemplate = `{{rcHead "Usage:"}}{{if .Runnable}}
+const rcUsageTemplate = `{{rcHead "Usage:"}}{{if rcShowUseLine .}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
@@ -85,6 +85,7 @@ func applyHelpStyling(root *cobra.Command) {
 	cobra.AddTemplateFunc("rcCmd", func(s string) string { return output.HelpCommand(helpColor, s) })
 	cobra.AddTemplateFunc("rcFoot", func(s string) string { return output.HelpDim(helpColor, s) })
 	cobra.AddTemplateFunc("rcGlobalFlags", globalFlagsSummary)
+	cobra.AddTemplateFunc("rcShowUseLine", isDiscoverableRunnable)
 	root.SetUsageTemplate(rcUsageTemplate)
 }
 

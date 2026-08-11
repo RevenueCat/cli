@@ -26,6 +26,23 @@ type usageError struct{ err error }
 func (e usageError) Error() string { return e.err.Error() }
 func (e usageError) Unwrap() error { return e.err }
 
+// unknownSubcommandError is returned when a command group is handed a verb it
+// doesn't have. It carries a distinct type so the JSON envelope can label it
+// unknown_command_error while still mapping to the usage exit code.
+type unknownSubcommandError struct {
+	parent     string
+	name       string
+	suggestion string
+}
+
+func (e *unknownSubcommandError) Error() string {
+	msg := fmt.Sprintf("unknown command %q for %q", e.name, e.parent)
+	if e.suggestion != "" {
+		msg += fmt.Sprintf("; did you mean %q?", e.suggestion)
+	}
+	return msg
+}
+
 // cobra emits these prefixes for command/arg misuse; none pass through
 // FlagErrorFunc, so match them by message.
 func isCobraUsage(err error) bool {
@@ -150,7 +167,8 @@ func ExitCodeFor(err error) int {
 		return 2
 	}
 	var ue usageError
-	if errors.As(err, &ue) || isCobraUsage(err) {
+	var uce *unknownSubcommandError
+	if errors.As(err, &ue) || errors.As(err, &uce) || isCobraUsage(err) {
 		return 2
 	}
 	var apiErr *api.APIError
