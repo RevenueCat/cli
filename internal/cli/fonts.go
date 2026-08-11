@@ -112,11 +112,9 @@ func newFontsUploadCmd() *cobra.Command {
 The response's font_key (RCFM:…) is the reference. The server registers the
 font project-wide automatically — no further setup call is needed.
 
-A paywall uses the font when a text component's font_name is set to the
-font_key. Two routes: name the key explicitly in an rc paywalls edit prompt
-("set headings to font_name RCFM:…") — the editor does not list custom fonts,
-so always name the key — or PATCH the components directly (see rc paywalls
---help for the recipe).
+Use the font through rc paywalls edit: name the key explicitly in the prompt
+and say which text to apply it to ("set headings to font_name RCFM:…"). The
+editor does not list custom fonts, so always name the key.
 
 Preview screenshots may not render CLI-referenced custom fonts; verify in the
 dashboard builder URL.`,

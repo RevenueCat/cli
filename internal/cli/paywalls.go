@@ -49,7 +49,7 @@ only.
 To wire uploaded assets without an editor turn, PATCH the draft directly:
 
   rc api GET "/projects/<p>/paywalls/<id>?expand=components"  # read draft + revision
-  # edit components_config: set image source / font_name
+  # edit components_config: set image source
   rc api PATCH /projects/<p>/paywalls/<id> --body @body.json  # revision, components_config,
                                                               # components_localizations, default_locale
 
