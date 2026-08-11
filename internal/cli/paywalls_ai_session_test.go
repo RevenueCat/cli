@@ -60,6 +60,7 @@ func TestRunPaywallAI_FailedRunPersistsSessionID(t *testing.T) {
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "session"+paywallSessionSuffix)
 	session := newTestSession()
+	session.TraceID = "trace_prev"
 	if err := savePaywallAISession(sessionPath, session); err != nil {
 		t.Fatal(err)
 	}
@@ -76,6 +77,9 @@ func TestRunPaywallAI_FailedRunPersistsSessionID(t *testing.T) {
 	}
 	if stored.SessionID != "sess_minted" {
 		t.Fatalf("failed run did not persist session id: got %q, want sess_minted", stored.SessionID)
+	}
+	if stored.TraceID != "trace_prev" {
+		t.Fatalf("failed run cleared the last good TraceID: got %q, want trace_prev", stored.TraceID)
 	}
 }
 

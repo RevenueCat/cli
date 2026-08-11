@@ -560,7 +560,10 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 				checkpointed = true
 			}
 		case paywallai.EventRunFailed:
-			applySessionEvent(session, event)
+			// not applySessionEvent: a failed event omits trace_id and would clear the last good turn's TraceID, breaking rewind.
+			if event.SessionID != "" {
+				session.SessionID = event.SessionID
+			}
 			_ = savePaywallAISession(opts.sessionPath, session)
 			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRunFailedHint(opts, checkpointed))
 		case paywallai.EventRunCompleted:
