@@ -49,7 +49,7 @@ func loadFont(path string) (api.FontCreate, error) {
 func newFontsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "fonts",
-		Short: "Manage project fonts",
+		Short: "Manage custom fonts for paywalls",
 	}
 	cmd.AddCommand(newFontsUploadCmd(), newFontsListCmd())
 	return cmd
@@ -100,6 +100,17 @@ func newFontsUploadCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "upload <file>",
 		Short: "Upload a font to the project for use in Paywalls",
+		Long: `Uploads a ttf/otf font file to the project.
+
+The response's font_key (RCFM:…) is the reference. The server registers the
+font project-wide automatically — no further setup call is needed.
+
+Use the font through rc paywalls edit: name the key explicitly in the prompt
+and say which text to apply it to ("set headings to font_name RCFM:…"). The
+editor does not list custom fonts, so always name the key.
+
+Preview screenshots may not render CLI-referenced custom fonts; verify in the
+dashboard builder URL.`,
 		Example: `  rc fonts upload ./Inter-Bold.ttf
   rc fonts upload ./Inter-Bold.ttf --json`,
 		Args: cobra.ExactArgs(1),

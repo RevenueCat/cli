@@ -36,8 +36,8 @@ the code when adding/renaming a command.
      here: humans reach them through guided flows/pickers; agents discover
      them through the schema channel.
    - **punted** (`surface: "punted"` annotation) — hidden from `--help` *and*
-     schema, still runnable. For under-DX-tested commands (the one-shot
-     `setup` orchestrator). Promote to a real tier once tested.
+     schema, still runnable. For under-DX-tested commands. Promote to a real
+     tier once tested.
    `rc --all` / `RC_SURFACE=full` reveals everything to humans. Hidden never
    means disabled — skills naming an agent-only command keep working.
 
@@ -94,7 +94,7 @@ names; there's no list endpoint.
 
 ```
 # Onboarding entry points (the two scoped npx surfaces)
-rc setup                                                 # PUNTED: one-shot agent-driven bootstrap; hidden until DX-tested
+rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
 rc capital setup                                         # RevenueCat Capital = App Store Connect key flow (wraps apps apple setup)
 rc                                                       # bare rc -> getting-started help; --all reveals every command
 
@@ -214,7 +214,7 @@ rc paywalls edit <paywall-id>|--session <file> --prompt  # AI-edit any paywall (
 rc paywalls rewind --session <file>                      # undo the last editor action
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes
-rc paywalls delete <id>
+rc paywalls delete <id> [--force]                        # attached/published paywalls refuse to delete without --force
 
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)

@@ -89,7 +89,7 @@ func revenueCatSkillDirs(toolkitKey string) []string {
 	case "codex":
 		rel = filepath.Join(".codex", "skills")
 	case "cursor":
-		rel = filepath.Join(".cursor", "skills-cursor")
+		rel = filepath.Join(".cursor", "skills")
 	default:
 		return nil
 	}

@@ -73,7 +73,7 @@ var agentClients = []agentClient{
 	{"Codex", "codex", "codex", func(p, autonomy string) []string {
 		switch autonomy {
 		case autonomyAuto, autonomyTrusted:
-			return []string{"--full-auto", p}
+			return []string{"-a", "on-request", "-s", "workspace-write", p}
 		case autonomyFull:
 			return []string{"--dangerously-bypass-approvals-and-sandbox", p}
 		default:
