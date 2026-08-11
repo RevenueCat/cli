@@ -23,18 +23,7 @@ func newPaywallsCmd() *cobra.Command {
 The design workflow: generate a draft with rc paywalls generate, look at the
 preview screenshot it writes, iterate with rc paywalls edit on the SAME
 --session, and run rc paywalls publish only after the user reviewed and
-approved the design.
-
-Ground the design in the app's brand before generating. Read the app's theme
-and brand files first. Collect exact hex colors, font choices, tone words,
-and real feature names. Pass brand docs via --attachment DESIGN.md, app
-screenshots via --image (max 3), and audience or product context via
---context.
-
-Do not over-prompt. rc paywalls generate and edit produce worse designs from
-huge instruction dumps. Give short general direction. Be specific only about
-concrete brand facts (colors, fonts, images, tone). Leave layout and design
-decisions to the editor. When editing, make one theme of change per turn.
+approved the design. See generate's and edit's help for how to prompt well.
 
 Iterating is the normal workflow: expect several edit turns until the result
 is acceptable, not a perfect first try. Every completed turn writes a preview
@@ -43,9 +32,7 @@ Undo a bad turn with rc paywalls rewind.
 
 Custom assets: upload the app's real fonts with rc fonts upload and real
 images (logo, hero) with rc media-assets upload BEFORE designing, then
-reference them — see those commands' help for the exact wiring. The editor
-cannot ingest local files itself; --image attachments are visual references
-only.
+reference them in prompts — see those commands' help for the exact wiring.
 
 Publishing is customer-facing: review the preview screenshot and the builder
 URL, get the user's approval, then rc paywalls publish.`,
