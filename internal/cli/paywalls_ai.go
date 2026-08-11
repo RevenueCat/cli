@@ -138,12 +138,17 @@ run rc paywalls publish.
 Do not generate blind: read the app's theme and brand files and collect app
 screenshots before the first turn. If the app ships custom fonts (.ttf/.otf
 in the codebase), upload them with rc fonts upload first and name the
-returned font_key in prompts. Keep the prompt SHORT — a few sentences of
-general direction plus concrete brand facts (exact hex colors, font names,
-tone words, real feature names). Do not write huge instruction dumps or
-dictate the full layout; long prompts make the editor produce worse designs —
-leave design decisions to it. Put reference material in flags, not prose:
-brand docs via --attachment, screenshots via --image, audience via --context.`,
+returned font_key in prompts. When real assets fit the design (the app's
+logo, hero or feature images), upload them with rc media-assets upload first
+and paste the returned URL into the prompt for the editor to place — --image
+attachments are visual references only, never placed in the design.
+
+Keep the prompt SHORT — a few sentences of general direction plus concrete
+brand facts (exact hex colors, font names, tone words, real feature names).
+Do not write huge instruction dumps or dictate the full layout; long prompts
+make the editor produce worse designs — leave design decisions to it. Put
+reference material in flags, not prose: brand docs via --attachment,
+screenshots via --image, audience via --context.`,
 		Example: `  rc paywalls generate
   rc paywalls generate --name "Summer sale" --prompt "A calm annual-first paywall"
   rc paywalls generate --prompt "Warm and minimal, annual-first. Background #0E1B2A, headings in Sora." --attachment DESIGN.md --image home.png
@@ -267,6 +272,10 @@ Using it well:
   - Use the app's real fonts: upload .ttf/.otf files from the codebase with
     rc fonts upload (rc fonts list shows existing ones), then name the
     font_key in the prompt and say which text to apply it to.
+  - Use the app's real images where they fit: upload the logo or hero images
+    with rc media-assets upload (rc media-assets list shows existing ones),
+    then paste the returned URL into the prompt and say where to place it —
+    --image attachments are visual references only, never placed.
   - Keep the SAME --session file across turns — it is the conversation
     memory. A lost session file starts the design conversation over.
   - The Paywall AI editor may reply with a clarifying question instead of a design (it
