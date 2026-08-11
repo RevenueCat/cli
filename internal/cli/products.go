@@ -271,7 +271,7 @@ only supported for Test Store products.`,
 			}
 			allowed := productTypesForStore(app.Type)
 			if productType == "" {
-				if rt.Globals.NoInput || !tui.IsInteractive() {
+				if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
 					return fmt.Errorf("--type is required (%s)", strings.Join(productTypeValues(allowed), ", "))
 				}
 				opts := make([]huh.Option[string], len(allowed))
@@ -322,11 +322,12 @@ only supported for Test Store products.`,
 }
 
 // productTypesForStore returns the ProductType values accepted for an app's
-// store. Test Store takes granular consumable/non_consumable; the App/Play
-// stores take one_time and non_renewing_subscription. The union across stores
-// must cover the ProductType enum (see TestProductTypeStoreSetsCoverEnum).
+// store. Test Store and Web Billing take granular consumable/non_consumable;
+// the App/Play stores take one_time and non_renewing_subscription. The union
+// across stores must cover the ProductType enum (see TestProductTypeStoreSetsCoverEnum).
 func productTypesForStore(appType api.AppType) []api.ProductType {
-	if string(appType) == string(api.TestStoreAppTypeTestStore) {
+	switch string(appType) {
+	case string(api.TestStoreAppTypeTestStore), string(api.RCBillingAppTypeRcBilling):
 		return []api.ProductType{
 			api.ProductTypeSubscription,
 			api.ProductTypeConsumable,
