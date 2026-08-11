@@ -85,3 +85,20 @@ func TestEveryCommandHasARegisteredGroup(t *testing.T) {
 		}
 	}
 }
+
+func TestSchemaExposesExperimentalMarked(t *testing.T) {
+	root := NewRootCmd("test")
+	tree := commandTreeWithSchemas(root)
+	var capital map[string]any
+	for _, c := range tree["commands"].([]map[string]any) {
+		if c["name"] == "capital" {
+			capital = c
+		}
+	}
+	if capital == nil {
+		t.Fatal("experimental command 'capital' should still appear in the schema so agents can detect it")
+	}
+	if capital["experimental"] != true {
+		t.Errorf("'capital' should be marked experimental in the schema, got %v", capital["experimental"])
+	}
+}

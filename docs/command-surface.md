@@ -30,8 +30,9 @@ the code when adding/renaming a command.
    `internal/cli/surface.go`):
    - **default** — shown in `rc --help`, in `rc commands`/`rc schema`, and runnable.
    - **experimental** (`surface: "experimental"` annotation) — hidden from `--help`
-     *and* `rc commands`/`rc schema` until the feature ships; still runnable.
-     `rc --all` / `RC_SURFACE=full` reveals experimental commands in `--help`.
+     until the feature ships (revealed by `rc --all` / `RC_SURFACE=full`), but
+     still present in `rc commands` / `rc schema` marked `"experimental": true`
+     so agents can detect it and choose to skip it. Still runnable.
    Hidden never means disabled — a skill naming an experimental command still works.
 
 ## Verified API truths (from `internal/api/testdata/v2/`)

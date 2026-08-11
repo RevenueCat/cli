@@ -66,9 +66,6 @@ func commandTreeWithSchemas(c *cobra.Command) map[string]any {
 	tree := commandSchema(c)
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if experimentalFromSchema(sc) {
-			continue
-		}
 		subs = append(subs, commandTreeWithSchemas(sc))
 	}
 	tree["commands"] = subs
@@ -108,15 +105,16 @@ func commandSchema(c *cobra.Command) map[string]any {
 
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if experimentalFromSchema(sc) {
-			continue
-		}
-		subs = append(subs, map[string]any{
+		sub := map[string]any{
 			"name":     sc.Name(),
 			"short":    sc.Short,
 			"aliases":  sc.Aliases,
 			"runnable": sc.Runnable(),
-		})
+		}
+		if experimentalFromSchema(sc) {
+			sub["experimental"] = true
+		}
+		subs = append(subs, sub)
 	}
 
 	schema := map[string]any{
@@ -133,6 +131,9 @@ func commandSchema(c *cobra.Command) map[string]any {
 		"subcommands":  subs,
 		"runnable":     c.Runnable(),
 		"capabilities": inferCapabilities(c),
+	}
+	if experimentalFromSchema(c) {
+		schema["experimental"] = true
 	}
 	addHumanRequirement(schema, c)
 	return schema
@@ -251,9 +252,6 @@ func commandPath(c *cobra.Command) string {
 func commandTree(c *cobra.Command) map[string]any {
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if experimentalFromSchema(sc) {
-			continue
-		}
 		subs = append(subs, commandTree(sc))
 	}
 	tree := map[string]any{
@@ -265,6 +263,9 @@ func commandTree(c *cobra.Command) map[string]any {
 		"runnable":     c.Runnable(),
 		"capabilities": inferCapabilities(c),
 		"commands":     subs,
+	}
+	if experimentalFromSchema(c) {
+		tree["experimental"] = true
 	}
 	addHumanRequirement(tree, c)
 	return tree
