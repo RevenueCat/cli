@@ -17,7 +17,7 @@ func newPaywallsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "paywalls",
 		Aliases: []string{"paywall"},
-		Short:   "Create and inspect paywalls",
+		Short:   "Create and inspect Paywalls",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if !guidedMode() || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
@@ -73,7 +73,9 @@ func ensureAuthInteractive(cmd *cobra.Command) error {
 func newPaywallsListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
-		Short: "List paywalls",
+		Short: "List Paywalls",
+		Example: `  rc paywalls list
+  rc paywalls list --json | jq '.data.items[].id'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -108,7 +110,7 @@ func newPaywallsListCmd() *cobra.Command {
 func newPaywallsPublishCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "publish [id]",
-		Short: "Publish the current paywall draft",
+		Short: "Publish the current Paywall draft",
 		Long: `Publishes the current draft and makes its components available to RevenueCat SDKs.
 
 This changes the customer-facing paywall. Review the draft before publishing.
@@ -149,7 +151,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 func newPaywallsUnpublishCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "unpublish [id]",
-		Short: "Unpublish a paywall",
+		Short: "Unpublish a Paywall",
 		Long: `Removes the published paywall so RevenueCat SDKs stop serving it to customers.
 
 Unpublishing can be blocked when the paywall's offering is used by an active experiment.
@@ -228,8 +230,10 @@ func formatPublishedAt(publishedAt *api.Millis) string {
 func newPaywallsShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show [id]",
-		Short: "Show a paywall",
-		Args:  cobra.MaximumNArgs(1),
+		Short: "Show a Paywall",
+		Example: `  rc paywalls show pw_abc
+  rc paywalls show pw_abc --json`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -259,7 +263,7 @@ func newPaywallsDeleteCmd() *cobra.Command {
 	var force bool
 	cmd := &cobra.Command{
 		Use:   "delete [id]",
-		Short: "Delete a paywall",
+		Short: "Delete a Paywall",
 		Long: `Permanently deletes a paywall.
 
 Reversibility: irreversible. Recreate the paywall if it is deleted.

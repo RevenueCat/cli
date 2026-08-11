@@ -217,9 +217,11 @@ rc paywalls unpublish [id]                               # remove the published 
 rc paywalls delete <id> [--force]                        # attached/published paywalls refuse to delete without --force
 
 # Rico (AI assistant)
-rc rico chat [message]                                   # streaming chat window in a TTY (--plain for a line loop)
-rc rico chat -r                                          # pick a past conversation to resume (last one on top)
-rc rico chat "..." --approve-tools --yes --no-input      # agent mode: auto-approve tool calls (destructive need --yes)
+rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)
+rc rico --continue                                       # continue the most recent conversation
+rc rico -r                                               # pick a past conversation to resume (last one on top)
+rc rico --print "..." --json                             # headless: one answer and exit (for scripts/agents)
+rc rico "..." --approve-tools --yes --no-input           # agent mode: auto-approve tool calls (destructive need --yes)
 rc rico conversations list|show <id>|delete <id>
 rc rico feedback <run-id> <good|bad>
 

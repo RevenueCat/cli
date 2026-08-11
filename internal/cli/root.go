@@ -56,7 +56,7 @@ Agent-friendly entrypoints:
   rc <cmd> --no-input    fail rather than prompt
   rc <cmd> --yes         skip confirmations`,
 		Example: `  # Human use
-  rc login
+  rc auth login
   rc customer show cus_abc
 
   # Scripted use
@@ -114,10 +114,14 @@ Agent-friendly entrypoints:
 	whoamiAlias.Use = "whoami"
 	whoamiAlias.Hidden = true
 
-	// Bare `rc` shows help, which leads with the getting-started intro. The
-	// guided setup orchestrator is still available explicitly as `rc setup`.
-	root.RunE = func(cmd *cobra.Command, args []string) error {
-		return cmd.Help()
+	// bare rc → state-aware getting-started; rc --help lists every command.
+	// --all falls through to help instead of the home screen
+	root.RunE = func(cmd *cobra.Command, _ []string) error {
+		if RuntimeFrom(cmd.Context()).Globals.ShowAll {
+			return cmd.Help()
+		}
+		writeHomeScreen(cmd.OutOrStdout(), RuntimeFrom(cmd.Context()))
+		return nil
 	}
 
 	root.AddCommand(
@@ -157,13 +161,16 @@ Agent-friendly entrypoints:
 	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		return usageError{suggestFlag(cmd, err)}
 	})
+	applyCommandGroups(root)
 	applySurfaceProfile(root)
+	applyHelpStyling(root)
 
 	// --help skips PersistentPreRunE, so re-apply the surface from the parsed
 	// --all flag right before help renders, and footer the hidden count so a
 	// human (or a skill-less agent) knows there's more.
 	defaultHelp := root.HelpFunc()
 	root.SetHelpFunc(func(c *cobra.Command, args []string) {
+		helpColor = !g.NoColor && os.Getenv("NO_COLOR") == ""
 		applySurfaceProfile(root)
 		defaultHelp(c, args)
 		if c == root && !showAllSurface(root) && !testing.Testing() {

@@ -11,9 +11,9 @@ func newInvoicesCmd() *cobra.Command {
 		Use:     "invoices",
 		Aliases: []string{"invoice"},
 		Short:   "Inspect Web Billing invoices",
-		Long: `Inspect RevenueCat Billing (Web Billing) invoices — the billing records for
+		Long: `Inspect Web Billing (formerly RevenueCat Billing) invoices — the billing records for
 web purchases, with payment status and a downloadable PDF. These are
-RevenueCat Billing records, not App Store or Play Store purchases.`,
+Web Billing records, not App Store or Play Store purchases.`,
 		Example: `  rc invoices for cus_abc
   rc invoices show inv_abc`,
 	}
@@ -28,7 +28,7 @@ func newInvoicesShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "show <id>",
 		Short:   "Show a Web Billing invoice",
-		Long:    `Shows a RevenueCat Billing invoice: its payment status, amount, issue date, and the URL to the downloadable PDF.`,
+		Long:    `Shows a Web Billing invoice: its payment status, amount, issue date, and the URL to the downloadable PDF.`,
 		Example: "  rc invoices show inv_abc\n  rc invoices show inv_abc --json | jq -r '.pdf_url'",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -57,7 +57,7 @@ func newInvoicesForCustomerCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "for <customer-id>",
 		Short:   "List a Customer's Web Billing invoices",
-		Long:    `Lists the RevenueCat Billing invoices for a Customer by App User ID, with each invoice's payment status and issue date.`,
+		Long:    `Lists the Web Billing invoices for a Customer by App User ID, with each invoice's payment status and issue date.`,
 		Example: "  rc invoices for cus_abc\n  rc invoices for cus_abc --json | jq '.data.items[] | select(.status==\"paid\")'",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

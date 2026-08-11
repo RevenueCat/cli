@@ -29,6 +29,8 @@ type Chat struct {
 	Send func(ctx context.Context, message string, emit *ChatEmitter)
 	// Transcript preloads history (e.g. when resuming a conversation).
 	Transcript []ChatEntry
+	// Initial, when set, is sent as the first turn as soon as the window opens.
+	Initial string
 	// RelativeLinkBase, when set, prefixes relative markdown link targets
 	// ("[x](/path)") in assistant messages so they are clickable in a
 	// terminal (e.g. "https://app.revenuecat.com").
@@ -159,7 +161,12 @@ func (m *chatModel) cancelTurn() {
 	}
 }
 
-func (m *chatModel) Init() tea.Cmd { return textarea.Blink }
+func (m *chatModel) Init() tea.Cmd {
+	if m.cfg.Initial != "" {
+		return tea.Batch(textarea.Blink, m.startTurn(m.cfg.Initial))
+	}
+	return textarea.Blink
+}
 
 func (m *chatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {

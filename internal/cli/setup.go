@@ -1,17 +1,18 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -110,7 +111,7 @@ the step-by-step commands in the docs.`,
 		Annotations: map[string]string{
 			"surface":               "punted",
 			"requires_human":        "true",
-			"requires_human_reason": "launches the user's local AI agent in an interactive terminal; agents should follow the RevenueCat skills directly instead",
+			"requires_human_reason": "interactively it launches a local AI agent; run non-interactively (rc setup --json) to get the setup prompt to follow directly",
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runSetup(cmd)
@@ -121,8 +122,8 @@ the step-by-step commands in the docs.`,
 
 func runSetup(cmd *cobra.Command) error {
 	rt := RuntimeFrom(cmd.Context())
-	if rt.Globals.NoInput || !tui.IsInteractive() {
-		return errors.New("rc setup is interactive: it verifies the directory and launches your AI agent. Agents should use the RevenueCat skills directly (rc skills prompts --json)")
+	if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+		return runSetupAgentPrompt(cmd, rt)
 	}
 
 	dir, err := os.Getwd()
@@ -133,30 +134,27 @@ func runSetup(cmd *cobra.Command) error {
 	platform := platformFromLabel(projectLabel)
 	agents := detectAgents()
 
-	account := "not logged in"
-	if rt.Config != nil && rt.Config.BearerToken() != "" {
-		account = "logged in"
-		if rt.Config.AccountEmail != "" {
-			account = rt.Config.AccountEmail
-		}
+	rt.Out.Title("RevenueCat setup  ·  " + filepath.Base(dir))
+	rt.Out.Lead("An AI agent sets up RevenueCat for this app — you approve each step.")
+	rt.Out.Field("Project", projectLabel)
+	rt.Out.Field("Location", collapseHome(dir))
+	if len(agents) == 0 {
+		rt.Out.Field("Agents", "none found", "install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below")
 	}
 
-	rt.Out.Title("RevenueCat setup — " + filepath.Base(dir))
-	rt.Out.Lead("Hands your app's RevenueCat onboarding to an AI agent with RevenueCat's skills installed — nothing runs without your OK.")
-	rt.Out.Field("Directory", collapseHome(dir), projectLabel)
-	rt.Out.Field("Account", account)
-	agentNames := make([]string, 0, len(agents))
-	for _, a := range agents {
-		agentNames = append(agentNames, a.Name)
-	}
-	if len(agentNames) > 0 {
-		rt.Out.Field("Agents found", strings.Join(agentNames, ", "))
-	} else {
-		rt.Out.Field("Agents found", "none", "install Claude Code, Codex, Cursor, or Gemini CLI for agent-driven setup")
-	}
-
+	justAuthed := false
 	if rt.Config == nil || rt.Config.BearerToken() == "" {
 		if err := setupAuthenticate(cmd, rt); err != nil {
+			return err
+		}
+		justAuthed = true
+	}
+
+	newProjectPending := false
+	if rt.Config != nil && rt.Config.BearerToken() != "" {
+		var err error
+		newProjectPending, err = confirmSetupAccount(cmd, rt, dir, justAuthed)
+		if err != nil {
 			return err
 		}
 	}
@@ -164,18 +162,6 @@ func runSetup(cmd *cobra.Command) error {
 	rt.Out.Info("Checking where this project stands…")
 	stage := detectSetupStage(cmd, rt, platform)
 	rt.Out.Field("Stage", stage.Label)
-
-	// Everything that would interrupt the agent mid-run (Apple sign-in, 2FA)
-	// happens before the handoff.
-	appleDeferred := false
-	if stage.PromptID == "connect-apple" || (stage.PromptID == "test-store-ready" && rt.Config != nil && rt.Config.BearerToken() != "") {
-		if offerOneShotApple(cmd, rt, dir, platform) {
-			stage = detectSetupStage(cmd, rt, platform)
-			rt.Out.Field("Stage", stage.Label)
-		} else if platform == "ios" || platform == "cross" {
-			appleDeferred = true
-		}
-	}
 
 	if !projectDetected {
 		cont, err := tui.ConfirmDefault(false, "No app project detected in this directory. Set up here anyway?", false)
@@ -189,48 +175,48 @@ func runSetup(cmd *cobra.Command) error {
 		}
 	}
 
-	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
-	if appleDeferred {
-		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
-	}
+	// Apple runs before the handoff (the agent can't do 2FA); deferred until then.
+	applePending := (platform == "ios" || platform == "cross") &&
+		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
+
+	rt.Out.Title("Step 1 · Choose your agent")
 	choice, err := pickSetupAgent(agents)
 	if err != nil {
 		return err
 	}
 	if choice == nil {
-		rt.Out.Answer("Agent", "none — manual prompt")
+		rt.Out.Answer("Agent", "none — copy the prompt")
 		rt.Out.Blank()
-		rt.Out.Info("Paste this into any agent after running rc skills install:")
-		rt.Out.Info(prompt)
+		rt.Out.Info("Run rc skills install, then paste this into any agent:")
+		rt.Out.Info(setupAgentPrompt(rt, stage, applePending))
 		rt.Out.Hint("more starter prompts:  rc skills prompts")
 		return nil
 	}
 	rt.Out.Answer("Agent", choice.Name)
 
-	autonomy := autonomyTrusted
+	rt.Out.Title("Step 2 · Autonomy")
+	autonomy := autonomyFull
 	if err := tui.Form(false).
 		Field(huh.NewSelect[string]().
-			Title("How much should "+choice.Name+" do without asking?").
+			Title("How much can "+choice.Name+" do without stopping to ask?").
+			Description("You can interrupt anytime.").
 			Options(
-				huh.NewOption("Run the setup freely (pre-approves rc, file edits, and builds)", autonomyTrusted),
+				huh.NewOption("Run freely — no approval prompts", autonomyFull),
+				huh.NewOption("Pre-approve rc, edits, and builds; ask for anything unusual", autonomyTrusted),
 				huh.NewOption("Ask me before each step", autonomyManual),
-				huh.NewOption("Everything, no approvals at all", autonomyFull),
 			).
 			Value(&autonomy)).
 		Run(); err != nil {
 		return err
 	}
-	autonomyLabels := map[string]string{
-		autonomyTrusted: "run freely (rc, edits, builds pre-approved)",
-		autonomyManual:  "ask before each step",
-		autonomyFull:    "no approvals",
-	}
 	rt.Out.Answer("Autonomy", autonomyLabels[autonomy])
 
+	rt.Out.Title("Step 3 · Skills")
 	skillsScope := "project"
 	if err := tui.Form(false).
 		Field(huh.NewSelect[string]().
-			Title("Install the RevenueCat skills for this project or globally?").
+			Title("Install the RevenueCat skills here or globally?").
+			Description("Project keeps them with this repo; global shares them across every project on this machine.").
 			Options(
 				huh.NewOption("This project only", "project"),
 				huh.NewOption("Globally (all projects on this machine)", "global"),
@@ -239,15 +225,30 @@ func runSetup(cmd *cobra.Command) error {
 		Run(); err != nil {
 		return err
 	}
-	rt.Out.Answer("Skills", map[string]string{"project": "this project only", "global": "global"}[skillsScope])
+	rt.Out.Answer("Skills", skillsScopeLabels[skillsScope])
+
+	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
+	appleDeferred := applePending
+
+	prompt := setupAgentPrompt(rt, stage, appleDeferred)
 
 	rt.Out.Plan([]string{
-		"Install/update the RevenueCat AI Toolkit skills for " + choice.Name,
+		"Install the RevenueCat AI Toolkit skills for " + choice.Name,
 		"Configure the RevenueCat MCP for " + choice.Name,
-		"Launch " + choice.Name + " with the \"" + stage.PromptID + "\" prompt (takes over this terminal)",
+		"Launch " + choice.Name + " to build your Test Store catalog, paywall, and SDK integration",
 	})
+	if appleDeferred {
+		rt.Out.Info("Apple is deferred — the agent finishes everything that doesn't need it, then hands you the exact commands to connect App Store Connect when you're ready to ship.")
+	}
 	if err := confirmOrAbort(rt, "Launch "+choice.Name+" now?"); err != nil {
 		return err
+	}
+
+	// deferred to here so canceling setup above doesn't wipe the active project
+	if newProjectPending {
+		if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
+			rt.Out.Warn("Couldn't save the cleared project to your profile: " + err.Error())
+		}
 	}
 
 	rt.Out.Info("Installing the RevenueCat AI Toolkit skills…")
@@ -286,6 +287,147 @@ func runSetup(cmd *cobra.Command) error {
 	agent := exec.CommandContext(cmd.Context(), choice.Binary, choice.LaunchArgs(prompt, autonomy)...)
 	agent.Stdin, agent.Stdout, agent.Stderr = os.Stdin, os.Stdout, os.Stderr
 	return agent.Run()
+}
+
+var autonomyLabels = map[string]string{
+	autonomyTrusted: "pre-approve rc, edits, builds; ask for the rest",
+	autonomyManual:  "ask before each step",
+	autonomyFull:    "run freely (no approval prompts)",
+}
+
+var skillsScopeLabels = map[string]string{
+	"project": "this project only",
+	"global":  "global",
+}
+
+// confirmSetupAccount confirms the account and picks the project for this app,
+// defaulting a new app to a fresh project rather than the active one.
+func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string, justAuthed bool) (newProjectPending bool, err error) {
+	const (
+		optNewProject = iota
+		optExistingProject
+		optSwitchAccount
+		optContinue
+	)
+	for {
+		active := rt.Config != nil && rt.Config.ProjectID != ""
+		title := "Create a new RevenueCat project for " + filepath.Base(dir) + "?"
+		opts := []huh.Option[int]{
+			huh.NewOption("Yes — new project", optNewProject),
+			huh.NewOption("Use an existing project", optExistingProject),
+		}
+		choice := optNewProject
+		if active {
+			// New stays the default: the active project is profile-global, not this dir's
+			title = "Set up " + filepath.Base(dir) + " — new project, or continue an existing one?"
+			opts = []huh.Option[int]{
+				huh.NewOption("New project for "+filepath.Base(dir), optNewProject),
+				huh.NewOption("Continue with "+activeProjectLabel(cmd, rt), optContinue),
+				huh.NewOption("Use a different project", optExistingProject),
+			}
+		}
+		// Switching accounts only makes sense if we didn't just log them in.
+		if !justAuthed {
+			opts = append(opts, huh.NewOption("Switch account", optSwitchAccount))
+		}
+		if err := tui.Form(false).
+			Field(huh.NewSelect[int]().Title(title).Options(opts...).Value(&choice)).
+			Run(); err != nil {
+			return false, err
+		}
+
+		switch choice {
+		case optContinue:
+			return false, nil
+		case optNewProject:
+			// persisted after launch is confirmed, not here
+			rt.Config.ProjectID = ""
+			return true, nil
+		case optExistingProject:
+			use, _, err := cmd.Root().Find([]string{"projects", "use"})
+			if err != nil || use == nil {
+				return false, fmt.Errorf("couldn't open the project picker — run `rc projects use`, then rerun setup")
+			}
+			use.SetContext(cmd.Context())
+			if err := use.RunE(use, nil); err != nil {
+				rt.Out.Warn("Project not changed: " + err.Error())
+				continue
+			}
+			return false, nil
+		case optSwitchAccount:
+			rt.Config.AccountEmail = ""
+			rt.Config.AccountName = ""
+			if err := loginWithOAuth(cmd.Context(), rt); err != nil {
+				return false, err
+			}
+		}
+	}
+}
+
+// activeProjectLabel resolves the active project's name via the API, falling
+// back to the ID.
+func activeProjectLabel(cmd *cobra.Command, rt *Runtime) string {
+	id := rt.Config.ProjectID
+	client, err := rt.API()
+	if err != nil {
+		return id
+	}
+	if p, err := client.Projects.Get(cmd.Context(), id); err == nil && p.Name != "" {
+		return p.Name + " (" + id + ")"
+	}
+	return id
+}
+
+// setupAgentPrompt is the starter prompt handed to the agent, with the
+// Apple-deferred instruction appended when relevant.
+func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool) string {
+	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
+	if appleDeferred {
+		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
+	}
+	return prompt
+}
+
+// runSetupAgentPrompt emits the stage-aware setup prompt for a non-interactive
+// (agent) run instead of launching a nested agent.
+func runSetupAgentPrompt(cmd *cobra.Command, rt *Runtime) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	projectLabel, _ := detectAppProject(dir)
+	platform := platformFromLabel(projectLabel)
+	stage := detectSetupStage(cmd, rt, platform)
+	authed := rt.Config != nil && rt.Config.BearerToken() != ""
+	applePending := (platform == "ios" || platform == "cross") &&
+		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
+
+	prompt := setupAgentPrompt(rt, stage, applePending) + setupAuthHandbackNote(authed)
+
+	if rt.Globals.JSON {
+		return rt.Out.Render(map[string]any{
+			"prompt":         prompt,
+			"stage":          stage.PromptID,
+			"authenticated":  authed,
+			"apple_deferred": applePending,
+			"platform":       platform,
+		})
+	}
+	fmt.Fprintln(cmd.OutOrStdout(), prompt)
+	return nil
+}
+
+// setupAuthHandbackNote appends auth guidance when logged out: headless signup
+// is fine, but existing-account login is a human step to hand back.
+func setupAuthHandbackNote(authed bool) string {
+	if authed {
+		return ""
+	}
+	savePassword := ""
+	if runtime.GOOS == "darwin" {
+		savePassword = " --save-password"
+	}
+	return "\n\nAuth: you are not logged in. If the user has no RevenueCat account, create one without a browser: `rc auth signup --email <user's email> --name \"<user's name>\" --generate-password" + savePassword + " --accept-terms --no-input --json` — but only after the user explicitly agrees to the RevenueCat Terms of Service and Privacy Policy. If the user already has an account, STOP and ask them to run `rc auth login` (a browser sign-in you cannot perform), then continue."
 }
 
 // setupStage is where this project stands in the onboarding journey; it
@@ -413,42 +555,25 @@ func setupAuthenticate(cmd *cobra.Command, rt *Runtime) error {
 	const (
 		optLogin = iota
 		optSignup
-		optSkip
 	)
 	choice := optLogin
 	if err := tui.Form(false).
 		Field(huh.NewSelect[int]().
-			Title("You're not logged in. What would you like to do?").
+			Title("You're not logged in — how would you like to sign in?").
 			Options(
 				huh.NewOption("Log in (opens your browser)", optLogin),
 				huh.NewOption("Create a RevenueCat account", optSignup),
-				huh.NewOption("Skip — the agent can handle it later", optSkip),
 			).
 			Value(&choice)).
 		Run(); err != nil {
 		return err
 	}
-	switch choice {
-	case optLogin:
-		if err := loginWithOAuth(cmd.Context(), rt); err != nil {
-			return err
-		}
-	case optSignup:
+	if choice == optSignup {
 		signup := newAuthSignupCmd()
 		signup.SetContext(cmd.Context())
-		if err := signup.RunE(signup, nil); err != nil {
-			return err
-		}
-	default:
-		rt.Out.Answer("Account", "skipped — the agent will sign you in or up")
-		return nil
+		return signup.RunE(signup, nil)
 	}
-	account := "logged in"
-	if rt.Config != nil && rt.Config.AccountEmail != "" {
-		account = rt.Config.AccountEmail
-	}
-	rt.Out.Answer("Account", account)
-	return nil
+	return loginWithOAuth(cmd.Context(), rt)
 }
 
 func starterPromptByID(id string) string {

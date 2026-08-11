@@ -132,6 +132,13 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 					}
 					generatePassword = passwordMode == passwordGenerate
 					rt.Out.Answer("Password", map[bool]string{true: "generate", false: "create my own"}[generatePassword])
+					if generatePassword {
+						note := `You can set your own anytime with "Forgot password?" at revenuecat.com.`
+						if runtime.GOOS == "darwin" {
+							note = "We'll offer to save it to your macOS Keychain. " + note
+						}
+						rt.Out.Info(note)
+					}
 				}
 				if password == "" && !generatePassword {
 					var confirmation string
