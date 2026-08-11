@@ -36,9 +36,10 @@ huge instruction dumps. Give short general direction. Be specific only about
 concrete brand facts (colors, fonts, images, tone). Leave layout and design
 decisions to the editor. When editing, make one theme of change per turn.
 
-Never accept the first result. Every completed turn writes a preview
-screenshot; judge it against the direction. Expect 2-4 edit turns before the
-design is right. Undo a bad turn with rc paywalls rewind.
+Iterating is the normal workflow: expect several edit turns until the result
+is acceptable, not a perfect first try. Every completed turn writes a preview
+screenshot; judge it against the direction and keep editing until it matches.
+Undo a bad turn with rc paywalls rewind.
 
 Custom assets: upload the app's real fonts with rc fonts upload and real
 images (logo, hero) with rc media-assets upload BEFORE designing, then
