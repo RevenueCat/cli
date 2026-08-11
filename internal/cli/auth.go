@@ -417,7 +417,7 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 				rt.Out.Field("Credential", credSource.Describe())
 			}
 			if conflict != nil {
-				rt.Out.Warn(conflict["message"].(string))
+				rt.warnCredentialConflict(credSource)
 			}
 			if showScopes && authenticated {
 				if scopesKnown {
