@@ -122,6 +122,7 @@ func commandSchema(c *cobra.Command) map[string]any {
 	schema := map[string]any{
 		"name":         c.Name(),
 		"path":         commandPath(c),
+		"group":        c.GroupID,
 		"aliases":      c.Aliases,
 		"use":          c.Use,
 		"short":        c.Short,
@@ -258,6 +259,7 @@ func commandTree(c *cobra.Command) map[string]any {
 	tree := map[string]any{
 		"name":         c.Name(),
 		"path":         commandPath(c),
+		"group":        c.GroupID,
 		"short":        c.Short,
 		"aliases":      c.Aliases,
 		"runnable":     c.Runnable(),

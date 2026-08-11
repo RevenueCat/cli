@@ -64,3 +64,24 @@ func TestCurateSurface(t *testing.T) {
 		t.Error("--all should reveal a punted command")
 	}
 }
+
+func TestEveryCommandHasARegisteredGroup(t *testing.T) {
+	valid := map[string]bool{}
+	for _, g := range commandGroups {
+		valid[g.ID] = true
+	}
+	root := NewRootCmd("test")
+	for _, c := range root.Commands() {
+		switch c.Name() {
+		case "help", "completion":
+			continue
+		}
+		if c.GroupID == "" {
+			t.Errorf("command %q has no group — set one in NewRootCmd's grouped table", c.Name())
+			continue
+		}
+		if !valid[c.GroupID] {
+			t.Errorf("command %q has group %q not in commandGroups", c.Name(), c.GroupID)
+		}
+	}
+}
