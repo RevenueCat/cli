@@ -30,7 +30,7 @@ the code when adding/renaming a command.
    `internal/cli/surface.go`):
    - **human** — in the `humanSurface` allowlist, shown in `rc --help`. Keep
      this list tight; it's the first thing a person sees. Currently:
-     `paywalls`, `capital`, `apps`, `auth`, `projects`, `version` (+ `login`).
+     `paywalls`, `apps`, `auth`, `projects`, `version` (+ `login`).
    - **agent-only** (default) — hidden from `rc --help`, but present in
      `rc commands --schemas` and fully runnable. Most resource commands live
      here: humans reach them through guided flows/pickers; agents discover
@@ -95,7 +95,7 @@ names; there's no list endpoint.
 ```
 # Onboarding entry points (the two scoped npx surfaces)
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
-rc capital setup                                         # RevenueCat Capital = App Store Connect key flow (wraps apps apple setup)
+rc capital setup                                         # EXPERIMENTAL (hidden from --help/schema until Capital ships): App Store Connect key flow (wraps apps apple setup)
 rc                                                       # bare rc -> getting-started help; --all reveals every command
 
 # Auth / meta
