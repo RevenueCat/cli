@@ -136,7 +136,9 @@ turns until the design is right. The draft stays unpublished; review it and
 run rc paywalls publish.
 
 Do not generate blind: read the app's theme and brand files and collect app
-screenshots before the first turn. Keep the prompt SHORT — a few sentences of
+screenshots before the first turn. If the app ships custom fonts (.ttf/.otf
+in the codebase), upload them with rc fonts upload first and name the
+returned font_key in prompts. Keep the prompt SHORT — a few sentences of
 general direction plus concrete brand facts (exact hex colors, font names,
 tone words, real feature names). Do not write huge instruction dumps or
 dictate the full layout; long prompts make the editor produce worse designs —
@@ -262,6 +264,9 @@ Using it well:
   - Pass design references: --attachment DESIGN.md folds text style guides
     into the direction; --attachment screenshot.png (or --image) attaches
     visually, up to 3 images total.
+  - Use the app's real fonts: upload .ttf/.otf files from the codebase with
+    rc fonts upload (rc fonts list shows existing ones), then name the
+    font_key in the prompt and say which text to apply it to.
   - Keep the SAME --session file across turns — it is the conversation
     memory. A lost session file starts the design conversation over.
   - The Paywall AI editor may reply with a clarifying question instead of a design (it
