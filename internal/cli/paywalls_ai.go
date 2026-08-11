@@ -289,8 +289,7 @@ Using it well:
   - Each completed turn writes a preview screenshot next to the session file
     (and a dark-mode one when the design has dark mode); its path is shown in
     the output. Look at it after every turn and judge it against the
-    direction; in the next prompt, describe what is still wrong rather than
-    resending the previous prompt.
+    direction; in the next prompt, describe what is still wrong.
   - Turns take one to several minutes and stream progress; run with an
     extended timeout (--timeout) or in the background rather than polling.
   - Undo the last turn:  rc paywalls rewind --session <file>`,
