@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/huh"
@@ -294,22 +295,11 @@ func derefStr(s *string) string {
 	return *s
 }
 
-// dashboardProjectID strips the alphabetic type prefix (and optional underscore
-// separator) from an API resource ID so it can be used in dashboard URLs.
-//
-//	"proj5adb8697"  → "5adb8697"   (no underscore)
-//	"app_abc123"    → "abc123"     (underscore separator)
-//	"ofrng_xyz"     → "xyz"
+// dashboardProjectID strips the "proj" prefix (and an optional "_" separator) from a project ID for use in dashboard URLs.
 func dashboardProjectID(id string) string {
-	i := 0
-	for i < len(id) && ((id[i] >= 'a' && id[i] <= 'z') || (id[i] >= 'A' && id[i] <= 'Z')) {
-		i++
+	s := strings.TrimPrefix(id, "proj")
+	if s == id {
+		return id
 	}
-	if i < len(id) && id[i] == '_' {
-		i++
-	}
-	if i < len(id) {
-		return id[i:]
-	}
-	return id
+	return strings.TrimPrefix(s, "_")
 }
