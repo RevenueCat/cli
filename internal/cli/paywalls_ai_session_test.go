@@ -44,7 +44,7 @@ func newTestSession() *paywallAISession {
 	}
 }
 
-func astraFailingServer(t *testing.T, startedSessionID string) *httptest.Server {
+func failingEditorServer(t *testing.T, startedSessionID string) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
@@ -54,8 +54,8 @@ func astraFailingServer(t *testing.T, startedSessionID string) *httptest.Server 
 }
 
 func TestRunPaywallAI_FailedRunPersistsSessionID(t *testing.T) {
-	astra := astraFailingServer(t, "sess_minted")
-	defer astra.Close()
+	editor := failingEditorServer(t, "sess_minted")
+	defer editor.Close()
 
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "session"+paywallSessionSuffix)
@@ -65,7 +65,7 @@ func TestRunPaywallAI_FailedRunPersistsSessionID(t *testing.T) {
 	}
 
 	rt := newSessionTestRuntime("https://rc.invalid")
-	opts := paywallAIOptions{baseURL: astra.URL, sessionPath: sessionPath, prompt: "make it blue", timeout: 30 * time.Second}
+	opts := paywallAIOptions{baseURL: editor.URL, sessionPath: sessionPath, prompt: "make it blue", timeout: 30 * time.Second}
 	if err := runPaywallAI(context.Background(), rt, opts, session); err == nil {
 		t.Fatal("expected the failed run to return an error")
 	}
@@ -80,8 +80,8 @@ func TestRunPaywallAI_FailedRunPersistsSessionID(t *testing.T) {
 }
 
 func TestRunPaywallAI_EmptyRunStartedKeepsStoredSessionID(t *testing.T) {
-	astra := astraFailingServer(t, "")
-	defer astra.Close()
+	editor := failingEditorServer(t, "")
+	defer editor.Close()
 
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "session"+paywallSessionSuffix)
@@ -92,7 +92,7 @@ func TestRunPaywallAI_EmptyRunStartedKeepsStoredSessionID(t *testing.T) {
 	}
 
 	rt := newSessionTestRuntime("https://rc.invalid")
-	opts := paywallAIOptions{baseURL: astra.URL, sessionPath: sessionPath, prompt: "keep going", timeout: 30 * time.Second}
+	opts := paywallAIOptions{baseURL: editor.URL, sessionPath: sessionPath, prompt: "keep going", timeout: 30 * time.Second}
 	if err := runPaywallAI(context.Background(), rt, opts, session); err == nil {
 		t.Fatal("expected the failed run to return an error")
 	}
@@ -137,13 +137,13 @@ func (m *rcPaywallMock) server(t *testing.T) *httptest.Server {
 	}))
 }
 
-type astraEchoServer struct {
+type echoEditorServer struct {
 	mu       sync.Mutex
 	received []string
 	minted   int
 }
 
-func (s *astraEchoServer) server(t *testing.T) *httptest.Server {
+func (s *echoEditorServer) server(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
@@ -167,10 +167,10 @@ func (s *astraEchoServer) server(t *testing.T) *httptest.Server {
 	}))
 }
 
-func runEditTurn(t *testing.T, configDir, astraURL, rcURL, paywallID string) {
+func runEditTurn(t *testing.T, configDir, editorURL, rcURL, paywallID string) {
 	t.Helper()
 	t.Setenv("RC_CONFIG_DIR", configDir)
-	t.Setenv("RC_PAYWALL_AI_BASE_URL", astraURL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", editorURL)
 	cmd := newPaywallsEditCmd()
 	rt := newSessionTestRuntime(rcURL)
 	cmd.SetContext(WithRuntime(context.Background(), rt))
@@ -186,17 +186,17 @@ func TestPaywallsEdit_AutoContinuesSessionAcrossTurns(t *testing.T) {
 	rc := &rcPaywallMock{}
 	rcServer := rc.server(t)
 	defer rcServer.Close()
-	astra := &astraEchoServer{}
-	astraServer := astra.server(t)
-	defer astraServer.Close()
+	editor := &echoEditorServer{}
+	editorServer := editor.server(t)
+	defer editorServer.Close()
 
 	configDir := t.TempDir()
-	runEditTurn(t, configDir, astraServer.URL, rcServer.URL, "pw_test")
-	runEditTurn(t, configDir, astraServer.URL, rcServer.URL, "pw_test")
+	runEditTurn(t, configDir, editorServer.URL, rcServer.URL, "pw_test")
+	runEditTurn(t, configDir, editorServer.URL, rcServer.URL, "pw_test")
 
-	astra.mu.Lock()
-	received := append([]string(nil), astra.received...)
-	astra.mu.Unlock()
+	editor.mu.Lock()
+	received := append([]string(nil), editor.received...)
+	editor.mu.Unlock()
 
 	if len(received) != 2 {
 		t.Fatalf("expected 2 editor turns, got %d: %v", len(received), received)
@@ -216,9 +216,9 @@ func TestPaywallsEdit_ExplicitSessionOverridesDefault(t *testing.T) {
 	rc := &rcPaywallMock{}
 	rcServer := rc.server(t)
 	defer rcServer.Close()
-	astra := &astraEchoServer{}
-	astraServer := astra.server(t)
-	defer astraServer.Close()
+	editor := &echoEditorServer{}
+	editorServer := editor.server(t)
+	defer editorServer.Close()
 
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "custom"+paywallSessionSuffix)
@@ -229,7 +229,7 @@ func TestPaywallsEdit_ExplicitSessionOverridesDefault(t *testing.T) {
 	}
 
 	t.Setenv("RC_CONFIG_DIR", t.TempDir())
-	t.Setenv("RC_PAYWALL_AI_BASE_URL", astraServer.URL)
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", editorServer.URL)
 	cmd := newPaywallsEditCmd()
 	rt := newSessionTestRuntime(rcServer.URL)
 	cmd.SetContext(WithRuntime(context.Background(), rt))
@@ -240,9 +240,9 @@ func TestPaywallsEdit_ExplicitSessionOverridesDefault(t *testing.T) {
 		t.Fatalf("edit with --session failed: %v", err)
 	}
 
-	astra.mu.Lock()
-	received := append([]string(nil), astra.received...)
-	astra.mu.Unlock()
+	editor.mu.Lock()
+	received := append([]string(nil), editor.received...)
+	editor.mu.Unlock()
 	if len(received) != 1 || received[0] != "sess_explicit" {
 		t.Fatalf("--session did not drive the request session id: %v", received)
 	}
