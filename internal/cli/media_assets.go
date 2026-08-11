@@ -114,23 +114,11 @@ func newMediaAssetsUploadCmd() *cobra.Command {
 		Short: "Upload an image to the project Media Gallery",
 		Long: `Uploads an image to the project Media Gallery for use in paywalls.
 
-Compose the reference URL as asset_base_url + "/" + object_name from the
-upload response. Per-rendition URLs come from formats.<name>.object_name.
-Reuse the original URL for any rendition missing from the response.
+The reference URL is asset_base_url + "/" + object_name from the upload
+response; the command prints it after the upload.
 
-An image component's source needs exactly these fields — all required, no
-extra keys, https URLs from the upload response only:
-
-  "source": {"light": {"width", "height", "original", "webp",
-             "webp_low_res", "heic", "heic_low_res"}}
-
-A background image takes this form:
-
-  {"type": "image", "value": {"light": {…}}, "fit_mode": "fill"}
-
-Two routes to place it: paste the URL into an rc paywalls edit prompt for the
-editor to place it, or PATCH the components directly (see rc paywalls --help
-for the recipe).`,
+Place it through rc paywalls edit: paste the URL into the prompt and say
+where it goes ("use https://assets.pawwalls.com/… as the hero image").`,
 		Example: `  rc media-assets upload ./hero.png
   rc media-assets upload ./hero.png --json`,
 		Args: cobra.ExactArgs(1),
