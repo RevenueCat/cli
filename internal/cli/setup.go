@@ -256,10 +256,12 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	install := exec.CommandContext(cmd.Context(), npxPath, installArgs...)
 	// Run from a temp dir so the global install can't drop a lockfile in the app repo.
-	if tmp, err := os.MkdirTemp("", "rc-skills-"); err == nil {
-		install.Dir = tmp
-		defer os.RemoveAll(tmp)
+	tmp, err := os.MkdirTemp("", "rc-skills-")
+	if err != nil {
+		return fmt.Errorf("create isolated skills install directory: %w", err)
 	}
+	install.Dir = tmp
+	defer os.RemoveAll(tmp)
 	if out, err := install.CombinedOutput(); err != nil {
 		tail := string(out)
 		if len(tail) > 1200 {
