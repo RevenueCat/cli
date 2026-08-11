@@ -114,11 +114,9 @@ func newMediaAssetsUploadCmd() *cobra.Command {
 		Short: "Upload an image to the project Media Gallery",
 		Long: `Uploads an image to the project Media Gallery for use in paywalls.
 
-The reference URL is asset_base_url + "/" + object_name from the upload
-response; the command prints it after the upload.
-
-Place it through rc paywalls edit: paste the URL into the prompt and say
-where it goes ("use https://assets.pawwalls.com/… as the hero image").`,
+The upload response includes the asset URL. Use that URL to place the image
+in a paywall through rc paywalls edit: paste it into the prompt and say where
+it goes ("use https://assets.pawwalls.com/… as the hero image").`,
 		Example: `  rc media-assets upload ./hero.png
   rc media-assets upload ./hero.png --json`,
 		Args: cobra.ExactArgs(1),
