@@ -18,6 +18,24 @@ func newPaywallsCmd() *cobra.Command {
 		Use:     "paywalls",
 		Aliases: []string{"paywall"},
 		Short:   "Create and inspect Paywalls",
+		Long: `Design, iterate on, and publish paywalls.
+
+The design workflow: generate a draft with rc paywalls generate, look at the
+preview screenshot it writes, iterate with rc paywalls edit on the SAME
+--session, and run rc paywalls publish only after the user reviewed and
+approved the design. See generate's and edit's help for how to prompt well.
+
+Iterating is the normal workflow: expect several edit turns until the result
+is acceptable, not a perfect first try. Every completed turn writes a preview
+screenshot; judge it against the direction and keep editing until it matches.
+Undo a bad turn with rc paywalls rewind.
+
+Custom assets: upload the app's real fonts with rc fonts upload and real
+images (logo, hero) with rc media-assets upload BEFORE designing, then
+reference them in prompts — see those commands' help for the exact wiring.
+
+Publishing is customer-facing: review the preview screenshot and the builder
+URL, get the user's approval, then rc paywalls publish.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if !guidedMode() || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
@@ -113,7 +131,8 @@ func newPaywallsPublishCmd() *cobra.Command {
 		Short: "Publish the current Paywall draft",
 		Long: `Publishes the current draft and makes its components available to RevenueCat SDKs.
 
-This changes the customer-facing paywall. Review the draft before publishing.
+This changes what customers see. Review the preview screenshot and the
+dashboard builder URL, and get the user's approval before publishing.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc paywalls publish pw_abc
@@ -231,6 +250,10 @@ func newPaywallsShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show [id]",
 		Short: "Show a Paywall",
+		Long: `Prints paywall metadata: offering, timestamps, publish state.
+
+For design work, look at the session preview screenshot and the dashboard
+builder URL instead — show returns metadata, not visuals.`,
 		Example: `  rc paywalls show pw_abc
   rc paywalls show pw_abc --json`,
 		Args: cobra.MaximumNArgs(1),
@@ -260,16 +283,22 @@ func newPaywallsShowCmd() *cobra.Command {
 }
 
 func newPaywallsDeleteCmd() *cobra.Command {
-	return &cobra.Command{
+	var force bool
+	cmd := &cobra.Command{
 		Use:   "delete [id]",
 		Short: "Delete a Paywall",
 		Long: `Permanently deletes a paywall.
 
 Reversibility: irreversible. Recreate the paywall if it is deleted.
 
+A paywall that is attached to an offering or published refuses to delete
+unless --force is passed — --yes alone is not enough. It may be live or
+someone else's in-progress work; get explicit consent from the user first.
+
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc paywalls delete pw_old --yes`,
-		Args:    cobra.MaximumNArgs(1),
+		Example: `  rc paywalls delete pw_old --yes
+  rc paywalls delete pw_attached --force --yes`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -286,17 +315,42 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			args = []string{pickedID}
-			if err := confirmOrAbort(rt, fmt.Sprintf("Delete paywall %q?", args[0])); err != nil {
+			paywall, err := client.Paywalls.Get(cmd.Context(), projectID, pickedID)
+			if err != nil {
 				return err
 			}
-			if err := client.Paywalls.Delete(cmd.Context(), projectID, args[0]); err != nil {
+			if !force {
+				switch {
+				case paywall.PublishedAt != nil:
+					return WithHint(
+						fmt.Errorf("paywall %s is published — customers may be seeing it", pickedID),
+						"Deletion is irreversible. Unpublish it first (rc paywalls unpublish "+pickedID+") and detach it from its offering in the dashboard, or re-run with --force after the user explicitly confirms this paywall should be destroyed.",
+					)
+				case paywall.OfferingID != "":
+					return WithHint(
+						fmt.Errorf("paywall %s is attached to offering %s and may be someone's in-progress work", pickedID, paywall.OfferingID),
+						"Deletion is irreversible. Re-run with --force only after the user explicitly confirms this paywall should be destroyed. To free the offering for a new design instead, generate a standalone draft (rc paywalls generate without --offering-id) and attach it in the dashboard.",
+					)
+				}
+			}
+			if paywall.PublishedAt != nil {
+				rt.Out.Warn("This paywall is published — customers may be seeing it.")
+			}
+			if paywall.OfferingID != "" {
+				rt.Out.Warn(fmt.Sprintf("Attached to offering %s.", paywall.OfferingID))
+			}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Permanently delete paywall %s?", paywallPickerLabel(*paywall))); err != nil {
 				return err
 			}
-			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+			if err := client.Paywalls.Delete(cmd.Context(), projectID, pickedID); err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Deleted %s", pickedID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": pickedID})
 		},
 	}
+	cmd.Flags().BoolVar(&force, "force", false, "delete even when the paywall is attached to an offering or published")
+	return cmd
 }
 
 // wrapPaywallActionGateError explains the beta gate on the paywall

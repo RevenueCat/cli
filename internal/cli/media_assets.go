@@ -53,7 +53,7 @@ func loadMediaAsset(path string) (api.CreateMediaAssetJSONBody, error) {
 func newMediaAssetsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "media-assets",
-		Short: "Manage project media assets",
+		Short: "Manage project images for paywalls (Media Gallery)",
 	}
 	cmd.AddCommand(newMediaAssetsUploadCmd(), newMediaAssetsListCmd())
 	return cmd
@@ -112,6 +112,11 @@ func newMediaAssetsUploadCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "upload <file>",
 		Short: "Upload an image to the project Media Gallery",
+		Long: `Uploads an image to the project Media Gallery for use in paywalls.
+
+The upload response includes the asset URL. Use that URL to place the image
+in a paywall through rc paywalls edit: paste it into the prompt and say where
+it goes ("use https://assets.pawwalls.com/… as the hero image").`,
 		Example: `  rc media-assets upload ./hero.png
   rc media-assets upload ./hero.png --json`,
 		Args: cobra.ExactArgs(1),
