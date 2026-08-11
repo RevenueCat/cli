@@ -66,7 +66,7 @@ func commandTreeWithSchemas(c *cobra.Command) map[string]any {
 	tree := commandSchema(c)
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
+		if experimentalFromSchema(sc) {
 			continue
 		}
 		subs = append(subs, commandTreeWithSchemas(sc))
@@ -108,7 +108,7 @@ func commandSchema(c *cobra.Command) map[string]any {
 
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
+		if experimentalFromSchema(sc) {
 			continue
 		}
 		subs = append(subs, map[string]any{
@@ -158,7 +158,7 @@ func inferCapabilities(c *cobra.Command) []string {
 		acc.add(canonicalVerb(c.Name()))
 	}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
+		if experimentalFromSchema(sc) {
 			continue
 		}
 		collectCapabilities(sc, []string{sc.Name()}, acc)
@@ -171,7 +171,7 @@ func collectCapabilities(c *cobra.Command, path []string, acc *capAccumulator) {
 		acc.add(capLabel(path))
 	}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
+		if experimentalFromSchema(sc) {
 			continue
 		}
 		collectCapabilities(sc, append(append([]string{}, path...), sc.Name()), acc)
@@ -251,7 +251,7 @@ func commandPath(c *cobra.Command) string {
 func commandTree(c *cobra.Command) map[string]any {
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
+		if experimentalFromSchema(sc) {
 			continue
 		}
 		subs = append(subs, commandTree(sc))

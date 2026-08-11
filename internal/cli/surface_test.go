@@ -10,7 +10,7 @@ import (
 // --help, agents/JSON see everything. These guard the two invariants that
 // keep that honest.
 
-// Agent discovery (rc commands --schemas) must include every non-punted
+// Agent discovery (rc commands --schemas) must include every non-experimental
 // command, including setup (agents run it non-interactively for the prompt).
 func TestCommandSurface_SchemaIncludesAgentCommands(t *testing.T) {
 	root := NewRootCmd("test")
@@ -28,10 +28,10 @@ func TestCommandSurface_SchemaIncludesAgentCommands(t *testing.T) {
 
 // The human-help curation runs behind a testing.Testing() short-circuit, so
 // this drives curateSurface directly: the full surface shows by default, a
-// punted command is held back until --all, and aliases stay hidden.
+// experimental command is held back until --all, and aliases stay hidden.
 func TestCurateSurface(t *testing.T) {
 	root := NewRootCmd("test")
-	root.AddCommand(&cobra.Command{Use: "x-punted", Annotations: map[string]string{annotationSurface: surfacePunted}})
+	root.AddCommand(&cobra.Command{Use: "x-experimental", Annotations: map[string]string{annotationSurface: surfaceExperimental}})
 	hidden := func(name string) bool {
 		for _, c := range root.Commands() {
 			if c.Name() == name {
@@ -55,13 +55,13 @@ func TestCurateSurface(t *testing.T) {
 	if !hidden("login") {
 		t.Error("the back-compat 'login' alias should stay hidden")
 	}
-	if !hidden("x-punted") {
-		t.Error("a punted command should be hidden by default")
+	if !hidden("x-experimental") {
+		t.Error("a experimental command should be hidden by default")
 	}
 
 	curateSurface(root, true) // rc --all
-	if hidden("x-punted") {
-		t.Error("--all should reveal a punted command")
+	if hidden("x-experimental") {
+		t.Error("--all should reveal a experimental command")
 	}
 }
 

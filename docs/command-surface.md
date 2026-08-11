@@ -35,7 +35,7 @@ the code when adding/renaming a command.
      `rc commands --schemas` and fully runnable. Most resource commands live
      here: humans reach them through guided flows/pickers; agents discover
      them through the schema channel.
-   - **punted** (`surface: "punted"` annotation) — hidden from `--help` *and*
+   - **experimental** (`surface: "experimental"` annotation) — hidden from `--help` *and*
      schema, still runnable. For under-DX-tested commands. Promote to a real
      tier once tested.
    `rc --all` / `RC_SURFACE=full` reveals everything to humans. Hidden never
