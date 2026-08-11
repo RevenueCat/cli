@@ -383,7 +383,6 @@ func newAuthStatusCmd() *cobra.Command {
 				rt.Out.Success(fmt.Sprintf("Logged in as %s (profile: %s)", identity, profileName))
 			} else {
 				rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", profileName))
-				rt.Out.Info("Account identity is not cached for this login")
 			}
 			if projectStatus == "not_found" {
 				rt.Out.Warn(fmt.Sprintf("Configured project %s is no longer accessible; run `rc projects use`", rt.Config.ProjectID))
