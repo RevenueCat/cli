@@ -18,6 +18,47 @@ func newPaywallsCmd() *cobra.Command {
 		Use:     "paywalls",
 		Aliases: []string{"paywall"},
 		Short:   "Create and inspect paywalls",
+		Long: `Design, iterate on, and publish paywalls.
+
+The design workflow: generate a draft with rc paywalls generate, look at the
+preview screenshot it writes, iterate with rc paywalls edit on the SAME
+--session, and run rc paywalls publish only after the user reviewed and
+approved the design.
+
+Ground the design in the app's brand before generating. Read the app's theme
+and brand files first. Collect exact hex colors, font choices, tone words,
+and real feature names. Pass brand docs via --attachment DESIGN.md, app
+screenshots via --image (max 3), and audience or product context via
+--context.
+
+Do not over-prompt. The Paywall AI editor produces worse designs from huge
+instruction dumps. Give short general direction. Be specific only about
+concrete brand facts (colors, fonts, images, tone). Leave layout and design
+decisions to the editor. When editing, make one theme of change per turn.
+
+Never accept the first result. Every completed turn writes a preview
+screenshot; judge it against the direction. Expect 2-4 edit turns before the
+design is right. Undo a bad turn with rc paywalls rewind.
+
+Custom assets: upload the app's real fonts with rc fonts upload and real
+images (logo, hero) with rc media-assets upload BEFORE designing, then
+reference them — see those commands' help for the exact wiring. The editor
+cannot ingest local files itself; --image attachments are visual references
+only.
+
+To wire uploaded assets without an editor turn, PATCH the draft directly:
+
+  rc api GET "/projects/<p>/paywalls/<id>?expand=components"  # read draft + revision
+  # edit components_config: set image source / font_name
+  rc api PATCH /projects/<p>/paywalls/<id> --body @body.json  # revision, components_config,
+                                                              # components_localizations, default_locale
+
+A direct PATCH bumps the draft revision, so any open --session diverges and
+the next edit starts fresh. Wire assets before or between AI sessions, or via
+an edit prompt.
+
+Publishing is customer-facing: review the preview screenshot and the builder
+URL, get the user's approval, then rc paywalls publish.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if !guidedMode() || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
@@ -111,7 +152,8 @@ func newPaywallsPublishCmd() *cobra.Command {
 		Short: "Publish the current paywall draft",
 		Long: `Publishes the current draft and makes its components available to RevenueCat SDKs.
 
-This changes the customer-facing paywall. Review the draft before publishing.
+This changes what customers see. Review the preview screenshot and the
+dashboard builder URL, and get the user's approval before publishing.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc paywalls publish pw_abc
@@ -229,7 +271,11 @@ func newPaywallsShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show [id]",
 		Short: "Show a paywall",
-		Args:  cobra.MaximumNArgs(1),
+		Long: `Prints paywall metadata: offering, timestamps, publish state.
+
+For design work, look at the session preview screenshot and the dashboard
+builder URL instead — show returns metadata, not visuals.`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

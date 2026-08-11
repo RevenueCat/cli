@@ -53,7 +53,7 @@ func loadMediaAsset(path string) (api.CreateMediaAssetJSONBody, error) {
 func newMediaAssetsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "media-assets",
-		Short: "Manage project media assets",
+		Short: "Manage project images for paywalls (Media Gallery)",
 	}
 	cmd.AddCommand(newMediaAssetsUploadCmd(), newMediaAssetsListCmd())
 	return cmd
@@ -119,7 +119,26 @@ func newMediaAssetsUploadCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "upload <file>",
 		Short: "Upload an image to the project Media Gallery",
-		Args:  cobra.ExactArgs(1),
+		Long: `Uploads an image to the project Media Gallery for use in paywalls.
+
+Compose the reference URL as asset_base_url + "/" + object_name from the
+upload response. Per-rendition URLs come from formats.<name>.object_name.
+Reuse the original URL for any rendition missing from the response.
+
+An image component's source needs exactly these fields — all required, no
+extra keys, https URLs from the upload response only:
+
+  "source": {"light": {"width", "height", "original", "webp",
+             "webp_low_res", "heic", "heic_low_res"}}
+
+A background image takes this form:
+
+  {"type": "image", "value": {"light": {…}}, "fit_mode": "fill"}
+
+Two routes to place it: paste the URL into an rc paywalls edit prompt for the
+editor to place it, or PATCH the components directly (see rc paywalls --help
+for the recipe).`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

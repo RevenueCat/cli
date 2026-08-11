@@ -49,7 +49,7 @@ func loadFont(path string) (api.FontCreate, error) {
 func newFontsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "fonts",
-		Short: "Manage project fonts",
+		Short: "Manage custom fonts for paywalls",
 	}
 	cmd.AddCommand(newFontsUploadCmd(), newFontsListCmd())
 	return cmd
@@ -107,7 +107,20 @@ func newFontsUploadCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "upload <file>",
 		Short: "Upload a font to the project for use in paywalls",
-		Args:  cobra.ExactArgs(1),
+		Long: `Uploads a ttf/otf font file to the project.
+
+The response's font_key (RCFM:…) is the reference. The server registers the
+font project-wide automatically — no further setup call is needed.
+
+A paywall uses the font when a text component's font_name is set to the
+font_key. Two routes: name the key explicitly in an rc paywalls edit prompt
+("set headings to font_name RCFM:…") — the editor does not list custom fonts,
+so always name the key — or PATCH the components directly (see rc paywalls
+--help for the recipe).
+
+Preview screenshots may not render CLI-referenced custom fonts; verify in the
+dashboard builder URL.`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

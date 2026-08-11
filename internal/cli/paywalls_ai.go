@@ -133,9 +133,18 @@ edit turn. Each completed turn also writes a preview screenshot next to the
 session file (plus a dark-mode one when the design has dark mode); its path is
 shown in the output — look at it after every turn and keep iterating with edit
 turns until the design is right. The draft stays unpublished; review it and
-run rc paywalls publish.`,
+run rc paywalls publish.
+
+Do not generate blind: read the app's theme and brand files and collect app
+screenshots before the first turn. Keep the prompt SHORT — a few sentences of
+general direction plus concrete brand facts (exact hex colors, font names,
+tone words, real feature names). Do not write huge instruction dumps or
+dictate the full layout; long prompts make the editor produce worse designs —
+leave design decisions to it. Put reference material in flags, not prose:
+brand docs via --attachment, screenshots via --image, audience via --context.`,
 		Example: `  rc paywalls generate
   rc paywalls generate --name "Summer sale" --prompt "A calm annual-first paywall"
+  rc paywalls generate --prompt "Warm and minimal, annual-first. Background #0E1B2A, headings in Sora." --attachment DESIGN.md --image home.png
   rc paywalls generate --offering-id ofrng_default --prompt "Match our brand" --image brand.png --json --no-input`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -241,11 +250,15 @@ completed turn saves the design back onto the RevenueCat draft
 
 Using it well:
 
-  - Write a SPECIFIC prompt: exact hex colors, font vibe, tone words, real
-    feature names, and what to avoid. Read the app's theme files and the
-    session JSON for grounding first — but only ever CHANGE the design
-    through this command; hand-editing the session file gets clobbered by
-    the next turn or fails the revision guard.
+  - Keep the prompt SHORT and specific about brand facts: exact hex colors,
+    font names, tone words, real feature names, and what to avoid. Do not
+    dictate the full layout — long instruction dumps make the editor produce
+    worse designs; leave design decisions to it.
+  - Make ONE theme of change per turn (layout OR color OR copy), so each
+    screenshot is judgeable.
+  - Read the app's theme files and the session JSON for grounding first — but
+    only ever CHANGE the design through this command; hand-editing the
+    session file gets clobbered by the next turn or fails the revision guard.
   - Pass design references: --attachment DESIGN.md folds text style guides
     into the direction; --attachment screenshot.png (or --image) attaches
     visually, up to 3 images total.
@@ -256,8 +269,8 @@ Using it well:
     with another edit turn on the same session.
   - Each completed turn writes a preview screenshot next to the session file
     (and a dark-mode one when the design has dark mode); its path is shown in
-    the output. Look at it after every turn: judge the result against the
-    direction, then follow up with more edit turns until it looks right.
+    the output. Judge it against the direction before the next turn; name
+    what is wrong in the next prompt instead of repeating the old one.
   - Turns take one to several minutes and stream progress; run with an
     extended timeout (--timeout) or in the background rather than polling.
   - Undo the last turn:  rc paywalls rewind --session <file>`,
@@ -399,7 +412,12 @@ func newPaywallsRewindCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rewind --session <file>",
 		Short: "Undo the last Paywall AI editor action",
-		Args:  cobra.NoArgs,
+		Long: `Use rewind when the last turn made the design worse: rewind, then re-prompt
+with more specific direction on the same --session.
+
+Only the last editor action is undone. Preview screenshots from the rewound
+turn are removed.`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if sessionPath == "" {
