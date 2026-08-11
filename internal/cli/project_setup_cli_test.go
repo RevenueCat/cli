@@ -240,6 +240,19 @@ func TestPaywallsUnpublishRequiresConfirmationAndReturnsState(t *testing.T) {
 	}
 }
 
+func TestProjectsUse_NoInputWithoutArgErrorsAndLeavesSelectionUntouched(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("unexpected request %s %s: use without an argument under --no-input must not touch the API or active project", r.Method, r.URL.Path)
+		http.Error(w, "unexpected request", http.StatusNotFound)
+	}))
+	t.Cleanup(server.Close)
+
+	_, _, err := runProjectSetupCommand(t, server.URL, "projects", "use", "--no-input", "--json")
+	if err == nil || !strings.Contains(err.Error(), "no project specified") {
+		t.Fatalf("error = %v, want a 'no project specified' error", err)
+	}
+}
+
 func runProjectSetupCommand(t *testing.T, baseURL string, args ...string) (string, string, error) {
 	t.Helper()
 	t.Setenv("RC_CONFIG_DIR", t.TempDir())

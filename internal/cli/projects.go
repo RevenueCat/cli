@@ -210,6 +210,10 @@ The chosen project is written to the active profile file (default:
 			var chosen string
 			if len(args) == 1 {
 				chosen = args[0]
+			} else if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+				// No picker available: erroring beats the silent clear that the
+				// non-interactive select otherwise resolves to.
+				return fmt.Errorf("no project specified: pass a project ID (e.g. `rc projects use proj_abc`); the interactive picker is unavailable under --json/--no-input")
 			} else {
 				page, err := client.Projects.List(cmd.Context())
 				if err != nil {
