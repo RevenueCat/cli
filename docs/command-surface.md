@@ -214,7 +214,7 @@ rc paywalls edit <paywall-id>|--session <file> --prompt  # AI-edit any paywall (
 rc paywalls rewind --session <file>                      # undo the last editor action
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes
-rc paywalls delete <id>
+rc paywalls delete <id> [--force]                        # attached/published paywalls refuse to delete without --force
 
 # Rico (AI assistant)
 rc rico chat [message]                                   # streaming chat window in a TTY (--plain for a line loop)

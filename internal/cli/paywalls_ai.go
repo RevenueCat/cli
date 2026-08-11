@@ -172,7 +172,7 @@ run rc paywalls publish.`,
 				if opts.offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
 					return WithHint(
 						fmt.Errorf("creating draft paywall: offering %s already has a paywall (an offering can only have one): %w", opts.offeringID, err),
-						"Generate against another offering, omit --offering-id to create a standalone draft and attach it in the dashboard later, or delete the existing paywall (rc paywalls list, then rc paywalls delete <id>).",
+						"omit --offering-id to generate a standalone draft and attach it in the dashboard later, or generate against another offering. Do NOT delete the existing paywall to clear the way: deletion is irreversible and it may be someone else's in-progress work — inspect it first (rc paywalls show <id>) and get explicit consent from the user before any rc paywalls delete.",
 					)
 				}
 				return fmt.Errorf("creating draft paywall: %w", err)

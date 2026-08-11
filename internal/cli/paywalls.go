@@ -256,16 +256,22 @@ func newPaywallsShowCmd() *cobra.Command {
 }
 
 func newPaywallsDeleteCmd() *cobra.Command {
-	return &cobra.Command{
+	var force bool
+	cmd := &cobra.Command{
 		Use:   "delete [id]",
 		Short: "Delete a paywall",
 		Long: `Permanently deletes a paywall.
 
 Reversibility: irreversible. Recreate the paywall if it is deleted.
 
+A paywall that is attached to an offering or published refuses to delete
+unless --force is passed — --yes alone is not enough. It may be live or
+someone else's in-progress work; get explicit consent from the user first.
+
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc paywalls delete pw_old --yes`,
-		Args:    cobra.MaximumNArgs(1),
+		Example: `  rc paywalls delete pw_old --yes
+  rc paywalls delete pw_attached --force --yes`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -282,17 +288,42 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			args = []string{pickedID}
-			if err := confirmOrAbort(rt, fmt.Sprintf("Delete paywall %q?", args[0])); err != nil {
+			paywall, err := client.Paywalls.Get(cmd.Context(), projectID, pickedID)
+			if err != nil {
 				return err
 			}
-			if err := client.Paywalls.Delete(cmd.Context(), projectID, args[0]); err != nil {
+			if !force {
+				switch {
+				case paywall.PublishedAt != nil:
+					return WithHint(
+						fmt.Errorf("paywall %s is published — customers may be seeing it", pickedID),
+						"Deletion is irreversible. Unpublish it first (rc paywalls unpublish "+pickedID+") and detach it from its offering in the dashboard, or re-run with --force after the user explicitly confirms this paywall should be destroyed.",
+					)
+				case paywall.OfferingID != "":
+					return WithHint(
+						fmt.Errorf("paywall %s is attached to offering %s and may be someone's in-progress work", pickedID, paywall.OfferingID),
+						"Deletion is irreversible. Re-run with --force only after the user explicitly confirms this paywall should be destroyed. To free the offering for a new design instead, generate a standalone draft (rc paywalls generate without --offering-id) and attach it in the dashboard.",
+					)
+				}
+			}
+			if paywall.PublishedAt != nil {
+				rt.Out.Warn("This paywall is published — customers may be seeing it.")
+			}
+			if paywall.OfferingID != "" {
+				rt.Out.Warn(fmt.Sprintf("Attached to offering %s.", paywall.OfferingID))
+			}
+			if err := confirmOrAbort(rt, fmt.Sprintf("Permanently delete paywall %s?", paywallPickerLabel(*paywall))); err != nil {
 				return err
 			}
-			rt.Out.Success(fmt.Sprintf("Deleted %s", args[0]))
-			return rt.Out.Render(map[string]any{"ok": true, "id": args[0]})
+			if err := client.Paywalls.Delete(cmd.Context(), projectID, pickedID); err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Deleted %s", pickedID))
+			return rt.Out.Render(map[string]any{"ok": true, "id": pickedID})
 		},
 	}
+	cmd.Flags().BoolVar(&force, "force", false, "delete even when the paywall is attached to an offering or published")
+	return cmd
 }
 
 // wrapPaywallActionGateError explains the beta gate on the paywall
