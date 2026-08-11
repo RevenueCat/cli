@@ -60,8 +60,7 @@ func newMediaAssetsCmd() *cobra.Command {
 }
 
 func newMediaAssetsListCmd() *cobra.Command {
-	var limit int
-	var cursor string
+	var opts api.ListOptions
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List media assets in the project Media Gallery",
@@ -77,10 +76,7 @@ func newMediaAssetsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			page, err := client.MediaAssets.List(cmd.Context(), projectID, &api.ListMediaAssetsOptions{
-				Limit:         limit,
-				StartingAfter: cursor,
-			})
+			page, err := client.MediaAssets.List(cmd.Context(), projectID, &opts)
 			if err != nil {
 				return err
 			}
@@ -104,14 +100,11 @@ func newMediaAssetsListCmd() *cobra.Command {
 			}); err != nil {
 				return err
 			}
-			if page.NextPage != "" && !rt.Globals.JSON && len(page.Items) > 0 {
-				rt.Out.Info(fmt.Sprintf("more results — pass --cursor %s for the next page", page.Items[len(page.Items)-1].ID))
-			}
+			hintMoreResults(rt, page)
 			return nil
 		},
 	}
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (server default if unset)")
-	cmd.Flags().StringVar(&cursor, "cursor", "", "media asset ID to start after (pagination)")
+	addListPaginationFlags(cmd, &opts)
 	return cmd
 }
 
@@ -138,6 +131,8 @@ A background image takes this form:
 Two routes to place it: paste the URL into an rc paywalls edit prompt for the
 editor to place it, or PATCH the components directly (see rc paywalls --help
 for the recipe).`,
+		Example: `  rc media-assets upload ./hero.png
+  rc media-assets upload ./hero.png --json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())

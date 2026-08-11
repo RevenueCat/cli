@@ -56,8 +56,7 @@ func newFontsCmd() *cobra.Command {
 }
 
 func newFontsListCmd() *cobra.Command {
-	var limit int
-	var cursor string
+	var opts api.ListOptions
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List fonts uploaded to the project",
@@ -73,10 +72,7 @@ func newFontsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			page, err := client.Fonts.List(cmd.Context(), projectID, &api.ListFontsOptions{
-				Limit:         limit,
-				StartingAfter: cursor,
-			})
+			page, err := client.Fonts.List(cmd.Context(), projectID, &opts)
 			if err != nil {
 				return err
 			}
@@ -92,21 +88,18 @@ func newFontsListCmd() *cobra.Command {
 			}); err != nil {
 				return err
 			}
-			if page.NextPage != "" && !rt.Globals.JSON && len(page.Items) > 0 {
-				rt.Out.Info(fmt.Sprintf("more results — pass --cursor %s for the next page", page.Items[len(page.Items)-1].ID))
-			}
+			hintMoreResults(rt, page)
 			return nil
 		},
 	}
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (server default if unset)")
-	cmd.Flags().StringVar(&cursor, "cursor", "", "font ID to start after (pagination)")
+	addListPaginationFlags(cmd, &opts)
 	return cmd
 }
 
 func newFontsUploadCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "upload <file>",
-		Short: "Upload a font to the project for use in paywalls",
+		Short: "Upload a font to the project for use in Paywalls",
 		Long: `Uploads a ttf/otf font file to the project.
 
 The response's font_key (RCFM:…) is the reference. The server registers the
@@ -118,6 +111,8 @@ editor does not list custom fonts, so always name the key.
 
 Preview screenshots may not render CLI-referenced custom fonts; verify in the
 dashboard builder URL.`,
+		Example: `  rc fonts upload ./Inter-Bold.ttf
+  rc fonts upload ./Inter-Bold.ttf --json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())

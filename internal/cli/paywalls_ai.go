@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,7 +21,7 @@ import (
 )
 
 // paywallAISession is the state file round-tripped between editor turns. The
-// Paywall AI editor keeps no server-side paywall state between requests: the client must resend
+// Paywalls AI Editor keeps no server-side paywall state between requests: the client must resend
 // the full paywall plus the opaque session blobs every turn, so the CLI
 // persists them here (the dashboard holds the same data in builder state).
 type paywallAISession struct {
@@ -98,15 +97,16 @@ const minimalComponentsConfig = `{
 const minimalUIConfig = `{"fonts": {}, "presets": {"saved_colors": []}}`
 
 type paywallAIOptions struct {
-	context     string
-	attachments []string
-	prompt      string
-	offeringID  string
-	name        string
-	sessionPath string
-	images      []string
-	baseURL     string
-	timeout     time.Duration
+	context      string
+	attachments  []string
+	prompt       string
+	offeringID   string
+	name         string
+	sessionPath  string
+	images       []string
+	baseURL      string
+	timeout      time.Duration
+	createdDraft bool
 }
 
 func newPaywallsGenerateCmd() *cobra.Command {
@@ -118,9 +118,9 @@ func newPaywallsGenerateCmd() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate a paywall draft with the Paywall AI editor",
+		Short: "Generate a Paywall draft with the Paywalls AI Editor",
 		Long: `Creates a draft paywall and designs it from a natural-language prompt using
-the Paywall AI editor — the same engine behind the dashboard's AI mode.
+the Paywalls AI Editor — the same engine behind the dashboard's AI mode.
 
 The draft is standalone unless --offering-id attaches it to an offering; an
 offering can only have one paywall, so attaching fails if it already has one.
@@ -228,6 +228,11 @@ screenshots via --image, audience via --context.`,
 					return err
 				}
 			}
+			opts.createdDraft = true
+			// save up front so a drop before the first checkpoint still leaves a resumable session
+			if err := savePaywallAISession(opts.sessionPath, session); err != nil {
+				return err
+			}
 			return runPaywallAI(cmd.Context(), rt, opts, session)
 		},
 	}
@@ -245,7 +250,7 @@ func newPaywallsEditCmd() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "edit [paywall-id]",
-		Short: "Edit a paywall with the Paywall AI editor",
+		Short: "Edit a Paywall with the Paywalls AI Editor",
 		Long: `Applies a natural-language edit to a paywall.
 
 Given a paywall ID, the current draft (or published) components are fetched
@@ -278,7 +283,7 @@ Using it well:
     --image attachments are visual references only, never placed.
   - Keep the SAME --session file across turns — it is the conversation
     memory. A lost session file starts the design conversation over.
-  - The Paywall AI editor may reply with a clarifying question instead of a design (it
+  - The Paywalls AI Editor may reply with a clarifying question instead of a design (it
     appears in the streamed activity / the --json activity array). Answer it
     with another edit turn on the same session.
   - Each completed turn writes a preview screenshot next to the session file
@@ -425,13 +430,14 @@ func newPaywallsRewindCmd() *cobra.Command {
 	baseURL := envOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:   "rewind --session <file>",
-		Short: "Undo the last Paywall AI editor action",
+		Short: "Rewind the last Paywalls AI Editor action",
 		Long: `Use rewind when the last turn made the design worse: rewind, then re-prompt
 with more specific direction on the same --session.
 
 Only the last editor action is undone. Preview screenshots from the rewound
 turn are removed.`,
-		Args: cobra.NoArgs,
+		Example: "  rc paywalls rewind --session ./paywall-session.json",
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if sessionPath == "" {
@@ -460,7 +466,7 @@ turn are removed.`,
 		},
 	}
 	cmd.Flags().StringVar(&sessionPath, "session", "", "editor session file")
-	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "Paywall AI editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
+	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "Paywalls AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	return cmd
 }
 
@@ -470,7 +476,7 @@ func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 	cmd.Flags().StringArrayVar(&opts.attachments, "attachment", nil, "design reference file: images (png/jpeg/webp) attach visually, text files (DESIGN.md, style guides) travel with the direction")
 	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: in the CLI data dir, per project and paywall)")
 	cmd.Flags().StringArrayVar(&opts.images, "image", nil, "reference image to attach (png/jpeg/webp, max 3)")
-	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Paywall AI editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
+	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Paywalls AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait")
 }
 
@@ -491,7 +497,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	ctx, cancel := context.WithTimeout(ctx, opts.timeout)
 	defer cancel()
 
-	rt.Out.Info("Designing with the Paywall AI editor — this can take a few minutes…")
+	rt.Out.Info("Designing with the Paywalls AI Editor — this can take a few minutes…")
 	stream, err := client.Stream(ctx, paywallai.EditorRequest{
 		ProjectID:        session.ProjectID,
 		PaywallID:        session.PaywallID,
@@ -513,21 +519,23 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	defer stream.Close()
 
 	reportedActivity := 0
+	checkpointed := false
 	for {
 		event, err := stream.Next()
-		if err == io.EOF {
-			return fmt.Errorf("the Paywall AI editor closed the stream without completing the run")
-		}
 		if err != nil {
-			return err
+			return streamDropError(opts, checkpointed, err)
 		}
 		switch event.Type {
 		case paywallai.EventRunStarted:
 			session.SessionID = event.SessionID
 		case paywallai.EventTurnSnapshot:
 			reportedActivity = reportPaywallAIActivity(rt, event.Activity, reportedActivity)
+			applySessionEvent(session, event)
+			if err := savePaywallAISession(opts.sessionPath, session); err == nil {
+				checkpointed = true
+			}
 		case paywallai.EventRunFailed:
-			return fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message)
+			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRecoveryHint(opts, checkpointed))
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			return finishPaywallAI(ctx, rt, opts, session, event)
@@ -535,12 +543,14 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	}
 }
 
-func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession, event *paywallai.Event) error {
-	session.SessionID = event.SessionID
+func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
+	if event.SessionID != "" {
+		session.SessionID = event.SessionID
+	}
+	// snapshot omits TraceID; clear a prior run's stale trace rather than keep it
 	session.TraceID = event.TraceID
 	if event.Paywall != nil {
-		// The AI editor doesn't manage offering attachment and may echo
-		// offering_id as null — keep what the CLI established.
+		// the editor echoes offering_id as null; keep the CLI's
 		offeringID := session.Paywall.OfferingID
 		session.Paywall = *event.Paywall
 		if session.Paywall.OfferingID == nil {
@@ -553,6 +563,24 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	if len(event.AppContext) > 0 {
 		session.AppContext = event.AppContext
 	}
+}
+
+func paywallRecoveryHint(opts paywallAIOptions, checkpointed bool) string {
+	if checkpointed {
+		return "Progress so far is saved. Continue with: rc paywalls edit --session " + opts.sessionPath
+	}
+	if opts.createdDraft {
+		return "The draft was created. Continue editing it with: rc paywalls edit --session " + opts.sessionPath
+	}
+	return "Nothing was saved yet. Re-run the command to try again."
+}
+
+func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
+	return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", err), paywallRecoveryHint(opts, checkpointed))
+}
+
+func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession, event *paywallai.Event) error {
+	applySessionEvent(session, event)
 	if err := savePaywallAISession(opts.sessionPath, session); err != nil {
 		return err
 	}
@@ -578,7 +606,7 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		}
 		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
 		if errored := countErroredActivity(event.Activity); errored > 0 {
-			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywall AI editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
+			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywalls AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
 		}
 		rt.Out.Blank()
 		if path, ok := screenshots["light"]; ok {
@@ -699,14 +727,14 @@ func reportPaywallAIActivity(rt *Runtime, activity []paywallai.ToolActivity, alr
 	for _, item := range activity[min(alreadyReported, len(activity)):] {
 		switch item.Type {
 		case "assistant_message":
-			rt.Out.Info("Paywall AI: " + item.Content)
+			rt.Out.Info("Paywalls AI: " + item.Content)
 		default:
 			text := item.Display.Text
 			if text == "" {
 				text = item.ToolName
 			}
 			if item.Status == "error" {
-				rt.Out.Warn("⚙ " + text + "  (errored — the Paywall AI editor retries these itself)")
+				rt.Out.Warn("⚙ " + text + "  (errored — the Paywalls AI Editor retries these itself)")
 			} else {
 				rt.Out.Info("⚙ " + text)
 			}
@@ -806,7 +834,7 @@ func requirePaywallAIPrompt(rt *Runtime, prompt *string, title string) error {
 		Run()
 }
 
-// withPaywallContext folds --context into the direction sent to the Paywall AI editor: the
+// withPaywallContext folds --context into the direction sent to the Paywalls AI Editor: the
 // skills document the flag (product/audience/brand context) and agents were
 // burning generation attempts on unknown-flag errors before hand-merging it.
 func withPaywallContext(prompt, context string) string {
@@ -827,7 +855,7 @@ func countErroredActivity(activity []paywallai.ToolActivity) int {
 }
 
 // loadPaywallAIAttachments routes --image and --attachment by type: image
-// files become real Paywall AI editor attachments (the server accepts only
+// files become real Paywalls AI Editor attachments (the server accepts only
 // png/jpeg/webp, max 3, 10MB); text design references (DESIGN.md, style
 // guides) are folded into the message, which is the only channel the editor
 // API has for them today. Anything else (fonts, binaries) errors clearly.
@@ -850,7 +878,7 @@ func loadPaywallAIAttachments(images, attachments []string) ([]paywallai.InputAt
 			}
 			textBlocks = append(textBlocks, "Design reference ("+filepath.Base(path)+"):\n```\n"+string(data)+"\n```")
 		default:
-			return nil, "", fmt.Errorf("unsupported attachment %q: the Paywall AI editor accepts images (png/jpeg/webp) and text design references (md/txt/json/yaml/css) — fonts and other binaries are not supported by the editor API yet", path)
+			return nil, "", fmt.Errorf("unsupported attachment %q: the Paywalls AI Editor accepts images (png/jpeg/webp) and text design references (md/txt/json/yaml/css) — fonts and other binaries are not supported by the editor API yet", path)
 		}
 	}
 	loaded, err := loadPaywallAIImages(imagePaths)

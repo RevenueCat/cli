@@ -25,7 +25,7 @@ func newSchemaCmd(root *cobra.Command) *cobra.Command {
 Always emits JSON regardless of --json (the command is purely informational).
 Use this from an agent rather than scraping the human --help output.`,
 		Example: `  rc schema apps create
-  rc schema rico chat`,
+  rc schema rico`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
