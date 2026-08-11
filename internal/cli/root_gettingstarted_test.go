@@ -53,7 +53,7 @@ func TestBareRC_LoggedInNoProject_NudgesProject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"logged in", "no project selected", "Pick a project", "rc projects use", "Paywalls & design", "rc paywalls generate"} {
+	for _, want := range []string{"logged in", "no project selected", "Pick a project", "rc projects use", "Design paywalls", "rc paywalls generate"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("logged-in/no-project home missing %q:\n%s", want, out)
 		}
@@ -71,7 +71,7 @@ func TestBareRC_LoggedInWithProject_ShowsCommandMap(t *testing.T) {
 	for _, want := range []string{
 		"project proj_abc",
 		"app.revenuecat.com/projects/abc", // dashboard deep-link (prefix stripped)
-		"Paywalls & design", "Catalog", "Customers & revenue", "Apps & integrations", "AI & automation",
+		"Design paywalls", "Manage your catalog", "Understand customers & revenue", "Connect apps & integrations", "Set up & automate",
 		"rc paywalls generate", "rc paywalls edit",
 		"rc customer show <id>",
 	} {

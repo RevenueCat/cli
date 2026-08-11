@@ -43,12 +43,12 @@ const rcUsageTemplate = `{{rcHead "Usage:"}}{{if .Runnable}}
 
 // commandGroups define the sections of `rc --help`, in display order.
 var commandGroups = []*cobra.Group{
-	{ID: "start", Title: "Getting started"},
-	{ID: "design", Title: "Paywalls & design"},
-	{ID: "catalog", Title: "Catalog"},
-	{ID: "revenue", Title: "Customers & revenue"},
-	{ID: "integrations", Title: "Apps & integrations"},
-	{ID: "ai", Title: "AI & automation"},
+	{ID: "start", Title: "Get started"},
+	{ID: "design", Title: "Design paywalls"},
+	{ID: "catalog", Title: "Manage your catalog"},
+	{ID: "revenue", Title: "Understand customers & revenue"},
+	{ID: "integrations", Title: "Connect apps & integrations"},
+	{ID: "ai", Title: "Set up & automate"},
 	{ID: "advanced", Title: "Advanced"},
 }
 
