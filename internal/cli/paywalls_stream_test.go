@@ -54,3 +54,20 @@ func TestStreamDropError(t *testing.T) {
 		t.Fatalf("created-draft hint = %q", h)
 	}
 }
+
+func TestPaywallRunFailedHint(t *testing.T) {
+	checkpointed := paywallRunFailedHint(paywallAIOptions{sessionPath: "/tmp/s.paywall.json"}, true)
+	if !strings.Contains(checkpointed, "edit --session /tmp/s.paywall.json") {
+		t.Fatalf("checkpointed hint = %q", checkpointed)
+	}
+
+	created := paywallRunFailedHint(paywallAIOptions{sessionPath: "/tmp/s.paywall.json", createdDraft: true}, false)
+	if !strings.Contains(created, "edit --session /tmp/s.paywall.json") {
+		t.Fatalf("created-draft hint = %q", created)
+	}
+
+	none := paywallRunFailedHint(paywallAIOptions{}, false)
+	if !strings.Contains(none, "transient") || !strings.Contains(none, "re-run") {
+		t.Fatalf("no-progress hint = %q", none)
+	}
+}
