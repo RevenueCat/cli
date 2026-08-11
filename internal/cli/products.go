@@ -269,6 +269,9 @@ only supported for Test Store products.`,
 			if err != nil {
 				return err
 			}
+			if string(app.Type) == string(api.RCBillingAppTypeRcBilling) {
+				return fmt.Errorf("Web Billing products can't be created via the API; configure them in the RevenueCat dashboard")
+			}
 			allowed := productTypesForStore(app.Type)
 			if productType == "" {
 				if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
@@ -322,12 +325,11 @@ only supported for Test Store products.`,
 }
 
 // productTypesForStore returns the ProductType values accepted for an app's
-// store. Test Store and Web Billing take granular consumable/non_consumable;
-// the App/Play stores take one_time and non_renewing_subscription. The union
-// across stores must cover the ProductType enum (see TestProductTypeStoreSetsCoverEnum).
+// store. Test Store takes granular consumable/non_consumable; the App/Play
+// stores take one_time and non_renewing_subscription. The union across stores
+// must cover the ProductType enum (see TestProductTypeStoreSetsCoverEnum).
 func productTypesForStore(appType api.AppType) []api.ProductType {
-	switch string(appType) {
-	case string(api.TestStoreAppTypeTestStore), string(api.RCBillingAppTypeRcBilling):
+	if string(appType) == string(api.TestStoreAppTypeTestStore) {
 		return []api.ProductType{
 			api.ProductTypeSubscription,
 			api.ProductTypeConsumable,

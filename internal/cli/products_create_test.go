@@ -150,6 +150,20 @@ func TestProductsCreate_DurationRejectedOnAppStore(t *testing.T) {
 	}
 }
 
+func TestProductsCreate_RejectsWebBilling(t *testing.T) {
+	requests, _, err := runProductsCreate(t, "rc_billing",
+		"--store-id", "sid", "--type", "subscription", "--app-id", "app", "--title", "T")
+	if err == nil {
+		t.Fatal("expected client-side rejection creating a Web Billing product")
+	}
+	if !strings.Contains(err.Error(), "Web Billing") {
+		t.Fatalf("error should explain Web Billing can't be created, got: %v", err)
+	}
+	if postedProducts(requests) {
+		t.Fatalf("Web Billing create reached the server: %v", requests)
+	}
+}
+
 func TestProductsCreate_DurationAcceptedOnTestStore(t *testing.T) {
 	requests, body, err := runProductsCreate(t, "test_store",
 		"--store-id", "sid", "--type", "subscription", "--app-id", "app", "--title", "T", "--duration", "P1M")
