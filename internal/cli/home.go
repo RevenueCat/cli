@@ -16,6 +16,9 @@ type homeGroup struct {
 // homeMap is the curated command catalog shown once authenticated. Groups key
 // into commandGroups so titles and order match `rc --help`.
 var homeMap = []homeGroup{
+	{"start", [][2]string{
+		{"rc setup", "set up RevenueCat for a new app"},
+	}},
 	{"design", [][2]string{
 		{"rc paywalls generate", "design a paywall with AI"},
 		{"rc paywalls edit", "refine an existing paywall"},
@@ -34,7 +37,6 @@ var homeMap = []homeGroup{
 		{"rc apps", "connect App Store & Google Play"},
 	}},
 	{"ai", [][2]string{
-		{"rc setup", "set up RevenueCat for a new app"},
 		{"rc skills install", "AI workflows for coding agents"},
 		{"rc rico", "ask RevenueCat's AI ✨"},
 	}},

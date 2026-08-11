@@ -71,8 +71,8 @@ func TestBareRC_LoggedInWithProject_ShowsCommandMap(t *testing.T) {
 	for _, want := range []string{
 		"project proj_abc",
 		"app.revenuecat.com/projects/abc", // dashboard deep-link (prefix stripped)
-		"Design paywalls", "Manage your catalog", "Understand customers & revenue", "Connect apps & integrations", "Set up & automate",
-		"rc paywalls generate", "rc paywalls edit",
+		"Get started", "Design paywalls", "Manage your catalog", "Manage customers & revenue", "Connect apps & integrations", "Automate with AI",
+		"rc setup", "rc paywalls generate", "rc paywalls edit",
 		"rc customer show <id>",
 	} {
 		if !strings.Contains(out, want) {

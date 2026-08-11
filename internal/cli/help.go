@@ -46,9 +46,9 @@ var commandGroups = []*cobra.Group{
 	{ID: "start", Title: "Get started"},
 	{ID: "design", Title: "Design paywalls"},
 	{ID: "catalog", Title: "Manage your catalog"},
-	{ID: "revenue", Title: "Understand customers & revenue"},
+	{ID: "revenue", Title: "Manage customers & revenue"},
 	{ID: "integrations", Title: "Connect apps & integrations"},
-	{ID: "ai", Title: "Set up & automate"},
+	{ID: "ai", Title: "Automate with AI"},
 	{ID: "advanced", Title: "Advanced"},
 }
 

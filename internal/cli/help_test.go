@@ -57,7 +57,7 @@ func TestRootHelp_KeepsFullGlobalFlagDescriptions(t *testing.T) {
 		}
 	}
 	// Root commands render in labeled groups, not one flat "Available Commands" list.
-	for _, want := range []string{"Get started", "Understand customers & revenue", "Advanced"} {
+	for _, want := range []string{"Get started", "Manage customers & revenue", "Advanced"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("root help missing command group %q:\n%s", want, out)
 		}
