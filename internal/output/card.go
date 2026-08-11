@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Card is a structured detail view used by commands like `rc customer show`.
+// Card is a structured detail view used by commands like `rc customers show`.
 // It's an alternative to RenderTable for "one entity, many facets" output.
 // JSON mode bypasses Card entirely and emits Raw via Render().
 //

@@ -21,7 +21,7 @@ user feedback.
 
 The four items that move "feels unfinished" → "feels real" for the launch audience.
 
-### 1.1 Pretty `rc customer show` (M, 4–6h)
+### 1.1 Pretty `rc customers show` (M, 4–6h)
 
 Replace the JSON dump with a card view in TTY mode. `--json` path unchanged.
 
@@ -41,7 +41,7 @@ spec is composable so other future detail views can reuse it.
 in `internal/output/output.go` via `github.com/itchyny/gojq`.
 
 **Acceptance (met):**
-- ✓ `rc customer list --json --format '.data.items[].id'` works.
+- ✓ `rc customers list --json --format '.data.items[].id'` works.
 - ✓ Plain JSON path expressions (jq syntax).
 - ✓ Errors in the expression go to stderr with a clear message; exit 2.
 - ✓ `--format` is only meaningful with `--json` (warns otherwise).
@@ -82,7 +82,7 @@ Make the most common API failures self-resolving.
 ---
 
 **Phase 1 done when:** a new internal user can install, login (with URL
-guidance), run `rc customer show` and read it without squinting, switch
+guidance), run `rc customers show` and read it without squinting, switch
 between staging and prod profiles, and get a hint when their key is revoked.
 
 ## Phase 2 — Quality of life (after real feedback)

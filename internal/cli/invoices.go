@@ -50,7 +50,7 @@ func newInvoicesShowCmd() *cobra.Command {
 	}
 }
 
-// `rc invoices for <customer-id>` is more user-friendly than `rc customer invoices`
+// `rc invoices for <customer-id>` is more user-friendly than `rc customers invoices`
 // because invoices are an independent noun; users go looking for an invoice
 // first and only narrow by customer if needed.
 func newInvoicesForCustomerCmd() *cobra.Command {

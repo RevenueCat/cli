@@ -14,7 +14,7 @@ Quick reference:
 - **stdout = data, stderr = chatter.** `--json` is opt-in, never auto.
 - **Don't auto-generate from OpenAPI.** This is a hand-crafted CLI; that's
   the whole pitch.
-- **Don't name commands after HTTP shape.** `rc customer grant`, not
+- **Don't name commands after HTTP shape.** `rc customers grant`, not
   `rc post-promotional-entitlement`.
 - **Errors**: typed `*api.APIError` from the API layer; CLI maps to exit codes
   via `internal/cli/runtime.go:ExitCodeFor`.

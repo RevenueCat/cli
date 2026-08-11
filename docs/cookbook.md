@@ -23,14 +23,14 @@ Look up a customer end-to-end (customer record + active entitlements + subs +
 purchases, merged into one envelope):
 
 ```bash
-rc customer show cus_abc
-rc customer show cus_abc --json | jq '.data.subscriptions.items'
+rc customers show cus_abc
+rc customers show cus_abc --json | jq '.data.subscriptions.items'
 ```
 
 Grant a one-month promotional entitlement:
 
 ```bash
-rc customer grant --customer-id cus_abc --entitlement-id pro --duration monthly --yes
+rc customers grant --customer-id cus_abc --entitlement-id pro --duration monthly --yes
 ```
 
 Refund a Web Billing subscription (this is `--yes` by intent — confirmation
@@ -49,7 +49,7 @@ rc subscriptions extend sub_abc --by P1M
 Merge two customer records into one:
 
 ```bash
-rc customer transfer cus_old --to cus_new --yes
+rc customers transfer cus_old --to cus_new --yes
 ```
 
 ## Catalog management
@@ -134,7 +134,7 @@ rc --profile prod metrics --json
 Or per-invocation env (no on-disk profile needed for CI):
 
 ```bash
-RC_PROFILE=staging rc customer list --json
+RC_PROFILE=staging rc customers list --json
 RC_API_KEY=sk_... RC_PROJECT_ID=proj_x rc audit --limit 10 --json
 ```
 
@@ -149,7 +149,7 @@ rc commands --json
 Get a single command's input/output schema:
 
 ```bash
-rc schema customer grant
+rc schema customers grant
 rc schema entitlements attach        # shows positional arg shape
 ```
 
@@ -178,10 +178,10 @@ Exit code reference: `0` success, `1` generic, `2` usage, `4` unauthorized,
 **Pipe IDs into a loop**:
 
 ```bash
-rc customer list --json --limit 100 |
+rc customers list --json --limit 100 |
   jq -r '.data.items[].id' |
   while read id; do
-    rc customer show "$id" --json > "customers/$id.json"
+    rc customers show "$id" --json > "customers/$id.json"
   done
 ```
 
@@ -190,7 +190,7 @@ prompts only when stdin/stdout are terminals; pass `--no-color` to force off
 or `--no-input` to disable prompts):
 
 ```bash
-rc customer list                    # pretty table on TTY
-rc customer list | cat              # still pretty (we don't auto-switch on pipe)
-rc customer list --json | cat       # explicit machine-readable
+rc customers list                    # pretty table on TTY
+rc customers list | cat              # still pretty (we don't auto-switch on pipe)
+rc customers list --json | cat       # explicit machine-readable
 ```

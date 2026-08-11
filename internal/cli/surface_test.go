@@ -19,7 +19,7 @@ func TestCommandSurface_SchemaIncludesAgentCommands(t *testing.T) {
 	for _, c := range tree["commands"].([]map[string]any) {
 		names[c["name"].(string)] = true
 	}
-	for _, want := range []string{"customer", "offerings", "entitlements", "packages", "setup"} {
+	for _, want := range []string{"customers", "offerings", "entitlements", "packages", "setup"} {
 		if !names[want] {
 			t.Errorf("command %q missing from schema surface", want)
 		}
@@ -46,8 +46,8 @@ func TestCurateSurface(t *testing.T) {
 	if hidden("paywalls") {
 		t.Error("'paywalls' should be visible in --help")
 	}
-	if hidden("customer") {
-		t.Error("'customer' should be visible in --help (full surface)")
+	if hidden("customers") {
+		t.Error("'customers' should be visible in --help (full surface)")
 	}
 	if hidden("setup") {
 		t.Error("'setup' should be visible in --help")
