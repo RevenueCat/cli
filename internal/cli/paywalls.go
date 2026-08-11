@@ -31,8 +31,8 @@ and real feature names. Pass brand docs via --attachment DESIGN.md, app
 screenshots via --image (max 3), and audience or product context via
 --context.
 
-Do not over-prompt. The Paywall AI editor produces worse designs from huge
-instruction dumps. Give short general direction. Be specific only about
+Do not over-prompt. rc paywalls generate and edit produce worse designs from
+huge instruction dumps. Give short general direction. Be specific only about
 concrete brand facts (colors, fonts, images, tone). Leave layout and design
 decisions to the editor. When editing, make one theme of change per turn.
 
