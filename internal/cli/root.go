@@ -184,12 +184,12 @@ Agent-friendly entrypoints:
 	return root
 }
 
-// guardUnknownSubcommands makes every command group reject an unknown
-// subcommand instead of cobra's default — printing group help and exiting 0,
-// which reads as success to scripts and agents. cobra only guards the root:
-// other parents short-circuit to help before arg validation runs, so a
-// non-runnable group also gets a help-only RunE to reach validation. A bare
-// group (no args) still falls through to help or the group's own RunE, and
+// guardUnknownSubcommands walks the whole tree so every group — top-level and
+// nested — rejects an unknown subcommand instead of cobra's default of printing
+// help and exiting 0, which reads as success to scripts and agents. (cobra only
+// does that for the root.) A non-runnable group short-circuits to help before
+// arg validation runs, so it also gets a help-only RunE to reach the check. A
+// bare group (no args) still falls through to help or the group's own RunE, and
 // groups that set their own Args (e.g. rico takes a message) are left alone.
 func guardUnknownSubcommands(cmd *cobra.Command) {
 	for _, sub := range cmd.Commands() {
