@@ -214,6 +214,8 @@ rc paywalls edit <paywall-id>|--session <file> --prompt  # AI-edit any paywall (
 rc paywalls rewind --session <file>                      # undo the last editor action
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes
+rc paywalls attach <paywall-id> <offering-id>            # attach or move a paywall to an offering (one paywall per offering); confirms when published
+rc paywalls detach <paywall-id>                          # make it standalone; unpublish a published paywall first
 rc paywalls delete <id> [--force]                        # attached/published paywalls refuse to delete without --force
 
 # Rico (AI assistant)

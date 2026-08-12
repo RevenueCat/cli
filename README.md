@@ -70,7 +70,7 @@ rc charts show mrr
 | **Offerings** | `list` · `show` · `verify` · `preview` · `create` · `update` · `set-current` · `archive` |
 | **Packages** | `list` (across all offerings) · `show` · `products` · `create` · `update` · `delete` · `attach` · `detach` |
 | **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `store sync` |
-| **Paywalls** | `list` · `show` · `create` · `generate` (AI) · `edit` (AI) · `rewind` · `publish` · `unpublish` · `delete` |
+| **Paywalls** | `list` · `show` · `create` · `generate` (AI) · `edit` (AI) · `rewind` · `publish` · `unpublish` · `attach` · `detach` · `delete` |
 | **Rico (AI assistant)** | `chat` (streaming, tool approvals) · `conversations list/show/delete` · `feedback` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
 | **Apps** | `list` · `show` · `create` · `update` · `delete` · `apple check` · `apple setup` |

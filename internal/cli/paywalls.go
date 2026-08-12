@@ -68,6 +68,8 @@ URL, get the user's approval, then rc paywalls publish.`,
 		newPaywallsRewindCmd(),
 		newPaywallsPublishCmd(),
 		newPaywallsUnpublishCmd(),
+		newPaywallsAttachCmd(),
+		newPaywallsDetachCmd(),
 		newPaywallsDeleteCmd(),
 	)
 	return cmd
@@ -208,6 +210,113 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 	}
 }
 
+func newPaywallsAttachCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "attach [paywall-id] [offering-id]",
+		Short: "Attach a Paywall to an Offering",
+		Long: `Attaches a paywall to an offering, or moves it from its current offering.
+
+An offering holds one paywall: attach fails if the target offering already
+has one — detach that one first. Attaching a published paywall makes it live
+for the offering immediately.
+
+Confirmation: prompts under TTY when the paywall is published; pass --yes to
+skip. Required under --no-input.`,
+		Example: `  rc paywalls attach pw_abc ofrng_default
+  rc paywalls attach pw_abc ofrng_default --yes --no-input --json`,
+		Args: cobra.MaximumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			paywallID, err := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+				return paywallPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			offeringID, err := requireID(rt, argAt(args, 1), "offering", func() ([]PickerItem, error) {
+				return offeringPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			paywall, err := client.Paywalls.Get(cmd.Context(), projectID, paywallID)
+			if err != nil {
+				return err
+			}
+			if paywall.PublishedAt != nil {
+				if err := confirmOrAbort(rt, fmt.Sprintf("Paywall %s is published — attaching makes it live for offering %s. Attach now?", paywallID, offeringID)); err != nil {
+					return err
+				}
+			}
+			paywall, err = client.Paywalls.SetOffering(cmd.Context(), projectID, paywallID, &offeringID)
+			if err != nil {
+				var apiErr *api.APIError
+				if errors.As(err, &apiErr) && apiErr.Status == 409 && apiErr.Type == "resource_already_exists" {
+					return WithHint(
+						fmt.Errorf("attaching paywall %s: offering %s already has a paywall (an offering can only have one): %w", paywallID, offeringID, err),
+						"Find the offering's current paywall with rc paywalls list, detach it (rc paywalls detach <paywall-id>), or attach to a different offering. Do NOT delete the existing paywall to clear the way: deletion is irreversible and it may be someone else's in-progress work.",
+					)
+				}
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Attached %s to %s", paywall.ID, offeringID))
+			return rt.Out.Render(paywall)
+		},
+	}
+}
+
+func newPaywallsDetachCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "detach [paywall-id]",
+		Short: "Detach a Paywall from its Offering",
+		Long: `Detaches a paywall from its offering, leaving it as a standalone draft and
+freeing the offering for another paywall.
+
+A published paywall cannot be detached — unpublish it first.`,
+		Example: `  rc paywalls detach pw_abc
+  rc paywalls detach pw_abc --no-input --json`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			paywallID, err := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+				return paywallPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			paywall, err := client.Paywalls.SetOffering(cmd.Context(), projectID, paywallID, nil)
+			if err != nil {
+				var apiErr *api.APIError
+				if errors.As(err, &apiErr) && apiErr.Status == 422 && apiErr.Type == "parameter_error" {
+					return WithHint(
+						fmt.Errorf("detaching offering from paywall %s: %w", paywallID, err),
+						"A published paywall keeps its offering. Unpublish it first (rc paywalls unpublish "+paywallID+"), then re-run rc paywalls detach "+paywallID+".",
+					)
+				}
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Detached %s from its offering", paywall.ID))
+			return rt.Out.Render(paywall)
+		},
+	}
+}
+
 func paywallPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
 	page, err := client.Paywalls.List(ctx, projectID)
 	if err != nil {
@@ -324,12 +433,12 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				case paywall.PublishedAt != nil:
 					return WithHint(
 						fmt.Errorf("paywall %s is published — customers may be seeing it", pickedID),
-						"Deletion is irreversible. Unpublish it first (rc paywalls unpublish "+pickedID+") and detach it from its offering in the dashboard, or re-run with --force after the user explicitly confirms this paywall should be destroyed.",
+						"Deletion is irreversible. Unpublish it first (rc paywalls unpublish "+pickedID+"), then detach it (rc paywalls detach "+pickedID+") if you only need to free the offering, or re-run with --force after the user explicitly confirms this paywall should be destroyed.",
 					)
 				case paywall.OfferingID != "":
 					return WithHint(
 						fmt.Errorf("paywall %s is attached to offering %s and may be someone's in-progress work", pickedID, paywall.OfferingID),
-						"Deletion is irreversible. Re-run with --force only after the user explicitly confirms this paywall should be destroyed. To free the offering for a new design instead, generate a standalone draft (rc paywalls generate without --offering-id) and attach it in the dashboard.",
+						"Deletion is irreversible. Re-run with --force only after the user explicitly confirms this paywall should be destroyed. To free the offering instead, detach this paywall (rc paywalls detach "+pickedID+") — it stays as a standalone draft.",
 					)
 				}
 			}
