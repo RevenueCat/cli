@@ -20,7 +20,6 @@ var appTypes = []huh.Option[string]{
 	huh.NewOption("App Store", "app_store"),
 	huh.NewOption("Play Store", "play_store"),
 	huh.NewOption("Amazon", "amazon"),
-	huh.NewOption("Mac App Store", "mac_app_store"),
 	huh.NewOption("Roku", "roku"),
 	huh.NewOption("Stripe", "stripe"),
 	huh.NewOption("Web Billing", "rc_billing"),
@@ -184,7 +183,7 @@ with rc apps apple setup.`,
 				return err
 			}
 			if !validAppType(appType) {
-				return fmt.Errorf("--type is required: app_store|play_store|amazon|mac_app_store|roku|stripe|rc_billing|paddle")
+				return fmt.Errorf("--type is required: app_store|play_store|amazon|roku|stripe|rc_billing|paddle")
 			}
 			if err := promptForAppPlatformFields(rt, appType, &bundleID, &packageName, &appName); err != nil {
 				return err
@@ -209,8 +208,6 @@ with rc apps apple setup.`,
 					AppStoreConnectAPIKeyIssuer: ptrIfSet(appStoreConnectAPIKeyIssuer),
 					AppStoreConnectVendorNumber: ptrIfSet(appStoreConnectVendorNumber),
 				}
-			case "mac_app_store":
-				body.MacAppStore = &api.MacAppStoreConfig{BundleID: bundleID, SharedSecret: ptrIfSet(sharedSecret)}
 			case "paddle":
 				body.Paddle = &api.PaddleAppConfig{
 					PaddleAPIKey:    ptrIfSet(paddleAPIKey),
@@ -247,8 +244,8 @@ with rc apps apple setup.`,
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "app name (required)")
-	cmd.Flags().StringVar(&appType, "type", "", "app type: app_store|play_store|amazon|mac_app_store|roku|stripe|rc_billing|paddle")
-	cmd.Flags().StringVar(&bundleID, "bundle-id", "", "Apple bundle identifier for app_store or mac_app_store")
+	cmd.Flags().StringVar(&appType, "type", "", "app type: app_store|play_store|amazon|roku|stripe|rc_billing|paddle")
+	cmd.Flags().StringVar(&bundleID, "bundle-id", "", "Apple bundle identifier for app_store")
 	cmd.Flags().StringVar(&packageName, "package-name", "", "store package name for play_store or amazon")
 	cmd.Flags().StringVar(&sharedSecret, "shared-secret", "", "Apple or Amazon shared secret")
 	cmd.Flags().StringVar(&subscriptionPrivateKey, "subscription-private-key", "", "App Store subscription private key PEM")
@@ -275,7 +272,7 @@ func promptForAppPlatformFields(rt *Runtime, appType string, bundleID, packageNa
 	switch appType {
 	case "amazon":
 		form.Field(huh.NewInput().Title("Package name").Value(packageName).Validate(tui.Required("package name")))
-	case "app_store", "mac_app_store":
+	case "app_store":
 		form.Field(huh.NewInput().Title("Bundle ID").Value(bundleID).Validate(tui.Required("bundle ID")))
 	case "play_store":
 		form.Field(huh.NewInput().Title("Package name").Value(packageName).Validate(tui.Required("package name")))
@@ -289,7 +286,7 @@ func promptForAppPlatformFields(rt *Runtime, appType string, bundleID, packageNa
 
 func validAppType(appType string) bool {
 	switch appType {
-	case "amazon", "app_store", "mac_app_store", "paddle", "play_store", "rc_billing", "roku", "stripe":
+	case "amazon", "app_store", "paddle", "play_store", "rc_billing", "roku", "stripe":
 		return true
 	default:
 		return false
