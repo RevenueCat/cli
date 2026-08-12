@@ -270,7 +270,7 @@ only supported for Test Store products.`,
 				return err
 			}
 			if string(app.Type) == string(api.RCBillingAppTypeRcBilling) {
-				return fmt.Errorf("Web Billing products can't be created via the API; configure them in the RevenueCat dashboard")
+				return fmt.Errorf("can't create Web Billing products via the API; configure them in the RevenueCat dashboard")
 			}
 			allowed := productTypesForStore(app.Type)
 			if productType == "" {
