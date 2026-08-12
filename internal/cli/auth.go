@@ -230,7 +230,7 @@ anything on disk.`,
   rc auth login --api-key sk_...
 
   # CI: don't store on disk
-  RC_API_KEY=sk_... rc customer list`,
+  RC_API_KEY=sk_... rc customers list`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 

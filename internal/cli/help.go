@@ -59,7 +59,7 @@ var commandGroupByName = map[string]string{
 	"profiles": "start", "browse": "start", "open": "start", "setup": "start",
 	"paywalls": "design", "fonts": "design", "media-assets": "design",
 	"offerings": "catalog", "products": "catalog", "packages": "catalog", "entitlements": "catalog",
-	"customer": "revenue", "subscriptions": "revenue", "purchases": "revenue",
+	"customers": "revenue", "subscriptions": "revenue", "purchases": "revenue",
 	"invoices": "revenue", "charts": "revenue", "metrics": "revenue",
 	"apps": "integrations", "capital": "integrations", "webhooks": "integrations",
 	"rico": "ai", "skills": "ai",

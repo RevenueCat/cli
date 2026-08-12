@@ -52,22 +52,22 @@ func grantExpiry(duration string, now time.Time) (int64, error) {
 }
 
 // Customer commands illustrate the design principle: the CLI shape is NOT a
-// 1:1 mirror of the REST API. `rc customer show` composes the customer record
+// 1:1 mirror of the REST API. `rc customers show` composes the customer record
 // (which already embeds active_entitlements) with subscriptions and purchases
 // to build one user-intent view.
 
 func newCustomersCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "customer",
-		Aliases: []string{"customers"},
+		Use:     "customers",
+		Aliases: []string{"customer"},
 		Short:   "Inspect and manage Customers",
 		Long: `Inspect and manage Customers in the active project. A Customer Profile
 gathers a Customer's subscriptions, Non-Subscription Purchases, active
 Entitlements, and Customer Attributes. Multiple App User IDs that resolve to
 one Customer are aliases.`,
-		Example: `  rc customer list
-  rc customer show cus_abc
-  rc customer grant cus_abc entl_pro --duration monthly`,
+		Example: `  rc customers list
+  rc customers show cus_abc
+  rc customers grant cus_abc entl_pro --duration monthly`,
 	}
 	cmd.AddCommand(
 		newCustomerListCmd(),
@@ -97,8 +97,8 @@ endpoint used by the SDK. The selected app must have a test_ public SDK key.
 The Product may be given by RevenueCat Product ID or store identifier.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc customer simulate-purchase --app-id app_test --product premium_monthly --app-user-id demo-user
-  rc customer simulate-purchase --app-id app_test --product prod_abc --app-user-id demo-user --yes --json --no-input`,
+		Example: `  rc customers simulate-purchase --app-id app_test --product premium_monthly --app-user-id demo-user
+  rc customers simulate-purchase --app-id app_test --product prod_abc --app-user-id demo-user --yes --json --no-input`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -225,8 +225,8 @@ func newCustomerAliasesCmd() *cobra.Command {
 		Long: `Lists the App User IDs that resolve to one Customer. Aliases accumulate
 when the same person is identified under different App User IDs (anonymous
 then logged-in, across devices, after a transfer).`,
-		Example: `  rc customer aliases cus_abc
-  rc customer aliases cus_abc --json | jq '.data.items[].id'`,
+		Example: `  rc customers aliases cus_abc
+  rc customers aliases cus_abc --json | jq '.data.items[].id'`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -253,8 +253,8 @@ func newCustomerAttributesCmd() *cobra.Command {
 		Short: "List a Customer's attributes",
 		Long: `Lists the Customer Attributes (metadata) stored on a Customer, including
 reserved keys like $email and any custom keys you set.`,
-		Example: `  rc customer attributes cus_abc
-  rc customer attributes cus_abc --json | jq '.data'`,
+		Example: `  rc customers attributes cus_abc
+  rc customers attributes cus_abc --json | jq '.data'`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -283,8 +283,8 @@ func newCustomerSetAttributeCmd() *cobra.Command {
 		Long: `Sets Customer Attributes (metadata) on a Customer. Pass --set key=value
 once per attribute. Existing attributes with the same key are overwritten;
 others are preserved.`,
-		Example: `  rc customer set-attribute cus_abc --set email=user@example.com
-  rc customer set-attribute cus_abc --set $segment=premium --set $churnRisk=low`,
+		Example: `  rc customers set-attribute cus_abc --set email=user@example.com
+  rc customers set-attribute cus_abc --set $segment=premium --set $churnRisk=low`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -340,8 +340,8 @@ Reversibility: destructive on the source Customer's purchase history — the
 transfer is not automatically reversed.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc customer transfer cus_old --to cus_new
-  rc customer transfer cus_old --to cus_new --yes --json`,
+		Example: `  rc customers transfer cus_old --to cus_new
+  rc customers transfer cus_old --to cus_new --yes --json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -377,9 +377,9 @@ func newCustomerOverrideOfferingCmd() *cobra.Command {
 		Short: "Assign an Offering override to a Customer",
 		Long: `Forces a specific Offering to be shown to one Customer regardless of
 which Offering is currently the project default. Common for A/B tests or
-support overrides. Use 'rc customer clear-override' to remove.`,
-		Example: `  rc customer override-offering cus_abc --offering ofrng_promo_2026
-  rc customer clear-override cus_abc`,
+support overrides. Use 'rc customers clear-override' to remove.`,
+		Example: `  rc customers override-offering cus_abc --offering ofrng_promo_2026
+  rc customers clear-override cus_abc`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -388,7 +388,7 @@ support overrides. Use 'rc customer clear-override' to remove.`,
 				return err
 			}
 			if offering == "" {
-				return fmt.Errorf("--offering is required (use `rc customer clear-override` to remove)")
+				return fmt.Errorf("--offering is required (use `rc customers clear-override` to remove)")
 			}
 			client, err := rt.API()
 			if err != nil {
@@ -409,13 +409,13 @@ func newCustomerClearOverrideCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "clear-override <customer-id>",
 		Short: "Clear a Customer's Offering override",
-		Long: `Removes any Offering override set via ` + "`rc customer override-offering`" + `.
+		Long: `Removes any Offering override set via ` + "`rc customers override-offering`" + `.
 The Customer will see whichever Offering is the project default.
 
-Reversibility: re-apply with ` + "`rc customer override-offering`" + `.
+Reversibility: re-apply with ` + "`rc customers override-offering`" + `.
 
 Confirmation: no prompt.`,
-		Example: `  rc customer clear-override cus_abc`,
+		Example: `  rc customers clear-override cus_abc`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -449,7 +449,7 @@ Reversibility: the resulting subscription can be cancelled normally, but
 the original token consumption with Google cannot be undone.
 
 Confirmation: no prompt — idempotent (re-running with the same token is safe).`,
-		Example: `  rc customer restore-google cus_abc --token GPA.xxxx-xxxx-xxxx-xxxxx`,
+		Example: `  rc customers restore-google cus_abc --token GPA.xxxx-xxxx-xxxx-xxxxx`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -481,8 +481,8 @@ func newCustomerWalletCmd() *cobra.Command {
 		Short: "Show a Customer's Virtual Currency balances",
 		Long: `Shows the Customer's wallet: per-currency virtual currency balances for
 the project.`,
-		Example: `  rc customer wallet cus_abc
-  rc customer wallet cus_abc --json | jq '.data.items[]'`,
+		Example: `  rc customers wallet cus_abc
+  rc customers wallet cus_abc --json | jq '.data.items[]'`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -586,9 +586,9 @@ func newCustomerListCmd() *cobra.Command {
 		Short: "List Customers in the active project",
 		Long: `Lists Customers, paginated. In TTY mode launches an interactive browser;
 pass --json for machine-readable output or --no-input to disable the browser.`,
-		Example: `  rc customer list
-  rc customer list --json --limit 100 | jq '.data.items[].id'
-  rc customer list --cursor cus_xyz --limit 50`,
+		Example: `  rc customers list
+  rc customers list --json --limit 100 | jq '.data.items[].id'
+  rc customers list --cursor cus_xyz --limit 50`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -655,8 +655,8 @@ func newCustomerShowCmd() *cobra.Command {
 subscriptions, and Non-Subscription Purchases into one envelope — the CLI's
 take on the Customer Profile. In TTY mode launches an interactive detail view
 with drill-down. Use --json for the raw merged document.`,
-		Example: `  rc customer show cus_abc
-  rc customer show cus_abc --json | jq '.data.customer.active_entitlements'`,
+		Example: `  rc customers show cus_abc
+  rc customers show cus_abc --json | jq '.data.customer.active_entitlements'`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -720,9 +720,9 @@ to pick from the project's Entitlements interactively.
 Duration must be one of: daily, three_day, weekly, monthly, two_month,
 three_month, six_month, yearly, lifetime. Omit --duration under a TTY to
 pick from the list interactively.`,
-		Example: `  rc customer grant cus_abc                          # TTY: picks entitlement + duration
-  rc customer grant cus_abc pro --duration monthly   # fully explicit
-  rc customer grant cus_abc pro --duration monthly --yes --json`,
+		Example: `  rc customers grant cus_abc                          # TTY: picks entitlement + duration
+  rc customers grant cus_abc pro --duration monthly   # fully explicit
+  rc customers grant cus_abc pro --duration monthly --yes --json`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -786,17 +786,17 @@ func newCustomerRevokeCmd() *cobra.Command {
 		Use:   "revoke <customer-id> [entitlement-id]",
 		Short: "Revoke a promotional Entitlement from a Customer",
 		Long: `Revokes a previously-granted promotional Entitlement. Only affects
-promotional grants made through ` + "`rc customer grant`" + ` — store
+promotional grants made through ` + "`rc customers grant`" + ` — store
 purchases are not affected.
 
 customer-id is required. entitlement-id is optional under a TTY — omit it
 to pick from the project's Entitlements interactively.
 
-Reversibility: re-grant with ` + "`rc customer grant`" + ` if needed.
+Reversibility: re-grant with ` + "`rc customers grant`" + ` if needed.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc customer revoke cus_abc              # TTY: picks entitlement
-  rc customer revoke cus_abc pro --yes   # fully explicit`,
+		Example: `  rc customers revoke cus_abc              # TTY: picks entitlement
+  rc customers revoke cus_abc pro --yes   # fully explicit`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -840,7 +840,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 	return cmd
 }
 
-// customerCard composes the pretty TTY view of `rc customer show`. JSON
+// customerCard composes the pretty TTY view of `rc customers show`. JSON
 // callers never touch this — they get `raw` straight through Render().
 func customerCard(c *api.Customer, subs *api.Page[api.Subscription], purs *api.Page[api.Purchase], raw any) output.Card {
 	card := output.Card{
