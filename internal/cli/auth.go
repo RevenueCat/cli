@@ -411,7 +411,6 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 				rt.Out.Success(fmt.Sprintf("Logged in as %s (profile: %s)", identity, profileName))
 			} else {
 				rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", profileName))
-				rt.Out.Info("Account identity is not cached for this login")
 			}
 			if authenticated {
 				rt.Out.Field("Credential", credSource.Describe())
