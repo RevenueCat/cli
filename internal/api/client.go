@@ -27,11 +27,13 @@ import (
 const DefaultBaseURL = "https://api.revenuecat.com/v2"
 
 type Options struct {
-	APIKey       string
-	BaseURL      string
-	HTTPClient   *http.Client
-	UserAgent    string
-	ExtraHeaders http.Header
+	APIKey  string
+	BaseURL string
+	// CredentialSource names where APIKey came from, for auth-error hints only.
+	CredentialSource string
+	HTTPClient       *http.Client
+	UserAgent        string
+	ExtraHeaders     http.Header
 }
 
 type cacheEntry struct {
@@ -40,12 +42,13 @@ type cacheEntry struct {
 }
 
 type Client struct {
-	baseURL      *url.URL
-	apiKey       string
-	http         *http.Client
-	userAgent    string
-	extraHeaders http.Header
-	cache        sync.Map // url string → cacheEntry; GET-only, session-scoped
+	baseURL          *url.URL
+	apiKey           string
+	credentialSource string
+	http             *http.Client
+	userAgent        string
+	extraHeaders     http.Header
+	cache            sync.Map // url string → cacheEntry; GET-only, session-scoped
 
 	Projects        *ProjectsService
 	Customers       *CustomersService
@@ -89,7 +92,7 @@ func NewClient(opts Options) *Client {
 	if ua == "" {
 		ua = "revenuecat-cli/dev"
 	}
-	c := &Client{baseURL: u, apiKey: opts.APIKey, http: hc, userAgent: ua, extraHeaders: opts.ExtraHeaders}
+	c := &Client{baseURL: u, apiKey: opts.APIKey, credentialSource: opts.CredentialSource, http: hc, userAgent: ua, extraHeaders: opts.ExtraHeaders}
 	c.Projects = &ProjectsService{c: c}
 	c.Customers = &CustomersService{c: c}
 	c.Entitlements = &EntitlementsService{c: c}
@@ -168,7 +171,7 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	}
 
 	if resp.StatusCode >= 400 {
-		return parseError(resp)
+		return c.annotateError(parseError(resp))
 	}
 	if out == nil || resp.StatusCode == http.StatusNoContent {
 		return nil
@@ -185,6 +188,14 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 		}
 	}
 	return json.Unmarshal(data, out)
+}
+
+// annotateError stamps the client's credential source onto an APIError.
+func (c *Client) annotateError(err error) error {
+	if ae, ok := err.(*APIError); ok {
+		ae.CredentialSource = c.credentialSource
+	}
+	return err
 }
 
 // Page wraps cursor-paginated list responses.
@@ -253,7 +264,7 @@ func (c *Client) Raw(ctx context.Context, method, path string, body []byte) ([]b
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		return nil, resp.StatusCode, parseError(resp)
+		return nil, resp.StatusCode, c.annotateError(parseError(resp))
 	}
 	data, err := io.ReadAll(resp.Body)
 	return data, resp.StatusCode, err

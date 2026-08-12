@@ -75,9 +75,7 @@ Agent-friendly entrypoints:
 			if err != nil {
 				return err
 			}
-			if g.APIKey != "" {
-				cfg.APIKey = g.APIKey
-			}
+			cfg.SetFlagAPIKey(g.APIKey)
 			if g.ProjectID != "" {
 				cfg.ProjectID = g.ProjectID
 			}
