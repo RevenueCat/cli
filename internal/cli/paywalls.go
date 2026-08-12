@@ -28,8 +28,7 @@ approved the design. See generate's and edit's help for how to prompt well.
 Iterating is the normal workflow: expect several edit turns until the result
 is acceptable, not a perfect first try. Every completed turn writes a preview
 screenshot; judge it against the direction and keep editing until it matches.
-Screenshots never show Restore Purchases buttons; the session JSON is the
-source of truth for those. Undo a bad turn with rc paywalls rewind.
+Undo a bad turn with rc paywalls rewind.
 
 Custom assets: upload the app's real fonts with rc fonts upload and real
 images (logo, hero) with rc media-assets upload BEFORE designing, then
