@@ -8,14 +8,15 @@ import (
 )
 
 // Command surface: --help shows the full command set; only the experimental tier
-// (commands not yet DX-tested) is held back, and `rc --all` reveals those too.
-// Back-compat aliases stay hidden via their own Hidden flag — curateSurface
-// never un-hides them.
+// (commands not yet DX-tested, e.g. `capital setup`) is held back, and `rc --all`
+// reveals those too. Back-compat aliases stay hidden via their own Hidden flag —
+// curateSurface never un-hides them.
 //
 // Two annotation tiers via "surface":
 //   - default: shown in --help, commands/schema, and runnable
-//   - experimental: hidden from --help and schema until DX-tested (the one-shot
-//     `setup` orchestrator); `rc --all` shows it in help but never schema
+//   - experimental: hidden from --help until DX-tested, but still present in
+//     commands/schema marked "experimental": true (and left out of inferred
+//     capabilities); `rc --all` reveals it in help
 
 const (
 	annotationSurface   = "surface"
@@ -52,9 +53,8 @@ func curateSurface(root *cobra.Command, all bool) {
 	}
 }
 
-// experimentalFromSchema reports whether a command is hidden even from agent
-// discovery. Only the experimental tier qualifies; agent-only commands are hidden
-// from help but must still appear in commands/schema.
-func experimentalFromSchema(c *cobra.Command) bool {
+// isExperimental reports the experimental tier: hidden from --help, but still
+// shown in commands/schema (tagged) and left out of inferred capabilities.
+func isExperimental(c *cobra.Command) bool {
 	return c.Annotations[annotationSurface] == surfaceExperimental
 }

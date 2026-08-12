@@ -111,7 +111,7 @@ func commandSchema(c *cobra.Command) map[string]any {
 			"aliases":  sc.Aliases,
 			"runnable": sc.Runnable(),
 		}
-		if experimentalFromSchema(sc) {
+		if isExperimental(sc) {
 			sub["experimental"] = true
 		}
 		subs = append(subs, sub)
@@ -132,7 +132,7 @@ func commandSchema(c *cobra.Command) map[string]any {
 		"runnable":     c.Runnable(),
 		"capabilities": inferCapabilities(c),
 	}
-	if experimentalFromSchema(c) {
+	if isExperimental(c) {
 		schema["experimental"] = true
 	}
 	addHumanRequirement(schema, c)
@@ -159,7 +159,7 @@ func inferCapabilities(c *cobra.Command) []string {
 		acc.add(canonicalVerb(c.Name()))
 	}
 	for _, sc := range c.Commands() {
-		if experimentalFromSchema(sc) {
+		if isExperimental(sc) {
 			continue
 		}
 		collectCapabilities(sc, []string{sc.Name()}, acc)
@@ -172,7 +172,7 @@ func collectCapabilities(c *cobra.Command, path []string, acc *capAccumulator) {
 		acc.add(capLabel(path))
 	}
 	for _, sc := range c.Commands() {
-		if experimentalFromSchema(sc) {
+		if isExperimental(sc) {
 			continue
 		}
 		collectCapabilities(sc, append(append([]string{}, path...), sc.Name()), acc)
@@ -264,7 +264,7 @@ func commandTree(c *cobra.Command) map[string]any {
 		"capabilities": inferCapabilities(c),
 		"commands":     subs,
 	}
-	if experimentalFromSchema(c) {
+	if isExperimental(c) {
 		tree["experimental"] = true
 	}
 	addHumanRequirement(tree, c)

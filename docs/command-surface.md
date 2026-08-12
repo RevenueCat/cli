@@ -89,7 +89,7 @@ names; there's no list endpoint.
 ```
 # Onboarding entry points (the two scoped npx surfaces)
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
-rc capital setup                                         # EXPERIMENTAL (hidden from --help/schema until Capital ships): App Store Connect key flow (wraps apps apple setup)
+rc capital setup                                         # EXPERIMENTAL (hidden from --help until Capital ships): App Store Connect key flow (wraps apps apple setup)
 rc                                                       # bare rc -> getting-started help; --all reveals experimental commands
 
 # Auth / meta
