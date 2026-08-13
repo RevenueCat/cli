@@ -747,15 +747,7 @@ func currentDraftRevision(ctx context.Context, client *api.Client, projectID, pa
 	if err != nil {
 		return 0, err
 	}
-	if paywall.Components != nil {
-		if d := paywall.Components.Draft; d != nil && d.Revision != nil {
-			return *d.Revision, nil
-		}
-		if p := paywall.Components.Published; p != nil && p.Revision != nil {
-			return *p.Revision, nil
-		}
-	}
-	return 0, nil
+	return paywallRevision(paywall), nil
 }
 
 // reportPaywallAIActivity prints activity items not yet shown; snapshots carry

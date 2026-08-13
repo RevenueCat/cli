@@ -217,8 +217,8 @@ func newPaywallsAttachCmd() *cobra.Command {
 		Long: `Attaches a paywall to an offering, or moves it from its current offering.
 
 An offering holds one paywall: attach fails if the target offering already
-has one — detach that one first. Attaching a published paywall makes it live
-for the offering immediately.
+has one — detach that one first. Attaching a published paywall means it can
+be served to customers through that offering.
 
 Confirmation: prompts under TTY when the paywall is published; pass --yes to
 skip. Required under --no-input.`,
@@ -247,16 +247,20 @@ skip. Required under --no-input.`,
 			if err != nil {
 				return err
 			}
-			paywall, err := client.Paywalls.Get(cmd.Context(), projectID, paywallID)
+			paywall, err := client.Paywalls.GetWithComponents(cmd.Context(), projectID, paywallID)
 			if err != nil {
 				return err
 			}
 			if paywall.PublishedAt != nil {
-				if err := confirmOrAbort(rt, fmt.Sprintf("Paywall %s is published — attaching makes it live for offering %s. Attach now?", paywallID, offeringID)); err != nil {
+				prompt := fmt.Sprintf("Paywall %s is published — it will be served to customers through offering %s. Attach now?", paywallID, offeringID)
+				if paywall.OfferingID != "" && paywall.OfferingID != offeringID {
+					prompt = fmt.Sprintf("Paywall %s is published and served to customers through offering %s — moving it will serve it through %s instead. Move now?", paywallID, paywall.OfferingID, offeringID)
+				}
+				if err := confirmOrAbort(rt, prompt); err != nil {
 					return err
 				}
 			}
-			paywall, err = client.Paywalls.SetOffering(cmd.Context(), projectID, paywallID, &offeringID)
+			paywall, err = client.Paywalls.SetOffering(cmd.Context(), projectID, paywallID, paywallRevision(paywall), &offeringID)
 			if err != nil {
 				var apiErr *api.APIError
 				if errors.As(err, &apiErr) && apiErr.Status == 409 && apiErr.Type == "resource_already_exists" {
@@ -303,7 +307,11 @@ A published paywall cannot be detached — unpublish it first.`,
 			if err != nil {
 				return err
 			}
-			paywall, err := client.Paywalls.SetOffering(cmd.Context(), projectID, paywallID, nil)
+			paywall, err := client.Paywalls.GetWithComponents(cmd.Context(), projectID, paywallID)
+			if err != nil {
+				return err
+			}
+			paywall, err = client.Paywalls.SetOffering(cmd.Context(), projectID, paywallID, paywallRevision(paywall), nil)
 			if err != nil {
 				var apiErr *api.APIError
 				if errors.As(err, &apiErr) && apiErr.Status == 422 && apiErr.Type == "parameter_error" {
@@ -318,6 +326,18 @@ A published paywall cannot be detached — unpublish it first.`,
 			return rt.Out.Render(paywall)
 		},
 	}
+}
+
+func paywallRevision(paywall *api.Paywall) int {
+	if paywall.Components != nil {
+		if draft := paywall.Components.Draft; draft != nil && draft.Revision != nil {
+			return *draft.Revision
+		}
+		if published := paywall.Components.Published; published != nil && published.Revision != nil {
+			return *published.Revision
+		}
+	}
+	return 0
 }
 
 func paywallPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
@@ -404,8 +424,9 @@ func newPaywallsDeleteCmd() *cobra.Command {
 Reversibility: irreversible. Recreate the paywall if it is deleted.
 
 A paywall that is attached to an offering or published refuses to delete
-unless --force is passed — --yes alone is not enough. It may be live or
-someone else's in-progress work; get explicit consent from the user first.
+unless --force is passed — --yes alone is not enough. It may be serving
+customers or be someone else's in-progress work; get explicit consent from
+the user first.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc paywalls delete pw_old --yes

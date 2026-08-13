@@ -43,14 +43,14 @@ func TestPaywallsSetOffering(t *testing.T) {
 		{
 			name:       "attach",
 			offeringID: &ofrng,
-			wantBody:   `{"offering_id":"ofrng_x"}`,
+			wantBody:   `{"offering_id":"ofrng_x","revision":7}`,
 			response:   `{"id":"pw","offering_id":"ofrng_x","created_at":1,"published_at":null,"object":"paywall"}`,
 			wantResult: "ofrng_x",
 		},
 		{
 			name:       "detach",
 			offeringID: nil,
-			wantBody:   `{"offering_id":null}`,
+			wantBody:   `{"offering_id":null,"revision":7}`,
 			response:   `{"id":"pw","offering_id":null,"created_at":1,"published_at":null,"object":"paywall"}`,
 			wantResult: "",
 		},
@@ -71,7 +71,7 @@ func TestPaywallsSetOffering(t *testing.T) {
 			t.Cleanup(srv.Close)
 
 			client := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-			paywall, err := client.Paywalls.SetOffering(context.Background(), "proj", "pw", tt.offeringID)
+			paywall, err := client.Paywalls.SetOffering(context.Background(), "proj", "pw", 7, tt.offeringID)
 			if err != nil {
 				t.Fatal(err)
 			}
