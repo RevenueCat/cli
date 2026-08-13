@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 // APIError is the typed error returned for all non-2xx API responses.
@@ -29,6 +31,9 @@ type APIError struct {
 	Retryable         bool   `json:"retryable,omitempty"`
 	RequestID         string `json:"-"`                     // X-Request-Id header, not in body
 	RetryAfterSeconds int    `json:"retry_after,omitempty"` // Retry-After header on 429
+
+	// CredentialSource names where the request's credential came from; set by the client, not the wire.
+	CredentialSource string `json:"-"`
 }
 
 func (e *APIError) Error() string {
@@ -69,9 +74,12 @@ func parseError(resp *http.Response) error {
 // Hint returns an actionable next step for the user, given the error type +
 // status. Returns empty when nothing useful can be said.
 func (e *APIError) Hint() string {
+	if scope := MissingScope(e.Message); scope != "" {
+		return e.scopeHint(scope)
+	}
 	switch e.Type {
 	case "unauthorized", "authentication_error":
-		return "Your API key may be revoked or expired. Run `rc login` again, or set RC_API_KEY."
+		return e.authHint()
 	case "rate_limit_exceeded":
 		if e.RetryAfterSeconds > 0 {
 			return fmt.Sprintf("Rate limited. Retry after %d seconds.", e.RetryAfterSeconds)
@@ -80,6 +88,50 @@ func (e *APIError) Hint() string {
 	}
 	if e.Status >= 500 {
 		return "API issue. Retry, or check https://status.revenuecat.com."
+	}
+	return ""
+}
+
+func (e *APIError) credentialSourceNote() string {
+	switch e.CredentialSource {
+	case "env":
+		return " The active credential came from the RC_API_KEY environment variable — check your shell env (e.g. ~/.zshrc), or run `rc login`."
+	case "flag":
+		return " The active credential came from the --api-key flag; pass a key with the required scope, or run `rc login`."
+	case "oauth":
+		return " Run `rc login` again to refresh your session."
+	default:
+		return " Run `rc login` again, or set RC_API_KEY to a key with the required scope."
+	}
+}
+
+func (e *APIError) authHint() string {
+	return "Your credential may be revoked, expired, or missing a required scope." + e.credentialSourceNote()
+}
+
+func (e *APIError) scopeHint(scope string) string {
+	return fmt.Sprintf("The active credential is missing the %q scope.", scope) + e.credentialSourceNote()
+}
+
+// scopeTokenRe matches scope identifiers like "project_configuration:read_write".
+var scopeTokenRe = regexp.MustCompile(`[A-Za-z0-9_*]+:[A-Za-z0-9_*]+(?::[A-Za-z0-9_*]+)?`)
+
+// MissingScope extracts the scope named in a permission/scope error message, or "" if none.
+func MissingScope(msg string) string {
+	if msg == "" || !strings.Contains(strings.ToLower(msg), "scope") {
+		return ""
+	}
+	for _, q := range []byte{'`', '"', '\''} {
+		if i := strings.IndexByte(msg, q); i >= 0 {
+			if j := strings.IndexByte(msg[i+1:], q); j > 0 {
+				if cand := strings.TrimSpace(msg[i+1 : i+1+j]); cand != "" {
+					return cand
+				}
+			}
+		}
+	}
+	if m := scopeTokenRe.FindString(msg); m != "" {
+		return m
 	}
 	return ""
 }

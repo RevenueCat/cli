@@ -73,7 +73,7 @@ func TestBareRC_LoggedInWithProject_ShowsCommandMap(t *testing.T) {
 		"app.revenuecat.com/projects/abc", // dashboard deep-link (prefix stripped)
 		"Get started", "Design paywalls", "Manage your catalog", "Manage customers & revenue", "Connect apps & integrations", "Automate with AI",
 		"rc setup", "rc paywalls generate", "rc paywalls edit",
-		"rc customer show <id>",
+		"rc customers show <id>",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("logged-in/project home missing %q:\n%s", want, out)

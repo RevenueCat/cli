@@ -18,7 +18,7 @@ make check            # verify everything passes clean
 ```bash
 go run ./cmd/rc --help
 go run ./cmd/rc commands --json | jq    # full surface
-go run ./cmd/rc schema customer grant   # per-command schema
+go run ./cmd/rc schema customers grant   # per-command schema
 ```
 
 Build a local binary:
@@ -38,7 +38,7 @@ export RC_PROJECT_ID="proj_..."
 export RC_CONFIG_DIR="$(mktemp -d)"
 
 go run ./cmd/rc projects list
-go run ./cmd/rc customer show <id>
+go run ./cmd/rc customers show <id>
 ```
 
 When done: `unset RC_API_KEY` and revoke the key in the dashboard.

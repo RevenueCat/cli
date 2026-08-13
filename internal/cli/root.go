@@ -58,15 +58,15 @@ Agent-friendly entrypoints:
   rc <cmd> --yes         skip confirmations`,
 		Example: `  # Human use
   rc auth login
-  rc customer show cus_abc
+  rc customers show cus_abc
 
   # Scripted use
-  rc customer list --json | jq '.data.items[].id'
+  rc customers list --json | jq '.data.items[].id'
   RC_API_KEY=sk_... rc entitlements list --json
 
   # Agent discovery
   rc commands --json
-  rc schema customer grant`,
+  rc schema customers grant`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Version:       version,
@@ -75,9 +75,7 @@ Agent-friendly entrypoints:
 			if err != nil {
 				return err
 			}
-			if g.APIKey != "" {
-				cfg.APIKey = g.APIKey
-			}
+			cfg.SetFlagAPIKey(g.APIKey)
 			if g.ProjectID != "" {
 				cfg.ProjectID = g.ProjectID
 			}

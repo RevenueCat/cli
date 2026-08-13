@@ -29,7 +29,7 @@ var homeMap = []homeGroup{
 		{"rc entitlements list", "entitlements & their products"},
 	}},
 	{"revenue", [][2]string{
-		{"rc customer show <id>", "a full customer view"},
+		{"rc customers show <id>", "a full customer view"},
 		{"rc charts show mrr", "MRR, actives, conversion"},
 		{"rc metrics", "project overview at a glance"},
 	}},
