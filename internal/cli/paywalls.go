@@ -268,6 +268,9 @@ skip. Required under --no-input.`,
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Attached %s to %s", paywall.ID, offeringID))
+			if paywall.PublishedAt != nil {
+				rt.Out.Hint("Apps may not pick this up until the next publish — run rc paywalls publish " + paywall.ID + ".")
+			}
 			return rt.Out.Render(paywall)
 		},
 	}
