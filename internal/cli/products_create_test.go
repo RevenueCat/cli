@@ -74,14 +74,22 @@ func TestProductsCreate_TypeAcceptanceByStore(t *testing.T) {
 
 		{"play_store subscription", "play_store", "subscription", true},
 		{"play_store one_time", "play_store", "one_time", true},
-		{"play_store non_renewing_subscription", "play_store", "non_renewing_subscription", true},
+		{"play_store non_renewing_subscription", "play_store", "non_renewing_subscription", false},
 		{"play_store consumable", "play_store", "consumable", false},
 		{"play_store non_consumable", "play_store", "non_consumable", false},
+
+		{"amazon one_time", "amazon", "one_time", true},
+		{"amazon non_renewing_subscription", "amazon", "non_renewing_subscription", false},
+		{"stripe subscription", "stripe", "subscription", true},
+		{"stripe non_renewing_subscription", "stripe", "non_renewing_subscription", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			requests, body, err := runProductsCreate(t, tc.appType,
-				"--store-id", "sid", "--type", tc.productType, "--app-id", "app", "--title", "T")
+			args := []string{"--store-id", "sid", "--type", tc.productType, "--app-id", "app", "--title", "T"}
+			if tc.appType == "test_store" && tc.productType == "subscription" {
+				args = append(args, "--duration", "P1M")
+			}
+			requests, body, err := runProductsCreate(t, tc.appType, args...)
 			if tc.accepted {
 				if err != nil {
 					t.Fatalf("expected accept, got error: %v", err)
@@ -179,6 +187,20 @@ func TestProductsCreate_DurationAcceptedOnTestStore(t *testing.T) {
 	}
 	if sub["duration"] != "P1M" {
 		t.Fatalf("outgoing duration = %v, want P1M", sub["duration"])
+	}
+}
+
+func TestProductsCreate_DurationRequiredForTestStoreSubscription(t *testing.T) {
+	requests, _, err := runProductsCreate(t, "test_store",
+		"--store-id", "sid", "--type", "subscription", "--app-id", "app", "--title", "T")
+	if err == nil {
+		t.Fatal("expected client-side rejection for missing --duration on a Test Store subscription")
+	}
+	if !strings.Contains(err.Error(), "--duration") {
+		t.Fatalf("error should mention --duration, got: %v", err)
+	}
+	if postedProducts(requests) {
+		t.Fatalf("missing --duration still reached the server: %v", requests)
 	}
 }
 

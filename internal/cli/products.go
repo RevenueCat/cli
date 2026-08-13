@@ -229,12 +229,13 @@ store exactly (required).
 --app-id is the RevenueCat app ID (required; picker shown in a terminal). The
 app's store decides which --type values are valid.
 --type is the Product type; valid values depend on the app's store. Test Store
-accepts subscription, consumable, non_consumable; App Store and Play Store
-accept subscription, one_time, non_renewing_subscription (required; picker shown
-in a terminal).
+accepts subscription, consumable, non_consumable; App Store accepts subscription,
+one_time, non_renewing_subscription; Play Store, Amazon, and Stripe accept
+subscription and one_time (required; picker shown in a terminal).
 --title is the Customer-facing Product title (required for Test Store Products).
---duration is an ISO 8601 duration, e.g. P1M, P1Y. Subscription parameters are
-only supported for Test Store products.`,
+--duration is an ISO 8601 duration, e.g. P1M, P1Y. It is required for Test Store
+subscription Products; subscription parameters are only supported for Test Store
+products.`,
 		Example: `  rc products create --store-id premium_monthly --type subscription --app-id test_app --title "Premium Monthly" --duration P1M
   rc products create --store-id coins_100 --type consumable --app-id test_app --title "100 Coins"
   rc products create --store-id com.example.once --type one_time --app-id app_x --display-name "Unlock Everything"`,
@@ -292,6 +293,9 @@ only supported for Test Store products.`,
 			if isTestStoreApp(app) && title == "" {
 				return fmt.Errorf("--title is required for Test Store products")
 			}
+			if isTestStoreApp(app) && productType == "subscription" && duration == "" {
+				return fmt.Errorf("--duration is required for Test Store subscription products (e.g. P1M, P1Y)")
+			}
 			if duration != "" && !isTestStoreApp(app) {
 				return fmt.Errorf("--duration and other subscription parameters are only supported for Test Store products, but app %s is a %s app", appID, app.Type)
 			}
@@ -325,21 +329,27 @@ only supported for Test Store products.`,
 }
 
 // productTypesForStore returns the ProductType values accepted for an app's
-// store. Test Store takes granular consumable/non_consumable; the App/Play
-// stores take one_time and non_renewing_subscription. The union across stores
-// must cover the ProductType enum (see TestProductTypeStoreSetsCoverEnum).
+// store. non_renewing_subscription is App Store only (khepri __validate_product_type);
+// the sets' union must cover the ProductType enum (TestProductTypeStoreSetsCoverEnum).
 func productTypesForStore(appType api.AppType) []api.ProductType {
-	if string(appType) == string(api.TestStoreAppTypeTestStore) {
+	switch string(appType) {
+	case string(api.TestStoreAppTypeTestStore):
 		return []api.ProductType{
 			api.ProductTypeSubscription,
 			api.ProductTypeConsumable,
 			api.ProductTypeNonConsumable,
 		}
-	}
-	return []api.ProductType{
-		api.ProductTypeSubscription,
-		api.ProductTypeOneTime,
-		api.ProductTypeNonRenewingSubscription,
+	case string(api.AppStoreAppTypeAppStore):
+		return []api.ProductType{
+			api.ProductTypeSubscription,
+			api.ProductTypeOneTime,
+			api.ProductTypeNonRenewingSubscription,
+		}
+	default:
+		return []api.ProductType{
+			api.ProductTypeSubscription,
+			api.ProductTypeOneTime,
+		}
 	}
 }
 
