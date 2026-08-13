@@ -230,8 +230,10 @@ store exactly (required).
 app's store decides which --type values are valid.
 --type is the Product type; valid values depend on the app's store. Test Store
 accepts subscription, consumable, non_consumable; App Store accepts subscription,
-one_time, non_renewing_subscription; Play Store, Amazon, and Stripe accept
-subscription and one_time (required; picker shown in a terminal).
+one_time, consumable, non_consumable, non_renewing_subscription; Play Store
+accepts subscription, one_time, consumable, non_consumable; Amazon, Stripe, and
+other stores accept subscription and one_time (required; picker shown in a
+terminal).
 --title is the Customer-facing Product title (required for Test Store Products).
 --duration is an ISO 8601 duration, e.g. P1M, P1Y. It is required for Test Store
 subscription Products; subscription parameters are only supported for Test Store
@@ -299,6 +301,9 @@ products.`,
 			if duration != "" && !isTestStoreApp(app) {
 				return fmt.Errorf("--duration and other subscription parameters are only supported for Test Store products, but app %s is a %s app", appID, app.Type)
 			}
+			if duration != "" && isTestStoreApp(app) && productType != "subscription" {
+				return fmt.Errorf("--duration is only valid for a Test Store subscription product, not a %s product", productType)
+			}
 			body := api.ProductCreate{
 				StoreIdentifier: storeID,
 				// Sent verbatim: Test Store takes consumable/non_consumable but reads back
@@ -328,9 +333,9 @@ products.`,
 	return cmd
 }
 
-// productTypesForStore returns the ProductType values accepted for an app's
-// store. non_renewing_subscription is App Store only (khepri __validate_product_type);
-// the sets' union must cover the ProductType enum (TestProductTypeStoreSetsCoverEnum).
+// productTypesForStore returns the product types each store's API accepts. These
+// aren't in the flat ProductType enum, so they're encoded here; the sets' union
+// must stay covering the enum (TestProductTypeStoreSetsCoverEnum).
 func productTypesForStore(appType api.AppType) []api.ProductType {
 	switch string(appType) {
 	case string(api.TestStoreAppTypeTestStore):
@@ -343,7 +348,16 @@ func productTypesForStore(appType api.AppType) []api.ProductType {
 		return []api.ProductType{
 			api.ProductTypeSubscription,
 			api.ProductTypeOneTime,
+			api.ProductTypeConsumable,
+			api.ProductTypeNonConsumable,
 			api.ProductTypeNonRenewingSubscription,
+		}
+	case string(api.PlayStoreAppTypePlayStore):
+		return []api.ProductType{
+			api.ProductTypeSubscription,
+			api.ProductTypeOneTime,
+			api.ProductTypeConsumable,
+			api.ProductTypeNonConsumable,
 		}
 	default:
 		return []api.ProductType{
