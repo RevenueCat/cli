@@ -23,8 +23,8 @@ vet:
 	go vet ./...
 
 lint:
-	@command -v staticcheck >/dev/null || { echo "staticcheck not installed: go install honnef.co/go/tools/cmd/staticcheck@latest"; exit 1; }
-	staticcheck ./...
+	@command -v golangci-lint >/dev/null || { echo "golangci-lint not installed: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2"; exit 1; }
+	golangci-lint run ./...
 
 check: fmt-check vet test
 
