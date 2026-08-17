@@ -192,6 +192,8 @@ func TestDestructiveCommands_RefuseUnderNoInputWithoutYes(t *testing.T) {
 		{"subscriptions", "refund", "sub_x"},
 		{"products", "store", "discard", "plan_x"},
 		{"customer", "revoke", "cust_x", "ent_x"},
+		{"customer", "grant", "cust_x", "ent_x", "--duration", "monthly"},
+		{"customer", "transfer", "cust_x", "--to", "cust_y"},
 	}
 	for _, args := range commands {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
