@@ -513,6 +513,36 @@ func TestSave_DoesNotPersistPerDirProject(t *testing.T) {
 	}
 }
 
+func TestUseProjectID_PersistsChoiceEqualToDirBinding(t *testing.T) {
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": t.TempDir(), "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+	if err := config.Save("default", &config.Config{APIKey: "sk_disk", ProjectID: "proj_profile"}); err != nil {
+		t.Fatal(err)
+	}
+
+	work := t.TempDir()
+	writeProjectFile(t, work, "proj_dir")
+	t.Chdir(work)
+
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// User explicitly selects the project the directory already binds to.
+	cfg.UseProjectID("proj_dir")
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Chdir(t.TempDir())
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ProjectID != "proj_dir" {
+		t.Errorf("explicit UseProjectID matching the dir binding must persist, got %q", got.ProjectID)
+	}
+}
+
 func TestProfileName_RejectsPathTraversal(t *testing.T) {
 	dir := t.TempDir()
 	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_PROFILE": "", "RC_API_KEY": ""})

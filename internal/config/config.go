@@ -474,6 +474,16 @@ func Load(profile string) (*Config, error) {
 	return cfg, nil
 }
 
+// UseProjectID records a project the user chose explicitly (projects use,
+// projects create --use, the picker). It clears the env/dir project overrides
+// so Save persists the choice even when it equals the injected override value —
+// otherwise the revert would mistake the deliberate write for an untouched override.
+func (c *Config) UseProjectID(id string) {
+	c.ProjectID = id
+	c.envProjectID.set = false
+	c.dirProjectID.set = false
+}
+
 func Save(profile string, cfg *Config) error {
 	path, err := profilePath(profile)
 	if err != nil {

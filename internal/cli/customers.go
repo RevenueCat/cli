@@ -571,7 +571,7 @@ func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
 		return pick, nil
 	}
 
-	rt.Config.ProjectID = projectID
+	rt.Config.UseProjectID(projectID)
 	if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 		rt.Out.Info(fmt.Sprintf("note: couldn't save profile: %v", err))
 	}

@@ -161,7 +161,7 @@ current profile.`,
 				return err
 			}
 			if use {
-				rt.Config.ProjectID = p.ID
+				rt.Config.UseProjectID(p.ID)
 				if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 					return err
 				}
@@ -261,7 +261,7 @@ The chosen project is written to the active profile file (default:
 				return err
 			}
 
-			rt.Config.ProjectID = p.ID
+			rt.Config.UseProjectID(p.ID)
 			if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 				return err
 			}
