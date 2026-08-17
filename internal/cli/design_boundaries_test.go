@@ -65,7 +65,6 @@ func TestDesignSystemBoundaries(t *testing.T) {
 				"apps_apple.go":  "output-only gates, suppressed under --json",
 				"paywalls_ai.go": "self-gating requireProject/requireID branch",
 				"open.go":        "guarded by an IsJSON early-return above",
-				"decide.go":      "caller-guarded prompt primitive",
 			},
 			useThis: "use rt.CanPrompt() instead of hand-rolling the --json/--no-input/TTY check",
 		},

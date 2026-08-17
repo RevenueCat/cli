@@ -34,14 +34,14 @@ func decide[T comparable](rt *Runtime, title string, preset *T, choices []Choice
 	if preset != nil {
 		return *preset, nil
 	}
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		flags := make([]string, 0, len(choices))
 		for _, c := range choices {
 			if c.Flag != "" {
 				flags = append(flags, c.Flag)
 			}
 		}
-		return zero, fmt.Errorf("%s requires a choice under --no-input: pass one of %s", title, strings.Join(flags, ", "))
+		return zero, fmt.Errorf("%s requires a choice in non-interactive mode: pass one of %s", title, strings.Join(flags, ", "))
 	}
 	opts := make([]huh.Option[T], len(choices))
 	for i, c := range choices {
