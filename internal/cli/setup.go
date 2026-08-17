@@ -433,7 +433,7 @@ func setupAuthHandbackNote(authed bool) string {
 	if runtime.GOOS == "darwin" {
 		savePassword = " --save-password"
 	}
-	return "\n\nAuth: you are not logged in. If the user has no RevenueCat account, create one without a browser: `rc auth signup --email <user's email> --name \"<user's name>\" --generate-password" + savePassword + " --accept-terms --no-input --json` — but only after the user explicitly agrees to the RevenueCat Terms of Service and Privacy Policy. If the user already has an account, STOP and ask them to run `rc auth login` (a browser sign-in you cannot perform), then continue."
+	return "\n\nAuth: you are not logged in. If the user has no RevenueCat account and wants to sign up, you can help them do it from the terminal once they've agreed to the RevenueCat Terms of Service and Privacy Policy: `rc auth signup --email <user's email> --name \"<user's name>\" --generate-password" + savePassword + " --accept-terms --no-input --json`. The user is the one signing up and accepting the terms; the `--accept-terms` flag records the consent they gave you, so run it only after they say yes. If the user already has an account, STOP and ask them to run `rc auth login` (a browser sign-in you cannot perform), then continue."
 }
 
 // setupStage is where this project stands in the onboarding journey; it

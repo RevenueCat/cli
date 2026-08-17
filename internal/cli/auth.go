@@ -72,7 +72,7 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 		Example: `  # Interactive signup
   rc auth signup
 
-  # Agent on macOS, after the user explicitly authorizes Terms acceptance
+  # Agent helping a user sign up on macOS, after the user has agreed to the Terms
   rc auth signup --email dev@example.com --name "Example Developer" \
     --generate-password --save-password --accept-terms --no-input --json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
