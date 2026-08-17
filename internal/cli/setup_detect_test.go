@@ -3,22 +3,32 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestDetectAppProject(t *testing.T) {
 	cases := []struct {
-		name  string
-		files []string
-		want  string
-		ok    bool
+		name         string
+		files        []string
+		wantLabel    string
+		wantPlatform string
+		wantStatus   projectStatus
 	}{
-		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", true},
-		{"flutter", []string{"pubspec.yaml"}, "Flutter app", true},
-		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", true},
-		{"android", []string{"settings.gradle"}, "Android project", true},
-		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", true},
-		{"empty", nil, "no app project detected", false},
+		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear},
+		{"flutter", []string{"pubspec.yaml"}, "Flutter app", "cross", projectClear},
+		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", "cross", projectClear},
+		{"android", []string{"settings.gradle"}, "Android project", "android", projectClear},
+		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", "ios", projectClear},
+		// A CocoaPods iOS project surfaces twice but is still one clear app.
+		{"xcode-with-workspace", []string{"MyApp.xcodeproj/project.pbxproj", "MyApp.xcworkspace/contents.xcworkspacedata"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear},
+
+		{"js-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}"}, "JavaScript project (not a mobile app)", "", projectNonMobile},
+
+		{"nested-js-and-android", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "settings.gradle"}, "multiple projects detected (JavaScript project, Android project)", "", projectAmbiguous},
+		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "settings.gradle"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous},
+
+		{"empty", nil, "no app project detected", "", projectNone},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -36,9 +46,10 @@ func TestDetectAppProject(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			label, ok := detectAppProject(dir)
-			if label != tc.want || ok != tc.ok {
-				t.Fatalf("detectAppProject = %q,%v want %q,%v", label, ok, tc.want, tc.ok)
+			label, platform, status := detectAppProject(dir)
+			if label != tc.wantLabel || platform != tc.wantPlatform || status != tc.wantStatus {
+				t.Fatalf("detectAppProject = %q,%q,%d want %q,%q,%d",
+					label, platform, status, tc.wantLabel, tc.wantPlatform, tc.wantStatus)
 			}
 		})
 	}
@@ -66,6 +77,21 @@ func TestPlatformFromLabel(t *testing.T) {
 	for label, want := range cases {
 		if got := platformFromLabel(label); got != want {
 			t.Errorf("platformFromLabel(%q) = %q, want %q", label, got, want)
+		}
+	}
+}
+
+func TestSetupProjectNote(t *testing.T) {
+	if note := setupProjectNote(projectClear); note != "" {
+		t.Errorf("clear project should add no note, got %q", note)
+	}
+	for _, status := range []projectStatus{projectAmbiguous, projectNonMobile, projectNone} {
+		note := setupProjectNote(status)
+		if note == "" {
+			t.Errorf("status %d should hand the platform decision to the agent, got empty note", status)
+		}
+		if !strings.Contains(note, "Project detection:") {
+			t.Errorf("status %d note missing detection prefix: %q", status, note)
 		}
 	}
 }

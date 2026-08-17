@@ -134,8 +134,7 @@ func runSetup(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	projectLabel, projectDetected := detectAppProject(dir)
-	platform := platformFromLabel(projectLabel)
+	projectLabel, platform, projStatus := detectAppProject(dir)
 	agents := detectAgents()
 
 	rt.Out.Title("RevenueCat setup  ·  " + filepath.Base(dir))
@@ -167,7 +166,12 @@ func runSetup(cmd *cobra.Command) error {
 	stage := detectSetupStage(cmd, rt, platform)
 	rt.Out.Field("Stage", stage.Label)
 
-	if !projectDetected {
+	switch projStatus {
+	case projectAmbiguous:
+		rt.Out.Info("Several project markers here — the agent will figure out which app and platform to set up.")
+	case projectNonMobile:
+		rt.Out.Info("This doesn't look like a mobile app — the agent will confirm what needs RevenueCat and pick the platform.")
+	case projectNone:
 		cont, err := tui.ConfirmDefault(false, "No app project detected in this directory. Set up here anyway?", false)
 		if err != nil {
 			return err
@@ -192,7 +196,7 @@ func runSetup(cmd *cobra.Command) error {
 		rt.Out.Answer("Agent", "none — copy the prompt")
 		rt.Out.Blank()
 		rt.Out.Info("Run rc skills install, then paste this into any agent:")
-		rt.Out.Info(setupAgentPrompt(rt, stage, applePending))
+		rt.Out.Info(setupAgentPrompt(rt, stage, applePending, projStatus))
 		rt.Out.Hint("more starter prompts:  rc skills prompts")
 		return nil
 	}
@@ -235,7 +239,7 @@ func runSetup(cmd *cobra.Command) error {
 	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
 	appleDeferred := applePending
 
-	prompt := setupAgentPrompt(rt, stage, appleDeferred)
+	prompt := setupAgentPrompt(rt, stage, appleDeferred, projStatus)
 
 	rt.Out.Plan([]string{
 		"Install the RevenueCat AI Toolkit skills for " + choice.Name,
@@ -386,12 +390,25 @@ func activeProjectLabel(cmd *cobra.Command, rt *Runtime) string {
 
 // setupAgentPrompt is the starter prompt handed to the agent, with the
 // Apple-deferred instruction appended when relevant.
-func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool) string {
-	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
+func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool, status projectStatus) string {
+	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt) + setupProjectNote(status)
 	if appleDeferred {
 		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
 	}
 	return prompt
+}
+
+func setupProjectNote(status projectStatus) string {
+	switch status {
+	case projectAmbiguous:
+		return "\n\nProject detection: this directory has several project markers, so it may be a monorepo or nested checkout. Identify the specific app and platform that needs RevenueCat before making changes — do not infer one from the directory."
+	case projectNonMobile:
+		return "\n\nProject detection: this directory does not look like a mobile app (it resembles a web or backend project). Confirm with the user what should get RevenueCat and which platform, rather than assuming iOS."
+	case projectNone:
+		return "\n\nProject detection: no recognizable app project was found here. Confirm the target app and platform with the user before proceeding."
+	default:
+		return ""
+	}
 }
 
 // runSetupAgentPrompt emits the stage-aware setup prompt for a non-interactive
@@ -401,14 +418,13 @@ func runSetupAgentPrompt(cmd *cobra.Command, rt *Runtime) error {
 	if err != nil {
 		return err
 	}
-	projectLabel, _ := detectAppProject(dir)
-	platform := platformFromLabel(projectLabel)
+	_, platform, projStatus := detectAppProject(dir)
 	stage := detectSetupStage(cmd, rt, platform)
 	authed := rt.Config != nil && rt.Config.BearerToken() != ""
 	applePending := (platform == "ios" || platform == "cross") &&
 		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
 
-	prompt := setupAgentPrompt(rt, stage, applePending) + setupAuthHandbackNote(authed)
+	prompt := setupAgentPrompt(rt, stage, applePending, projStatus) + setupAuthHandbackNote(authed)
 
 	if rt.Globals.JSON {
 		return rt.Out.Render(map[string]any{
@@ -622,46 +638,91 @@ func detectAgents() []agentClient {
 	return found
 }
 
-// detectAppProject decides whether dir looks like an app project root and
-// names what it found. The label rides the Directory field so a wrong-cwd
-// mistake is visible before anything runs.
-func detectAppProject(dir string) (label string, ok bool) {
-	if home, err := os.UserHomeDir(); err == nil && dir == home {
-		return "this is your home directory, not an app", false
+type projectStatus int
+
+const (
+	projectClear projectStatus = iota
+	projectAmbiguous
+	projectNonMobile
+	projectNone
+)
+
+type projectMarker struct {
+	label    string
+	platform string
+}
+
+func detectProjectMarkers(dir string) []projectMarker {
+	var markers []projectMarker
+	add := func(label string) {
+		markers = append(markers, projectMarker{label, platformFromLabel(label)})
 	}
+
 	if matches, _ := filepath.Glob(filepath.Join(dir, "*.xcodeproj")); len(matches) > 0 {
-		return "Xcode project (" + filepath.Base(matches[0]) + ")", true
+		add("Xcode project (" + filepath.Base(matches[0]) + ")")
 	}
 	if matches, _ := filepath.Glob(filepath.Join(dir, "*.xcworkspace")); len(matches) > 0 {
-		return "Xcode workspace (" + filepath.Base(matches[0]) + ")", true
+		add("Xcode workspace (" + filepath.Base(matches[0]) + ")")
 	}
 	if _, err := os.Stat(filepath.Join(dir, "pubspec.yaml")); err == nil {
-		return "Flutter app", true
+		add("Flutter app")
 	}
 	if data, err := os.ReadFile(filepath.Join(dir, "package.json")); err == nil {
 		switch {
 		case strings.Contains(string(data), `"react-native"`):
-			return "React Native app", true
+			add("React Native app")
 		case strings.Contains(string(data), `"expo"`):
-			return "Expo app", true
+			add("Expo app")
 		default:
-			return "JavaScript project", true
+			add("JavaScript project")
 		}
 	}
 	for _, tuist := range []string{"Project.swift", "Workspace.swift"} {
 		if _, err := os.Stat(filepath.Join(dir, tuist)); err == nil {
-			return "Tuist project (iOS)", true
+			add("Tuist project (iOS)")
+			break
 		}
 	}
 	if _, err := os.Stat(filepath.Join(dir, "Package.swift")); err == nil {
-		return "Swift package", true
+		add("Swift package")
 	}
 	for _, gradle := range []string{"settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts"} {
 		if _, err := os.Stat(filepath.Join(dir, gradle)); err == nil {
-			return "Android project", true
+			add("Android project")
+			break
 		}
 	}
-	return "no app project detected", false
+	return markers
+}
+
+// detectAppProject returns an empty platform for every non-clear case so
+// applePending never fires (and the flow defers the platform to the agent)
+// on a nested, non-mobile, or empty directory.
+func detectAppProject(dir string) (label, platform string, status projectStatus) {
+	if home, err := os.UserHomeDir(); err == nil && dir == home {
+		return "this is your home directory, not an app", "", projectNone
+	}
+	markers := detectProjectMarkers(dir)
+	if len(markers) == 0 {
+		return "no app project detected", "", projectNone
+	}
+
+	buckets := map[string]bool{}
+	for _, m := range markers {
+		buckets[m.platform] = true
+	}
+	if len(buckets) > 1 {
+		labels := make([]string, len(markers))
+		for i, m := range markers {
+			labels[i] = m.label
+		}
+		return "multiple projects detected (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous
+	}
+
+	if markers[0].platform == "unknown" {
+		return markers[0].label + " (not a mobile app)", "", projectNonMobile
+	}
+	return markers[0].label, markers[0].platform, projectClear
 }
 
 // setupSessionName names the launched agent's session after the app directory.
