@@ -451,7 +451,10 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 				"project_status":         projectStatus,
 				"base_url":               rt.Config.BaseURL,
 			}
-			if authenticated && rt.Config.AuthSource != "" {
+			// Only report auth_origin when the stored credential is the active
+			// one; under a flag/env override it's the wrong credential's origin.
+			if authenticated && rt.Config.AuthSource != "" &&
+				(credSource == config.SourceOAuth || credSource == config.SourceProfile) {
 				out["auth_origin"] = rt.Config.AuthSource
 			}
 			if credSource == config.SourceOAuth {

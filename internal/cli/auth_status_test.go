@@ -84,6 +84,17 @@ func TestAuthStatus_NamesAPIKeyFlag(t *testing.T) {
 	wantField(t, data, "credential_description", "the --api-key flag")
 }
 
+func TestAuthStatus_OmitsAuthOriginWhenOverridden(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("RC_API_KEY", "")
+	seedProfile(t, dir, &config.Config{APIKey: "sk_from_mcp", AuthSource: config.AuthOriginMCPImport})
+
+	// A live --api-key wins, so the stored mcp_import provenance is not in use.
+	data := statusData(t, dir, "--api-key", "sk_flag")
+	wantField(t, data, "credential_source", "flag")
+	wantField(t, data, "auth_origin", nil)
+}
+
 func TestAuthStatus_NamesEnvVar(t *testing.T) {
 	dir := t.TempDir()
 	seedProfile(t, dir, &config.Config{})
