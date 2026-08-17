@@ -51,7 +51,7 @@ func newPurchasesShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				item := purchaseToItem(cmd.Context(), client, projectID, p.CustomerID, *p)
 				return tui.RunBrowser("Purchase", []tui.BrowserItem{item})
 			}

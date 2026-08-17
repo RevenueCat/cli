@@ -248,7 +248,7 @@ func newEntitlementsListCmd() *cobra.Command {
 				return err
 			}
 
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, e := range page.Items {
 					e := e
@@ -297,7 +297,7 @@ func newEntitlementsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				item := entitlementToItem(cmd.Context(), client, projectID, *ent)
 				return tui.RunBrowser("Entitlement", []tui.BrowserItem{item})
 			}

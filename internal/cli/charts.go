@@ -54,7 +54,7 @@ func runChartsList(cmd *cobra.Command, _ []string) error {
 	// The interactive browser renders live chart data, which needs auth and a
 	// project; when either is unavailable this stays a static command and
 	// falls through to the plain list.
-	if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+	if rt.CanPrompt() {
 		if projectID, err := requireProject(rt); err == nil {
 			if client, err := rt.API(); err == nil {
 				items := chartActionItems(cmd.Context(), client, projectID, rt.Globals.NoColor)

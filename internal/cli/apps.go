@@ -75,7 +75,7 @@ status. App Store apps show whether Apple credentials are configured.`,
 				return err
 			}
 
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, a := range page.Items {
 					items[i] = appToItem(projectID, a)
@@ -137,7 +137,7 @@ func newAppsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				item := appToItem(projectID, *a)
 				err := tui.RunBrowser("App", []tui.BrowserItem{item})
 				appleSetupHintForApps(rt, []api.App{*a})

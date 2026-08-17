@@ -190,7 +190,7 @@ func newProductsListCmd() *cobra.Command {
 				return err
 			}
 
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, p := range page.Items {
 					items[i] = productToItem(p)
@@ -277,7 +277,7 @@ products.`,
 			}
 			allowed := productTypesForStore(app.Type)
 			if productType == "" {
-				if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+				if !rt.CanPrompt() {
 					return fmt.Errorf("--type is required (%s)", strings.Join(productTypeValues(allowed), ", "))
 				}
 				opts := make([]huh.Option[string], len(allowed))
@@ -608,7 +608,7 @@ few seconds.`,
 				renderLiveStoreState(rt, state)
 				return nil
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				item := productToItem(*p)
 				return tui.RunBrowser("Product", []tui.BrowserItem{item})
 			}

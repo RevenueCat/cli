@@ -607,7 +607,7 @@ pass --json for machine-readable output or --no-input to disable the browser.`,
 				return err
 			}
 
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				cols := []string{"ID", "PLATFORM", "COUNTRY", "FIRST SEEN", "LAST SEEN"}
 				return tui.RunBrowserTable("Customers", cols, customersToItems(cmd.Context(), client, projectID, page.Items))
 			}
@@ -673,7 +673,7 @@ with drill-down. Use --json for the raw merged document.`,
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				item := customerToItem(cmd.Context(), client, projectID, *customer)
 				return tui.RunBrowser("Customer", []tui.BrowserItem{item})
 			}

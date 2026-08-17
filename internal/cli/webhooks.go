@@ -60,7 +60,7 @@ func newWebhooksListCmd() *cobra.Command {
 				return err
 			}
 
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, w := range page.Items {
 					items[i] = webhookToItem(projectID, w)
@@ -127,7 +127,7 @@ func newWebhooksShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				item := webhookToItem(projectID, *w)
 				return tui.RunBrowser("Webhook", []tui.BrowserItem{item})
 			}

@@ -126,7 +126,7 @@ the step-by-step commands in the docs.`,
 
 func runSetup(cmd *cobra.Command) error {
 	rt := RuntimeFrom(cmd.Context())
-	if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		return runSetupAgentPrompt(cmd, rt)
 	}
 

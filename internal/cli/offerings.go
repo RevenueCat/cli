@@ -397,7 +397,7 @@ func newOfferingsListCmd() *cobra.Command {
 				return err
 			}
 
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				items := make([]tui.BrowserItem, len(page.Items))
 				for i, o := range page.Items {
 					o := o
@@ -450,7 +450,7 @@ func newOfferingsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				item := offeringToItem(cmd.Context(), client, projectID, *o)
 				return tui.RunBrowser("Offering", []tui.BrowserItem{item})
 			}

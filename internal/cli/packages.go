@@ -90,7 +90,7 @@ func runPackagesList(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+	if rt.CanPrompt() {
 		items := make([]tui.BrowserItem, len(all))
 		for i, fp := range all {
 			fp := fp

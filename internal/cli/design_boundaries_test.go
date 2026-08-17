@@ -81,6 +81,22 @@ func TestDesignSystemBoundaries(t *testing.T) {
 			},
 			useThis: "use decide(rt, title, presetFromFlag, choices) so every branch has a flag and a --no-input path",
 		},
+		{
+			name:   "prompt-gate only through rt.CanPrompt",
+			needle: "tui.IsInteractive(",
+			roots:  []string{"internal/tui"},
+			allow: map[string]string{
+				"runtime.go":              "CanPrompt is the one true prompt-gate",
+				"apps_apple.go":           "intentional NoInput-only gate (no --json prompt path)",
+				"paywalls_ai.go":          "intentional NoInput-only gate (no --json prompt path)",
+				"products_store_input.go": "intentional NoInput-only gate (no --json prompt path)",
+				"open.go":                 "intentional NoInput-only gate (no --json prompt path)",
+				"decide.go":               "intentional NoInput-only gate (no --json prompt path)",
+				"rico.go":                 "intentional NoInput-only gate (no --json prompt path)",
+				"customers.go":            "intentional NoInput-only gate (no --json prompt path)",
+			},
+			useThis: "use rt.CanPrompt() instead of hand-rolling the --json/--no-input/TTY check",
+		},
 	}
 
 	repoRoot := filepath.Join("..", "..")

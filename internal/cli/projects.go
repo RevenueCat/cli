@@ -58,7 +58,7 @@ func runProjectsList(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+	if rt.CanPrompt() {
 		items := make([]tui.BrowserItem, len(page.Items))
 		for i, p := range page.Items {
 			p := p
@@ -125,7 +125,7 @@ func newProjectsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				return tui.RunBrowser(p.Name, browseHubItems(cmd.Context(), client, p.ID, rt.Globals.NoColor))
 			}
 			return rt.Out.Render(p)
