@@ -43,38 +43,30 @@ const rcUsageTemplate = `{{rcHead "Usage:"}}{{if .Runnable}}
 
 // commandGroups define the sections of `rc --help`, in display order.
 var commandGroups = []*cobra.Group{
-	{ID: "start", Title: "Getting started"},
-	{ID: "design", Title: "Paywalls & design"},
-	{ID: "catalog", Title: "Catalog"},
-	{ID: "revenue", Title: "Customers & revenue"},
-	{ID: "integrations", Title: "Apps & integrations"},
-	{ID: "ai", Title: "AI & automation"},
+	{ID: "start", Title: "Get started"},
+	{ID: "design", Title: "Design paywalls"},
+	{ID: "catalog", Title: "Manage your catalog"},
+	{ID: "revenue", Title: "Manage customers & revenue"},
+	{ID: "integrations", Title: "Connect apps & integrations"},
+	{ID: "ai", Title: "Automate with AI"},
 	{ID: "advanced", Title: "Advanced"},
 }
 
-// commandGroupByName maps each top-level command to its group. Hidden aliases
-// are included so no empty "Additional Commands" section renders.
-var commandGroupByName = map[string]string{
-	"auth": "start", "login": "start", "whoami": "start", "projects": "start",
-	"profiles": "start", "browse": "start", "open": "start", "setup": "start",
-	"paywalls": "design", "fonts": "design", "media-assets": "design",
-	"offerings": "catalog", "products": "catalog", "packages": "catalog", "entitlements": "catalog",
-	"customers": "revenue", "subscriptions": "revenue", "purchases": "revenue",
-	"invoices": "revenue", "charts": "revenue", "metrics": "revenue",
-	"apps": "integrations", "capital": "integrations", "webhooks": "integrations",
-	"rico": "ai", "skills": "ai",
-	"api": "advanced", "audit": "advanced", "schema": "advanced",
-	"commands": "advanced", "version": "advanced",
-}
-
-// applyCommandGroups registers the groups and assigns every command to one.
-func applyCommandGroups(root *cobra.Command) {
-	root.AddGroup(commandGroups...)
-	for _, c := range root.Commands() {
-		if g, ok := commandGroupByName[c.Name()]; ok {
-			c.GroupID = g
+// groupTitle returns a group's display title from commandGroups, the single
+// source of truth shared by `rc --help` and the home screen.
+func groupTitle(id string) string {
+	for _, g := range commandGroups {
+		if g.ID == id {
+			return g.Title
 		}
 	}
+	return id
+}
+
+// applyCommandGroups registers the help groups. Each command's GroupID is set
+// where it's added to root (see NewRootCmd), so grouping lives on the command.
+func applyCommandGroups(root *cobra.Command) {
+	root.AddGroup(commandGroups...)
 	root.SetHelpCommandGroupID("advanced")
 	root.SetCompletionCommandGroupID("advanced")
 }

@@ -335,7 +335,7 @@ without raw API calls.
 | `--profile <name>` | Config profile (precedence: flag → `$RC_PROFILE` → `rc profiles use` → `"default"`) |
 | `--api-key <key>` | Override profile key (`$RC_API_KEY`) |
 | `--yes, -y` | Skip confirmation prompts |
-| `--all` | Show every command in help, not just the common ones |
+| `--all` | Also show experimental (unreleased) commands in help |
 | `--no-color` | Disable ANSI color (also respects `$NO_COLOR`) |
 | `--format <expr>` | jq expression applied to `--json` output |
 

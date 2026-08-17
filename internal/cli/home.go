@@ -9,25 +9,34 @@ import (
 )
 
 type homeGroup struct {
-	title string
-	rows  [][2]string // {command, description}
+	groupID string      // key into commandGroups; title comes from there
+	rows    [][2]string // {command, description}
 }
 
-// homeMap is the curated command catalog shown once authenticated.
+// homeMap is the curated command catalog shown once authenticated. Groups key
+// into commandGroups so titles and order match `rc --help`.
 var homeMap = []homeGroup{
-	{"Build", [][2]string{
+	{"start", [][2]string{
+		{"rc setup", "set up RevenueCat for a new app"},
+	}},
+	{"design", [][2]string{
+		{"rc paywalls generate", "design a paywall with AI"},
+		{"rc paywalls edit", "refine an existing paywall"},
+	}},
+	{"catalog", [][2]string{
 		{"rc offerings list", "offerings & their packages"},
 		{"rc products list", "products across your stores"},
 		{"rc entitlements list", "entitlements & their products"},
 	}},
-	{"Inspect", [][2]string{
+	{"revenue", [][2]string{
 		{"rc customers show <id>", "a full customer view"},
 		{"rc charts show mrr", "MRR, actives, conversion"},
 		{"rc metrics", "project overview at a glance"},
 	}},
-	{"Automate & set up", [][2]string{
-		{"rc setup", "set up RevenueCat for a new app"},
+	{"integrations", [][2]string{
 		{"rc apps", "connect App Store & Google Play"},
+	}},
+	{"ai", [][2]string{
 		{"rc skills install", "AI workflows for coding agents"},
 		{"rc rico", "ask RevenueCat's AI ✨"},
 	}},
@@ -57,13 +66,6 @@ func writeHomeScreen(w io.Writer, rt *Runtime) {
 			b.WriteString("\n")
 		}
 
-		b.WriteString(paint(output.ToneAccent, "✨ Paywalls — design with AI") + "\n")
-		b.WriteString(homeRows(paint, [][2]string{
-			{"rc paywalls generate", "start from a prompt"},
-			{"rc paywalls edit", "refine an existing paywall"},
-		}, 0))
-		b.WriteString("\n")
-
 		mapWidth := 0
 		for _, g := range homeMap {
 			for _, r := range g.rows {
@@ -76,7 +78,7 @@ func writeHomeScreen(w io.Writer, rt *Runtime) {
 			if i > 0 {
 				b.WriteString("\n")
 			}
-			b.WriteString(label(g.title) + "\n")
+			b.WriteString(label(groupTitle(g.groupID)) + "\n")
 			b.WriteString(homeRows(paint, g.rows, mapWidth))
 		}
 	}

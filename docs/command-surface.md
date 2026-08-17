@@ -26,20 +26,14 @@ the code when adding/renaming a command.
    purchases for the full SE-debug view.
 8. **Don't invent verbs the API can't fulfill.** Verified against fixtures.
 9. **Surface tiers scope who sees what, not who can run what.** Every command
-   is one of three tiers (set via the `surface` annotation, enforced in
+   is one of two tiers (set via the `surface` annotation, enforced in
    `internal/cli/surface.go`):
-   - **human** — in the `humanSurface` allowlist, shown in `rc --help`. Keep
-     this list tight; it's the first thing a person sees. Currently:
-     `paywalls`, `capital`, `apps`, `auth`, `projects`, `version` (+ `login`).
-   - **agent-only** (default) — hidden from `rc --help`, but present in
-     `rc commands --schemas` and fully runnable. Most resource commands live
-     here: humans reach them through guided flows/pickers; agents discover
-     them through the schema channel.
-   - **punted** (`surface: "punted"` annotation) — hidden from `--help` *and*
-     schema, still runnable. For under-DX-tested commands. Promote to a real
-     tier once tested.
-   `rc --all` / `RC_SURFACE=full` reveals everything to humans. Hidden never
-   means disabled — skills naming an agent-only command keep working.
+   - **default** — shown in `rc --help`, in `rc commands`/`rc schema`, and runnable.
+   - **experimental** (`surface: "experimental"` annotation) — hidden from `--help`
+     until the feature ships (revealed by `rc --all` / `RC_SURFACE=full`), but
+     still present in `rc commands` / `rc schema` marked `"experimental": true`
+     so agents can detect it and choose to skip it. Still runnable.
+   Hidden never means disabled — a skill naming an experimental command still works.
 
 ## Verified API truths (from `internal/api/testdata/v2/`)
 
@@ -95,8 +89,8 @@ names; there's no list endpoint.
 ```
 # Onboarding entry points (the two scoped npx surfaces)
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
-rc capital setup                                         # RevenueCat Capital = App Store Connect key flow (wraps apps apple setup)
-rc                                                       # bare rc -> getting-started help; --all reveals every command
+rc capital setup                                         # EXPERIMENTAL (hidden from --help until Capital ships): App Store Connect key flow (wraps apps apple setup)
+rc                                                       # bare rc -> getting-started help; --all reveals experimental commands
 
 # Auth / meta
 rc auth login                                            # browser OAuth or API key; offers MCP-token import on npx runs; rc login is a hidden alias

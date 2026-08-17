@@ -66,9 +66,6 @@ func commandTreeWithSchemas(c *cobra.Command) map[string]any {
 	tree := commandSchema(c)
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
-			continue
-		}
 		subs = append(subs, commandTreeWithSchemas(sc))
 	}
 	tree["commands"] = subs
@@ -108,20 +105,22 @@ func commandSchema(c *cobra.Command) map[string]any {
 
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
-			continue
-		}
-		subs = append(subs, map[string]any{
+		sub := map[string]any{
 			"name":     sc.Name(),
 			"short":    sc.Short,
 			"aliases":  sc.Aliases,
 			"runnable": sc.Runnable(),
-		})
+		}
+		if isExperimental(sc) {
+			sub["experimental"] = true
+		}
+		subs = append(subs, sub)
 	}
 
 	schema := map[string]any{
 		"name":         c.Name(),
 		"path":         commandPath(c),
+		"group":        c.GroupID,
 		"aliases":      c.Aliases,
 		"use":          c.Use,
 		"short":        c.Short,
@@ -132,6 +131,9 @@ func commandSchema(c *cobra.Command) map[string]any {
 		"subcommands":  subs,
 		"runnable":     c.Runnable(),
 		"capabilities": inferCapabilities(c),
+	}
+	if isExperimental(c) {
+		schema["experimental"] = true
 	}
 	addHumanRequirement(schema, c)
 	return schema
@@ -157,7 +159,7 @@ func inferCapabilities(c *cobra.Command) []string {
 		acc.add(canonicalVerb(c.Name()))
 	}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
+		if isExperimental(sc) {
 			continue
 		}
 		collectCapabilities(sc, []string{sc.Name()}, acc)
@@ -170,7 +172,7 @@ func collectCapabilities(c *cobra.Command, path []string, acc *capAccumulator) {
 		acc.add(capLabel(path))
 	}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
+		if isExperimental(sc) {
 			continue
 		}
 		collectCapabilities(sc, append(append([]string{}, path...), sc.Name()), acc)
@@ -250,19 +252,20 @@ func commandPath(c *cobra.Command) string {
 func commandTree(c *cobra.Command) map[string]any {
 	subs := []map[string]any{}
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
-			continue
-		}
 		subs = append(subs, commandTree(sc))
 	}
 	tree := map[string]any{
 		"name":         c.Name(),
 		"path":         commandPath(c),
+		"group":        c.GroupID,
 		"short":        c.Short,
 		"aliases":      c.Aliases,
 		"runnable":     c.Runnable(),
 		"capabilities": inferCapabilities(c),
 		"commands":     subs,
+	}
+	if isExperimental(c) {
+		tree["experimental"] = true
 	}
 	addHumanRequirement(tree, c)
 	return tree
