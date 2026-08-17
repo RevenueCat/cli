@@ -134,7 +134,7 @@ func runSetup(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	projectLabel, platform, projStatus := detectAppProject(dir)
+	projectLabel, platform, projStatus, appDir := detectAppProject(dir)
 	agents := detectAgents()
 
 	rt.Out.Title("RevenueCat setup  ·  " + filepath.Base(dir))
@@ -196,7 +196,7 @@ func runSetup(cmd *cobra.Command) error {
 		rt.Out.Answer("Agent", "none — copy the prompt")
 		rt.Out.Blank()
 		rt.Out.Info("Run rc skills install, then paste this into any agent:")
-		rt.Out.Info(setupAgentPrompt(rt, stage, applePending, projStatus))
+		rt.Out.Info(setupAgentPrompt(rt, stage, applePending, projStatus, appDir))
 		rt.Out.Hint("more starter prompts:  rc skills prompts")
 		return nil
 	}
@@ -239,7 +239,7 @@ func runSetup(cmd *cobra.Command) error {
 	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
 	appleDeferred := applePending
 
-	prompt := setupAgentPrompt(rt, stage, appleDeferred, projStatus)
+	prompt := setupAgentPrompt(rt, stage, appleDeferred, projStatus, appDir)
 
 	rt.Out.Plan([]string{
 		"Install the RevenueCat AI Toolkit skills for " + choice.Name,
@@ -390,15 +390,18 @@ func activeProjectLabel(cmd *cobra.Command, rt *Runtime) string {
 
 // setupAgentPrompt is the starter prompt handed to the agent, with the
 // Apple-deferred instruction appended when relevant.
-func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool, status projectStatus) string {
-	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt) + setupProjectNote(status)
+func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool, status projectStatus, appDir string) string {
+	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt) + setupProjectNote(status, appDir)
 	if appleDeferred {
 		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
 	}
 	return prompt
 }
 
-func setupProjectNote(status projectStatus) string {
+func setupProjectNote(status projectStatus, appDir string) string {
+	if appDir != "" {
+		return "\n\nProject detection: the app is in ./" + appDir + ", not the current directory — cd into it (or target that path) before making changes."
+	}
 	switch status {
 	case projectAmbiguous:
 		return "\n\nProject detection: this directory has several project markers, so it may be a monorepo or nested checkout. Identify the specific app and platform that needs RevenueCat before making changes — do not infer one from the directory."
@@ -418,13 +421,13 @@ func runSetupAgentPrompt(cmd *cobra.Command, rt *Runtime) error {
 	if err != nil {
 		return err
 	}
-	_, platform, projStatus := detectAppProject(dir)
+	_, platform, projStatus, appDir := detectAppProject(dir)
 	stage := detectSetupStage(cmd, rt, platform)
 	authed := rt.Config != nil && rt.Config.BearerToken() != ""
 	applePending := (platform == "ios" || platform == "cross") &&
 		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
 
-	prompt := setupAgentPrompt(rt, stage, applePending, projStatus) + setupAuthHandbackNote(authed)
+	prompt := setupAgentPrompt(rt, stage, applePending, projStatus, appDir) + setupAuthHandbackNote(authed)
 
 	if rt.Globals.JSON {
 		return rt.Out.Render(map[string]any{
@@ -695,16 +698,12 @@ func detectProjectMarkers(dir string) []projectMarker {
 	return markers
 }
 
-// detectAppProject returns an empty platform for every non-clear case so
-// applePending never fires (and the flow defers the platform to the agent)
-// on a nested, non-mobile, or empty directory.
-func detectAppProject(dir string) (label, platform string, status projectStatus) {
-	if home, err := os.UserHomeDir(); err == nil && dir == home {
-		return "this is your home directory, not an app", "", projectNone
-	}
+// classifyDir inspects one directory's markers. hasMarkers is false when it has
+// none, so the caller can decide whether to look elsewhere (e.g. one level down).
+func classifyDir(dir string) (label, platform string, status projectStatus, hasMarkers bool) {
 	markers := detectProjectMarkers(dir)
 	if len(markers) == 0 {
-		return "no app project detected", "", projectNone
+		return "", "", projectNone, false
 	}
 
 	// A non-mobile marker (a package.json for tooling like Fastlane or Prettier)
@@ -726,12 +725,66 @@ func detectAppProject(dir string) (label, platform string, status projectStatus)
 		for i, m := range mobile {
 			labels[i] = m.label
 		}
-		return "multiple projects detected (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous
+		return "multiple projects detected (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous, true
 	case len(buckets) == 1:
-		return mobile[0].label, mobile[0].platform, projectClear
+		return mobile[0].label, mobile[0].platform, projectClear, true
 	default:
-		return markers[0].label + " (not a mobile app)", "", projectNonMobile
+		return markers[0].label + " (not a mobile app)", "", projectNonMobile, true
 	}
+}
+
+// detectAppProject classifies the working directory, returning an empty platform
+// for every non-clear case so applePending never fires and the flow defers to
+// the agent. When the directory has no markers of its own, it looks one level
+// down for a single app in a subdirectory (a common layout: the app lives in
+// ./ios, ./app, or ./apps/mobile). appDir is that relative subdirectory, empty
+// when the app is the working directory itself.
+func detectAppProject(dir string) (label, platform string, status projectStatus, appDir string) {
+	if home, err := os.UserHomeDir(); err == nil && dir == home {
+		return "this is your home directory, not an app", "", projectNone, ""
+	}
+	if l, p, s, ok := classifyDir(dir); ok {
+		return l, p, s, ""
+	}
+
+	var subs []struct{ label, platform, rel string }
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		if !e.IsDir() || skipSubdir(e.Name()) {
+			continue
+		}
+		// Only a single clear mobile app in a subdir counts; a web/tooling subdir
+		// or a subdir that is itself ambiguous doesn't compete.
+		if l, p, s, ok := classifyDir(filepath.Join(dir, e.Name())); ok && s == projectClear {
+			subs = append(subs, struct{ label, platform, rel string }{l, p, e.Name()})
+		}
+	}
+
+	switch len(subs) {
+	case 1:
+		return subs[0].label + " (in ./" + subs[0].rel + ")", subs[0].platform, projectClear, subs[0].rel
+	case 0:
+		return "no app project detected", "", projectNone, ""
+	default:
+		labels := make([]string, len(subs))
+		for i, s := range subs {
+			labels[i] = s.label + " (./" + s.rel + ")"
+		}
+		return "multiple app projects in subdirectories (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous, ""
+	}
+}
+
+// skipSubdir skips directories that never hold an app root but are expensive or
+// misleading to scan: VCS metadata, dependencies, and build output.
+func skipSubdir(name string) bool {
+	if strings.HasPrefix(name, ".") {
+		return true
+	}
+	switch name {
+	case "node_modules", "Pods", "Carthage", "build", "Build", "DerivedData", "vendor", "dist", "out", "target":
+		return true
+	}
+	return false
 }
 
 // setupSessionName names the launched agent's session after the app directory.

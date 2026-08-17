@@ -23,24 +23,30 @@ func TestDetectAppProject(t *testing.T) {
 		wantLabel    string
 		wantPlatform string
 		wantStatus   projectStatus
+		wantAppDir   string
 	}{
-		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear},
-		{"flutter", []string{"pubspec.yaml"}, "Flutter app", "cross", projectClear},
-		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", "cross", projectClear},
-		{"android", []string{"settings.gradle"}, "Android project", "android", projectClear},
-		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", "ios", projectClear},
+		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, ""},
+		{"flutter", []string{"pubspec.yaml"}, "Flutter app", "cross", projectClear, ""},
+		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", "cross", projectClear, ""},
+		{"android", []string{"settings.gradle"}, "Android project", "android", projectClear, ""},
+		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", "ios", projectClear, ""},
 		// A CocoaPods iOS project surfaces twice but is still one clear app.
-		{"xcode-with-workspace", []string{"MyApp.xcodeproj/project.pbxproj", "MyApp.xcworkspace/contents.xcworkspacedata"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear},
+		{"xcode-with-workspace", []string{"MyApp.xcodeproj/project.pbxproj", "MyApp.xcworkspace/contents.xcworkspacedata"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, ""},
 
-		{"js-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}"}, "JavaScript project (not a mobile app)", "", projectNonMobile},
+		{"js-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}"}, "JavaScript project (not a mobile app)", "", projectNonMobile, ""},
 
 		// A mobile app carrying a tooling package.json is still one clear app.
-		{"ios-with-tooling-package-json", []string{"MyApp.xcodeproj/project.pbxproj", "package.json:{\"dependencies\":{\"prettier\":\"3\"}}"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear},
-		{"android-with-tooling-package-json", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "settings.gradle"}, "Android project", "android", projectClear},
+		{"ios-with-tooling-package-json", []string{"MyApp.xcodeproj/project.pbxproj", "package.json:{\"dependencies\":{\"prettier\":\"3\"}}"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, ""},
+		{"android-with-tooling-package-json", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "settings.gradle"}, "Android project", "android", projectClear, ""},
 
-		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "settings.gradle"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous},
+		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "settings.gradle"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous, ""},
 
-		{"empty", nil, "no app project detected", "", projectNone},
+		// No markers at the root, but a single app one level down is picked up.
+		{"single-app-in-subdir", []string{"ios/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, "ios"},
+		{"two-apps-in-subdirs", []string{"android-app/settings.gradle", "ios-app/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android-app), Xcode project (MyApp.xcodeproj) (./ios-app))", "", projectAmbiguous, ""},
+		{"subdir-scan-skips-dependencies", []string{"node_modules/pubspec.yaml"}, "no app project detected", "", projectNone, ""},
+
+		{"empty", nil, "no app project detected", "", projectNone, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -58,10 +64,10 @@ func TestDetectAppProject(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			label, platform, status := detectAppProject(dir)
-			if label != tc.wantLabel || platform != tc.wantPlatform || status != tc.wantStatus {
-				t.Fatalf("detectAppProject = %q,%q,%d want %q,%q,%d",
-					label, platform, status, tc.wantLabel, tc.wantPlatform, tc.wantStatus)
+			label, platform, status, appDir := detectAppProject(dir)
+			if label != tc.wantLabel || platform != tc.wantPlatform || status != tc.wantStatus || appDir != tc.wantAppDir {
+				t.Fatalf("detectAppProject = %q,%q,%d,%q want %q,%q,%d,%q",
+					label, platform, status, appDir, tc.wantLabel, tc.wantPlatform, tc.wantStatus, tc.wantAppDir)
 			}
 		})
 	}
@@ -129,17 +135,22 @@ func TestPlatformFromLabel(t *testing.T) {
 }
 
 func TestSetupProjectNote(t *testing.T) {
-	if note := setupProjectNote(projectClear); note != "" {
+	if note := setupProjectNote(projectClear, ""); note != "" {
 		t.Errorf("clear project should add no note, got %q", note)
 	}
 	for _, status := range []projectStatus{projectAmbiguous, projectNonMobile, projectNone} {
-		note := setupProjectNote(status)
+		note := setupProjectNote(status, "")
 		if note == "" {
 			t.Errorf("status %d should hand the platform decision to the agent, got empty note", status)
 		}
 		if !strings.Contains(note, "Project detection:") {
 			t.Errorf("status %d note missing detection prefix: %q", status, note)
 		}
+	}
+	// A clear app in a subdirectory tells the agent where it is.
+	note := setupProjectNote(projectClear, "ios")
+	if !strings.Contains(note, "./ios") {
+		t.Errorf("subdir note should point at ./ios, got %q", note)
 	}
 }
 
