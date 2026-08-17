@@ -754,7 +754,7 @@ pick from the list interactively.`,
 				return err
 			}
 			if duration == "" {
-				if rt.Globals.NoInput || !tui.IsInteractive() {
+				if !rt.CanPrompt() {
 					return fmt.Errorf("--duration is required")
 				}
 				sel := huh.NewSelect[string]().Title("Duration").Options(grantDurationOptions...).Value(&duration)

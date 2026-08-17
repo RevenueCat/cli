@@ -532,7 +532,7 @@ func (s *ricoPlainSink) Approve(interrupt rico.Interrupt, label string) (bool, e
 	if interrupt.IsDestructive() {
 		label += " (destructive)"
 	}
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		approved := s.session.opts.approveTools && (!interrupt.IsDestructive() || rt.Globals.AssumeYes)
 		if !approved && !s.silent {
 			rt.Out.Warn("Rejected tool call: " + label)
