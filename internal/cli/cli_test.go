@@ -700,3 +700,108 @@ func TestExitCode_UsageErrorsAre2(t *testing.T) {
 		t.Errorf("unknown flag should exit 2, got %d (err: %v)", got, err)
 	}
 }
+
+func TestUnknownSubcommand_ErrorsAcrossGroups(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{"non-runnable group", []string{"apps", "frobnicate"}},
+		{"another non-runnable group", []string{"auth", "frobnicate"}},
+		{"runnable guided group", []string{"paywalls", "create"}},
+		{"runnable list group", []string{"packages", "frobnicate"}},
+		{"nested group", []string{"apps", "apple", "frobnicate"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			out, _, err := runCmd(t, tc.args...)
+			if err == nil {
+				t.Fatalf("want error for unknown subcommand %v, got nil (stdout: %s)", tc.args, out)
+			}
+			if got := cli.ExitCodeFor(err); got != 2 {
+				t.Errorf("unknown subcommand should exit 2, got %d (err: %v)", got, err)
+			}
+			if !strings.HasPrefix(err.Error(), "unknown command") {
+				t.Errorf("want an unknown-command message, got %q", err.Error())
+			}
+		})
+	}
+}
+
+func TestUnknownSubcommand_PreservesBareGroupAndValidSubcommand(t *testing.T) {
+	out, _, err := runCmd(t, "apps")
+	if err != nil {
+		t.Fatalf("bare group should show help, not error: %v", err)
+	}
+	if !strings.Contains(out, "Available Commands:") {
+		t.Errorf("bare group should render help with its subcommands, got:\n%s", out)
+	}
+
+	// A valid subcommand isn't guarded: it may fail on missing auth (exit 4),
+	// but never as unknown-command (exit 2).
+	_, _, err = runCmd(t, "apps", "list", "--no-input")
+	if err != nil && strings.HasPrefix(err.Error(), "unknown command") {
+		t.Errorf("valid subcommand misrouted as unknown: %v", err)
+	}
+}
+
+func TestGroupHelpHidesBareUseLine(t *testing.T) {
+	out, _, err := runCmd(t, "apps", "--help")
+	if err != nil {
+		t.Fatalf("apps --help: %v", err)
+	}
+	if !strings.Contains(out, "rc apps [command]") {
+		t.Fatalf("group usage should offer the subcommand form:\n%s", out)
+	}
+	if strings.Contains(out, "rc apps [flags]") {
+		t.Errorf("help-only group must not render a runnable useline:\n%s", out)
+	}
+}
+
+// The guard makes groups cobra-runnable, but that must not leak into the agent
+// discovery surface: a group stays runnable:false and never lists its own name
+// as a capability.
+func TestUnknownSubcommand_KeepsGroupsOutOfDiscoverySurface(t *testing.T) {
+	out, _, err := runCmd(t, "commands", "--json")
+	if err != nil {
+		t.Fatalf("commands --json: %v", err)
+	}
+	type node struct {
+		Name         string   `json:"name"`
+		Runnable     bool     `json:"runnable"`
+		Capabilities []string `json:"capabilities"`
+		Commands     []node   `json:"commands"`
+	}
+	var got struct {
+		Data node `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	var apps *node
+	for i := range got.Data.Commands {
+		if got.Data.Commands[i].Name == "apps" {
+			apps = &got.Data.Commands[i]
+		}
+	}
+	if apps == nil {
+		t.Fatal("apps group missing from commands tree")
+	}
+	if apps.Runnable {
+		t.Error("pure group apps should report runnable:false in the discovery surface")
+	}
+	if contains(apps.Capabilities, "apps") {
+		t.Errorf("pure group apps must not advertise its own name as a capability, got %v", apps.Capabilities)
+	}
+}
+
+// Near-misses carry cobra's did-you-mean so an agent can self-correct.
+func TestUnknownSubcommand_SuggestsNearMiss(t *testing.T) {
+	_, _, err := runCmd(t, "apps", "lst")
+	if err == nil {
+		t.Fatal("want error for unknown subcommand")
+	}
+	if !strings.Contains(err.Error(), `did you mean "list"?`) {
+		t.Errorf("want a did-you-mean suggestion for 'lst', got %q", err.Error())
+	}
+}

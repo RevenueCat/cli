@@ -152,6 +152,30 @@ func TestWithHint_NilPassesThrough(t *testing.T) {
 	}
 }
 
+func TestWriteJSONError_UnknownSubcommandHasOwnType(t *testing.T) {
+	var buf bytes.Buffer
+	writeJSONError(&buf, &unknownSubcommandError{parent: "rc paywalls", name: "create", suggestion: "generate"})
+	var got struct {
+		Error struct {
+			Type     string `json:"type"`
+			Message  string `json:"message"`
+			ExitCode int    `json:"exit_code"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, buf.String())
+	}
+	if got.Error.Type != "unknown_command_error" {
+		t.Errorf("want type=unknown_command_error, got %q", got.Error.Type)
+	}
+	if got.Error.ExitCode != 2 {
+		t.Errorf("unknown subcommand should map to exit 2, got %d", got.Error.ExitCode)
+	}
+	if !strings.Contains(got.Error.Message, `did you mean "generate"?`) {
+		t.Errorf("message should carry the suggestion, got %q", got.Error.Message)
+	}
+}
+
 func TestWriteJSONError_NotAuthenticatedHasUnauthorizedType(t *testing.T) {
 	var buf bytes.Buffer
 	writeJSONError(&buf, ErrNotAuthenticated)

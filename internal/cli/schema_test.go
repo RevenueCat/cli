@@ -106,7 +106,7 @@ func TestInferCapabilities_DriftGuard(t *testing.T) {
 		if len(c.Commands()) > 0 {
 			caps := inferCapabilities(c)
 			for _, sc := range c.Commands() {
-				if isExperimental(sc) || !sc.Runnable() {
+				if isExperimental(sc) || !isDiscoverableRunnable(sc) {
 					continue
 				}
 				want := canonicalVerb(sc.Name())

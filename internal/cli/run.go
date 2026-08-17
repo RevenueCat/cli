@@ -123,6 +123,8 @@ func writeJSONError(w io.Writer, err error) {
 		env.RetryAfterSeconds = apiErr.RetryAfterSeconds
 	} else if errors.Is(err, ErrNotAuthenticated) {
 		env.Type = "unauthorized"
+	} else if uce := (*unknownSubcommandError)(nil); errors.As(err, &uce) {
+		env.Type = "unknown_command_error"
 	}
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")

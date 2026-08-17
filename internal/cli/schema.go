@@ -109,7 +109,7 @@ func commandSchema(c *cobra.Command) map[string]any {
 			"name":     sc.Name(),
 			"short":    sc.Short,
 			"aliases":  sc.Aliases,
-			"runnable": sc.Runnable(),
+			"runnable": isDiscoverableRunnable(sc),
 		}
 		if isExperimental(sc) {
 			sub["experimental"] = true
@@ -129,7 +129,7 @@ func commandSchema(c *cobra.Command) map[string]any {
 		"example":      c.Example,
 		"flags":        flags,
 		"subcommands":  subs,
-		"runnable":     c.Runnable(),
+		"runnable":     isDiscoverableRunnable(c),
 		"capabilities": inferCapabilities(c),
 	}
 	if isExperimental(c) {
@@ -152,10 +152,17 @@ func addHumanRequirement(schema map[string]any, c *cobra.Command) {
 	}
 }
 
+// isDiscoverableRunnable reports whether a command is a real, invocable verb
+// for the agent discovery surface. A pure group made runnable only to reject
+// unknown subcommands (help_only) isn't one — it just prints help.
+func isDiscoverableRunnable(c *cobra.Command) bool {
+	return c.Runnable() && c.Annotations["help_only"] != "true"
+}
+
 // inferCapabilities lists runnable descendants as `group:verb` labels relative to c.
 func inferCapabilities(c *cobra.Command) []string {
 	acc := &capAccumulator{seen: map[string]bool{}}
-	if c.Runnable() {
+	if isDiscoverableRunnable(c) {
 		acc.add(canonicalVerb(c.Name()))
 	}
 	for _, sc := range c.Commands() {
@@ -168,7 +175,7 @@ func inferCapabilities(c *cobra.Command) []string {
 }
 
 func collectCapabilities(c *cobra.Command, path []string, acc *capAccumulator) {
-	if c.Runnable() {
+	if isDiscoverableRunnable(c) {
 		acc.add(capLabel(path))
 	}
 	for _, sc := range c.Commands() {
@@ -260,7 +267,7 @@ func commandTree(c *cobra.Command) map[string]any {
 		"group":        c.GroupID,
 		"short":        c.Short,
 		"aliases":      c.Aliases,
-		"runnable":     c.Runnable(),
+		"runnable":     isDiscoverableRunnable(c),
 		"capabilities": inferCapabilities(c),
 		"commands":     subs,
 	}
