@@ -134,7 +134,7 @@ func runSetup(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	projectLabel, platform, projStatus, appDir := detectAppProject(dir)
+	projectLabel, platform, projStatus, appDirs := detectAppProject(dir)
 	agents := detectAgents()
 
 	rt.Out.Title("RevenueCat setup  ·  " + filepath.Base(dir))
@@ -196,7 +196,7 @@ func runSetup(cmd *cobra.Command) error {
 		rt.Out.Answer("Agent", "none — copy the prompt")
 		rt.Out.Blank()
 		rt.Out.Info("Run rc skills install, then paste this into any agent:")
-		rt.Out.Info(setupAgentPrompt(rt, stage, applePending, projStatus, appDir))
+		rt.Out.Info(setupAgentPrompt(rt, stage, applePending, projStatus, appDirs))
 		rt.Out.Hint("more starter prompts:  rc skills prompts")
 		return nil
 	}
@@ -239,7 +239,7 @@ func runSetup(cmd *cobra.Command) error {
 	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
 	appleDeferred := applePending
 
-	prompt := setupAgentPrompt(rt, stage, appleDeferred, projStatus, appDir)
+	prompt := setupAgentPrompt(rt, stage, appleDeferred, projStatus, appDirs)
 
 	rt.Out.Plan([]string{
 		"Install the RevenueCat AI Toolkit skills for " + choice.Name,
@@ -390,20 +390,34 @@ func activeProjectLabel(cmd *cobra.Command, rt *Runtime) string {
 
 // setupAgentPrompt is the starter prompt handed to the agent, with the
 // Apple-deferred instruction appended when relevant.
-func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool, status projectStatus, appDir string) string {
-	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt) + setupProjectNote(status, appDir)
+// joinSubdirs renders relative app subdirectories as "./a, ./b" for agent notes.
+func joinSubdirs(dirs []string) string {
+	out := make([]string, len(dirs))
+	for i, d := range dirs {
+		out[i] = "./" + d
+	}
+	return strings.Join(out, ", ")
+}
+
+func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool, status projectStatus, appDirs []string) string {
+	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt) + setupProjectNote(status, appDirs)
 	if appleDeferred {
 		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
 	}
 	return prompt
 }
 
-func setupProjectNote(status projectStatus, appDir string) string {
-	if appDir != "" {
-		return "\n\nProject detection: the app is in ./" + appDir + ", not the current directory — cd into it (or target that path) before making changes."
-	}
+func setupProjectNote(status projectStatus, appDirs []string) string {
 	switch status {
+	case projectClear:
+		if len(appDirs) == 1 {
+			return "\n\nProject detection: the app is in ./" + appDirs[0] + ", not the current directory — cd into it (or target that path) before making changes."
+		}
+		return ""
 	case projectAmbiguous:
+		if len(appDirs) > 0 {
+			return "\n\nProject detection: several app projects live in subdirectories (" + joinSubdirs(appDirs) + "); the current directory has none. Identify the specific app and platform that needs RevenueCat before making changes — do not infer one."
+		}
 		return "\n\nProject detection: this directory has several project markers, so it may be a monorepo or nested checkout. Identify the specific app and platform that needs RevenueCat before making changes — do not infer one from the directory."
 	case projectNonMobile:
 		return "\n\nProject detection: this directory does not look like a mobile app (it resembles a web or backend project). Confirm with the user what should get RevenueCat and which platform, rather than assuming iOS."
@@ -421,13 +435,13 @@ func runSetupAgentPrompt(cmd *cobra.Command, rt *Runtime) error {
 	if err != nil {
 		return err
 	}
-	_, platform, projStatus, appDir := detectAppProject(dir)
+	_, platform, projStatus, appDirs := detectAppProject(dir)
 	stage := detectSetupStage(cmd, rt, platform)
 	authed := rt.Config != nil && rt.Config.BearerToken() != ""
 	applePending := (platform == "ios" || platform == "cross") &&
 		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
 
-	prompt := setupAgentPrompt(rt, stage, applePending, projStatus, appDir) + setupAuthHandbackNote(authed)
+	prompt := setupAgentPrompt(rt, stage, applePending, projStatus, appDirs) + setupAuthHandbackNote(authed)
 
 	if rt.Globals.JSON {
 		return rt.Out.Render(map[string]any{
@@ -736,15 +750,16 @@ func classifyDir(dir string) (label, platform string, status projectStatus, hasM
 // detectAppProject classifies the working directory, returning an empty platform
 // for every non-clear case so applePending never fires and the flow defers to
 // the agent. When the directory has no markers of its own, it looks one level
-// down for a single app in a subdirectory (a common layout: the app lives in
-// ./ios, ./app, or ./apps/mobile). appDir is that relative subdirectory, empty
-// when the app is the working directory itself.
-func detectAppProject(dir string) (label, platform string, status projectStatus, appDir string) {
+// down for apps in subdirectories (a common layout: the app lives in ./ios,
+// ./app, or ./apps/mobile). appDirs holds those relative subdirectories — one
+// for a single clear app, several for an ambiguous set — and is empty when the
+// app (or the ambiguity) is the working directory itself.
+func detectAppProject(dir string) (label, platform string, status projectStatus, appDirs []string) {
 	if home, err := os.UserHomeDir(); err == nil && dir == home {
-		return "this is your home directory, not an app", "", projectNone, ""
+		return "this is your home directory, not an app", "", projectNone, nil
 	}
 	if l, p, s, ok := classifyDir(dir); ok {
-		return l, p, s, ""
+		return l, p, s, nil
 	}
 
 	var subs []struct{ label, platform, rel string }
@@ -762,15 +777,17 @@ func detectAppProject(dir string) (label, platform string, status projectStatus,
 
 	switch len(subs) {
 	case 1:
-		return subs[0].label + " (in ./" + subs[0].rel + ")", subs[0].platform, projectClear, subs[0].rel
+		return subs[0].label + " (in ./" + subs[0].rel + ")", subs[0].platform, projectClear, []string{subs[0].rel}
 	case 0:
-		return "no app project detected", "", projectNone, ""
+		return "no app project detected", "", projectNone, nil
 	default:
 		labels := make([]string, len(subs))
+		rels := make([]string, len(subs))
 		for i, s := range subs {
 			labels[i] = s.label + " (./" + s.rel + ")"
+			rels[i] = s.rel
 		}
-		return "multiple app projects in subdirectories (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous, ""
+		return "multiple app projects in subdirectories (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous, rels
 	}
 }
 

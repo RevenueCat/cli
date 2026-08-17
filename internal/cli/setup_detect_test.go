@@ -23,30 +23,30 @@ func TestDetectAppProject(t *testing.T) {
 		wantLabel    string
 		wantPlatform string
 		wantStatus   projectStatus
-		wantAppDir   string
+		wantAppDirs  []string
 	}{
-		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, ""},
-		{"flutter", []string{"pubspec.yaml"}, "Flutter app", "cross", projectClear, ""},
-		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", "cross", projectClear, ""},
-		{"android", []string{"settings.gradle"}, "Android project", "android", projectClear, ""},
-		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", "ios", projectClear, ""},
+		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
+		{"flutter", []string{"pubspec.yaml"}, "Flutter app", "cross", projectClear, nil},
+		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", "cross", projectClear, nil},
+		{"android", []string{"settings.gradle"}, "Android project", "android", projectClear, nil},
+		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", "ios", projectClear, nil},
 		// A CocoaPods iOS project surfaces twice but is still one clear app.
-		{"xcode-with-workspace", []string{"MyApp.xcodeproj/project.pbxproj", "MyApp.xcworkspace/contents.xcworkspacedata"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, ""},
+		{"xcode-with-workspace", []string{"MyApp.xcodeproj/project.pbxproj", "MyApp.xcworkspace/contents.xcworkspacedata"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
 
-		{"js-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}"}, "JavaScript project (not a mobile app)", "", projectNonMobile, ""},
+		{"js-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}"}, "JavaScript project (not a mobile app)", "", projectNonMobile, nil},
 
 		// A mobile app carrying a tooling package.json is still one clear app.
-		{"ios-with-tooling-package-json", []string{"MyApp.xcodeproj/project.pbxproj", "package.json:{\"dependencies\":{\"prettier\":\"3\"}}"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, ""},
-		{"android-with-tooling-package-json", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "settings.gradle"}, "Android project", "android", projectClear, ""},
+		{"ios-with-tooling-package-json", []string{"MyApp.xcodeproj/project.pbxproj", "package.json:{\"dependencies\":{\"prettier\":\"3\"}}"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
+		{"android-with-tooling-package-json", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "settings.gradle"}, "Android project", "android", projectClear, nil},
 
-		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "settings.gradle"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous, ""},
+		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "settings.gradle"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous, nil},
 
 		// No markers at the root, but a single app one level down is picked up.
-		{"single-app-in-subdir", []string{"ios/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, "ios"},
-		{"two-apps-in-subdirs", []string{"android-app/settings.gradle", "ios-app/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android-app), Xcode project (MyApp.xcodeproj) (./ios-app))", "", projectAmbiguous, ""},
-		{"subdir-scan-skips-dependencies", []string{"node_modules/pubspec.yaml"}, "no app project detected", "", projectNone, ""},
+		{"single-app-in-subdir", []string{"ios/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
+		{"two-apps-in-subdirs", []string{"android-app/settings.gradle", "ios-app/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android-app), Xcode project (MyApp.xcodeproj) (./ios-app))", "", projectAmbiguous, []string{"android-app", "ios-app"}},
+		{"subdir-scan-skips-dependencies", []string{"node_modules/pubspec.yaml"}, "no app project detected", "", projectNone, nil},
 
-		{"empty", nil, "no app project detected", "", projectNone, ""},
+		{"empty", nil, "no app project detected", "", projectNone, nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -64,10 +64,10 @@ func TestDetectAppProject(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			label, platform, status, appDir := detectAppProject(dir)
-			if label != tc.wantLabel || platform != tc.wantPlatform || status != tc.wantStatus || appDir != tc.wantAppDir {
-				t.Fatalf("detectAppProject = %q,%q,%d,%q want %q,%q,%d,%q",
-					label, platform, status, appDir, tc.wantLabel, tc.wantPlatform, tc.wantStatus, tc.wantAppDir)
+			label, platform, status, appDirs := detectAppProject(dir)
+			if label != tc.wantLabel || platform != tc.wantPlatform || status != tc.wantStatus || !equalStrings(appDirs, tc.wantAppDirs) {
+				t.Fatalf("detectAppProject = %q,%q,%d,%v want %q,%q,%d,%v",
+					label, platform, status, appDirs, tc.wantLabel, tc.wantPlatform, tc.wantStatus, tc.wantAppDirs)
 			}
 		})
 	}
@@ -135,11 +135,11 @@ func TestPlatformFromLabel(t *testing.T) {
 }
 
 func TestSetupProjectNote(t *testing.T) {
-	if note := setupProjectNote(projectClear, ""); note != "" {
+	if note := setupProjectNote(projectClear, nil); note != "" {
 		t.Errorf("clear project should add no note, got %q", note)
 	}
 	for _, status := range []projectStatus{projectAmbiguous, projectNonMobile, projectNone} {
-		note := setupProjectNote(status, "")
+		note := setupProjectNote(status, nil)
 		if note == "" {
 			t.Errorf("status %d should hand the platform decision to the agent, got empty note", status)
 		}
@@ -148,9 +148,13 @@ func TestSetupProjectNote(t *testing.T) {
 		}
 	}
 	// A clear app in a subdirectory tells the agent where it is.
-	note := setupProjectNote(projectClear, "ios")
-	if !strings.Contains(note, "./ios") {
+	if note := setupProjectNote(projectClear, []string{"ios"}); !strings.Contains(note, "./ios") {
 		t.Errorf("subdir note should point at ./ios, got %q", note)
+	}
+	// Ambiguous apps in subdirectories forward every path, not "this directory".
+	note := setupProjectNote(projectAmbiguous, []string{"android-app", "ios-app"})
+	if !strings.Contains(note, "./android-app") || !strings.Contains(note, "./ios-app") {
+		t.Errorf("ambiguous-subdir note should list the subdirs, got %q", note)
 	}
 }
 
