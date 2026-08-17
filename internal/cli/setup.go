@@ -707,22 +707,31 @@ func detectAppProject(dir string) (label, platform string, status projectStatus)
 		return "no app project detected", "", projectNone
 	}
 
+	// A non-mobile marker (a package.json for tooling like Fastlane or Prettier)
+	// sits in many mobile repos, so it doesn't make the target ambiguous — only
+	// distinct mobile platforms do.
+	var mobile []projectMarker
 	buckets := map[string]bool{}
 	for _, m := range markers {
+		if m.platform == "unknown" {
+			continue
+		}
+		mobile = append(mobile, m)
 		buckets[m.platform] = true
 	}
-	if len(buckets) > 1 {
-		labels := make([]string, len(markers))
-		for i, m := range markers {
+
+	switch {
+	case len(buckets) > 1:
+		labels := make([]string, len(mobile))
+		for i, m := range mobile {
 			labels[i] = m.label
 		}
 		return "multiple projects detected (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous
-	}
-
-	if markers[0].platform == "unknown" {
+	case len(buckets) == 1:
+		return mobile[0].label, mobile[0].platform, projectClear
+	default:
 		return markers[0].label + " (not a mobile app)", "", projectNonMobile
 	}
-	return markers[0].label, markers[0].platform, projectClear
 }
 
 // setupSessionName names the launched agent's session after the app directory.

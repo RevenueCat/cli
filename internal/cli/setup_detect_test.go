@@ -25,7 +25,10 @@ func TestDetectAppProject(t *testing.T) {
 
 		{"js-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}"}, "JavaScript project (not a mobile app)", "", projectNonMobile},
 
-		{"nested-js-and-android", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "settings.gradle"}, "multiple projects detected (JavaScript project, Android project)", "", projectAmbiguous},
+		// A mobile app carrying a tooling package.json is still one clear app.
+		{"ios-with-tooling-package-json", []string{"MyApp.xcodeproj/project.pbxproj", "package.json:{\"dependencies\":{\"prettier\":\"3\"}}"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear},
+		{"android-with-tooling-package-json", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "settings.gradle"}, "Android project", "android", projectClear},
+
 		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "settings.gradle"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous},
 
 		{"empty", nil, "no app project detected", "", projectNone},
