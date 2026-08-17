@@ -22,6 +22,7 @@ Your Apple credentials go from your machine directly to Apple and are never
 saved or sent to RevenueCat.`,
 		Example: `  rc capital setup
   rc capital setup appl_1a2b3c`,
+		Annotations: map[string]string{annotationSurface: surfaceExperimental},
 	}
 	// Reuse the Apple credential workflow verbatim: the "setup" subcommand is
 	// the same guided flow shipped as `rc apps apple setup`.

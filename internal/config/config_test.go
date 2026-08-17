@@ -8,8 +8,6 @@ import (
 	"github.com/revenuecat/cli/internal/config"
 )
 
-// setEnv sets envs and registers cleanup. Cleaner than per-test t.Setenv calls
-// when many vars are touched at once.
 func setEnv(t *testing.T, pairs map[string]string) {
 	t.Helper()
 	for k, v := range pairs {
@@ -86,7 +84,6 @@ func TestSave_WritesWithOwnerOnlyPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// 0o600 is the contract — the file contains an API key.
 	if mode := info.Mode().Perm(); mode != 0o600 {
 		t.Errorf("want mode 0600, got %o", mode)
 	}
@@ -102,7 +99,6 @@ func TestLoad_EnvOverridesFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Now layer env on top.
 	t.Setenv("RC_API_KEY", "env_key")
 	t.Setenv("RC_PROJECT_ID", "env_proj")
 	t.Setenv("RC_BASE_URL", "https://env.example")
@@ -127,19 +123,16 @@ func TestActiveProfilePointer_RoundTrip(t *testing.T) {
 	t.Setenv("RC_CONFIG_DIR", dir)
 	t.Setenv("RC_PROFILE", "")
 
-	// Create two profiles.
 	for _, name := range []string{"default", "staging"} {
 		if err := config.Save(name, &config.Config{APIKey: "k_" + name}); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	// No pointer yet → fall back to "default".
 	if got := config.ProfileName(""); got != "default" {
 		t.Errorf("with no pointer file, want 'default', got %q", got)
 	}
 
-	// Set staging as active.
 	if err := config.SetActiveProfile("staging"); err != nil {
 		t.Fatal(err)
 	}
@@ -147,14 +140,12 @@ func TestActiveProfilePointer_RoundTrip(t *testing.T) {
 		t.Errorf("after SetActiveProfile(staging), want 'staging', got %q", got)
 	}
 
-	// Env var beats pointer.
 	t.Setenv("RC_PROFILE", "default")
 	if got := config.ProfileName(""); got != "default" {
 		t.Errorf("env should beat pointer, got %q", got)
 	}
 	t.Setenv("RC_PROFILE", "")
 
-	// Explicit arg beats both.
 	if got := config.ProfileName("override"); got != "override" {
 		t.Errorf("explicit arg should beat pointer, got %q", got)
 	}
@@ -218,34 +209,26 @@ func TestLoad_CorruptFileErrors(t *testing.T) {
 	}
 }
 
-// Env vars (RC_API_KEY etc.) are one-shot overrides. A command that saves the
-// config for an unrelated reason must not bake the ephemeral env value into the
-// profile — but an explicit change to a field must still persist.
 func TestSave_DoesNotPersistEnvOverrides(t *testing.T) {
 	dir := t.TempDir()
 	setEnv(t, map[string]string{
 		"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": "",
 	})
 
-	// Seed a profile that already has a real API key + project on disk.
 	if err := config.Save("default", &config.Config{APIKey: "sk_disk", ProjectID: "proj_disk"}); err != nil {
 		t.Fatal(err)
 	}
 
-	// Reload with env overrides in play, then change only the project (as
-	// `rc projects use` would) and save.
 	setEnv(t, map[string]string{"RC_API_KEY": "sk_env", "RC_PROJECT_ID": "proj_env"})
 	cfg, err := config.Load("default")
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.ProjectID = "proj_chosen" // explicit command change
+	cfg.ProjectID = "proj_chosen"
 	if err := config.Save("default", cfg); err != nil {
 		t.Fatal(err)
 	}
 
-	// Reload without env: the ephemeral API key must be gone, the explicit
-	// project change must have stuck.
 	setEnv(t, map[string]string{"RC_API_KEY": "", "RC_PROJECT_ID": ""})
 	got, err := config.Load("default")
 	if err != nil {
@@ -259,7 +242,123 @@ func TestSave_DoesNotPersistEnvOverrides(t *testing.T) {
 	}
 }
 
-// A profile name must not escape the config dir via path separators or "..".
+func saveOAuthProfile(t *testing.T, name string) {
+	t.Helper()
+	if err := config.Save(name, &config.Config{
+		TokenType:    "oauth",
+		AccessToken:  "oauth_access_token",
+		RefreshToken: "oauth_refresh_token",
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCredential_OAuthBeatsEnvAPIKey(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+	saveOAuthProfile(t, "default")
+
+	t.Setenv("RC_API_KEY", "sk_under_scoped_env")
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, src := cfg.Credential()
+	if src != config.SourceOAuth {
+		t.Errorf("want source oauth, got %q", src)
+	}
+	if tok != "oauth_access_token" {
+		t.Errorf("want the OAuth token, got %q", tok)
+	}
+	if cfg.BearerToken() != "oauth_access_token" {
+		t.Errorf("BearerToken should be the OAuth token, got %q", cfg.BearerToken())
+	}
+	present := cfg.PresentCredentialSources()
+	if len(present) != 2 || present[0] != config.SourceOAuth || present[1] != config.SourceEnv {
+		t.Errorf("want [oauth env] present, got %v", present)
+	}
+}
+
+func TestCredential_EnvUsedWhenNoLogin(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+
+	t.Setenv("RC_API_KEY", "sk_ci_env")
+	cfg, err := config.Load("never-saved")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, src := cfg.Credential()
+	if src != config.SourceEnv || tok != "sk_ci_env" {
+		t.Errorf("CI path: want env/sk_ci_env, got %q/%q", src, tok)
+	}
+	if got := cfg.PresentCredentialSources(); len(got) != 1 || got[0] != config.SourceEnv {
+		t.Errorf("want only [env], got %v", got)
+	}
+}
+
+func TestCredential_StoredProfileKey(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+	if err := config.Save("default", &config.Config{APIKey: "sk_disk"}); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tok, src := cfg.Credential(); src != config.SourceProfile || tok != "sk_disk" {
+		t.Errorf("want profile/sk_disk, got %q/%q", src, tok)
+	}
+}
+
+func TestCredential_FlagBeatsEverything(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+	saveOAuthProfile(t, "default")
+
+	t.Setenv("RC_API_KEY", "sk_env")
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.SetFlagAPIKey("sk_flag")
+	tok, src := cfg.Credential()
+	if src != config.SourceFlag || tok != "sk_flag" {
+		t.Errorf("flag should win, got %q/%q", src, tok)
+	}
+	present := cfg.PresentCredentialSources()
+	if len(present) != 3 {
+		t.Errorf("want flag+oauth+env present, got %v", present)
+	}
+}
+
+func TestSetAPIKey_SupersedesEnvOverride(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+
+	t.Setenv("RC_API_KEY", "sk_env")
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.SetAPIKey("sk_typed")
+	if tok, src := cfg.Credential(); src != config.SourceProfile || tok != "sk_typed" {
+		t.Errorf("want profile/sk_typed after SetAPIKey, got %q/%q", src, tok)
+	}
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("RC_API_KEY", "")
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.APIKey != "sk_typed" {
+		t.Errorf("SetAPIKey value should persist to disk, got %q", got.APIKey)
+	}
+}
+
 func TestProfileName_RejectsPathTraversal(t *testing.T) {
 	dir := t.TempDir()
 	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_PROFILE": "", "RC_API_KEY": ""})

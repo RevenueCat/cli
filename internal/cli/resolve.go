@@ -20,7 +20,7 @@ type PickerItem struct {
 //
 //   - arg non-empty          → return as-is, no network call
 //   - arg empty + TTY        → fetch items, show searchable picker
-//   - arg empty + --no-input → error: "<noun> ID is required"
+//   - arg empty + --no-input/--json → error: "<noun> ID is required"
 //
 // Pass argAt(args, i) as arg so commands with multiple positional IDs follow
 // the same pattern regardless of how many positions they need.
@@ -28,7 +28,7 @@ func requireID(rt *Runtime, arg, noun string, fetch func() ([]PickerItem, error)
 	if arg != "" {
 		return arg, nil
 	}
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if rt.Globals.NoInput || rt.Globals.JSON || !tui.IsInteractive() {
 		return "", fmt.Errorf("%s ID is required", noun)
 	}
 	items, err := fetch()

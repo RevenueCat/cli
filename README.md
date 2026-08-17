@@ -4,7 +4,7 @@ The official command line interface for [RevenueCat](https://www.revenuecat.com)
 
 ```
 rc auth login
-rc customer show cus_abc
+rc customers show cus_abc
 rc charts show mrr
 ```
 
@@ -54,7 +54,7 @@ rc projects use
 rc capital setup
 
 # Look up a customer
-rc customer show cus_abc
+rc customers show cus_abc
 
 # See your MRR in an interactive chart
 rc charts show mrr
@@ -79,7 +79,7 @@ rc charts show mrr
 
 ```bash
 rc --help          # see everything
-rc customer --help # see subcommands for any noun
+rc customers --help # see subcommands for any noun
 ```
 
 ### Verify a Test Store setup
@@ -90,7 +90,7 @@ SDK, and create a real headless Test Store transaction without raw API calls:
 ```bash
 rc offerings verify ofrng_default --json --no-input
 rc offerings preview app_test --app-user-id demo-user --json --no-input
-rc customer simulate-purchase \
+rc customers simulate-purchase \
   --app-id app_test --product premium_monthly --app-user-id demo-user \
   --yes --json --no-input
 ```
@@ -227,8 +227,8 @@ manual start, run `rc projects create --name "My App" --use`.
 Every command supports `--json` for stable, machine-readable output:
 
 ```bash
-rc customer list --json | jq '.data.items[].id'
-rc customer show cus_abc --json
+rc customers list --json | jq '.data.items[].id'
+rc customers show cus_abc --json
 RC_API_KEY=sk_... rc entitlements list --json --no-input
 ```
 
@@ -335,7 +335,7 @@ without raw API calls.
 | `--profile <name>` | Config profile (precedence: flag → `$RC_PROFILE` → `rc profiles use` → `"default"`) |
 | `--api-key <key>` | Override profile key (`$RC_API_KEY`) |
 | `--yes, -y` | Skip confirmation prompts |
-| `--all` | Show every command in help, not just the common ones |
+| `--all` | Also show experimental (unreleased) commands in help |
 | `--no-color` | Disable ANSI color (also respects `$NO_COLOR`) |
 | `--format <expr>` | jq expression applied to `--json` output |
 

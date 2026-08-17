@@ -58,15 +58,15 @@ Agent-friendly entrypoints:
   rc <cmd> --yes         skip confirmations`,
 		Example: `  # Human use
   rc auth login
-  rc customer show cus_abc
+  rc customers show cus_abc
 
   # Scripted use
-  rc customer list --json | jq '.data.items[].id'
+  rc customers list --json | jq '.data.items[].id'
   RC_API_KEY=sk_... rc entitlements list --json
 
   # Agent discovery
   rc commands --json
-  rc schema customer grant`,
+  rc schema customers grant`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Version:       version,
@@ -75,9 +75,7 @@ Agent-friendly entrypoints:
 			if err != nil {
 				return err
 			}
-			if g.APIKey != "" {
-				cfg.APIKey = g.APIKey
-			}
+			cfg.SetFlagAPIKey(g.APIKey)
 			if g.ProjectID != "" {
 				cfg.ProjectID = g.ProjectID
 			}
@@ -127,39 +125,49 @@ Agent-friendly entrypoints:
 		return nil
 	}
 
-	root.AddCommand(
-		newSetupCmd(),
-		newCapitalCmd(),
-		newOpenCmd(),
-		newAuthCmd(),
-		loginAlias,
-		whoamiAlias,
-		newProfilesCmd(),
-		newProjectsCmd(),
-		newBrowseCmd(),
-		newCustomersCmd(),
-		newEntitlementsCmd(),
-		newOfferingsCmd(),
-		newProductsCmd(),
-		newSubscriptionsCmd(),
-		newPurchasesCmd(),
-		newInvoicesCmd(),
-		newWebhooksCmd(),
-		newPaywallsCmd(),
-		newMediaAssetsCmd(),
-		newFontsCmd(),
-		newRicoCmd(),
-		newChartsCmd(),
-		newMetricsCmd(),
-		newAuditCmd(),
-		newAppsCmd(),
-		newPackagesCmd(),
-		newAPICmd(),
-		newSkillsCmd(),
-		newSchemaCmd(root),
-		newCommandsCmd(root),
-		newVersionCmd(),
-	)
+	// Each command declares its help group here; GroupID lives on the command
+	// (not a separate lookup), so adding a command means grouping it in one place.
+	// Group IDs must exist in commandGroups (enforced by TestEveryCommandHasARegisteredGroup).
+	grouped := []struct {
+		cmd   *cobra.Command
+		group string
+	}{
+		{newSetupCmd(), "start"},
+		{newCapitalCmd(), "integrations"},
+		{newOpenCmd(), "start"},
+		{newAuthCmd(), "start"},
+		{loginAlias, "start"},
+		{whoamiAlias, "start"},
+		{newProfilesCmd(), "start"},
+		{newProjectsCmd(), "start"},
+		{newBrowseCmd(), "start"},
+		{newCustomersCmd(), "revenue"},
+		{newEntitlementsCmd(), "catalog"},
+		{newOfferingsCmd(), "catalog"},
+		{newProductsCmd(), "catalog"},
+		{newSubscriptionsCmd(), "revenue"},
+		{newPurchasesCmd(), "revenue"},
+		{newInvoicesCmd(), "revenue"},
+		{newWebhooksCmd(), "integrations"},
+		{newPaywallsCmd(), "design"},
+		{newMediaAssetsCmd(), "design"},
+		{newFontsCmd(), "design"},
+		{newRicoCmd(), "ai"},
+		{newChartsCmd(), "revenue"},
+		{newMetricsCmd(), "revenue"},
+		{newAuditCmd(), "advanced"},
+		{newAppsCmd(), "integrations"},
+		{newPackagesCmd(), "catalog"},
+		{newAPICmd(), "advanced"},
+		{newSkillsCmd(), "ai"},
+		{newSchemaCmd(root), "advanced"},
+		{newCommandsCmd(root), "advanced"},
+		{newVersionCmd(), "advanced"},
+	}
+	for _, g := range grouped {
+		g.cmd.GroupID = g.group
+		root.AddCommand(g.cmd)
+	}
 
 	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		return usageError{suggestFlag(cmd, err)}

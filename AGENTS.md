@@ -32,7 +32,7 @@ internal/api/   ← typed REST client, 1:1 with API endpoints. NO CLI concepts.
 internal/cli/   ← user-intent commands. Composes api/ calls into UX.
 ```
 
-**The CLI shape is not the API shape.** `rc customer show` calls three
+**The CLI shape is not the API shape.** `rc customers show` calls three
 endpoints to build one composite view; the `api/` package never knows that
 command exists.
 
@@ -44,7 +44,7 @@ REST shape in command names.
 
 If you find yourself naming a command after the HTTP verb + path
 (`rc post-customer-entitlement`), stop. The right name is the user's intent
-(`rc customer grant`).
+(`rc customers grant`).
 
 ## Dual-mode contract (humans + agents)
 

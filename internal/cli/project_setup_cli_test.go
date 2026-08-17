@@ -78,6 +78,11 @@ func TestAppsKeys_ReturnsTypedPublicSDKKeys(t *testing.T) {
 
 func TestProductsCreate_SendsTestStoreTitleAndDuration(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/projects/proj/apps/app_test" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, `{"id":"app_test","name":"Test","type":"test_store","object":"app","project_id":"proj","created_at":1}`)
+			return
+		}
 		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/products" {
 			http.Error(w, "unexpected request", http.StatusNotFound)
 			return

@@ -11,7 +11,7 @@ the code when adding/renaming a command.
    the same user concept, they collapse under one noun. The CLI tree reflects
    how humans think, not how the API is laid out.
 2. **`/actions/foo` endpoints become verbs**, not subcommands of an `actions`
-   group. `POST /customers/{id}/actions/grant_entitlement` → `rc customer grant`.
+   group. `POST /customers/{id}/actions/grant_entitlement` → `rc customers grant`.
 3. **Archive/unarchive collapses** to `archive` + `restore` (or one verb +
    flag) — don't expose REST's symmetry as user-facing symmetry when one verb
    is the common case.
@@ -21,25 +21,19 @@ the code when adding/renaming a command.
    story.
 6. **Implicit project context.** `--project-id` is global, defaults to the
    profile's project, so most commands take just a resource ID.
-7. **Composite views are explicit.** `rc customer show` already gets active
+7. **Composite views are explicit.** `rc customers show` already gets active
    entitlements for free (embedded in API response); add subscriptions +
    purchases for the full SE-debug view.
 8. **Don't invent verbs the API can't fulfill.** Verified against fixtures.
 9. **Surface tiers scope who sees what, not who can run what.** Every command
-   is one of three tiers (set via the `surface` annotation, enforced in
+   is one of two tiers (set via the `surface` annotation, enforced in
    `internal/cli/surface.go`):
-   - **human** — in the `humanSurface` allowlist, shown in `rc --help`. Keep
-     this list tight; it's the first thing a person sees. Currently:
-     `paywalls`, `capital`, `apps`, `auth`, `projects`, `version` (+ `login`).
-   - **agent-only** (default) — hidden from `rc --help`, but present in
-     `rc commands --schemas` and fully runnable. Most resource commands live
-     here: humans reach them through guided flows/pickers; agents discover
-     them through the schema channel.
-   - **punted** (`surface: "punted"` annotation) — hidden from `--help` *and*
-     schema, still runnable. For under-DX-tested commands. Promote to a real
-     tier once tested.
-   `rc --all` / `RC_SURFACE=full` reveals everything to humans. Hidden never
-   means disabled — skills naming an agent-only command keep working.
+   - **default** — shown in `rc --help`, in `rc commands`/`rc schema`, and runnable.
+   - **experimental** (`surface: "experimental"` annotation) — hidden from `--help`
+     until the feature ships (revealed by `rc --all` / `RC_SURFACE=full`), but
+     still present in `rc commands` / `rc schema` marked `"experimental": true`
+     so agents can detect it and choose to skip it. Still runnable.
+   Hidden never means disabled — a skill naming an experimental command still works.
 
 ## Verified API truths (from `internal/api/testdata/v2/`)
 
@@ -95,8 +89,8 @@ names; there's no list endpoint.
 ```
 # Onboarding entry points (the two scoped npx surfaces)
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
-rc capital setup                                         # RevenueCat Capital = App Store Connect key flow (wraps apps apple setup)
-rc                                                       # bare rc -> getting-started help; --all reveals every command
+rc capital setup                                         # EXPERIMENTAL (hidden from --help until Capital ships): App Store Connect key flow (wraps apps apple setup)
+rc                                                       # bare rc -> getting-started help; --all reveals experimental commands
 
 # Auth / meta
 rc auth login                                            # browser OAuth or API key; offers MCP-token import on npx runs; rc login is a hidden alias
@@ -134,27 +128,27 @@ rc apps apple check [app-id]                             # validate Apple login,
 rc apps apple setup [app-id]                             # interactive: create ASC app record if missing, per-key consent for IAP/ASC keys, auto-fetch vendor number
 
 # Customers — busiest noun
-rc customer show [id]                                    # already embeds active_entitlements; we'll add subs + purchases
-rc customer get [id]                                     # raw single endpoint
-rc customer list
-rc customer create
-rc customer delete <id>
-rc customer aliases <id>
-rc customer attributes <id>                              # GET; --set k=v for POST
-rc customer grant <id> <entitlement> [--duration ...]
-rc customer revoke <id> <entitlement>
-rc customer transfer <from> --to <id>
-rc customer override-offering <id> --offering <id>
-rc customer clear-override <id>
-rc customer restore-google <id> --token <t>
-rc customer simulate-purchase                            # Test Store only; --app-id/--product/--app-user-id + confirmation/--yes
-rc customer subscriptions <id>
-rc customer purchases <id>
-rc customer entitlements <id>                            # active
-rc customer invoices <id>
-rc customer wallet <id>                                  # virtual_currencies per-customer
-rc customer wallet-grant <id> <currency> --amount N      # /virtual_currencies/update_balance
-rc customer wallet-tx <id> <currency> --amount N         # /virtual_currencies/transactions
+rc customers show [id]                                    # already embeds active_entitlements; we'll add subs + purchases
+rc customers get [id]                                     # raw single endpoint
+rc customers list
+rc customers create
+rc customers delete <id>
+rc customers aliases <id>
+rc customers attributes <id>                              # GET; --set k=v for POST
+rc customers grant <id> <entitlement> [--duration ...]
+rc customers revoke <id> <entitlement>
+rc customers transfer <from> --to <id>
+rc customers override-offering <id> --offering <id>
+rc customers clear-override <id>
+rc customers restore-google <id> --token <t>
+rc customers simulate-purchase                            # Test Store only; --app-id/--product/--app-user-id + confirmation/--yes
+rc customers subscriptions <id>
+rc customers purchases <id>
+rc customers entitlements <id>                            # active
+rc customers invoices <id>
+rc customers wallet <id>                                  # virtual_currencies per-customer
+rc customers wallet-grant <id> <currency> --amount N      # /virtual_currencies/update_balance
+rc customers wallet-tx <id> <currency> --amount N         # /virtual_currencies/transactions
 
 # Entitlements (project catalog)
 rc entitlements list

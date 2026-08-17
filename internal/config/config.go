@@ -43,6 +43,36 @@ type Config struct {
 	envAPIKey    envOverride
 	envProjectID envOverride
 	envBaseURL   envOverride
+
+	// flagAPIKey holds an --api-key value for this invocation; never serialized.
+	flagAPIKey string
+}
+
+// CredentialSource names where the active credential came from.
+type CredentialSource string
+
+const (
+	SourceFlag    CredentialSource = "flag"
+	SourceOAuth   CredentialSource = "oauth"
+	SourceEnv     CredentialSource = "env"
+	SourceProfile CredentialSource = "profile"
+	SourceNone    CredentialSource = "none"
+)
+
+// Describe returns a human-readable phrase naming the source.
+func (s CredentialSource) Describe() string {
+	switch s {
+	case SourceFlag:
+		return "the --api-key flag"
+	case SourceOAuth:
+		return "the OAuth login in this profile"
+	case SourceEnv:
+		return "the RC_API_KEY environment variable"
+	case SourceProfile:
+		return "the API key stored in this profile"
+	default:
+		return "no credential"
+	}
 }
 
 // envOverride records that Load replaced a field with an env-var value,
@@ -53,13 +83,63 @@ type envOverride struct {
 	set       bool
 }
 
-// BearerToken returns whichever auth credential should be sent as the
-// Authorization: Bearer header. OAuth access token takes priority.
+// BearerToken returns the auth credential for the Authorization: Bearer header.
 func (c *Config) BearerToken() string {
+	tok, _ := c.Credential()
+	return tok
+}
+
+// Credential resolves the active auth credential and reports its source.
+func (c *Config) Credential() (token string, source CredentialSource) {
+	if c.flagAPIKey != "" {
+		return c.flagAPIKey, SourceFlag
+	}
 	if c.TokenType == "oauth" && c.AccessToken != "" {
-		return c.AccessToken
+		return c.AccessToken, SourceOAuth
+	}
+	if c.envAPIKey.set && c.envAPIKey.env != "" {
+		return c.envAPIKey.env, SourceEnv
+	}
+	if k := c.storedAPIKey(); k != "" {
+		return k, SourceProfile
+	}
+	return "", SourceNone
+}
+
+// storedAPIKey is the API key on disk, ignoring any RC_API_KEY override.
+func (c *Config) storedAPIKey() string {
+	if c.envAPIKey.set {
+		return c.envAPIKey.disk
 	}
 	return c.APIKey
+}
+
+// PresentCredentialSources lists every available credential source, highest precedence first.
+func (c *Config) PresentCredentialSources() []CredentialSource {
+	var s []CredentialSource
+	if c.flagAPIKey != "" {
+		s = append(s, SourceFlag)
+	}
+	if c.TokenType == "oauth" && c.AccessToken != "" {
+		s = append(s, SourceOAuth)
+	}
+	if c.envAPIKey.set && c.envAPIKey.env != "" {
+		s = append(s, SourceEnv)
+	}
+	if c.storedAPIKey() != "" {
+		s = append(s, SourceProfile)
+	}
+	return s
+}
+
+// SetFlagAPIKey records an --api-key value for this invocation.
+func (c *Config) SetFlagAPIKey(key string) { c.flagAPIKey = key }
+
+// SetAPIKey sets an explicit stored API key, clearing any flag or env override.
+func (c *Config) SetAPIKey(key string) {
+	c.APIKey = key
+	c.flagAPIKey = ""
+	c.envAPIKey = envOverride{}
 }
 
 // IsOAuth reports whether this profile holds OAuth credentials.

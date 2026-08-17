@@ -132,8 +132,11 @@ answer with a clarifying question instead of a design — reply with another
 edit turn. Each completed turn also writes a preview screenshot next to the
 session file (plus a dark-mode one when the design has dark mode); its path is
 shown in the output — look at it after every turn and keep iterating with edit
-turns until the design is right. The draft stays unpublished; review it and
-run rc paywalls publish.
+turns until the design is right. The preview never renders Restore Purchases
+buttons — the renderer hides them by design. Do not report them missing from
+a screenshot; check the paywall JSON in the session file for a button with
+action type restore_purchases instead. The draft stays unpublished; review it
+and run rc paywalls publish.
 
 Do not generate blind: read the app's theme and brand files and collect app
 screenshots before the first turn. If the app ships custom fonts (.ttf/.otf
@@ -289,7 +292,11 @@ Using it well:
   - Each completed turn writes a preview screenshot next to the session file
     (and a dark-mode one when the design has dark mode); its path is shown in
     the output. Look at it after every turn and judge it against the
-    direction; in the next prompt, describe what is still wrong.
+    direction; in the next prompt, describe what is still wrong. The preview
+    never renders Restore Purchases buttons — the renderer hides them by
+    design; do not report them missing from a screenshot. Check the paywall
+    JSON in the session file for a button with action type restore_purchases
+    instead.
   - Turns take one to several minutes and stream progress; run with an
     extended timeout (--timeout) or in the background rather than polling.
   - Undo the last turn:  rc paywalls rewind --session <file>`,

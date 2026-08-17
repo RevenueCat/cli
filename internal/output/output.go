@@ -482,6 +482,14 @@ func (r *Renderer) Warn(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
 }
 
+// AlwaysWarn writes a warning to stderr even in --json mode.
+func (r *Renderer) AlwaysWarn(msg string) {
+	if r.quiet {
+		return
+	}
+	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
+}
+
 func (r *Renderer) Error(msg string) {
 	if r.json {
 		return

@@ -63,7 +63,8 @@ type Runtime struct {
 	Out     *output.Renderer
 	Ctx     context.Context
 
-	client *api.Client
+	client             *api.Client
+	warnedCredConflict bool
 }
 
 func WithRuntime(ctx context.Context, r *Runtime) context.Context {
@@ -90,21 +91,51 @@ func (r *Runtime) API() (*api.Client, error) {
 		r.silentRefresh()
 	}
 
-	if r.Config.BearerToken() == "" {
+	token, source := r.Config.Credential()
+	if token == "" {
 		return nil, ErrNotAuthenticated
 	}
+	r.warnCredentialConflict(source)
 	if b := r.Config.BaseURL; b != "" {
 		if u, err := url.Parse(b); err != nil || u.Scheme == "" || u.Host == "" {
 			return nil, fmt.Errorf("invalid base URL %q (RC_BASE_URL or profile base_url): expected an absolute URL like https://api.revenuecat.com/v2", b)
 		}
 	}
 	r.client = api.NewClient(api.Options{
-		APIKey:       r.Config.BearerToken(), // works for both API keys and OAuth tokens
-		BaseURL:      r.Config.BaseURL,
-		UserAgent:    userAgent(r.Globals.Version),
-		ExtraHeaders: customHeaders(),
+		APIKey:           token, // works for both API keys and OAuth tokens
+		CredentialSource: string(source),
+		BaseURL:          r.Config.BaseURL,
+		UserAgent:        userAgent(r.Globals.Version),
+		ExtraHeaders:     customHeaders(),
 	})
 	return r.client, nil
+}
+
+// warnCredentialConflict warns once per run when more than one credential source is present.
+func (r *Runtime) warnCredentialConflict(active config.CredentialSource) {
+	if r.warnedCredConflict {
+		return
+	}
+	present := r.Config.PresentCredentialSources()
+	if len(present) < 2 {
+		return
+	}
+	r.warnedCredConflict = true
+	r.Out.AlwaysWarn(credentialConflictMessage(active, present))
+}
+
+func credentialConflictMessage(active config.CredentialSource, present []config.CredentialSource) string {
+	var ignored []string
+	for _, s := range present {
+		if s != active {
+			ignored = append(ignored, s.Describe())
+		}
+	}
+	msg := "Multiple credentials found — using " + active.Describe()
+	if len(ignored) > 0 {
+		msg += "; ignoring " + strings.Join(ignored, " and ")
+	}
+	return msg + "."
 }
 
 func customHeaders() http.Header {

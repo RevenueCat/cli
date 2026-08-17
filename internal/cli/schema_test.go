@@ -95,7 +95,7 @@ func TestInferCapabilities_DriftGuard(t *testing.T) {
 
 	var walk func(c *cobra.Command)
 	walk = func(c *cobra.Command) {
-		if puntedFromSchema(c) {
+		if isExperimental(c) {
 			return
 		}
 
@@ -106,7 +106,7 @@ func TestInferCapabilities_DriftGuard(t *testing.T) {
 		if len(c.Commands()) > 0 {
 			caps := inferCapabilities(c)
 			for _, sc := range c.Commands() {
-				if puntedFromSchema(sc) || !isDiscoverableRunnable(sc) {
+				if isExperimental(sc) || !isDiscoverableRunnable(sc) {
 					continue
 				}
 				want := canonicalVerb(sc.Name())
@@ -126,7 +126,7 @@ func TestInferCapabilities_DriftGuard(t *testing.T) {
 
 func hasRunnableDescendant(c *cobra.Command) bool {
 	for _, sc := range c.Commands() {
-		if puntedFromSchema(sc) {
+		if isExperimental(sc) {
 			continue
 		}
 		if sc.Runnable() || hasRunnableDescendant(sc) {

@@ -350,7 +350,7 @@ func TestCommandsJSON_AgentDiscovery(t *testing.T) {
 	}
 	// Spot-check a few critical subcommands exist for agents to find.
 	tree := string(out)
-	for _, want := range []string{`"auth"`, `"customer"`, `"entitlements"`, `"schema"`, `"projects"`} {
+	for _, want := range []string{`"auth"`, `"customers"`, `"entitlements"`, `"schema"`, `"projects"`} {
 		if !strings.Contains(tree, want) {
 			t.Errorf("expected %s in command tree", want)
 		}
@@ -560,6 +560,7 @@ func TestSchema_IncludesPositionalArgs(t *testing.T) {
 }
 
 func TestSchema_IncludesAliases(t *testing.T) {
+	// Query via the singular alias to prove it resolves to the canonical plural.
 	out, errb, err := runCmd(t, "schema", "customer", "--json")
 	if err != nil {
 		t.Fatalf("execute: %v\nstderr: %s\nstdout: %s", err, errb, out)
@@ -576,11 +577,11 @@ func TestSchema_IncludesAliases(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &got); err != nil {
 		t.Fatalf("not JSON: %v\nstdout: %s", err, out)
 	}
-	if got.Data.Name != "customer" {
+	if got.Data.Name != "customers" {
 		t.Fatalf("wrong command resolved: name=%q stdout=%s", got.Data.Name, out)
 	}
-	if !contains(got.Data.Aliases, "customers") {
-		t.Errorf("want 'customers' in aliases, got %v", got.Data.Aliases)
+	if !contains(got.Data.Aliases, "customer") {
+		t.Errorf("want 'customer' in aliases, got %v", got.Data.Aliases)
 	}
 	subNames := make([]string, len(got.Data.Subcommands))
 	for i, s := range got.Data.Subcommands {
