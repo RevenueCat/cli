@@ -359,6 +359,160 @@ func TestSetAPIKey_SupersedesEnvOverride(t *testing.T) {
 	}
 }
 
+func writeProjectFile(t *testing.T, dir, projectID string) {
+	t.Helper()
+	body := []byte(`{"project_id": "` + projectID + `"}`)
+	if err := os.WriteFile(filepath.Join(dir, config.ProjectFileName), body, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func clearProjectEnv(t *testing.T) {
+	t.Helper()
+	setEnv(t, map[string]string{"RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+}
+
+func TestLoad_PerDirProjectFile(t *testing.T) {
+	t.Run("found in a parent directory", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+
+		root := t.TempDir()
+		writeProjectFile(t, root, "proj_dir")
+		nested := filepath.Join(root, "a", "b", "c")
+		if err := os.MkdirAll(nested, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		t.Chdir(nested)
+
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.ProjectID != "proj_dir" {
+			t.Errorf("per-dir file in parent should be found by walking up: got %q", cfg.ProjectID)
+		}
+	})
+
+	t.Run("nearest file wins", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+
+		root := t.TempDir()
+		writeProjectFile(t, root, "proj_far")
+		nested := filepath.Join(root, "child")
+		if err := os.MkdirAll(nested, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		writeProjectFile(t, nested, "proj_near")
+		t.Chdir(nested)
+
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.ProjectID != "proj_near" {
+			t.Errorf("nearest .revenuecat.json should win: got %q, want proj_near", cfg.ProjectID)
+		}
+	})
+
+	t.Run("beats profile default", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+		if err := config.Save("default", &config.Config{ProjectID: "proj_profile"}); err != nil {
+			t.Fatal(err)
+		}
+
+		dir := t.TempDir()
+		writeProjectFile(t, dir, "proj_dir")
+		t.Chdir(dir)
+
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.ProjectID != "proj_dir" {
+			t.Errorf("per-dir file should beat profile default: got %q, want proj_dir", cfg.ProjectID)
+		}
+	})
+
+	t.Run("env beats per-dir file", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+
+		dir := t.TempDir()
+		writeProjectFile(t, dir, "proj_dir")
+		t.Chdir(dir)
+		t.Setenv("RC_PROJECT_ID", "proj_env")
+
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.ProjectID != "proj_env" {
+			t.Errorf("RC_PROJECT_ID should beat per-dir file: got %q, want proj_env", cfg.ProjectID)
+		}
+	})
+
+	t.Run("absent file falls back to profile", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+		if err := config.Save("default", &config.Config{ProjectID: "proj_profile"}); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Chdir(t.TempDir())
+
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.ProjectID != "proj_profile" {
+			t.Errorf("with no per-dir file, should fall back to profile default: got %q", cfg.ProjectID)
+		}
+	})
+}
+
+func TestSave_DoesNotPersistPerDirProject(t *testing.T) {
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": t.TempDir(), "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+	if err := config.Save("default", &config.Config{APIKey: "sk_disk", ProjectID: "proj_profile"}); err != nil {
+		t.Fatal(err)
+	}
+
+	work := t.TempDir()
+	writeProjectFile(t, work, "proj_dir")
+	t.Chdir(work)
+
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ProjectID != "proj_dir" {
+		t.Fatalf("setup: want per-dir project active, got %q", cfg.ProjectID)
+	}
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg2, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg2.ProjectID = "proj_chosen"
+	if err := config.Save("default", cfg2); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Chdir(t.TempDir())
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ProjectID != "proj_chosen" {
+		t.Errorf("want explicit change persisted and per-dir project reverted, got %q", got.ProjectID)
+	}
+}
+
 func TestProfileName_RejectsPathTraversal(t *testing.T) {
 	dir := t.TempDir()
 	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_PROFILE": "", "RC_API_KEY": ""})

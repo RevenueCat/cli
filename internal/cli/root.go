@@ -99,7 +99,7 @@ Agent-friendly entrypoints:
 	_ = pf.MarkHidden("verbose")
 	pf.StringVar(&g.Profile, "profile", "", "configuration profile to use (default: active profile)")
 	pf.StringVar(&g.APIKey, "api-key", "", "RevenueCat API key (overrides profile; or set RC_API_KEY)")
-	pf.StringVar(&g.ProjectID, "project-id", "", "RevenueCat project ID (overrides profile; or set RC_PROJECT_ID)")
+	pf.StringVar(&g.ProjectID, "project-id", "", "RevenueCat project ID (highest precedence, then RC_PROJECT_ID, then .revenuecat.json in the directory tree, then the profile default)")
 	pf.StringVar(&g.Format, "format", "", "jq expression applied to --json output (e.g. '.data.items[].id')")
 	pf.BoolVar(&g.NoColor, "no-color", false, "disable ANSI color (also honors NO_COLOR)")
 	pf.BoolVarP(&g.AssumeYes, "yes", "y", false, "assume yes for confirmation prompts")

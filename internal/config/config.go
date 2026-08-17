@@ -50,6 +50,11 @@ type Config struct {
 	envProjectID envOverride
 	envBaseURL   envOverride
 
+	// Provenance of the per-directory project binding (see ProjectFileName).
+	// Like the env overrides it applies for a single invocation and is reverted
+	// in Save, so a tree-local project is never baked into the profile on disk.
+	dirProjectID envOverride
+
 	// flagAPIKey holds an --api-key value for this invocation; never serialized.
 	flagAPIKey string
 }
@@ -101,7 +106,6 @@ func (c *Config) BearerToken() string {
 	return tok
 }
 
-// Credential resolves the active auth credential and reports its source.
 func (c *Config) Credential() (token string, source CredentialSource) {
 	if c.flagAPIKey != "" {
 		return c.flagAPIKey, SourceFlag
@@ -194,7 +198,6 @@ func (c *Config) PresentCredentialSources() []CredentialSource {
 	return s
 }
 
-// SetFlagAPIKey records an --api-key value for this invocation.
 func (c *Config) SetFlagAPIKey(key string) { c.flagAPIKey = key }
 
 // SetAPIKey sets an explicit stored API key, clearing any flag or env override.
@@ -378,7 +381,61 @@ func profilePath(profile string) (string, error) {
 	return filepath.Join(dir, name+".json"), nil
 }
 
-// Load reads a profile from disk, layering env vars on top.
+// ProjectFileName is a per-directory project binding, discovered by walking up
+// from the working directory like git finding .git, so a repo can commit it.
+const ProjectFileName = ".revenuecat.json"
+
+type projectFile struct {
+	ProjectID string `json:"project_id"`
+}
+
+// findProjectFile returns the nearest ProjectFileName walking up from start.
+func findProjectFile(start string) (string, bool) {
+	dir := start
+	for {
+		p := filepath.Join(dir, ProjectFileName)
+		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+			return p, true
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", false
+		}
+		dir = parent
+	}
+}
+
+func dirProjectID() (string, bool) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", false
+	}
+	return dirProjectIDFrom(wd)
+}
+
+func dirProjectIDFrom(start string) (string, bool) {
+	path, ok := findProjectFile(start)
+	if !ok {
+		return "", false
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", false
+	}
+	var f projectFile
+	if err := json.Unmarshal(b, &f); err != nil {
+		return "", false
+	}
+	if f.ProjectID == "" {
+		return "", false
+	}
+	return f.ProjectID, true
+}
+
+// Load reads a profile from disk, layering the per-directory project binding
+// and env vars on top. The project ID resolves with this precedence (highest
+// first): --project-id flag (applied by the caller) > RC_PROJECT_ID env >
+// nearest .revenuecat.json in the directory tree > profile default.
 // Missing files are not an error — they return a zero Config so first-run
 // commands like `rc login` work cleanly.
 func Load(profile string) (*Config, error) {
@@ -397,6 +454,13 @@ func Load(profile string) (*Config, error) {
 	// Credentials live in the OS keyring when available; overlay them onto
 	// whatever the file held (the file carries them only as a fallback).
 	loadSecrets(profile, cfg)
+	// The per-directory binding overrides the profile default but sits below
+	// RC_PROJECT_ID and --project-id, which are applied after it. Recorded as an
+	// override so Save reverts it rather than persisting a tree-local project.
+	if pid, ok := dirProjectID(); ok {
+		cfg.dirProjectID = envOverride{env: pid, disk: cfg.ProjectID, set: true}
+		cfg.ProjectID = pid
+	}
 	applyEnv := func(o *envOverride, env string, cur *string) {
 		if env == "" {
 			return
@@ -430,7 +494,11 @@ func Save(profile string, cfg *Config) error {
 		}
 	}
 	revert(cfg.envAPIKey, &out.APIKey)
+	// Order matters: the env override's disk value is the per-dir binding when
+	// both applied, so unwind env first, then the per-dir binding, landing back
+	// on the profile's own project.
 	revert(cfg.envProjectID, &out.ProjectID)
+	revert(cfg.dirProjectID, &out.ProjectID)
 	revert(cfg.envBaseURL, &out.BaseURL)
 
 	// Try the OS keyring first; on success the file omits the secrets, on
