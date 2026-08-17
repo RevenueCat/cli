@@ -1,10 +1,19 @@
 package cli
 
 import (
+	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/config"
+	"github.com/revenuecat/cli/internal/output"
+	"github.com/spf13/cobra"
 )
 
 func TestDetectAppProject(t *testing.T) {
@@ -55,6 +64,41 @@ func TestDetectAppProject(t *testing.T) {
 					label, platform, status, tc.wantLabel, tc.wantPlatform, tc.wantStatus)
 			}
 		})
+	}
+}
+
+func TestDetectSetupStage_EmptyPlatformDoesNotForceApple(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/apps"):
+			_, _ = io.WriteString(w, `{"items":[]}`)
+		case strings.HasSuffix(r.URL.Path, "/offerings"):
+			_, _ = io.WriteString(w, `{"items":[{"id":"ofrng_x"}]}`)
+		case strings.HasSuffix(r.URL.Path, "/products"):
+			_, _ = io.WriteString(w, `{"items":[]}`)
+		default:
+			http.Error(w, "unexpected "+r.URL.Path, http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+
+	rt := &Runtime{
+		Globals: &Globals{NoInput: true, Version: "test"},
+		Config:  &config.Config{APIKey: "sk_test", ProjectID: "proj", BaseURL: srv.URL},
+		Out:     output.NewRenderer(io.Discard, io.Discard, false, false, false, ""),
+		client:  api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL}),
+	}
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// A Test Store exists but no store apps do. An empty platform must defer to
+	// the agent, not route to Apple; a clear iOS platform still connects Apple.
+	if stage := detectSetupStage(cmd, rt, ""); stage.PromptID == "connect-apple" {
+		t.Fatalf("empty platform routed to Apple: %+v", stage)
+	}
+	if stage := detectSetupStage(cmd, rt, "ios"); stage.PromptID != "connect-apple" {
+		t.Fatalf("iOS platform should connect Apple, got %+v", stage)
 	}
 }
 

@@ -534,9 +534,9 @@ func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupSta
 	}
 
 	// Apple applies when an App Store app exists, or none does but the
-	// directory looks like an iOS/cross-platform app. Android-only projects
-	// skip straight to the Play path.
-	appleRelevant := appStore != nil || (playStore == nil && platform != "android")
+	// directory is clearly iOS/cross-platform. An empty platform (nested,
+	// non-mobile, or undetermined) defers to the agent rather than assuming Apple.
+	appleRelevant := appStore != nil || (playStore == nil && (platform == "ios" || platform == "cross"))
 	if appleRelevant {
 		if appStore == nil || appStore.AppStore == nil ||
 			!appStore.AppStore.SubscriptionKeyConfigured || !appStore.AppStore.AppStoreConnectAPIKeyConfigured {
