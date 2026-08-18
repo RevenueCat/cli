@@ -175,10 +175,12 @@ with rc apps apple setup.`,
 			if err != nil {
 				return err
 			}
-			if err := tui.Form(rt.Globals.NoInput).
-				Field(huh.NewInput().Title("App name").Value(&name).Validate(tui.Required("name"))).
-				Field(huh.NewSelect[string]().Title("Type").Options(appTypes...).Value(&appType)).
-				Run(); err != nil {
+			form := tui.Form(rt.Globals.NoInput).
+				Field(huh.NewInput().Title("App name").Value(&name).Validate(tui.Required("name")))
+			if appType == "" && rt.CanPrompt() {
+				form.Field(huh.NewSelect[string]().Title("Type").Options(appTypes...).Value(&appType))
+			}
+			if err := form.Run(); err != nil {
 				return err
 			}
 			if !validAppType(appType) {
