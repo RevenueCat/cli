@@ -28,7 +28,7 @@ func requireID(rt *Runtime, arg, noun string, fetch func() ([]PickerItem, error)
 	if arg != "" {
 		return arg, nil
 	}
-	if rt.Globals.NoInput || rt.Globals.JSON || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		return "", fmt.Errorf("%s ID is required", noun)
 	}
 	items, err := fetch()

@@ -60,7 +60,7 @@ func defaultPaywallSessionPath(projectID, paywallID string) (string, error) {
 }
 
 func pickOfferingOrStandalone(ctx context.Context, rt *Runtime, client *api.Client, projectID string) (string, error) {
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		return "", nil
 	}
 	offerings, err := offeringPickerItems(ctx, client, projectID)
@@ -870,7 +870,7 @@ func requirePaywallAIPrompt(rt *Runtime, prompt *string, title string) error {
 	if *prompt != "" {
 		return nil
 	}
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		return fmt.Errorf("prompt is required; pass --prompt or set RC_PAYWALL_PROMPT")
 	}
 	return tui.Form(rt.Globals.NoInput).

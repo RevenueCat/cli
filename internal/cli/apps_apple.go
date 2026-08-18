@@ -68,7 +68,7 @@ func ensureAppStoreAppRecord(ctx context.Context, rt *Runtime, apple appleConnec
 		return nil
 	}
 	rt.Out.Warn("No App Store Connect app exists for " + bundleID + " — products and TestFlight need one.")
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		rt.Out.Warn("Create it in App Store Connect, or re-run rc apps apple setup interactively to create it from here.")
 		return nil
 	}
@@ -151,7 +151,7 @@ func decideAppleKey(rt *Runtime, name string, configured, skip, force, mayPrompt
 		return false, nil
 	case force:
 		return true, nil
-	case !mayPrompt || rt.Globals.NoInput || rt.Globals.AssumeYes || !tui.IsInteractive():
+	case !mayPrompt || rt.Globals.AssumeYes || !rt.CanPrompt():
 		return !configured, nil
 	case configured:
 		return tui.ConfirmDefault(false, "Replace the existing "+name+"? (a new key is created in App Store Connect and uploaded)", false)
@@ -311,7 +311,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			// sign-in so they can be made against live App Store Connect state
 			// (app record, vendor number). Non-interactive runs decide from
 			// flags now and can exit without touching Apple.
-			promptDecisions := !checkOnly && !rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive()
+			promptDecisions := !checkOnly && !rt.Globals.AssumeYes && rt.CanPrompt()
 			// A fully configured app gets an exit ramp before any Apple
 			// sign-in: replacing working keys is the exception, not the
 			// default. Explicit intent (--force, --vendor-number) skips it.
@@ -385,33 +385,34 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					steps = append(steps, "Save to RevenueCat")
 					rt.Out.Plan(steps)
 				}
-				if !checkOnly && !rt.Globals.AssumeYes {
-					confirmed, err := tui.Confirm(rt.Globals.NoInput, "Sign in to App Store Connect now?")
-					if err != nil {
+				if rt.CanPrompt() {
+					if !checkOnly && !rt.Globals.AssumeYes {
+						confirmed, err := tui.Confirm(rt.Globals.NoInput, "Sign in to App Store Connect now?")
+						if err != nil {
+							return err
+						}
+						if !confirmed {
+							return errors.New("cancelled")
+						}
+					}
+					if !rt.Globals.NoInput && tui.IsInteractive() {
+						rt.Out.Notice(
+							"Your Apple email and password go only to Apple and are never saved —",
+							"RevenueCat never sees them.",
+							"Apple keys created here upload straight to your RevenueCat project — they are",
+							"never saved on this computer or displayed.",
+						)
+					}
+					if err := tui.Form(rt.Globals.NoInput).
+						Field(huh.NewInput().Title("Apple Account email").Value(&appleID).Validate(tui.Required("Apple Account email"))).
+						Field(huh.NewInput().Title("Apple Account password").EchoMode(huh.EchoModePassword).Value(&password).Validate(tui.Required("Apple Account password"))).
+						Run(); err != nil {
 						return err
 					}
-					if !confirmed {
-						return errors.New("cancelled")
-					}
-				}
-				if !rt.Globals.NoInput && tui.IsInteractive() {
-					rt.Out.Notice(
-						"Your Apple email and password go only to Apple and are never saved —",
-						"RevenueCat never sees them.",
-						"Apple keys created here upload straight to your RevenueCat project — they are",
-						"never saved on this computer or displayed.",
-					)
-				}
-				if err := tui.Form(rt.Globals.NoInput).
-					Field(huh.NewInput().Title("Apple Account email").Value(&appleID).Validate(tui.Required("Apple Account email"))).
-					Field(huh.NewInput().Title("Apple Account password").EchoMode(huh.EchoModePassword).Value(&password).Validate(tui.Required("Apple Account password"))).
-					Run(); err != nil {
-					return err
 				}
 				if appleID == "" || password == "" {
-					return errors.New("Apple sign-in needs a human at an interactive terminal (Apple ID, password, and 2FA). " +
-						"Ask the user to run `rc apps apple " + map[bool]string{true: "check", false: "setup"}[checkOnly] + " " + appID + "` locally — " +
-						"never collect Apple credentials in chat or pass them via flags")
+					return fmt.Errorf("can't prompt for Apple sign-in here (--json or --no-input): supply the Apple Account email and password with --apple-id/--apple-password (or RC_APPLE_ID/RC_APPLE_PASSWORD) and the 2FA code with --verification-code (or RC_APPLE_2FA_CODE), or run `rc apps apple %s %s` in an interactive terminal",
+						map[bool]string{true: "check", false: "setup"}[checkOnly], appID)
 				}
 			}
 
@@ -441,7 +442,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					if err != nil {
 						return err
 					}
-					if verificationCode == "" && !rt.Globals.NoInput && tui.IsInteractive() {
+					if verificationCode == "" && rt.CanPrompt() {
 						title := fmt.Sprintf("Apple %s verification code", strings.ReplaceAll(challenge.Method, "_", " "))
 						if challenge.Destination != "" {
 							title += " sent to " + challenge.Destination
@@ -458,7 +459,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					}
 				}
 				if teamID == "" && len(session.Providers) > 1 {
-					if rt.Globals.NoInput || !tui.IsInteractive() {
+					if !rt.CanPrompt() {
 						available := make([]string, 0, len(session.Providers))
 						for _, provider := range session.Providers {
 							available = append(available, fmt.Sprintf("%d (%s)", provider.ID, provider.Name))
@@ -550,7 +551,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					case err == nil:
 						rt.Out.Success("Found vendor number " + fetched)
 						use := true
-						if !rt.Globals.NoInput && !rt.Globals.AssumeYes && tui.IsInteractive() {
+						if !rt.Globals.AssumeYes && rt.CanPrompt() {
 							question := "Set vendor number " + fetched + " on the RevenueCat app?"
 							if existingVendor != "" {
 								question = "Replace vendor number " + existingVendor + " with " + fetched + " on the RevenueCat app?"
@@ -566,7 +567,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						} else {
 							rt.Out.Answer("Vendor number", "unchanged")
 						}
-					case !rt.Globals.NoInput && tui.IsInteractive():
+					case rt.CanPrompt():
 						rt.Out.Warn("Could not fetch it automatically: " + err.Error())
 						rt.Out.Info("Find it in App Store Connect → Payments and Financial Reports, next to your legal entity name.")
 						if err := tui.Form(rt.Globals.NoInput).

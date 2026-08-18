@@ -32,7 +32,7 @@ func (o *storeStateInputOptions) desiredStates(rt *Runtime, app *api.App, stdin 
 		o.file = os.Getenv("RC_STORE_STATE_FILE")
 	}
 	if o.file == "" {
-		if rt.Globals.NoInput || !tui.IsInteractive() {
+		if !rt.CanPrompt() {
 			return nil, errors.New("desired state input is required: pass --file <path>, pipe input with --file -, or run interactively")
 		}
 		return promptStoreState(app)

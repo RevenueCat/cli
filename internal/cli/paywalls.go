@@ -10,7 +10,6 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
-	"github.com/revenuecat/cli/internal/tui"
 )
 
 func newPaywallsCmd() *cobra.Command {
@@ -38,7 +37,7 @@ Publishing is customer-facing: review the preview screenshot and the builder
 URL, get the user's approval, then rc paywalls publish.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			if !guidedMode() || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+			if !guidedMode() || !rt.CanPrompt() {
 				return cmd.Help()
 			}
 			if err := ensureAuthInteractive(cmd); err != nil {

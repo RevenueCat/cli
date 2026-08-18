@@ -92,7 +92,7 @@ them unless --approve-tools is passed (destructive tools also require --yes).`,
 			if session.conversationID == "" {
 				session.conversationID = rico.NewConversationID()
 			}
-			oneShot := opts.print || rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive()
+			oneShot := opts.print || !rt.CanPrompt()
 			if oneShot || (opts.plain && opts.prompt != "") {
 				if opts.prompt == "" {
 					return fmt.Errorf("message is required; pass it as an argument or set RC_RICO_PROMPT")
@@ -204,7 +204,7 @@ func (s *ricoSession) chatWindow(ctx context.Context) error {
 // pickRicoConversation shows the --resume picker in the alternate screen (so
 // nothing lingers on the primary screen once the chat window exits).
 func pickRicoConversation(ctx context.Context, rt *Runtime, client *rico.Client) (string, error) {
-	if rt.Globals.NoInput || rt.Globals.JSON || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		return "", fmt.Errorf("conversation ID is required; --resume needs a terminal (use --conversation <id>)")
 	}
 	items, err := ricoConversationPickerItems(ctx, rt, client)
@@ -532,7 +532,7 @@ func (s *ricoPlainSink) Approve(interrupt rico.Interrupt, label string) (bool, e
 	if interrupt.IsDestructive() {
 		label += " (destructive)"
 	}
-	if rt.Globals.NoInput || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		approved := s.session.opts.approveTools && (!interrupt.IsDestructive() || rt.Globals.AssumeYes)
 		if !approved && !s.silent {
 			rt.Out.Warn("Rejected tool call: " + label)

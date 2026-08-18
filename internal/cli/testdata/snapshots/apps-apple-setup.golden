@@ -15,4 +15,4 @@ $ rc apps apple setup app_snap1 --no-input --project-id proj_snap --api-key sk_s
 · 3. Create the App Store Connect API key
 · 4. Look up and confirm the vendor number
 · 5. Save to RevenueCat
-(exit: Sign in to App Store Connect now? (pass --yes to confirm non-interactively))
+(exit: can't prompt for Apple sign-in here (--json or --no-input): supply the Apple Account email and password with --apple-id/--apple-password (or RC_APPLE_ID/RC_APPLE_PASSWORD) and the 2FA code with --verification-code (or RC_APPLE_2FA_CODE), or run `rc apps apple setup app_snap1` in an interactive terminal)

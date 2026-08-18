@@ -81,6 +81,19 @@ func TestDesignSystemBoundaries(t *testing.T) {
 			},
 			useThis: "use decide(rt, title, presetFromFlag, choices) so every branch has a flag and a --no-input path",
 		},
+		{
+			name:   "prompt-gate only through rt.CanPrompt",
+			needle: "tui.IsInteractive(",
+			roots:  []string{"internal/tui"},
+			allow: map[string]string{
+				"runtime.go":     "CanPrompt is the one true prompt-gate",
+				"apps_apple.go":  "output-only gates, suppressed under --json",
+				"paywalls_ai.go": "self-gating requireProject/requireID branch",
+				"open.go":        "guarded by an IsJSON early-return above",
+				"decide.go":      "caller-guarded prompt primitive",
+			},
+			useThis: "use rt.CanPrompt() instead of hand-rolling the --json/--no-input/TTY check",
+		},
 	}
 
 	repoRoot := filepath.Join("..", "..")

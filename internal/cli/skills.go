@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/config"
-	"github.com/revenuecat/cli/internal/tui"
 )
 
 const (
@@ -119,7 +118,7 @@ func revenueCatSkillsInstalledFor(a agentClient) (checkable, installed bool) {
 
 // maybeNudgeSkillsInstall shows the install-skills hint once, for humans only, when a supported agent has no skills.
 func maybeNudgeSkillsInstall(rt *Runtime) {
-	if rt.Globals.JSON || rt.Globals.NoInput || !tui.IsInteractive() {
+	if !rt.CanPrompt() {
 		return
 	}
 	missing := false

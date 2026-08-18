@@ -15,6 +15,7 @@ import (
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/httpx"
 	"github.com/revenuecat/cli/internal/output"
+	"github.com/revenuecat/cli/internal/tui"
 )
 
 // usageError marks bad user input (bad flags) so ExitCodeFor returns the
@@ -65,6 +66,12 @@ type Runtime struct {
 
 	client             *api.Client
 	warnedCredConflict bool
+}
+
+// CanPrompt reports whether it's safe to show an interactive prompt: not in
+// --json or --no-input mode, and attached to a TTY.
+func (rt *Runtime) CanPrompt() bool {
+	return !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive()
 }
 
 func WithRuntime(ctx context.Context, r *Runtime) context.Context {

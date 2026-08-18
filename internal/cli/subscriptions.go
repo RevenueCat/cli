@@ -54,7 +54,7 @@ func newSubsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !rt.Globals.JSON && !rt.Globals.NoInput && tui.IsInteractive() {
+			if rt.CanPrompt() {
 				item := subscriptionToItem(cmd.Context(), client, projectID, s.CustomerID, *s)
 				return tui.RunBrowser("Subscription", []tui.BrowserItem{item})
 			}
