@@ -668,7 +668,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			result.VendorNumberConfigured = vendorNumber != ""
 			result.Failed = failedKeys
 			if len(failedKeys) > 0 {
-				rt.Out.Warn("Partly done: couldn't create the " + strings.Join(failedKeys, " and the ") + ". Everything that succeeded was saved to RevenueCat — resolve the note above and re-run to finish.")
+				rt.Out.Warn("Partly done: couldn't create the " + strings.Join(failedKeys, " and the ") + ". What succeeded was saved to RevenueCat. A failed attempt can still leave a key in App Store Connect that counts toward Apple's limit — check Users and Access → Integrations and reuse or revoke it before re-running.")
 			} else {
 				rt.Out.Success("Apple credentials configured")
 			}
@@ -676,9 +676,14 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			if result.ProviderName != "" {
 				subtitle = fmt.Sprintf("App Store Connect team %s (%d)", result.ProviderName, result.ProviderID)
 			}
-			keptOrCreated := func(id, label string) string {
+			keptOrCreated := func(id, label string, wasConfigured bool) string {
 				for _, f := range failedKeys {
 					if f == label {
+						// A failed create leaves RevenueCat untouched, so a key that
+						// was already configured is still in place, not gone.
+						if wasConfigured {
+							return "kept existing (replace failed — see note above)"
+						}
 						return "not created — see note above"
 					}
 				}
@@ -687,6 +692,8 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				}
 				return id + " (created)"
 			}
+			inAppWasConfigured := app.AppStore != nil && app.AppStore.SubscriptionKeyConfigured
+			ascWasConfigured := app.AppStore != nil && app.AppStore.AppStoreConnectAPIKeyConfigured
 			vendorLine := "unchanged"
 			if vendorNumber != "" {
 				vendorLine = vendorNumber
@@ -697,8 +704,8 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				Sections: []output.CardSection{{
 					Heading: "Configured",
 					Lines: []output.CardLine{
-						{Key: "In-app purchase key", Value: keptOrCreated(result.InAppPurchaseKeyID, inAppKeyLabel)},
-						{Key: "App Store Connect API key", Value: keptOrCreated(result.AppStoreConnectAPIKeyID, ascKeyLabel)},
+						{Key: "In-app purchase key", Value: keptOrCreated(result.InAppPurchaseKeyID, inAppKeyLabel, inAppWasConfigured)},
+						{Key: "App Store Connect API key", Value: keptOrCreated(result.AppStoreConnectAPIKeyID, ascKeyLabel, ascWasConfigured)},
 						{Key: "Vendor number", Value: vendorLine},
 					},
 				}},
