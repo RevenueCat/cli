@@ -26,7 +26,15 @@ lint:
 	@command -v golangci-lint >/dev/null || { echo "golangci-lint not installed: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2"; exit 1; }
 	golangci-lint run ./...
 
+# Runs lint too so the forbidigo bans (e.g. huh.NewSelect) fire on pre-commit,
+# not just in CI. Skips gracefully when golangci-lint isn't installed — CI still
+# enforces it.
 check: fmt-check vet test
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run ./...; \
+	else \
+		echo "golangci-lint not installed — skipping lint locally; CI enforces it (install: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2)"; \
+	fi
 
 tidy:
 	go mod tidy
