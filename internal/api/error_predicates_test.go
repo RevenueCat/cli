@@ -47,4 +47,8 @@ func TestRateLimitedAndUnauthorizedAcceptLegacyFallbackTypes(t *testing.T) {
 	if !IsUnauthorized(&APIError{Type: "unauthorized"}) {
 		t.Error("IsUnauthorized should accept the legacy unauthorized fallback")
 	}
+	// 403 carries authorization_error, distinct from the 401 authentication_error.
+	if !IsUnauthorized(&APIError{Type: "authorization_error"}) {
+		t.Error("IsUnauthorized should match a 403 authorization_error")
+	}
 }

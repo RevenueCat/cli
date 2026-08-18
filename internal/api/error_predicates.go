@@ -44,11 +44,12 @@ func IsRateLimited(err error) bool {
 	return ok && (t == string(RateLimitedTypeRateLimitError) || t == "rate_limit_exceeded")
 }
 
-// IsUnauthorized reports a 401/403. The spec type is authentication_error;
-// parseError's bodyless fallback uses unauthorized.
+// IsUnauthorized reports a 401 (authentication_error) or 403 (authorization_error);
+// parseError's bodyless fallback for both uses unauthorized.
 func IsUnauthorized(err error) bool {
 	t, ok := apiErrorType(err)
-	return ok && (t == string(UnauthorizedTypeAuthenticationError) || t == "unauthorized")
+	return ok && (t == string(UnauthorizedTypeAuthenticationError) ||
+		t == string(ForbiddenTypeAuthorizationError) || t == "unauthorized")
 }
 
 // IsServerError reports a 500/502 server_error.
