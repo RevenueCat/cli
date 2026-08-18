@@ -152,6 +152,163 @@ func (f *fakeAppleCheckClient) CreateApp(context.Context, *appleconnect.Session,
 	return errors.New("unexpected App Store Connect app creation")
 }
 
+type fakeAppleSetupClient struct {
+	fakeAppleCheckClient
+	inApp          func() (*appleconnect.Key, error)
+	api            func() (*appleconnect.Key, error)
+	registerErr    error
+	createErr      error
+	registerCalled bool
+	createCalled   bool
+}
+
+func (f *fakeAppleSetupClient) CreateInAppPurchaseKey(context.Context, *appleconnect.Session, string) (*appleconnect.Key, error) {
+	return f.inApp()
+}
+
+func (f *fakeAppleSetupClient) CreateAppStoreConnectKey(context.Context, *appleconnect.Session, string) (*appleconnect.Key, error) {
+	return f.api()
+}
+
+func (f *fakeAppleSetupClient) RegisterBundleID(context.Context, *appleconnect.Session, string, string) error {
+	f.registerCalled = true
+	return f.registerErr
+}
+
+func (f *fakeAppleSetupClient) CreateApp(context.Context, *appleconnect.Session, string, string, string) error {
+	f.createCalled = true
+	return f.createErr
+}
+
+func TestCreateAppleKeys_NonFatalOnOneFailure(t *testing.T) {
+	inAppKey := &appleconnect.Key{Kind: appleconnect.InAppPurchaseKey, ID: "iap1", IssuerID: "iss", PrivateKey: "iap-pem"}
+	apiKey := &appleconnect.Key{Kind: appleconnect.AppStoreConnectKey, ID: "asc1", IssuerID: "iss", PrivateKey: "asc-pem"}
+	maxKeys := errors.New("You've reached the maximum number of active keys allowed. To generate a new key, revoke an existing one.")
+	forbidden := errors.New("403 FORBIDDEN_ERROR: The API key in use does not allow this request")
+
+	tests := []struct {
+		name       string
+		inApp      func() (*appleconnect.Key, error)
+		api        func() (*appleconnect.Key, error)
+		wantInApp  *appleconnect.Key
+		wantAPI    *appleconnect.Key
+		wantFailed []string
+		wantHint   string
+	}{
+		{
+			name:       "in-app fails, ASC succeeds",
+			inApp:      func() (*appleconnect.Key, error) { return nil, forbidden },
+			api:        func() (*appleconnect.Key, error) { return apiKey, nil },
+			wantAPI:    apiKey,
+			wantFailed: []string{"in-app purchase key"},
+			wantHint:   "already exists",
+		},
+		{
+			name:       "ASC fails, in-app succeeds",
+			inApp:      func() (*appleconnect.Key, error) { return inAppKey, nil },
+			api:        func() (*appleconnect.Key, error) { return nil, maxKeys },
+			wantInApp:  inAppKey,
+			wantFailed: []string{"App Store Connect API key"},
+			wantHint:   "limit of active keys",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			apple := &fakeAppleSetupClient{inApp: tt.inApp, api: tt.api}
+			var stdout, stderr bytes.Buffer
+			rt := &Runtime{
+				Globals: &Globals{NoInput: true, Version: "test"},
+				Out:     output.NewRenderer(&stdout, &stderr, false, false, false, ""),
+			}
+			keys := createAppleKeys(context.Background(), rt, apple, &appleconnect.Session{}, true, true, "in-app", "api")
+
+			if keys.InAppPurchaseKey != tt.wantInApp {
+				t.Errorf("InAppPurchaseKey = %v, want %v", keys.InAppPurchaseKey, tt.wantInApp)
+			}
+			if keys.AppStoreConnectKey != tt.wantAPI {
+				t.Errorf("AppStoreConnectKey = %v, want %v", keys.AppStoreConnectKey, tt.wantAPI)
+			}
+			if !equalStrings(keys.Failed, tt.wantFailed) {
+				t.Errorf("Failed = %v, want %v", keys.Failed, tt.wantFailed)
+			}
+			if !strings.Contains(stderr.String(), tt.wantHint) {
+				t.Errorf("stderr missing hint %q:\n%s", tt.wantHint, stderr.String())
+			}
+		})
+	}
+}
+
+func TestAppsAppleSetup_PartialFailureExitsNonZeroAndReportsFailedKey(t *testing.T) {
+	inAppKey := &appleconnect.Key{Kind: appleconnect.InAppPurchaseKey, ID: "iap1", IssuerID: "iss", PrivateKey: "iap-pem"}
+	maxKeys := errors.New("You've reached the maximum number of active keys allowed.")
+
+	var patched bool
+	revenueCat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/projects/proj/apps/app" {
+			if r.Method == http.MethodPost {
+				patched = true
+			}
+			_, _ = io.WriteString(w, `{"id":"app","name":"iOS","type":"app_store","created_at":1,"app_store":{"bundle_id":"com.example.app","subscription_key_configured":false,"app_store_connect_api_key_configured":false}}`)
+			return
+		}
+		http.Error(w, "unexpected request", http.StatusMethodNotAllowed)
+	}))
+	t.Cleanup(revenueCat.Close)
+
+	apple := &fakeAppleSetupClient{
+		inApp: func() (*appleconnect.Key, error) { return inAppKey, nil },
+		api:   func() (*appleconnect.Key, error) { return nil, maxKeys },
+	}
+	var stdout, stderr bytes.Buffer
+	rt := &Runtime{
+		Globals: &Globals{JSON: true, NoInput: true, AssumeYes: true, Version: "test"},
+		Config:  &config.Config{APIKey: "sk_test", ProjectID: "proj", BaseURL: revenueCat.URL},
+		Ctx:     context.Background(),
+		Out:     output.NewRenderer(&stdout, &stderr, true, true, false, ""),
+		client:  api.NewClient(api.Options{APIKey: "sk_test", BaseURL: revenueCat.URL}),
+	}
+	cmd := newAppsAppleCmdWithFactory(func() (appleConnectClient, error) { return apple, nil })
+	// Without this, cobra appends usage text to stdout on the non-zero return.
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+	cmd.SetContext(WithRuntime(context.Background(), rt))
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+	cmd.SetArgs([]string{
+		"setup", "app",
+		"--apple-id", "dev@example.com",
+		"--apple-password", "secret",
+		"--verification-code", "123456",
+	})
+
+	err := cmd.Execute()
+	var exit *SilentExitError
+	if !errors.As(err, &exit) || exit.Code == 0 {
+		t.Fatalf("execute err = %v, want SilentExitError with non-zero code\nstderr: %s", err, stderr.String())
+	}
+	if !patched {
+		t.Error("expected the in-app key that succeeded to be saved to RevenueCat (no PATCH seen)")
+	}
+
+	var out struct {
+		Data struct {
+			InAppPurchaseKeyID string   `json:"in_app_purchase_key_id"`
+			Failed             []string `json:"failed_keys"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &out); err != nil {
+		t.Fatalf("decode output: %v\n%s", err, stdout.String())
+	}
+	if out.Data.InAppPurchaseKeyID != "iap1" {
+		t.Errorf("in_app_purchase_key_id = %q, want the saved key iap1", out.Data.InAppPurchaseKeyID)
+	}
+	if !equalStrings(out.Data.Failed, []string{ascKeyLabel}) {
+		t.Errorf("failed_keys = %v, want [%q]", out.Data.Failed, ascKeyLabel)
+	}
+}
+
 func TestCreateAppStoreAppRecord_NonFatalOnAppleFailure(t *testing.T) {
 	cases := []struct {
 		name        string
@@ -198,24 +355,6 @@ func TestCreateAppStoreAppRecord_NonFatalOnAppleFailure(t *testing.T) {
 			}
 		})
 	}
-}
-
-type fakeAppleSetupClient struct {
-	fakeAppleCheckClient
-	registerErr    error
-	createErr      error
-	registerCalled bool
-	createCalled   bool
-}
-
-func (f *fakeAppleSetupClient) RegisterBundleID(context.Context, *appleconnect.Session, string, string) error {
-	f.registerCalled = true
-	return f.registerErr
-}
-
-func (f *fakeAppleSetupClient) CreateApp(context.Context, *appleconnect.Session, string, string, string) error {
-	f.createCalled = true
-	return f.createErr
 }
 
 func equalStrings(left, right []string) bool {

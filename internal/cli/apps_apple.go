@@ -29,6 +29,7 @@ type appleConfigurationResult struct {
 	InAppPurchaseKeyID       string   `json:"in_app_purchase_key_id,omitempty"`
 	AppStoreConnectAPIKeyID  string   `json:"app_store_connect_api_key_id,omitempty"`
 	VendorNumberConfigured   bool     `json:"vendor_number_configured"`
+	Failed                   []string `json:"failed_keys,omitempty"`
 }
 
 type appleConnectClient interface {
@@ -108,6 +109,60 @@ func createAppStoreAppRecord(ctx context.Context, rt *Runtime, apple appleConnec
 	}
 	rt.Out.Success("Created App Store Connect app " + name + " (" + bundleID + ")")
 	return nil
+}
+
+// A nil key field means it was not requested or Apple refused it; Failed lists the refusals.
+type createdAppleKeys struct {
+	InAppPurchaseKey   *appleconnect.Key
+	AppStoreConnectKey *appleconnect.Key
+	Failed             []string
+}
+
+// One source for both labels so the card and the Failed list can't desync.
+const (
+	inAppKeyLabel = "in-app purchase key"
+	ascKeyLabel   = "App Store Connect API key"
+)
+
+func createAppleKeys(ctx context.Context, rt *Runtime, apple appleConnectClient, session *appleconnect.Session, createInApp, createAPI bool, inAppKeyName, apiKeyName string) createdAppleKeys {
+	var keys createdAppleKeys
+	if createInApp {
+		rt.Out.Info("Creating in-app purchase key in App Store Connect…")
+		key, err := apple.CreateInAppPurchaseKey(ctx, session, inAppKeyName)
+		switch {
+		case err != nil:
+			rt.Out.Warn("Could not create the " + inAppKeyLabel + ": " + err.Error())
+			appleKeyHint(rt, err, appleconnect.InAppPurchaseKey)
+			keys.Failed = append(keys.Failed, inAppKeyLabel)
+		default:
+			rt.Out.Success(fmt.Sprintf("Created in-app purchase key %s (%q) in App Store Connect", key.ID, inAppKeyName))
+			keys.InAppPurchaseKey = key
+		}
+	}
+	if createAPI {
+		rt.Out.Info("Creating App Store Connect API key…")
+		key, err := apple.CreateAppStoreConnectKey(ctx, session, apiKeyName)
+		switch {
+		case err != nil:
+			rt.Out.Warn("Could not create the " + ascKeyLabel + ": " + err.Error())
+			appleKeyHint(rt, err, appleconnect.AppStoreConnectKey)
+			keys.Failed = append(keys.Failed, ascKeyLabel)
+		default:
+			rt.Out.Success(fmt.Sprintf("Created App Store Connect API key %s (%q)", key.ID, apiKeyName))
+			keys.AppStoreConnectKey = key
+		}
+	}
+	return keys
+}
+
+func appleKeyHint(rt *Runtime, err error, kind appleconnect.KeyKind) {
+	msg := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(msg, "maximum number of active keys") || strings.Contains(msg, "revoke"):
+		rt.Out.Hint("You're at Apple's limit of active keys. Revoke an unused one in App Store Connect (Users and Access → Integrations) and re-run — or reuse a key you already set up for another app (Apple keys are account-level).")
+	case kind == appleconnect.InAppPurchaseKey && (strings.Contains(msg, "does not allow") || strings.Contains(msg, "forbidden")):
+		rt.Out.Hint("Apple wouldn't create the In-App Purchase key. It usually already exists (Apple allows one per account) or your Apple Account isn't the Account Holder — reuse the existing key or sign in as the Account Holder.")
+	}
 }
 
 func warnAppRecordFailed(rt *Runtime, bundleID string, err error) {
@@ -425,6 +480,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				result.Mode = "check"
 			}
 			createdIDs := make([]string, 0, 2)
+			var failedKeys []string
 			if needsApple {
 				apple, err := factory()
 				if err != nil {
@@ -580,26 +636,16 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					}
 				}
 
-				if createInAppKey {
-					rt.Out.Info("Creating in-app purchase key in App Store Connect…")
-					key, err := apple.CreateInAppPurchaseKey(cmd.Context(), session, inAppKeyName)
-					if err != nil {
-						return appleConfigurationError(err, createdIDs)
-					}
-					rt.Out.Success(fmt.Sprintf("Created in-app purchase key %s (%q) in App Store Connect", key.ID, inAppKeyName))
+				keys := createAppleKeys(cmd.Context(), rt, apple, session, createInAppKey, createAPIKey, inAppKeyName, apiKeyName)
+				failedKeys = keys.Failed
+				if key := keys.InAppPurchaseKey; key != nil {
 					createdIDs = append(createdIDs, string(key.Kind)+":"+key.ID)
 					result.InAppPurchaseKeyID = key.ID
 					update.AppStore.SubscriptionPrivateKey = &key.PrivateKey
 					update.AppStore.SubscriptionKeyID = &key.ID
 					update.AppStore.SubscriptionKeyIssuer = &key.IssuerID
 				}
-				if createAPIKey {
-					rt.Out.Info("Creating App Store Connect API key…")
-					key, err := apple.CreateAppStoreConnectKey(cmd.Context(), session, apiKeyName)
-					if err != nil {
-						return appleConfigurationError(err, createdIDs)
-					}
-					rt.Out.Success(fmt.Sprintf("Created App Store Connect API key %s (%q)", key.ID, apiKeyName))
+				if key := keys.AppStoreConnectKey; key != nil {
 					createdIDs = append(createdIDs, string(key.Kind)+":"+key.ID)
 					result.AppStoreConnectAPIKeyID = key.ID
 					update.AppStore.AppStoreConnectAPIKey = &key.PrivateKey
@@ -620,12 +666,22 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				rt.Out.Info("No RevenueCat changes to upload.")
 			}
 			result.VendorNumberConfigured = vendorNumber != ""
-			rt.Out.Success("Apple credentials configured")
+			result.Failed = failedKeys
+			if len(failedKeys) > 0 {
+				rt.Out.Warn("Partly done: couldn't create the " + strings.Join(failedKeys, " and the ") + ". Everything that succeeded was saved to RevenueCat — resolve the note above and re-run to finish.")
+			} else {
+				rt.Out.Success("Apple credentials configured")
+			}
 			subtitle := ""
 			if result.ProviderName != "" {
 				subtitle = fmt.Sprintf("App Store Connect team %s (%d)", result.ProviderName, result.ProviderID)
 			}
-			keptOrCreated := func(id string) string {
+			keptOrCreated := func(id, label string) string {
+				for _, f := range failedKeys {
+					if f == label {
+						return "not created — see note above"
+					}
+				}
 				if id == "" {
 					return "kept existing"
 				}
@@ -635,19 +691,27 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			if vendorNumber != "" {
 				vendorLine = vendorNumber
 			}
-			return rt.Out.RenderCard(output.Card{
+			if err := rt.Out.RenderCard(output.Card{
 				Title:    fmt.Sprintf("%s (%s)", app.Name, appID),
 				Subtitle: subtitle,
 				Sections: []output.CardSection{{
 					Heading: "Configured",
 					Lines: []output.CardLine{
-						{Key: "In-app purchase key", Value: keptOrCreated(result.InAppPurchaseKeyID)},
-						{Key: "App Store Connect API key", Value: keptOrCreated(result.AppStoreConnectAPIKeyID)},
+						{Key: "In-app purchase key", Value: keptOrCreated(result.InAppPurchaseKeyID, inAppKeyLabel)},
+						{Key: "App Store Connect API key", Value: keptOrCreated(result.AppStoreConnectAPIKeyID, ascKeyLabel)},
 						{Key: "Vendor number", Value: vendorLine},
 					},
 				}},
 				Raw: result,
-			})
+			}); err != nil {
+				return err
+			}
+			// Partial progress is saved, but a refused key still means the run
+			// didn't do what was asked — exit non-zero so scripts don't see success.
+			if len(failedKeys) > 0 {
+				return &SilentExitError{Code: 1}
+			}
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&appleID, "apple-id", "", "Apple Account email (env: RC_APPLE_ID)")
