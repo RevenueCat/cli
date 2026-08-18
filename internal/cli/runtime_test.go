@@ -26,7 +26,9 @@ func TestExitCodeFor_Matrix(t *testing.T) {
 		{"api-unauthorized", &api.APIError{Type: "unauthorized"}, 4},
 		{"api-auth-error", &api.APIError{Type: "authentication_error"}, 4},
 		{"api-resource-missing", &api.APIError{Type: "resource_missing"}, 5},
-		{"api-rate-limit", &api.APIError{Type: "rate_limit_exceeded"}, 6},
+		{"api-rate-limit-legacy", &api.APIError{Type: "rate_limit_exceeded"}, 6},
+		{"api-rate-limit-spec", &api.APIError{Type: "rate_limit_error"}, 6},
+		{"api-wrapped-resource-missing", fmt.Errorf("fetch: %w", &api.APIError{Type: "resource_missing"}), 5},
 		{"api-other", &api.APIError{Type: "http_error"}, 1},
 	}
 	for _, tc := range cases {
