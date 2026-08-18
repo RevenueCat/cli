@@ -67,6 +67,7 @@ URL, get the user's approval, then rc paywalls publish.`,
 		newPaywallsRewindCmd(),
 		newPaywallsPublishCmd(),
 		newPaywallsUnpublishCmd(),
+		newPaywallsDuplicateCmd(),
 		newPaywallsDeleteCmd(),
 	)
 	return cmd
@@ -279,6 +280,86 @@ builder URL instead — show returns metadata, not visuals.`,
 			return rt.Out.Render(p)
 		},
 	}
+}
+
+func newPaywallsDuplicateCmd() *cobra.Command {
+	var name, offeringID string
+	cmd := &cobra.Command{
+		Use:   "duplicate [id]",
+		Short: "Duplicate a Paywall",
+		Long: `Creates a new paywall from an existing one's components.
+
+The copy starts as a standalone draft (no offering) unless --offering-id is
+given, and its name defaults to "<source name> (copy)". The source is untouched.`,
+		Example: "  rc paywalls duplicate pw_abc\n  rc paywalls duplicate pw_abc --name \"Holiday variant\" --offering-id ofrng_x",
+		Args:    cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			paywallID, err := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+				return paywallPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			src, err := client.Paywalls.GetWithComponents(cmd.Context(), projectID, paywallID)
+			if err != nil {
+				return err
+			}
+			version := paywallComponentsToCopy(src)
+			if version == nil {
+				return fmt.Errorf("paywall %s has no components to duplicate", paywallID)
+			}
+			if name == "" {
+				base := strings.TrimSpace(src.Name)
+				if base == "" {
+					base = "Paywall"
+				}
+				name = base + " (copy)"
+			}
+			dup, err := client.Paywalls.CreateFromComponents(cmd.Context(), projectID, api.PaywallComponentsCreate{
+				OfferingID:              offeringID,
+				Name:                    name,
+				ComponentsConfig:        version.ComponentsConfig,
+				ComponentsLocalizations: version.ComponentsLocalizations,
+				DefaultLocale:           version.DefaultLocale,
+			})
+			if err != nil {
+				var apiErr *api.APIError
+				if offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
+					return WithHint(
+						fmt.Errorf("duplicating paywall %s into offering %s: an offering can only have one paywall: %w", paywallID, offeringID, err),
+						"Omit --offering-id to create a standalone copy, or pick an offering that has no paywall yet.",
+					)
+				}
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Duplicated %s → %s", paywallID, dup.ID))
+			return rt.Out.Render(dup)
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", `name for the copy (default: source name + " (copy)")`)
+	cmd.Flags().StringVar(&offeringID, "offering-id", "", "attach the copy to this offering (default: standalone)")
+	return cmd
+}
+
+// paywallComponentsToCopy prefers the draft (the current editable state) and
+// falls back to the published version.
+func paywallComponentsToCopy(p *api.Paywall) *api.PaywallComponentsVersion {
+	if p.Components == nil {
+		return nil
+	}
+	if p.Components.Draft != nil {
+		return p.Components.Draft
+	}
+	return p.Components.Published
 }
 
 func newPaywallsDeleteCmd() *cobra.Command {
