@@ -25,6 +25,10 @@ type productReadiness struct {
 	Verdict             readinessVerdict `json:"verdict"`
 	RawStoreStatus      *string          `json:"raw_store_status"`
 	UnpricedTerritories []string         `json:"unpriced_territories"`
+	// Warnings is the store's own remedy text (from the live read) — what to fix
+	// to make the product sellable. NextActions adds CLI-specific guidance.
+	Warnings    []string `json:"warnings,omitempty"`
+	NextActions []string `json:"next_actions,omitempty"`
 }
 
 type readinessReport struct {
@@ -107,7 +111,25 @@ func classifyProductReadiness(productID string, state *api.LiveStoreState, apply
 		verdict = readinessIncomplete
 	}
 	pr.Verdict = verdict
+	pr.Warnings = state.Warnings
+	pr.NextActions = readinessNextActions(pr)
 	return pr
+}
+
+// readinessNextActions turns a non-ready verdict into concrete CLI steps, so an
+// agent isn't left inferring the remedy from a raw status string.
+func readinessNextActions(pr productReadiness) []string {
+	if pr.Verdict == readinessReady || pr.Verdict == readinessInProgress {
+		return nil
+	}
+	var actions []string
+	if len(pr.UnpricedTerritories) > 0 {
+		actions = append(actions, "set prices for the unpriced territories, or fill them from a base territory: re-run with --equalize-base-territory <TERRITORY> (e.g. US)")
+	}
+	if pr.RawStoreStatus != nil && strings.EqualFold(*pr.RawStoreStatus, "MISSING_METADATA") {
+		actions = append(actions, "add the product's required metadata (localizations/review info) and re-apply; attach a real review screenshot with: rc products store screenshot <product-id> --file <path>")
+	}
+	return actions
 }
 
 // classifyRawStoreStatus resolves the store's own raw state. The second return
@@ -126,7 +148,7 @@ func classifyRawStoreStatus(raw *string, priced bool) (readinessVerdict, bool) {
 	case "MISSING_METADATA", "READY_TO_SUBMIT", "PREPARE_FOR_SUBMISSION",
 		"DEVELOPER_ACTION_NEEDED", "REJECTED", "DEVELOPER_REJECTED":
 		return readinessIncomplete, true
-	case "WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_BINARY_APPROVAL", "PROCESSING_CONTENT":
+	case "WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_BINARY_APPROVAL", "PROCESSING_CONTENT", "WAITING_FOR_UPLOAD":
 		return readinessInProgress, true
 	case "REMOVED_FROM_SALE", "DEVELOPER_REMOVED_FROM_SALE", "NOT_FOR_SALE":
 		return readinessIncomplete, true
@@ -216,6 +238,12 @@ func verifyStoreStateReadiness(ctx context.Context, rt *Runtime, reader storeSta
 func printReadinessReport(rt *Runtime, report *readinessReport) {
 	for _, p := range report.Products {
 		rt.Out.Info(formatProductReadiness(p))
+		for _, w := range p.Warnings {
+			rt.Out.Warn("  store: " + w)
+		}
+		for _, a := range p.NextActions {
+			rt.Out.Hint(a)
+		}
 	}
 	msg := fmt.Sprintf("Store readiness: %s", report.Overall)
 	switch report.Overall {

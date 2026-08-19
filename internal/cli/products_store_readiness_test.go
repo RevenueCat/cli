@@ -62,6 +62,11 @@ func TestClassifyProductReadiness(t *testing.T) {
 			wantVerdict: readinessInProgress,
 		},
 		{
+			name:        "waiting for upload is in progress",
+			state:       liveState("needs_action", strPtr("WAITING_FOR_UPLOAD"), nil, nil),
+			wantVerdict: readinessInProgress,
+		},
+		{
 			name:        "not found status is failed",
 			state:       liveState("not_found", nil, nil, nil),
 			wantVerdict: readinessFailed,
@@ -99,6 +104,40 @@ func TestClassifyProductReadiness(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReadinessNextActionsAndWarnings(t *testing.T) {
+	priced := map[string]api.TerritoryPrice{"US": {AmountMicros: 1, Currency: "USD"}}
+
+	unpriced := classifyProductReadiness("prod", liveState("ok", strPtr("APPROVED"), map[string]bool{"US": true, "GB": true}, priced), nil)
+	if !anyContains(unpriced.NextActions, "--equalize-base-territory") {
+		t.Errorf("unpriced product should suggest --equalize-base-territory, got %v", unpriced.NextActions)
+	}
+
+	missing := classifyProductReadiness("prod", liveState("needs_action", strPtr("MISSING_METADATA"), nil, nil), nil)
+	if !anyContains(missing.NextActions, "rc products store screenshot") {
+		t.Errorf("missing metadata should mention the screenshot command, got %v", missing.NextActions)
+	}
+
+	ready := classifyProductReadiness("prod", liveState("ok", strPtr("APPROVED"), map[string]bool{"US": true}, priced), nil)
+	if len(ready.NextActions) != 0 {
+		t.Errorf("ready product should have no next actions, got %v", ready.NextActions)
+	}
+
+	st := liveState("needs_action", strPtr("MISSING_METADATA"), nil, nil)
+	st.Warnings = []string{"Incomplete territory pricing"}
+	if got := classifyProductReadiness("prod", st, nil); len(got.Warnings) != 1 || got.Warnings[0] != "Incomplete territory pricing" {
+		t.Errorf("live store warnings should be surfaced verbatim, got %v", got.Warnings)
+	}
+}
+
+func anyContains(list []string, sub string) bool {
+	for _, s := range list {
+		if strings.Contains(s, sub) {
+			return true
+		}
+	}
+	return false
 }
 
 func TestWorstReadiness(t *testing.T) {

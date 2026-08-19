@@ -99,9 +99,14 @@ creating and reviewing without applying.
 Warnings about review notes, the review screenshot, and subscription group
 localizations are App Review submission requirements, not creation blockers —
 each warning prints a hint naming the exact CSV column or JSON field that
-clears it.`,
+clears it.
+
+For App Store subscriptions, --equalize-base-territory <TERRITORY> fills missing
+territory prices from a base territory (e.g. US) during apply. After applying,
+each product's live readiness is reported (see rc products store apply --help).`,
 		Example: `  rc products store sync app_abc
   rc products store sync app_abc --file catalog.csv
+  rc products store sync app_abc --file catalog.csv --equalize-base-territory US
   cat desired-states.json | rc products store sync app_abc --file - --input-format json --plan-only --json`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -156,7 +161,10 @@ not creation blockers — products create fine without them. Provide review
 notes via the app_store_review_notes CSV column (or
 store_state.review_information.notes in JSON); group display names via the
 app_store_subscription_group_localized_name CSV column. A placeholder review
-screenshot is uploaded automatically; replace it before submitting to Apple.`,
+screenshot is uploaded automatically; replace it before submitting to Apple.
+
+For App Store subscriptions, --equalize-base-territory <TERRITORY> (e.g. US)
+fills missing territory prices from a base territory during apply.`,
 		Example: `  rc products store plan app_abc --file catalog.csv --json --no-input
   cat desired-states.json | rc products store plan app_abc --file - --input-format json --json --no-input`,
 		Args: cobra.MaximumNArgs(1),
@@ -225,6 +233,18 @@ applies the plan ID supplied.
 
 Reversibility: writes to the connected store — undo by planning and applying
 the reverse state.
+
+After applying, it reads each product's live store state and reports readiness,
+because a plan the store accepted is not the same as a sellable product:
+  READY       configured and sellable
+  IN_PROGRESS the store is still processing (e.g. in review)
+  INCOMPLETE  something is missing (unpriced territories, missing metadata) —
+              each product prints the next action to take
+  FAILED      the product could not be applied or isn't in the store
+  UNKNOWN     the live state could not be read (the apply still succeeded)
+A non-READY result is reported as a warning, never a plain success. In --json the
+readiness object carries per-product verdict, raw_store_status, unpriced
+territories, store warnings, and next actions.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc products store apply plan_123 --yes --json --no-input`,
