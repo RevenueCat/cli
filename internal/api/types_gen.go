@@ -29055,6 +29055,45 @@ func (e CreateProductInStore503JSONResponseBodyType) Valid() bool {
 	}
 }
 
+// Defines values for GetProductStoreState200JSONResponseBodyStore.
+const (
+	GetProductStoreState200JSONResponseBodyStoreAppStore  GetProductStoreState200JSONResponseBodyStore = "app_store"
+	GetProductStoreState200JSONResponseBodyStorePlayStore GetProductStoreState200JSONResponseBodyStore = "play_store"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState200JSONResponseBodyStore enum.
+func (e GetProductStoreState200JSONResponseBodyStore) Valid() bool {
+	switch e {
+	case GetProductStoreState200JSONResponseBodyStoreAppStore:
+		return true
+	case GetProductStoreState200JSONResponseBodyStorePlayStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProductStoreState200JSONResponseBodyStoreStatusStatus.
+const (
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusNeedsAction GetProductStoreState200JSONResponseBodyStoreStatusStatus = "needs_action"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusNotFound    GetProductStoreState200JSONResponseBodyStoreStatusStatus = "not_found"
+	GetProductStoreState200JSONResponseBodyStoreStatusStatusOk          GetProductStoreState200JSONResponseBodyStoreStatusStatus = "ok"
+)
+
+// Valid indicates whether the value is a known member of the GetProductStoreState200JSONResponseBodyStoreStatusStatus enum.
+func (e GetProductStoreState200JSONResponseBodyStoreStatusStatus) Valid() bool {
+	switch e {
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusNeedsAction:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusNotFound:
+		return true
+	case GetProductStoreState200JSONResponseBodyStoreStatusStatusOk:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SearchPurchases400JSONResponseBodyObject.
 const (
 	SearchPurchases400JSONResponseBodyObjectError SearchPurchases400JSONResponseBodyObject = "error"
@@ -43994,6 +44033,12 @@ type CreateProductInStore503JSONResponseBodyObject string
 
 // CreateProductInStore503JSONResponseBodyType defines parameters for CreateProductInStore.
 type CreateProductInStore503JSONResponseBodyType string
+
+// GetProductStoreState200JSONResponseBodyStore defines parameters for GetProductStoreState.
+type GetProductStoreState200JSONResponseBodyStore string
+
+// GetProductStoreState200JSONResponseBodyStoreStatusStatus defines parameters for GetProductStoreState.
+type GetProductStoreState200JSONResponseBodyStoreStatusStatus string
 
 // SearchPurchasesParams defines parameters for SearchPurchases.
 type SearchPurchasesParams struct {

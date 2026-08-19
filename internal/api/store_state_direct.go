@@ -62,7 +62,12 @@ type LiveStoreState struct {
 }
 
 type StoreStatus struct {
+	// Status is RevenueCat's normalized health: ok | needs_action | not_found.
 	Status string `json:"status"`
+	// RawStoreStatus is the store's own state passed through verbatim (e.g. the
+	// App Store's MISSING_METADATA, READY_TO_SUBMIT, APPROVED); nil when the
+	// product has no store presence yet (e.g. Test Store).
+	RawStoreStatus *string `json:"raw_store_status"`
 }
 
 type StoreStateCommon struct {
