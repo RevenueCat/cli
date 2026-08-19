@@ -339,11 +339,18 @@ func renderStoreSubmitResult(rt *Runtime, resp *api.SubmitProductsToStoreRespons
 		rows = append(rows, []string{result.ProductID, result.Status, detail})
 	}
 	rt.Out.Info(fmt.Sprintf("Submitted %d of %d product(s) for review", resp.SubmittedCount, len(resp.Results)))
-	return rt.Out.RenderTable(output.Table{
+	if err := rt.Out.RenderTable(output.Table{
 		Columns: []string{"PRODUCT", "STATUS", "DETAIL"},
 		Rows:    rows,
 		Raw:     resp,
-	})
+	}); err != nil {
+		return err
+	}
+	if resp.SubmittedCount < len(resp.Results) {
+		skipped := len(resp.Results) - resp.SubmittedCount
+		rt.Out.Hint(fmt.Sprintf("%d product(s) were not submitted — see the DETAIL column for why. Confirm each exists in App Store Connect (apply its plan first), then re-run submit.", skipped))
+	}
+	return nil
 }
 
 func newProductsStoreDiscardCmd() *cobra.Command {

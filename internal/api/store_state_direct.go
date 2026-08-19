@@ -93,6 +93,9 @@ type SubmitProductsToStoreResponse struct {
 	Results        []SubmitProductToStoreResult `json:"results"`
 }
 
+// SubmitProductToStoreResult is one product's outcome. Status is "submitted"
+// or "skipped"; SubmissionID is set on submitted, Message carries the reason on
+// skipped. There is no per-product failure — hard failures are HTTP errors.
 type SubmitProductToStoreResult struct {
 	Object       string  `json:"object"`
 	ProductID    string  `json:"product_id"`

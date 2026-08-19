@@ -228,6 +228,44 @@ func TestProductsStoreSubmit_SurfacesSubmissionFailure(t *testing.T) {
 	}
 }
 
+func TestCleanSubmitProductIDs(t *testing.T) {
+	if got, err := cleanSubmitProductIDs([]string{" prod_abc ", "prod_def"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else if len(got) != 2 || got[0] != "prod_abc" || got[1] != "prod_def" {
+		t.Fatalf("trim = %v, want [prod_abc prod_def]", got)
+	}
+
+	if _, err := cleanSubmitProductIDs([]string{"prod_abc", "   "}); err == nil {
+		t.Fatal("expected error for a whitespace-only product ID")
+	}
+
+	tooMany := make([]string, 201)
+	for i := range tooMany {
+		tooMany[i] = "prod"
+	}
+	if _, err := cleanSubmitProductIDs(tooMany); err == nil {
+		t.Fatal("expected error for more than 200 product IDs")
+	}
+}
+
+func TestProductsStoreSubmit_AllSkippedExitsZero(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"submit_products_to_store_response","submitted_count":0,"results":[`+
+			`{"object":"submit_product_to_store_result","product_id":"prod_abc","status":"skipped","submission_id":null,"message":"not ready to submit"}]}`)
+	}))
+	t.Cleanup(server.Close)
+
+	out, _, err := runStoreLifecycleCommand(t, server.URL, "",
+		"products", "store", "submit", "prod_abc", "--yes", "--json", "--no-input")
+	if err != nil {
+		t.Fatalf("a fully-skipped response must exit 0, got %v", err)
+	}
+	if !strings.Contains(out, `"submitted_count": 0`) {
+		t.Fatalf("output missing submitted_count 0: %s", out)
+	}
+}
+
 type staticStoreStatePlanService struct{ plan *api.StoreStatePlan }
 
 func (s staticStoreStatePlanService) Get(context.Context, string, string) (*api.StoreStatePlan, error) {
