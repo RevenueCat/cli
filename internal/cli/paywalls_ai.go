@@ -191,7 +191,7 @@ screenshots via --image, audience via --context.`,
 				if opts.offeringID != "" && errors.As(err, &apiErr) && apiErr.Status == 409 {
 					return WithHint(
 						fmt.Errorf("creating draft paywall: offering %s already has a paywall (an offering can only have one): %w", opts.offeringID, err),
-						"omit --offering-id to generate a standalone draft and attach it in the dashboard later, or generate against another offering. Do NOT delete the existing paywall to clear the way: deletion is irreversible and it may be someone else's in-progress work — inspect it first (rc paywalls show <id>) and get explicit consent from the user before any rc paywalls delete.",
+						"omit --offering-id to generate a standalone draft and attach it later (rc paywalls attach <paywall-id> <offering-id>), or generate against another offering. To replace the offering's current paywall, detach it first (rc paywalls detach <its-paywall-id> — find it with rc paywalls list). Do NOT delete it: deletion is irreversible and it may be someone else's in-progress work — get explicit consent from the user before any rc paywalls delete.",
 					)
 				}
 				return fmt.Errorf("creating draft paywall: %w", err)
@@ -662,7 +662,7 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		rt.Out.Field("View it", paywallBuilderURL(session.ProjectID, session.PaywallID))
 		rt.Out.Field("Keep designing", "rc paywalls edit --session "+opts.sessionPath)
 		if session.Paywall.OfferingID == nil {
-			rt.Out.Field("Attach it", "dashboard → Paywalls → "+session.PaywallID+" → attach to an offering")
+			rt.Out.Field("Attach it", "rc paywalls attach "+session.PaywallID+" <offering-id>")
 		} else {
 			rt.Out.Field("Publish when ready", "rc paywalls publish "+session.PaywallID)
 		}
@@ -754,15 +754,7 @@ func currentDraftRevision(ctx context.Context, client *api.Client, projectID, pa
 	if err != nil {
 		return 0, err
 	}
-	if paywall.Components != nil {
-		if d := paywall.Components.Draft; d != nil && d.Revision != nil {
-			return *d.Revision, nil
-		}
-		if p := paywall.Components.Published; p != nil && p.Revision != nil {
-			return *p.Revision, nil
-		}
-	}
-	return 0, nil
+	return paywallRevision(paywall), nil
 }
 
 // reportPaywallAIActivity prints activity items not yet shown; snapshots carry

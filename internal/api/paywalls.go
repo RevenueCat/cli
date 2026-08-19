@@ -89,6 +89,14 @@ func (s *PaywallsService) CreateFromComponents(ctx context.Context, projectID st
 	return &out, err
 }
 
+// SetOffering attaches (non-nil) or detaches (nil) the paywall's offering.
+func (s *PaywallsService) SetOffering(ctx context.Context, projectID, id string, revision int, offeringID *string) (*Paywall, error) {
+	body := map[string]any{"revision": revision, "offering_id": offeringID}
+	var out Paywall
+	err := s.c.do(ctx, http.MethodPatch, pathPaywall(projectID, id), body, &out)
+	return &out, err
+}
+
 func (s *PaywallsService) Publish(ctx context.Context, projectID, id string) (*Paywall, error) {
 	var out Paywall
 	path := pathPaywallActionsPublish(projectID, id)
