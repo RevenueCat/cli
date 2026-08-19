@@ -368,8 +368,9 @@ func applyStoreStatePlan(ctx context.Context, rt *Runtime, client *api.Client, p
 	if plan.Status == "apply_errored" {
 		return fmt.Errorf("store-state plan %s failed while applying: %s", plan.ID, storeStateApplyErrors(plan))
 	}
-	rt.Out.Success("Applied plan " + plan.ID + " to the stores")
-	return renderStoreStatePlanResult(rt, plan)
+	rt.Out.Info("Applied plan " + plan.ID + " to the stores; verifying readiness")
+	report := verifyStoreStateReadiness(ctx, rt, client.StoreState, projectID, plan)
+	return renderStoreStateApplyResult(rt, plan, report)
 }
 
 type storeStatePlansAPI interface {
