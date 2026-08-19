@@ -351,11 +351,16 @@ but no longer associated with this app.
 
 Reversibility: irreversible.
 
-Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc apps delete app_old --yes`,
+Interactive-only: run it yourself in a terminal. It is unavailable under
+--json or --no-input so automation can't delete apps. --yes skips the
+confirmation prompt once you're in a terminal.`,
+		Example: `  rc apps delete app_old`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if err := requireInteractive(rt, cmd.CommandPath()); err != nil {
+				return err
+			}
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
