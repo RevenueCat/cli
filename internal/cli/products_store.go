@@ -271,6 +271,12 @@ Connect; one that isn't ready comes back skipped with a reason instead of
 failing the whole run. App Store only — Apple is the sole store that accepts
 review submissions through this command.
 
+The first In-App Purchase or subscription for an app cannot be submitted this
+way: App Store Connect requires the first one to be reviewed with a new app
+version. Add it on the app's version page in App Store Connect and submit that
+version; this command works once the app has at least one approved product
+(before then it returns the product as skipped, explaining this).
+
 Reversibility: starts Apple review — manage the submission in App Store Connect.
 
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,

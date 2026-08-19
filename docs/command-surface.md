@@ -197,7 +197,7 @@ rc products store sync [app-id]                          # human flow: input →
 rc products store plan [app-id]                          # persist desired state + diff on the backend; accepts --file <path|->
 rc products store show <plan-id>                         # inspect the exact persisted plan from any process
 rc products store apply <plan-id>                        # apply that same reviewed plan; requires confirmation/--yes
-rc products store submit <product-id>...                 # start Apple review for App Store products (--store app_store); requires confirmation/--yes
+rc products store submit <product-id>...                 # start Apple review for App Store products (--store app_store); requires confirmation/--yes; first IAP for an app must be reviewed with a new app version (skipped until one product is approved)
 rc products store discard <plan-id>                      # discard without applying; requires confirmation/--yes
 
 # Paywalls
