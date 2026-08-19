@@ -84,6 +84,33 @@ type TerritoryPrice struct {
 	StartDate    *string `json:"start_date"`
 }
 
+// SubmitProductsToStoreResponse is the outcome of submitting products for
+// store review. submitted_count counts only the products that were actually
+// submitted; results carries the per-product outcome (including skips).
+type SubmitProductsToStoreResponse struct {
+	Object         string                       `json:"object"`
+	SubmittedCount int                          `json:"submitted_count"`
+	Results        []SubmitProductToStoreResult `json:"results"`
+}
+
+type SubmitProductToStoreResult struct {
+	Object       string  `json:"object"`
+	ProductID    string  `json:"product_id"`
+	Status       string  `json:"status"`
+	SubmissionID *string `json:"submission_id"`
+	Message      *string `json:"message"`
+}
+
+// SubmitToStore starts store review for the given products. The store is
+// required by the API and only app_store is accepted today; products that are
+// not yet ready come back with a skipped result rather than failing the call.
+func (s *StoreStateService) SubmitToStore(ctx context.Context, projectID, store string, productIDs []string) (*SubmitProductsToStoreResponse, error) {
+	var out SubmitProductsToStoreResponse
+	body := map[string]any{"store": store, "product_ids": productIDs}
+	err := s.c.do(ctx, http.MethodPost, pathProductsActionsSubmitToStore(projectID), body, &out)
+	return &out, err
+}
+
 func (s *StoreStateService) Get(ctx context.Context, projectID, productID string) (*LiveStoreState, error) {
 	var out LiveStoreState
 	err := s.c.do(ctx, http.MethodGet, pathProductStoreState(projectID, productID), nil, &out)

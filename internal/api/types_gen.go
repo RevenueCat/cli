@@ -27204,6 +27204,21 @@ func (e CreateProduct503JSONResponseBodyType) Valid() bool {
 	}
 }
 
+// Defines values for SubmitProductsToStoreJSONBodyStore.
+const (
+	SubmitProductsToStoreJSONBodyStoreAppStore SubmitProductsToStoreJSONBodyStore = "app_store"
+)
+
+// Valid indicates whether the value is a known member of the SubmitProductsToStoreJSONBodyStore enum.
+func (e SubmitProductsToStoreJSONBodyStore) Valid() bool {
+	switch e {
+	case SubmitProductsToStoreJSONBodyStoreAppStore:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DeleteProduct400JSONResponseBodyObject.
 const (
 	DeleteProduct400JSONResponseBodyObjectError DeleteProduct400JSONResponseBodyObject = "error"
@@ -43614,6 +43629,20 @@ type CreateProduct503JSONResponseBodyObject string
 // CreateProduct503JSONResponseBodyType defines parameters for CreateProduct.
 type CreateProduct503JSONResponseBodyType string
 
+// SubmitProductsToStoreJSONBody defines parameters for SubmitProductsToStore.
+type SubmitProductsToStoreJSONBody struct {
+	// ProductIds Product IDs to attempt to submit to store.
+	ProductIds []string `json:"product_ids"`
+
+	// Store The target store for this operation.
+	//
+	// Example: app_store
+	Store SubmitProductsToStoreJSONBodyStore `json:"store"`
+}
+
+// SubmitProductsToStoreJSONBodyStore defines parameters for SubmitProductsToStore.
+type SubmitProductsToStoreJSONBodyStore string
+
 // DeleteProduct400JSONResponseBodyObject defines parameters for DeleteProduct.
 type DeleteProduct400JSONResponseBodyObject string
 
@@ -45286,6 +45315,9 @@ type CreatePaywallVersionJSONRequestBody CreatePaywallVersionJSONBody
 
 // CreateProductJSONRequestBody defines body for CreateProduct for application/json ContentType.
 type CreateProductJSONRequestBody CreateProductJSONBody
+
+// SubmitProductsToStoreJSONRequestBody defines body for SubmitProductsToStore for application/json ContentType.
+type SubmitProductsToStoreJSONRequestBody SubmitProductsToStoreJSONBody
 
 // UpdateProductJSONRequestBody defines body for UpdateProduct for application/json ContentType.
 type UpdateProductJSONRequestBody UpdateProductJSONBody

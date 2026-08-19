@@ -134,6 +134,8 @@ endpoints:
   - method: DELETE
     path: /projects/{project_id}/products/{product_id}
   - method: POST
+    path: /projects/{project_id}/products/actions/submit_to_store
+  - method: POST
     path: /projects/{project_id}/products/{product_id}/actions/archive
   - method: POST
     path: /projects/{project_id}/products/{product_id}/actions/unarchive
