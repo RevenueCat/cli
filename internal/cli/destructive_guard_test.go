@@ -20,11 +20,9 @@ func TestDestructiveCommands_RefuseUnderNoInputWithoutYes(t *testing.T) {
 	// The most destructive, irreversible commands are interactive-only and are
 	// covered separately below; --yes bypasses confirmation for everything here.
 	commands := [][]string{
-		{"products", "delete", "prod_x"},
 		{"products", "push", "prod_x"},
 		{"paywalls", "publish", "pw_x"},
 		{"paywalls", "unpublish", "pw_x"},
-		{"packages", "delete", "pkg_x"},
 		{"webhooks", "delete", "wh_x"},
 		{"purchases", "refund", "txn_x"},
 		{"subscriptions", "cancel", "sub_x"},
@@ -70,7 +68,7 @@ func TestDestructiveCommand_YesBypassesConfirmation(t *testing.T) {
 	var deleted bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodDelete && strings.HasSuffix(r.URL.Path, "/products/prod_x"):
+		case r.Method == http.MethodDelete && strings.HasSuffix(r.URL.Path, "/webhooks/wh_x"):
 			deleted = true
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{}`))
@@ -86,7 +84,7 @@ func TestDestructiveCommand_YesBypassesConfirmation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, errb, err := runCmdInConfigDir(t, configDir, "products", "delete", "prod_x", "--yes", "--no-input")
+	_, errb, err := runCmdInConfigDir(t, configDir, "webhooks", "delete", "wh_x", "--yes", "--no-input")
 	if err != nil {
 		t.Fatalf("--yes should let the delete proceed: %v\nstderr: %s", err, errb)
 	}
@@ -104,6 +102,8 @@ func TestInteractiveOnlyCommands_RefuseEvenWithYes(t *testing.T) {
 		{"paywalls", "delete", "pw_x"},
 		{"offerings", "delete", "ofrng_x"},
 		{"entitlements", "delete", "ent_x"},
+		{"products", "delete", "prod_x"},
+		{"packages", "delete", "pkg_x"},
 	}
 	for _, args := range commands {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
