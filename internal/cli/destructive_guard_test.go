@@ -17,16 +17,14 @@ import (
 // decide whether extra confirmation is needed) but fails the test on any write,
 // proving nothing is destroyed before consent.
 func TestDestructiveCommands_RefuseUnderNoInputWithoutYes(t *testing.T) {
+	// The most destructive, irreversible commands are interactive-only and are
+	// covered separately below; --yes bypasses confirmation for everything here.
 	commands := [][]string{
-		{"apps", "delete", "app_x"},
 		{"products", "delete", "prod_x"},
 		{"products", "push", "prod_x"},
-		{"paywalls", "delete", "pw_x"},
 		{"paywalls", "publish", "pw_x"},
 		{"paywalls", "unpublish", "pw_x"},
-		{"offerings", "delete", "ofrng_x"},
 		{"packages", "delete", "pkg_x"},
-		{"entitlements", "delete", "ent_x"},
 		{"webhooks", "delete", "wh_x"},
 		{"purchases", "refund", "txn_x"},
 		{"subscriptions", "cancel", "sub_x"},
@@ -71,24 +69,64 @@ func TestDestructiveCommand_YesBypassesConfirmation(t *testing.T) {
 	t.Setenv("RC_CONFIG_DIR", configDir)
 	var deleted bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodDelete && strings.HasSuffix(r.URL.Path, "/apps/app_x") {
+		switch {
+		case r.Method == http.MethodDelete && strings.HasSuffix(r.URL.Path, "/products/prod_x"):
 			deleted = true
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{}`))
-			return
+		case r.Method == http.MethodGet:
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{}`))
+		default:
+			http.Error(w, "unexpected request", http.StatusNotFound)
 		}
-		http.Error(w, "unexpected request", http.StatusNotFound)
 	}))
 	t.Cleanup(server.Close)
 	if err := config.Save("", &config.Config{APIKey: "sk_test", ProjectID: "proj_test", BaseURL: server.URL}); err != nil {
 		t.Fatal(err)
 	}
 
-	_, errb, err := runCmdInConfigDir(t, configDir, "apps", "delete", "app_x", "--yes", "--no-input")
+	_, errb, err := runCmdInConfigDir(t, configDir, "products", "delete", "prod_x", "--yes", "--no-input")
 	if err != nil {
 		t.Fatalf("--yes should let the delete proceed: %v\nstderr: %s", err, errb)
 	}
 	if !deleted {
-		t.Fatal("--yes did not let the command reach the store delete call")
+		t.Fatal("--yes did not let the command reach the delete call")
+	}
+}
+
+// The irreversible, customer-facing deletes are interactive-only: --yes does NOT
+// buy a way through, and --json/--no-input are refused outright so automation
+// can't fire them. A new human-only command is covered by adding it here.
+func TestInteractiveOnlyCommands_RefuseEvenWithYes(t *testing.T) {
+	commands := [][]string{
+		{"apps", "delete", "app_x"},
+		{"paywalls", "delete", "pw_x"},
+		{"offerings", "delete", "ofrng_x"},
+		{"entitlements", "delete", "ent_x"},
+	}
+	for _, args := range commands {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			configDir := t.TempDir()
+			t.Setenv("RC_CONFIG_DIR", configDir)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Errorf("%s %s: interactive-only command reached the network", r.Method, r.URL.Path)
+				http.Error(w, "must not touch the network", http.StatusInternalServerError)
+			}))
+			t.Cleanup(server.Close)
+			if err := config.Save("", &config.Config{APIKey: "sk_test", ProjectID: "proj_test", BaseURL: server.URL}); err != nil {
+				t.Fatal(err)
+			}
+
+			// --yes present on purpose: it must NOT bypass the interactive gate.
+			runArgs := append(append([]string{}, args...), "--yes", "--no-input")
+			_, _, err := runCmdInConfigDir(t, configDir, runArgs...)
+			if err == nil {
+				t.Fatal("want refusal: interactive-only even with --yes")
+			}
+			if !strings.Contains(err.Error(), "interactive-only") {
+				t.Fatalf("want the interactive-only gate error, got: %v", err)
+			}
+		})
 	}
 }
