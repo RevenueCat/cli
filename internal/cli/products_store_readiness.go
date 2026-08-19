@@ -112,19 +112,28 @@ func classifyProductReadiness(productID string, state *api.LiveStoreState, apply
 	}
 	pr.Verdict = verdict
 	pr.Warnings = state.Warnings
-	pr.NextActions = readinessNextActions(pr)
+	pr.NextActions = readinessNextActions(pr, state.Store)
 	return pr
 }
 
 // readinessNextActions turns a non-ready verdict into concrete CLI steps, so an
-// agent isn't left inferring the remedy from a raw status string.
-func readinessNextActions(pr productReadiness) []string {
+// agent isn't left inferring the remedy from a raw status string. The unpriced
+// remedy differs by store — --equalize-base-territory is App Store subscription
+// equalization, so Play products get their own guidance rather than an Apple flag.
+func readinessNextActions(pr productReadiness, store string) []string {
 	if pr.Verdict == readinessReady || pr.Verdict == readinessInProgress {
 		return nil
 	}
 	var actions []string
 	if len(pr.UnpricedTerritories) > 0 {
-		actions = append(actions, "set prices for the unpriced territories, or fill them from a base territory: re-run with --equalize-base-territory <TERRITORY> (e.g. US)")
+		switch store {
+		case "app_store":
+			actions = append(actions, "set prices for the unpriced territories, or fill them from a base territory: re-run with --equalize-base-territory <TERRITORY> (e.g. US)")
+		case "play_store":
+			actions = append(actions, "set prices for the unpriced territories, or let Google fill them from a base-plan other-regions price (usd_price / eur_price)")
+		default:
+			actions = append(actions, "set prices for the unpriced territories")
+		}
 	}
 	if pr.RawStoreStatus != nil && strings.EqualFold(*pr.RawStoreStatus, "MISSING_METADATA") {
 		actions = append(actions, "add the product's required metadata (localizations/review info) and re-apply; attach a real review screenshot with: rc products store screenshot <product-id> --file <path>")

@@ -15,6 +15,7 @@ func strPtr(s string) *string { return &s }
 
 func liveState(status string, raw *string, territories map[string]bool, priced map[string]api.TerritoryPrice) *api.LiveStoreState {
 	state := &api.LiveStoreState{
+		Store:       "app_store",
 		StoreStatus: &api.StoreStatus{Status: status, RawStoreStatus: raw},
 		Common:      &api.StoreStateCommon{},
 	}
@@ -117,6 +118,17 @@ func TestReadinessNextActionsAndWarnings(t *testing.T) {
 	missing := classifyProductReadiness("prod", liveState("needs_action", strPtr("MISSING_METADATA"), nil, nil), nil)
 	if !anyContains(missing.NextActions, "rc products store screenshot") {
 		t.Errorf("missing metadata should mention the screenshot command, got %v", missing.NextActions)
+	}
+
+	// A Play product must not be told to use the App Store-only equalize flag.
+	playState := liveState("ok", nil, map[string]bool{"US": true, "GB": true}, map[string]api.TerritoryPrice{"US": {AmountMicros: 1, Currency: "USD"}})
+	playState.Store = "play_store"
+	play := classifyProductReadiness("prod", playState, nil)
+	if anyContains(play.NextActions, "--equalize-base-territory") {
+		t.Errorf("Play product should not suggest the App Store equalize flag, got %v", play.NextActions)
+	}
+	if !anyContains(play.NextActions, "usd_price") {
+		t.Errorf("Play product should get Play-specific pricing guidance, got %v", play.NextActions)
 	}
 
 	ready := classifyProductReadiness("prod", liveState("ok", strPtr("APPROVED"), map[string]bool{"US": true}, priced), nil)
