@@ -1,2 +1,5 @@
 [tools]
 go = "1.25"
+# Provisioned so `mise exec -- make check` (the lefthook pre-commit) runs lint —
+# without it the forbidigo bans only fire in CI. Pinned to the CI version.
+golangci-lint = "2.12.2"
