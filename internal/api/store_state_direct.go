@@ -59,6 +59,9 @@ type LiveStoreState struct {
 	StoreStatus *StoreStatus      `json:"store_status"`
 	Common      *StoreStateCommon `json:"common"`
 	StoreState  map[string]any    `json:"store_state"`
+	// Warnings is a live-only field: human-readable notes about what's missing
+	// or needs attention (e.g. incomplete territory pricing). Empty when clean.
+	Warnings []string `json:"warnings"`
 }
 
 type StoreStatus struct {

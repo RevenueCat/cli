@@ -15,10 +15,11 @@ func TestLiveStoreState_RoundTrip(t *testing.T) {
 	  "store_status": {"status": "needs_action", "raw_store_status": "MISSING_METADATA"},
 	  "common": {
 	    "availability": {"territories": {"US": true, "GB": false}},
-	    "pricing": {"territory_prices": {"US": {"amount_micros": 9990000, "currency": "USD", "start_date": null}}},
-	    "localizations": {"en-US": {"name": "Pro", "description": null}}
+	    "pricing": {"territory_prices": {"US": {"amount_micros": 9990000, "currency": "USD", "start_date": "2026-09-01"}}},
+	    "localizations": {"en-US": {"name": "Pro", "description": "Full access"}}
 	  },
-	  "store_state": {"subscription_group_name": "Main"}
+	  "store_state": {"subscription_group_name": "Main"},
+	  "warnings": ["Incomplete territory pricing"]
 	}`
 
 	var s LiveStoreState
@@ -36,14 +37,18 @@ func TestLiveStoreState_RoundTrip(t *testing.T) {
 		t.Fatalf("availability not captured: %+v", s.Common)
 	}
 	price, ok := s.Common.Pricing.TerritoryPrices["US"]
-	if !ok || price.AmountMicros != 9990000 || price.Currency != "USD" {
+	if !ok || price.AmountMicros != 9990000 || price.Currency != "USD" || price.StartDate == nil || *price.StartDate != "2026-09-01" {
 		t.Fatalf("pricing not captured: %+v", s.Common.Pricing)
 	}
-	if s.Common.Localizations["en-US"].Name != "Pro" {
+	loc := s.Common.Localizations["en-US"]
+	if loc.Name != "Pro" || loc.Description == nil || *loc.Description != "Full access" {
 		t.Fatalf("localizations not captured: %+v", s.Common.Localizations)
 	}
 	if s.StoreState["subscription_group_name"] != "Main" {
 		t.Fatalf("freeform store_state not captured: %+v", s.StoreState)
+	}
+	if len(s.Warnings) != 1 || s.Warnings[0] != "Incomplete territory pricing" {
+		t.Fatalf("warnings not captured: %+v", s.Warnings)
 	}
 }
 
