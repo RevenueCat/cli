@@ -166,6 +166,10 @@ func classifyRawStoreStatus(raw *string, priced bool) (readinessVerdict, bool) {
 	}
 }
 
+// classifyNormalizedStatus maps RevenueCat's store-agnostic status. Both stores
+// collapse into this enum (Apple maps its raw states into it and also sends a
+// verbatim raw_store_status; Play sends only this), so it's the primary signal
+// for Play, which has no raw state to classify.
 func classifyNormalizedStatus(status string, priced bool) readinessVerdict {
 	switch status {
 	case "ok":
@@ -175,6 +179,12 @@ func classifyNormalizedStatus(status string, priced bool) readinessVerdict {
 		return readinessIncomplete
 	case "not_found":
 		return readinessFailed
+	case "action_in_progress":
+		return readinessInProgress
+	case "needs_action", "inactive_in_store", "draft":
+		return readinessIncomplete
+	case "could_not_check", "unspecified", "unknown", "":
+		return readinessUnknown
 	default:
 		return readinessIncomplete
 	}

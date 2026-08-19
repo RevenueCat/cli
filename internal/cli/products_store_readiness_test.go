@@ -83,6 +83,26 @@ func TestClassifyProductReadiness(t *testing.T) {
 			wantVerdict: readinessIncomplete,
 		},
 		{
+			name:        "normalized action_in_progress is in progress (Play)",
+			state:       liveState("action_in_progress", nil, nil, nil),
+			wantVerdict: readinessInProgress,
+		},
+		{
+			name:        "normalized draft is incomplete (Play base plan not active)",
+			state:       liveState("draft", nil, nil, nil),
+			wantVerdict: readinessIncomplete,
+		},
+		{
+			name:        "normalized inactive_in_store is incomplete (Play)",
+			state:       liveState("inactive_in_store", nil, nil, nil),
+			wantVerdict: readinessIncomplete,
+		},
+		{
+			name:        "normalized could_not_check is unknown",
+			state:       liveState("could_not_check", nil, nil, nil),
+			wantVerdict: readinessUnknown,
+		},
+		{
 			name:        "apply status failed is failed",
 			state:       liveState("ok", strPtr("APPROVED"), nil, nil),
 			applyStatus: strPtr("failed"),
