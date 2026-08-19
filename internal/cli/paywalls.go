@@ -427,12 +427,17 @@ unless --force is passed — --yes alone is not enough. It may be serving
 customers or be someone else's in-progress work; get explicit consent from
 the user first.
 
-Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc paywalls delete pw_old --yes
-  rc paywalls delete pw_attached --force --yes`,
+Interactive-only: run it yourself in a terminal. It is unavailable under
+--json or --no-input so automation can't delete paywalls. --yes skips the
+confirmation prompt once you're in a terminal.`,
+		Example: `  rc paywalls delete pw_old
+  rc paywalls delete pw_attached --force`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if err := requireInteractive(rt, cmd.CommandPath()); err != nil {
+				return err
+			}
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
@@ -451,19 +456,8 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if !force {
-				switch {
-				case paywall.PublishedAt != nil:
-					return WithHint(
-						fmt.Errorf("paywall %s is published — customers may be seeing it", pickedID),
-						"Deletion is irreversible. Unpublish it first (rc paywalls unpublish "+pickedID+"), then detach it (rc paywalls detach "+pickedID+") if you only need to free the offering, or re-run with --force after the user explicitly confirms this paywall should be destroyed.",
-					)
-				case paywall.OfferingID != "":
-					return WithHint(
-						fmt.Errorf("paywall %s is attached to offering %s and may be someone's in-progress work", pickedID, paywall.OfferingID),
-						"Deletion is irreversible. Re-run with --force only after the user explicitly confirms this paywall should be destroyed. To free the offering instead, detach this paywall (rc paywalls detach "+pickedID+") — it stays as a standalone draft.",
-					)
-				}
+			if err := checkPaywallDeletable(paywall, pickedID, force); err != nil {
+				return err
 			}
 			if paywall.PublishedAt != nil {
 				rt.Out.Warn("This paywall is published — customers may be seeing it.")
@@ -483,6 +477,28 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 	}
 	cmd.Flags().BoolVar(&force, "force", false, "delete even when the paywall is attached to an offering or published")
 	return cmd
+}
+
+// checkPaywallDeletable refuses to delete a published or attached paywall unless
+// --force is passed: those may be serving customers or be someone's in-progress
+// work, so deletion needs an explicit override on top of confirmation.
+func checkPaywallDeletable(paywall *api.Paywall, id string, force bool) error {
+	if force {
+		return nil
+	}
+	switch {
+	case paywall.PublishedAt != nil:
+		return WithHint(
+			fmt.Errorf("paywall %s is published — customers may be seeing it", id),
+			"Deletion is irreversible. Unpublish it first (rc paywalls unpublish "+id+"), then detach it (rc paywalls detach "+id+") if you only need to free the offering, or re-run with --force after the user explicitly confirms this paywall should be destroyed.",
+		)
+	case paywall.OfferingID != "":
+		return WithHint(
+			fmt.Errorf("paywall %s is attached to offering %s and may be someone's in-progress work", id, paywall.OfferingID),
+			"Deletion is irreversible. Re-run with --force only after the user explicitly confirms this paywall should be destroyed. To free the offering instead, detach this paywall (rc paywalls detach "+id+") — it stays as a standalone draft.",
+		)
+	}
+	return nil
 }
 
 // wrapPaywallActionGateError explains the beta gate on the paywall
