@@ -28,6 +28,11 @@ type Globals struct {
 	NoColor   bool
 	AssumeYes bool
 	Version   string
+
+	// CommandPath is the dotted path of the command being run (e.g.
+	// "paywalls.generate"), set once in PersistentPreRunE. Used only for the
+	// usage-analytics request header.
+	CommandPath string
 }
 
 func NewRootCmd(version string) *cobra.Command {
@@ -79,6 +84,7 @@ Agent-friendly entrypoints:
 			if g.ProjectID != "" {
 				cfg.ProjectID = g.ProjectID
 			}
+			g.CommandPath = dottedCommandPath(cmd)
 			rt := &Runtime{
 				Globals: g,
 				Config:  cfg,
