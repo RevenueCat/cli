@@ -430,12 +430,12 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 	if paywall.OfferingID != "" {
 		offeringID = &paywall.OfferingID
 	}
-	// seedSessionFromServer already errored if components were missing, so a
-	// missing revision here just seeds 0 and the next fetch supplies the real one.
-	revision := 0
-	if version.Revision != nil {
-		revision = *version.Revision
+	// The revision is the PATCH's stale-write token; persistPaywallDesign sends
+	// it without refetching, so a missing one has to error rather than seed 0.
+	if version.Revision == nil {
+		return nil, fmt.Errorf("paywall %s has no draft or published revision to update against", paywallID)
 	}
+	revision := *version.Revision
 	return &paywallAISession{
 		Version:   1,
 		ProjectID: projectID,
