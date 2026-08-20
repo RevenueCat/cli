@@ -13,7 +13,7 @@ import (
 
 func TestMissingScope(t *testing.T) {
 	cases := map[string]string{
-		"You are not authorized": "",
+		"You are not authorized":                                     "",
 		"missing required scope: `project_configuration:read_write`": "project_configuration:read_write",
 		"insufficient scope 'products:read_write'":                   "products:read_write",
 		"token requires the *:*:read_write scope":                    "*:*:read_write",
