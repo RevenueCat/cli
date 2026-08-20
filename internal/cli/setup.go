@@ -572,6 +572,13 @@ func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupSta
 			return setupStage{"Play Store app exists — catalog not synced", "sync-store-catalog"}
 		}
 	}
+	// Reachable only when the platform is undetermined (empty): a clear iOS,
+	// cross, or Android platform is handled above. With offerings but no store
+	// app connected, onboarding is not finished — keep it going and let the
+	// agent pick the store rather than reporting an audit-only "all synced".
+	if appStore == nil && playStore == nil {
+		return setupStage{"Test Store ready — store app not connected", "test-store-ready"}
+	}
 	return setupStage{"store apps connected and catalogs synced", "check-project"}
 }
 
@@ -758,8 +765,13 @@ func detectAppProject(dir string) (label, platform string, status projectStatus,
 	if home, err := os.UserHomeDir(); err == nil && dir == home {
 		return "this is your home directory, not an app", "", projectNone, nil
 	}
-	if l, p, s, ok := classifyDir(dir); ok {
-		return l, p, s, nil
+	rootLabel, rootPlatform, rootStatus, hasMarkers := classifyDir(dir)
+	// A clear or ambiguous mobile root is the target. A non-mobile root (a web
+	// or tooling package.json) can still sit above a nested mobile app, so fall
+	// through to the subdir scan and only settle on non-mobile if nothing
+	// clearer turns up one level down.
+	if hasMarkers && rootStatus != projectNonMobile {
+		return rootLabel, rootPlatform, rootStatus, nil
 	}
 
 	var subs []struct{ label, platform, rel string }
@@ -779,6 +791,9 @@ func detectAppProject(dir string) (label, platform string, status projectStatus,
 	case 1:
 		return subs[0].label + " (in ./" + subs[0].rel + ")", subs[0].platform, projectClear, []string{subs[0].rel}
 	case 0:
+		if hasMarkers {
+			return rootLabel, rootPlatform, rootStatus, nil
+		}
 		return "no app project detected", "", projectNone, nil
 	default:
 		labels := make([]string, len(subs))

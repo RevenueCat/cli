@@ -46,6 +46,11 @@ func TestDetectAppProject(t *testing.T) {
 		{"two-apps-in-subdirs", []string{"android-app/settings.gradle", "ios-app/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android-app), Xcode project (MyApp.xcodeproj) (./ios-app))", "", projectAmbiguous, []string{"android-app", "ios-app"}},
 		{"subdir-scan-skips-dependencies", []string{"node_modules/pubspec.yaml"}, "no app project detected", "", projectNone, nil},
 
+		// A non-mobile root (web/tooling package.json) must not hide a nested app.
+		{"web-root-with-nested-ios", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "ios/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
+		// A non-mobile root with no mobile app below still classifies as non-mobile.
+		{"web-root-no-nested-app", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "docs/README.md"}, "JavaScript project (not a mobile app)", "", projectNonMobile, nil},
+
 		{"empty", nil, "no app project detected", "", projectNone, nil},
 	}
 	for _, tc := range cases {
@@ -100,8 +105,13 @@ func TestDetectSetupStage_EmptyPlatformDoesNotForceApple(t *testing.T) {
 
 	// A Test Store exists but no store apps do. An empty platform must defer to
 	// the agent, not route to Apple; a clear iOS platform still connects Apple.
+	// An empty platform with offerings but no store apps must keep onboarding
+	// going, not fall through to the audit-only "all synced" stage.
 	if stage := detectSetupStage(cmd, rt, ""); stage.PromptID == "connect-apple" {
 		t.Fatalf("empty platform routed to Apple: %+v", stage)
+	}
+	if stage := detectSetupStage(cmd, rt, ""); stage.PromptID == "check-project" {
+		t.Fatalf("empty platform with no store apps must not report all synced: %+v", stage)
 	}
 	if stage := detectSetupStage(cmd, rt, "ios"); stage.PromptID != "connect-apple" {
 		t.Fatalf("iOS platform should connect Apple, got %+v", stage)
