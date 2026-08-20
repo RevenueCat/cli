@@ -482,7 +482,11 @@ func TestLoad_MalformedPerDirFileErrors(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Chdir(dir)
-		if _, err := config.Load("default"); err == nil {
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.ProjectBindingError(false) == nil {
 			t.Fatal("want error on malformed .revenuecat.json, got nil")
 		}
 	})
@@ -498,10 +502,110 @@ func TestLoad_MalformedPerDirFileErrors(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Chdir(dir)
-		if _, err := config.Load("default"); err == nil {
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.ProjectBindingError(false) == nil {
 			t.Fatal("want error when .revenuecat.json has no project_id, got nil")
 		}
 	})
+}
+
+func TestProjectBindingError_HigherOverridesBypassMalformedFile(t *testing.T) {
+	writeBad := func(t *testing.T) {
+		t.Helper()
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, config.ProjectFileName), []byte("not json"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		t.Chdir(dir)
+	}
+
+	t.Run("RC_PROJECT_ID wins over malformed file", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+		writeBad(t)
+		t.Setenv("RC_PROJECT_ID", "proj_env")
+
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.ProjectID != "proj_env" {
+			t.Errorf("RC_PROJECT_ID should apply despite malformed file, got %q", cfg.ProjectID)
+		}
+		if err := cfg.ProjectBindingError(false); err != nil {
+			t.Errorf("malformed file must not block RC_PROJECT_ID, got %v", err)
+		}
+	})
+
+	t.Run("--project-id flag bypasses malformed file", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+		writeBad(t)
+
+		cfg, err := config.Load("default")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := cfg.ProjectBindingError(true); err != nil {
+			t.Errorf("malformed file must not block an explicit --project-id, got %v", err)
+		}
+	})
+}
+
+func TestLogin_FlagProjectMatchingDirBindingPersists(t *testing.T) {
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": t.TempDir(), "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+	if err := config.Save("default", &config.Config{ProjectID: "proj_old"}); err != nil {
+		t.Fatal(err)
+	}
+
+	work := t.TempDir()
+	writeProjectFile(t, work, "proj_dir")
+	t.Chdir(work)
+
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Mirrors root.go applying --project-id equal to the tree binding.
+	cfg.UseProjectID("proj_dir")
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Chdir(t.TempDir())
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ProjectID != "proj_dir" {
+		t.Errorf("--project-id matching the dir binding must persist over the old default, got %q", got.ProjectID)
+	}
+}
+
+func TestStoredProjectID_UnwindsOverlay(t *testing.T) {
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	clearProjectEnv(t)
+	if err := config.Save("default", &config.Config{ProjectID: "proj_profile"}); err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	writeProjectFile(t, dir, "proj_dir")
+	t.Chdir(dir)
+	t.Setenv("RC_PROJECT_ID", "proj_env")
+
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ProjectID != "proj_env" {
+		t.Fatalf("setup: want env overlay active, got %q", cfg.ProjectID)
+	}
+	if got := cfg.StoredProjectID(); got != "proj_profile" {
+		t.Errorf("StoredProjectID should unwind overlays to the profile default, got %q", got)
+	}
 }
 
 func TestLoadStored_IgnoresPerDirBindingAndEnv(t *testing.T) {

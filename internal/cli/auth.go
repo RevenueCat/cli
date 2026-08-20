@@ -833,11 +833,11 @@ func clearProjectBinding(rt *Runtime) {
 	if rt.Globals.ProjectID != "" {
 		return
 	}
-	if rt.Config.ProjectID != "" {
-		rt.Out.Info("Cleared saved project " + rt.Config.ProjectID + ".")
+	if stored := rt.Config.StoredProjectID(); stored != "" {
+		rt.Out.Info("Cleared saved project " + stored + ".")
 		rt.Out.Hint("Pick one for this account:  rc projects use")
 	}
-	rt.Config.ProjectID = ""
+	rt.Config.UseProjectID("")
 }
 
 func finishLogin(ctx context.Context, rt *Runtime, _ *api.Client) error {

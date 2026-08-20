@@ -55,6 +55,11 @@ type Config struct {
 	// in Save, so a tree-local project is never baked into the profile on disk.
 	dirProjectID envOverride
 
+	// dirProjectErr holds a nearest .revenuecat.json that exists but could not
+	// be read or parsed. Load records it instead of failing so a higher-
+	// precedence override still bypasses it; ProjectBindingError surfaces it.
+	dirProjectErr error
+
 	// flagAPIKey holds an --api-key value for this invocation; never serialized.
 	flagAPIKey string
 }
@@ -470,13 +475,15 @@ func Load(profile string) (*Config, error) {
 	// The per-directory binding overrides the profile default but sits below
 	// RC_PROJECT_ID and --project-id, which are applied after it. Recorded as an
 	// override so Save reverts it rather than persisting a tree-local project.
-	// A binding file that exists but can't be read or parsed is an error, not a
-	// silent fall-through to another project.
-	pid, ok, err := dirProjectID()
-	if err != nil {
-		return nil, err
-	}
-	if ok {
+	// A binding file that exists but can't be read or parsed is recorded, not
+	// fatal: a higher-precedence override (RC_PROJECT_ID or --project-id) still
+	// wins, and otherwise ProjectBindingError surfaces it rather than silently
+	// falling through to another project.
+	pid, ok, derr := dirProjectID()
+	switch {
+	case derr != nil:
+		cfg.dirProjectErr = derr
+	case ok:
 		cfg.dirProjectID = envOverride{env: pid, disk: cfg.ProjectID, set: true}
 		cfg.ProjectID = pid
 	}
@@ -501,6 +508,31 @@ func (c *Config) UseProjectID(id string) {
 	c.ProjectID = id
 	c.envProjectID.set = false
 	c.dirProjectID.set = false
+}
+
+// StoredProjectID returns the profile's on-disk project default, unwinding any
+// per-invocation overlay (the per-directory binding or RC_PROJECT_ID) that Load
+// layered on top of it.
+func (c *Config) StoredProjectID() string {
+	if c.dirProjectID.set {
+		return c.dirProjectID.disk
+	}
+	if c.envProjectID.set {
+		return c.envProjectID.disk
+	}
+	return c.ProjectID
+}
+
+// ProjectBindingError reports a nearest .revenuecat.json that exists but could
+// not be read or parsed. It returns nil when a higher-precedence override wins
+// anyway — RC_PROJECT_ID (env) or an explicit --project-id (flagSet) — since
+// those bypass the tree binding entirely. Otherwise the malformed file would
+// silently retarget another project, so callers surface this before running.
+func (c *Config) ProjectBindingError(flagSet bool) error {
+	if c.dirProjectErr == nil || flagSet || c.envProjectID.set {
+		return nil
+	}
+	return c.dirProjectErr
 }
 
 func Save(profile string, cfg *Config) error {

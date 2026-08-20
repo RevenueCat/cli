@@ -77,7 +77,10 @@ Agent-friendly entrypoints:
 			}
 			cfg.SetFlagAPIKey(g.APIKey)
 			if g.ProjectID != "" {
-				cfg.ProjectID = g.ProjectID
+				cfg.UseProjectID(g.ProjectID)
+			}
+			if err := cfg.ProjectBindingError(g.ProjectID != ""); err != nil {
+				return err
 			}
 			rt := &Runtime{
 				Globals: g,
