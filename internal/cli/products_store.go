@@ -369,8 +369,9 @@ func applyStoreStatePlan(ctx context.Context, rt *Runtime, client *api.Client, p
 	}
 	if !slices.Contains(plan.Actions, "apply") {
 		if plan.Status == "planned_and_finished" || (plan.HasChanges != nil && !*plan.HasChanges) {
-			rt.Out.Success("Store state already matches the desired state; nothing to apply")
-			return renderStoreStatePlanResult(rt, plan)
+			rt.Out.Info("Store state already matches the desired state; nothing to apply. Verifying readiness")
+			report := verifyStoreStateReadiness(ctx, rt, client.StoreState, projectID, plan)
+			return renderStoreStateApplyResult(rt, plan, report)
 		}
 		return fmt.Errorf("store-state plan %s cannot be applied from status %s; available actions: %s", plan.ID, plan.Status, strings.Join(plan.Actions, ", "))
 	}

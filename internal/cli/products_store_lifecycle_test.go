@@ -90,6 +90,40 @@ func TestProductsStoreApply_UsesExistingPlanWithoutRecreatingIt(t *testing.T) {
 	}
 }
 
+func TestProductsStoreApply_NoOpStillVerifiesReadiness(t *testing.T) {
+	applied := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/projects/proj/store_state/plans/plan_123":
+			_, _ = io.WriteString(w, `{"id":"plan_123","object":"product_store_state_plan","status":"planned_and_finished","has_changes":false,"actions":["discard"],"summary":{"products_added":0,"products_modified":0,"products_unchanged":1},"desired_states":[],"plan_items":[{"product_id":"prod_1","app_id":"app","store_identifier":"com.example.pro","action":"no_change","diff":[],"warnings":[],"error_message":null,"apply_status":null,"apply_error_message":null}],"error_message":null,"warnings":[]}`)
+		case "/projects/proj/store_state/plans/plan_123/actions/apply":
+			applied = true
+			http.Error(w, "no-op plan must not apply", http.StatusInternalServerError)
+		case "/projects/proj/products/prod_1/store_state":
+			_, _ = io.WriteString(w, `{"project_id":"proj","product_id":"prod_1","store":"app_store","store_status":{"status":"needs_action","raw_store_status":"MISSING_METADATA"},"common":{},"store_state":{}}`)
+		default:
+			http.Error(w, "unexpected request "+r.URL.Path, http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	out, _, err := runStoreLifecycleCommand(t, server.URL, "",
+		"products", "store", "apply", "plan_123", "--yes", "--json", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if applied {
+		t.Fatal("no-op plan issued an apply request")
+	}
+	if !strings.Contains(out, `"overall": "INCOMPLETE"`) {
+		t.Fatalf("no-op apply reported success instead of INCOMPLETE readiness: %s", out)
+	}
+	if !strings.Contains(out, `"raw_store_status": "MISSING_METADATA"`) {
+		t.Fatalf("output missing raw store status: %s", out)
+	}
+}
+
 func TestProductsStoreDiscard_RequiresYesUnderNoInput(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "must not request without confirmation", http.StatusInternalServerError)
