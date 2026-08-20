@@ -50,8 +50,23 @@ type Config struct {
 	envProjectID envOverride
 	envBaseURL   envOverride
 
+	// Provenance of the per-directory project binding (see ProjectFileName).
+	// Like the env overrides it applies for a single invocation and is reverted
+	// in Save, so a tree-local project is never baked into the profile on disk.
+	dirProjectID envOverride
+
+	// dirProjectErr holds a nearest .revenuecat.json that exists but could not
+	// be read or parsed. Load records it instead of failing so a higher-
+	// precedence override still bypasses it; ProjectBindingError surfaces it.
+	dirProjectErr error
+
 	// flagAPIKey holds an --api-key value for this invocation; never serialized.
 	flagAPIKey string
+
+	// Provenance of a --project-id flag applied for this invocation only. Like
+	// the env/dir overrides it is reverted in Save, so a one-shot flag is never
+	// baked into the profile default by an incidental save (e.g. a token refresh).
+	flagProjectID envOverride
 }
 
 // CredentialSource names where the active credential came from.
@@ -101,7 +116,6 @@ func (c *Config) BearerToken() string {
 	return tok
 }
 
-// Credential resolves the active auth credential and reports its source.
 func (c *Config) Credential() (token string, source CredentialSource) {
 	if c.flagAPIKey != "" {
 		return c.flagAPIKey, SourceFlag
@@ -194,7 +208,6 @@ func (c *Config) PresentCredentialSources() []CredentialSource {
 	return s
 }
 
-// SetFlagAPIKey records an --api-key value for this invocation.
 func (c *Config) SetFlagAPIKey(key string) { c.flagAPIKey = key }
 
 // SetAPIKey sets an explicit stored API key, clearing any flag or env override.
@@ -378,10 +391,90 @@ func profilePath(profile string) (string, error) {
 	return filepath.Join(dir, name+".json"), nil
 }
 
-// Load reads a profile from disk, layering env vars on top.
+// ProjectFileName is a per-directory project binding, discovered by walking up
+// from the working directory like git finding .git, so a repo can commit it.
+const ProjectFileName = ".revenuecat.json"
+
+type projectFile struct {
+	ProjectID string `json:"project_id"`
+}
+
+// findProjectFile returns the nearest ProjectFileName walking up from start.
+func findProjectFile(start string) (string, bool) {
+	dir := start
+	for {
+		p := filepath.Join(dir, ProjectFileName)
+		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+			return p, true
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", false
+		}
+		dir = parent
+	}
+}
+
+func dirProjectID() (string, bool, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", false, nil
+	}
+	return dirProjectIDFrom(wd)
+}
+
+// DirBinding reports the nearest .revenuecat.json binding for the current
+// working directory: its file path and the project_id it resolves to. ok is
+// false when no readable, parseable binding applies (an unreadable one is
+// ProjectBindingError's concern, not this). Callers use it to warn when a
+// committed binding will shadow a profile default the user just set or cleared.
+func DirBinding() (path, projectID string, ok bool) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", "", false
+	}
+	p, found := findProjectFile(wd)
+	if !found {
+		return "", "", false
+	}
+	id, resolved, err := dirProjectIDFrom(wd)
+	if err != nil || !resolved {
+		return "", "", false
+	}
+	return p, id, true
+}
+
+func dirProjectIDFrom(start string) (string, bool, error) {
+	path, ok := findProjectFile(start)
+	if !ok {
+		return "", false, nil
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", false, fmt.Errorf("read %s: %w", path, err)
+	}
+	var f projectFile
+	if err := json.Unmarshal(b, &f); err != nil {
+		return "", false, fmt.Errorf("parse %s: %w", path, err)
+	}
+	if f.ProjectID == "" {
+		return "", false, fmt.Errorf("%s: missing or empty project_id", path)
+	}
+	return f.ProjectID, true, nil
+}
+
+// Load reads a profile from disk, layering the per-directory project binding
+// and env vars on top. The project ID resolves with this precedence (highest
+// first): --project-id flag (applied by the caller) > RC_PROJECT_ID env >
+// nearest .revenuecat.json in the directory tree > profile default.
 // Missing files are not an error — they return a zero Config so first-run
 // commands like `rc login` work cleanly.
-func Load(profile string) (*Config, error) {
+// LoadStored reads a profile's config as written on disk, overlaying keyring
+// secrets, without applying any per-invocation override (the per-directory
+// binding, RC_* env vars, or --project-id). Use it to report a profile's own
+// stored defaults, e.g. `profiles list`; use Load for the active resolved
+// config a command should act on.
+func LoadStored(profile string) (*Config, error) {
 	cfg := &Config{BaseURL: ""}
 	path, err := profilePath(profile)
 	if err != nil {
@@ -397,6 +490,29 @@ func Load(profile string) (*Config, error) {
 	// Credentials live in the OS keyring when available; overlay them onto
 	// whatever the file held (the file carries them only as a fallback).
 	loadSecrets(profile, cfg)
+	return cfg, nil
+}
+
+func Load(profile string) (*Config, error) {
+	cfg, err := LoadStored(profile)
+	if err != nil {
+		return nil, err
+	}
+	// The per-directory binding overrides the profile default but sits below
+	// RC_PROJECT_ID and --project-id, which are applied after it. Recorded as an
+	// override so Save reverts it rather than persisting a tree-local project.
+	// A binding file that exists but can't be read or parsed is recorded, not
+	// fatal: a higher-precedence override (RC_PROJECT_ID or --project-id) still
+	// wins, and otherwise ProjectBindingError surfaces it rather than silently
+	// falling through to another project.
+	pid, ok, derr := dirProjectID()
+	switch {
+	case derr != nil:
+		cfg.dirProjectErr = derr
+	case ok:
+		cfg.dirProjectID = envOverride{env: pid, disk: cfg.ProjectID, set: true}
+		cfg.ProjectID = pid
+	}
 	applyEnv := func(o *envOverride, env string, cur *string) {
 		if env == "" {
 			return
@@ -408,6 +524,58 @@ func Load(profile string) (*Config, error) {
 	applyEnv(&cfg.envProjectID, os.Getenv("RC_PROJECT_ID"), &cfg.ProjectID)
 	applyEnv(&cfg.envBaseURL, os.Getenv("RC_BASE_URL"), &cfg.BaseURL)
 	return cfg, nil
+}
+
+// UseProjectID records a project the user chose explicitly (projects use,
+// projects create --use, the picker). It clears the env/dir project overrides
+// so Save persists the choice even when it equals the injected override value —
+// otherwise the revert would mistake the deliberate write for an untouched override.
+func (c *Config) UseProjectID(id string) {
+	c.ProjectID = id
+	c.envProjectID.set = false
+	c.dirProjectID.set = false
+	c.flagProjectID.set = false
+}
+
+// OverrideProjectID applies a --project-id flag for this invocation only. Unlike
+// UseProjectID it keeps the value out of the profile: it records provenance so
+// Save reverts it, so an ordinary command that happens to persist config (an
+// OAuth token refresh, say) never bakes a one-shot flag into the stored default.
+// Login adopts an explicit --project-id as the new default with UseProjectID.
+func (c *Config) OverrideProjectID(id string) {
+	if id == "" {
+		return
+	}
+	c.flagProjectID = envOverride{env: id, disk: c.ProjectID, set: true}
+	c.ProjectID = id
+}
+
+// StoredProjectID returns the profile's on-disk project default, unwinding any
+// per-invocation overlay (the per-directory binding or RC_PROJECT_ID) that Load
+// layered on top of it.
+func (c *Config) StoredProjectID() string {
+	if c.dirProjectID.set {
+		return c.dirProjectID.disk
+	}
+	if c.envProjectID.set {
+		return c.envProjectID.disk
+	}
+	if c.flagProjectID.set {
+		return c.flagProjectID.disk
+	}
+	return c.ProjectID
+}
+
+// ProjectBindingError reports a nearest .revenuecat.json that exists but could
+// not be read or parsed. It returns nil when a higher-precedence override wins
+// anyway — RC_PROJECT_ID (env) or an explicit --project-id (flagSet) — since
+// those bypass the tree binding entirely. Otherwise the malformed file would
+// silently retarget another project, so callers surface this before running.
+func (c *Config) ProjectBindingError(flagSet bool) error {
+	if c.dirProjectErr == nil || flagSet || c.envProjectID.set {
+		return nil
+	}
+	return c.dirProjectErr
 }
 
 func Save(profile string, cfg *Config) error {
@@ -430,7 +598,12 @@ func Save(profile string, cfg *Config) error {
 		}
 	}
 	revert(cfg.envAPIKey, &out.APIKey)
+	// Order matters: each override's disk value is the layer beneath it, so
+	// unwind from the top down — the --project-id flag, then RC_PROJECT_ID, then
+	// the per-dir binding — landing back on the profile's own project.
+	revert(cfg.flagProjectID, &out.ProjectID)
 	revert(cfg.envProjectID, &out.ProjectID)
+	revert(cfg.dirProjectID, &out.ProjectID)
 	revert(cfg.envBaseURL, &out.BaseURL)
 
 	// Try the OS keyring first; on success the file omits the secrets, on

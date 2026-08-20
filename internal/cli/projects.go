@@ -161,22 +161,28 @@ current profile.`,
 				return err
 			}
 			if use {
-				rt.Config.ProjectID = p.ID
+				rt.Config.UseProjectID(p.ID)
 				if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 					return err
 				}
 			}
 			rt.Out.Success(fmt.Sprintf("Created project %s", p.ID))
+			var shadow *dirBindingShadow
 			if use {
 				rt.Out.Success(fmt.Sprintf("Active project: %s (%s)", p.Name, p.ID))
+				shadow = warnDirBindingShadow(rt, p.ID)
 			}
-			return rt.Out.Render(map[string]any{
+			result := map[string]any{
 				"project": p,
 				"profile": map[string]any{
 					"name":       config.ProfileName(rt.Globals.Profile),
 					"project_id": rt.Config.ProjectID,
 				},
-			})
+			}
+			if shadow != nil {
+				result["dir_binding_shadow"] = shadow
+			}
+			return rt.Out.Render(result)
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "project name (required)")
@@ -247,10 +253,14 @@ The chosen project is written to the active profile file (default:
 							return err
 						}
 						rt.Out.Success("No default project set — you'll be prompted on each command.")
-						return rt.Out.Render(map[string]any{
+						result := map[string]any{
 							"profile":    config.ProfileName(rt.Globals.Profile),
 							"project_id": "",
-						})
+						}
+						if shadow := warnDirBindingShadow(rt, ""); shadow != nil {
+							result["dir_binding_shadow"] = shadow
+						}
+						return rt.Out.Render(result)
 					}
 				}
 			}
@@ -261,19 +271,50 @@ The chosen project is written to the active profile file (default:
 				return err
 			}
 
-			rt.Config.ProjectID = p.ID
+			rt.Config.UseProjectID(p.ID)
 			if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 				return err
 			}
 
 			rt.Out.Success(fmt.Sprintf("Active project: %s (%s)", p.Name, p.ID))
-			return rt.Out.Render(map[string]any{
+			result := map[string]any{
 				"profile":    config.ProfileName(rt.Globals.Profile),
 				"project_id": p.ID,
 				"name":       p.Name,
-			})
+			}
+			if shadow := warnDirBindingShadow(rt, p.ID); shadow != nil {
+				result["dir_binding_shadow"] = shadow
+			}
+			return rt.Out.Render(result)
 		},
 	}
+}
+
+// dirBindingShadow describes a committed .revenuecat.json binding that
+// outranks the profile default. It is surfaced in --json results so agents
+// (which run in --json, where Warn/Hint are no-ops) still see the shadowing.
+type dirBindingShadow struct {
+	ProjectID string `json:"project_id"`
+	File      string `json:"file"`
+}
+
+// warnDirBindingShadow reports a committed .revenuecat.json binding in the
+// current tree that resolves to a different project than the profile default
+// just set or cleared. The precedence (binding > profile default) is
+// intentional; the hazard is that it's silent, so name the binding's project
+// and file and state that commands here use it until the file changes. In
+// human mode it emits a Warn+Hint; in every mode it returns the shadow (nil
+// when nothing shadows) so callers can include it in --json output. selected
+// is the id just persisted, or "" when the default was cleared (any binding
+// then shadows it and keeps suppressing the prompt).
+func warnDirBindingShadow(rt *Runtime, selected string) *dirBindingShadow {
+	path, bound, ok := config.DirBinding()
+	if !ok || bound == selected {
+		return nil
+	}
+	rt.Out.Warn(fmt.Sprintf("A directory binding overrides this: %s pins project %s.", path, bound))
+	rt.Out.Hint(fmt.Sprintf("Commands run in this directory will use %s, not the profile default, until you change or remove %s.", bound, path))
+	return &dirBindingShadow{ProjectID: bound, File: path}
 }
 
 func formatMillis(m int64) string {
