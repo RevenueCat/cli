@@ -17,17 +17,46 @@ import (
 )
 
 type storeStateInputOptions struct {
-	file        string
-	inputFormat string
+	file                  string
+	inputFormat           string
+	equalizeBaseTerritory string
 }
 
 func (o *storeStateInputOptions) addFlags(cmd *cobra.Command) {
 	flags := cmd.Flags()
 	flags.StringVarP(&o.file, "file", "f", "", "desired state file, or - for stdin (env: RC_STORE_STATE_FILE)")
 	flags.StringVar(&o.inputFormat, "input-format", "", "input format for stdin or extensionless files: csv or json")
+	flags.StringVar(&o.equalizeBaseTerritory, "equalize-base-territory", "", "equalize missing subscription prices from this base territory (e.g. US)")
 }
 
 func (o *storeStateInputOptions) desiredStates(rt *Runtime, app *api.App, stdin io.Reader) ([]api.StoreStatePlanDesiredState, error) {
+	states, err := o.gatherDesiredStates(rt, app, stdin)
+	if err != nil {
+		return nil, err
+	}
+	if base := strings.ToUpper(strings.TrimSpace(o.equalizeBaseTerritory)); base != "" {
+		for i := range states {
+			injectEqualizeBaseTerritory(&states[i], base)
+		}
+	}
+	return states, nil
+}
+
+// injectEqualizeBaseTerritory adds an equalization directive under
+// common.pricing without disturbing any territory_prices already set there.
+func injectEqualizeBaseTerritory(state *api.StoreStatePlanDesiredState, base string) {
+	if state.Common == nil {
+		state.Common = map[string]any{}
+	}
+	pricing, ok := state.Common["pricing"].(map[string]any)
+	if !ok {
+		pricing = map[string]any{}
+		state.Common["pricing"] = pricing
+	}
+	pricing["equalize_missing_subscription_prices"] = map[string]any{"base_territory": base}
+}
+
+func (o *storeStateInputOptions) gatherDesiredStates(rt *Runtime, app *api.App, stdin io.Reader) ([]api.StoreStatePlanDesiredState, error) {
 	if o.file == "" {
 		o.file = os.Getenv("RC_STORE_STATE_FILE")
 	}
