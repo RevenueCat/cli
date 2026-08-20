@@ -124,6 +124,63 @@ func TestInferCapabilities_DriftGuard(t *testing.T) {
 	walk(root)
 }
 
+func TestParseArgsFromUse(t *testing.T) {
+	cases := []struct {
+		use  string
+		want []map[string]any
+	}{
+		{"show <id>", []map[string]any{{"name": "id", "required": true, "variadic": false}}},
+		{"submit <product-id> [product-id...]", []map[string]any{
+			{"name": "product-id", "required": true, "variadic": false},
+			{"name": "product-id", "required": false, "variadic": true},
+		}},
+		{"schema [command...]", []map[string]any{{"name": "command", "required": false, "variadic": true}}},
+		{"list", []map[string]any{}},
+	}
+	for _, tc := range cases {
+		got := parseArgsFromUse(tc.use)
+		if len(got) != len(tc.want) {
+			t.Errorf("%q: got %d args, want %d (%v)", tc.use, len(got), len(tc.want), got)
+			continue
+		}
+		for i := range got {
+			for k, v := range tc.want[i] {
+				if got[i][k] != v {
+					t.Errorf("%q arg %d: %s = %v, want %v", tc.use, i, k, got[i][k], v)
+				}
+			}
+		}
+	}
+}
+
+// TestSchemaArgsMatchVariadicUse guards against variadic positionals that hide
+// from the agent schema, e.g. "<name>..." with the dots outside the brackets.
+func TestSchemaArgsMatchVariadicUse(t *testing.T) {
+	root := NewRootCmd("test")
+
+	var walk func(c *cobra.Command)
+	walk = func(c *cobra.Command) {
+		if strings.Contains(c.Use, "...") {
+			args := parseArgsFromUse(c.Use)
+			variadic := false
+			for _, a := range args {
+				if v, _ := a["variadic"].(bool); v {
+					variadic = true
+					break
+				}
+			}
+			if !variadic {
+				t.Errorf("%q Use %q signals variadic args but schema exposes none %v",
+					commandPath(c), c.Use, args)
+			}
+		}
+		for _, sc := range c.Commands() {
+			walk(sc)
+		}
+	}
+	walk(root)
+}
+
 func hasRunnableDescendant(c *cobra.Command) bool {
 	for _, sc := range c.Commands() {
 		if isExperimental(sc) {
