@@ -1,6 +1,6 @@
 module github.com/revenuecat/cli
 
-go 1.25.12
+go 1.25.13
 
 require (
 	github.com/NimbleMarkets/ntcharts v0.5.1
