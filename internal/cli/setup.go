@@ -683,14 +683,22 @@ func detectProjectMarkers(dir string) []projectMarker {
 	}
 
 	// Capacitor and similar wrappers keep the Xcode project one level down in
-	// ./App, so an ios/ directory holds no marker of its own without this.
-	for _, g := range []string{filepath.Join(dir, "*.xcodeproj"), filepath.Join(dir, "App", "*.xcodeproj")} {
+	// ios/App, so an ios/ directory holds no marker of its own without this. Only
+	// glob the nested App/ for an ios/ directory: a bare ./App beside a web or
+	// tooling root isn't a Capacitor project and must not read as a root iOS app.
+	xcodeprojGlobs := []string{filepath.Join(dir, "*.xcodeproj")}
+	xcworkspaceGlobs := []string{filepath.Join(dir, "*.xcworkspace")}
+	if filepath.Base(dir) == "ios" {
+		xcodeprojGlobs = append(xcodeprojGlobs, filepath.Join(dir, "App", "*.xcodeproj"))
+		xcworkspaceGlobs = append(xcworkspaceGlobs, filepath.Join(dir, "App", "*.xcworkspace"))
+	}
+	for _, g := range xcodeprojGlobs {
 		if matches, _ := filepath.Glob(g); len(matches) > 0 {
 			add("Xcode project (" + filepath.Base(matches[0]) + ")")
 			break
 		}
 	}
-	for _, g := range []string{filepath.Join(dir, "*.xcworkspace"), filepath.Join(dir, "App", "*.xcworkspace")} {
+	for _, g := range xcworkspaceGlobs {
 		if matches, _ := filepath.Glob(g); len(matches) > 0 {
 			add("Xcode workspace (" + filepath.Base(matches[0]) + ")")
 			break

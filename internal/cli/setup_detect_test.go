@@ -51,6 +51,13 @@ func TestDetectAppProject(t *testing.T) {
 		// Capacitor-style layout: Xcode project nested in ios/App, Gradle app in android/.
 		{"capacitor-nested-both", []string{"package.json:{\"dependencies\":{\"@capacitor/core\":\"5\"}}", "android/build.gradle:plugins { id \"com.android.application\" }", "ios/App/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android), Xcode project (MyApp.xcodeproj) (./ios))", "", projectAmbiguous, []string{"android", "ios"}},
 		{"capacitor-nested-ios-only", []string{"package.json:{\"dependencies\":{\"@capacitor/core\":\"5\"}}", "ios/App/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
+		// A bare ./App/*.xcodeproj at a web/tooling root is not Capacitor-shaped: the
+		// root must not read as a root-level iOS app (clear iOS, empty appDirs).
+		// It falls through to the subdir scan, which points the agent at ./App.
+		{"web-root-with-bare-app-xcodeproj", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "App/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./App)", "ios", projectClear, []string{"App"}},
+		// A bare ./App must not short-circuit the root into a clear iOS app: with an
+		// Android app beside it the scan still sees both and defers to the agent.
+		{"bare-app-beside-mobile-subdir", []string{"App/MyApp.xcodeproj/project.pbxproj", "android/build.gradle:plugins { id \"com.android.application\" }"}, "multiple app projects in subdirectories (Xcode project (MyApp.xcodeproj) (./App), Android project (./android))", "", projectAmbiguous, []string{"App", "android"}},
 		// A JVM/Gradle backend next to a web project is not a mobile app.
 		{"web-root-with-gradle-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "backend/build.gradle:plugins { id \"org.jetbrains.kotlin.jvm\" }"}, "JavaScript project (not a mobile app)", "", projectNonMobile, nil},
 
