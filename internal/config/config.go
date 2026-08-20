@@ -423,6 +423,27 @@ func dirProjectID() (string, bool, error) {
 	return dirProjectIDFrom(wd)
 }
 
+// DirBinding reports the nearest .revenuecat.json binding for the current
+// working directory: its file path and the project_id it resolves to. ok is
+// false when no readable, parseable binding applies (an unreadable one is
+// ProjectBindingError's concern, not this). Callers use it to warn when a
+// committed binding will shadow a profile default the user just set or cleared.
+func DirBinding() (path, projectID string, ok bool) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", "", false
+	}
+	p, found := findProjectFile(wd)
+	if !found {
+		return "", "", false
+	}
+	id, resolved, err := dirProjectIDFrom(wd)
+	if err != nil || !resolved {
+		return "", "", false
+	}
+	return p, id, true
+}
+
 func dirProjectIDFrom(start string) (string, bool, error) {
 	path, ok := findProjectFile(start)
 	if !ok {

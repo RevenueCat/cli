@@ -169,6 +169,7 @@ current profile.`,
 			rt.Out.Success(fmt.Sprintf("Created project %s", p.ID))
 			if use {
 				rt.Out.Success(fmt.Sprintf("Active project: %s (%s)", p.Name, p.ID))
+				warnDirBindingShadow(rt, p.ID)
 			}
 			return rt.Out.Render(map[string]any{
 				"project": p,
@@ -247,6 +248,7 @@ The chosen project is written to the active profile file (default:
 							return err
 						}
 						rt.Out.Success("No default project set — you'll be prompted on each command.")
+						warnDirBindingShadow(rt, "")
 						return rt.Out.Render(map[string]any{
 							"profile":    config.ProfileName(rt.Globals.Profile),
 							"project_id": "",
@@ -267,6 +269,7 @@ The chosen project is written to the active profile file (default:
 			}
 
 			rt.Out.Success(fmt.Sprintf("Active project: %s (%s)", p.Name, p.ID))
+			warnDirBindingShadow(rt, p.ID)
 			return rt.Out.Render(map[string]any{
 				"profile":    config.ProfileName(rt.Globals.Profile),
 				"project_id": p.ID,
@@ -274,6 +277,22 @@ The chosen project is written to the active profile file (default:
 			})
 		},
 	}
+}
+
+// warnDirBindingShadow warns when a committed .revenuecat.json binding in the
+// current tree resolves to a different project than the profile default just
+// set or cleared. The precedence (binding > profile default) is intentional;
+// the hazard is that it's silent, so name the binding's project and file and
+// state that commands here use it until the file changes. selected is the id
+// just persisted, or "" when the default was cleared (any binding then shadows
+// it and keeps suppressing the prompt).
+func warnDirBindingShadow(rt *Runtime, selected string) {
+	path, bound, ok := config.DirBinding()
+	if !ok || bound == selected {
+		return
+	}
+	rt.Out.Warn(fmt.Sprintf("A directory binding overrides this: %s pins project %s.", path, bound))
+	rt.Out.Hint(fmt.Sprintf("Commands run in this directory will use %s, not the profile default, until you change or remove %s.", bound, path))
 }
 
 func formatMillis(m int64) string {
