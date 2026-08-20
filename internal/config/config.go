@@ -122,6 +122,12 @@ func (c *Config) Credential() (token string, source CredentialSource) {
 // MCP-imported credential isn't named as an ordinary OAuth login or stored key.
 func (c *Config) CredentialDescription() string {
 	_, source := c.Credential()
+	return c.DescribeSource(source)
+}
+
+// DescribeSource names a credential source, refining the stored credential's
+// phrasing with its provenance (only flag/env overrides never carry one).
+func (c *Config) DescribeSource(source CredentialSource) string {
 	if c.AuthSource == AuthOriginMCPImport {
 		switch source {
 		case SourceOAuth:

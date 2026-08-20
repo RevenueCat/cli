@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -143,6 +144,29 @@ func TestAuthStatus_NamesMCPImportedAPIKey(t *testing.T) {
 	wantField(t, data, "credential_source", "profile")
 	wantField(t, data, "credential_description", "an MCP-imported API key")
 	wantField(t, data, "auth_origin", "mcp_import")
+}
+
+// The conflict message must name the active credential with the same
+// provenance-aware phrasing as the Credential line, not a bare source name.
+func TestAuthStatus_ConflictNamesMCPImportedActive(t *testing.T) {
+	dir := t.TempDir()
+	seedProfile(t, dir, &config.Config{
+		TokenType:   "oauth",
+		AccessToken: "atk_borrowed",
+		AuthSource:  config.AuthOriginMCPImport,
+	})
+	t.Setenv("RC_API_KEY", "sk_env")
+
+	data := statusData(t, dir)
+	wantField(t, data, "credential_source", "oauth")
+	conflict, ok := data["credential_conflict"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected credential_conflict, got %v", data["credential_conflict"])
+	}
+	msg, _ := conflict["message"].(string)
+	if !strings.Contains(msg, "an MCP-imported access token") {
+		t.Errorf("conflict message should name the MCP-imported token, got %q", msg)
+	}
 }
 
 // An RC_API_KEY set alongside an OAuth login must not silently take over.

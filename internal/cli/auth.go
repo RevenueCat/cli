@@ -388,7 +388,7 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 				conflict = map[string]any{
 					"active_source":   string(credSource),
 					"ignored_sources": ignored,
-					"message":         credentialConflictMessage(credSource, present),
+					"message":         credentialConflictMessage(rt.Config, credSource, present),
 				}
 			}
 
