@@ -258,7 +258,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 func newProductsStoreSubmitCmd() *cobra.Command {
 	var store string
 	cmd := &cobra.Command{
-		Use:   "submit <product-id>...",
+		Use:   "submit <product-id> [product-id...]",
 		Short: "Submit App Store products for Apple review",
 		Long: `Starts Apple review for the named App Store products. Applying a
 store-state plan pushes configuration to App Store Connect but never submits
