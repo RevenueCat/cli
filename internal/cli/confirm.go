@@ -16,7 +16,7 @@ func requireInteractive(rt *Runtime, action string) error {
 		return nil
 	}
 	return WithHint(
-		fmt.Errorf("%s is interactive-only and can't run with --json or --no-input", action),
+		fmt.Errorf("%s is interactive-only: it needs a real terminal and can't run with --json or --no-input", action),
 		"Run it yourself in an interactive terminal. It is intentionally unavailable to automation because it is irreversible.",
 	)
 }
