@@ -128,17 +128,17 @@ func (r *Runtime) warnCredentialConflict(active config.CredentialSource) {
 		return
 	}
 	r.warnedCredConflict = true
-	r.Out.AlwaysWarn(credentialConflictMessage(active, present))
+	r.Out.AlwaysWarn(credentialConflictMessage(r.Config, active, present))
 }
 
-func credentialConflictMessage(active config.CredentialSource, present []config.CredentialSource) string {
+func credentialConflictMessage(cfg *config.Config, active config.CredentialSource, present []config.CredentialSource) string {
 	var ignored []string
 	for _, s := range present {
 		if s != active {
-			ignored = append(ignored, s.Describe())
+			ignored = append(ignored, cfg.DescribeSource(s))
 		}
 	}
-	msg := "Multiple credentials found — using " + active.Describe()
+	msg := "Multiple credentials found — using " + cfg.DescribeSource(active)
 	if len(ignored) > 0 {
 		msg += "; ignoring " + strings.Join(ignored, " and ")
 	}

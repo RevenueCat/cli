@@ -32,6 +32,12 @@ type Config struct {
 	AccountEmail   string    `json:"account_email,omitempty"`
 	AccountName    string    `json:"account_name,omitempty"`
 
+	// AuthSource records how the stored credential was obtained, so status can
+	// name a borrowed MCP-imported token instead of passing it off as a normal
+	// OAuth login or stored key. Flag/env credentials aren't stored, so they're
+	// resolved live and never written here. Empty on legacy profiles.
+	AuthSource string `json:"auth_source,omitempty"` // AuthOrigin* constants
+
 	ProjectID string `json:"project_id,omitempty"`
 	BaseURL   string `json:"base_url,omitempty"`
 
@@ -57,6 +63,12 @@ const (
 	SourceEnv     CredentialSource = "env"
 	SourceProfile CredentialSource = "profile"
 	SourceNone    CredentialSource = "none"
+)
+
+const (
+	AuthOriginOAuthLogin = "oauth_login" // also set on signup
+	AuthOriginAPIKey     = "api_key"
+	AuthOriginMCPImport  = "mcp_import"
 )
 
 // Describe returns a human-readable phrase naming the source.
@@ -104,6 +116,56 @@ func (c *Config) Credential() (token string, source CredentialSource) {
 		return k, SourceProfile
 	}
 	return "", SourceNone
+}
+
+// CredentialDescription refines Describe with stored provenance so an
+// MCP-imported credential isn't named as an ordinary OAuth login or stored key.
+func (c *Config) CredentialDescription() string {
+	_, source := c.Credential()
+	return c.DescribeSource(source)
+}
+
+// DescribeSource names a credential source, refining the stored credential's
+// phrasing with its provenance (only flag/env overrides never carry one).
+func (c *Config) DescribeSource(source CredentialSource) string {
+	if c.AuthSource == AuthOriginMCPImport {
+		switch source {
+		case SourceOAuth:
+			return "an MCP-imported access token (borrowed; no auto-refresh)"
+		case SourceProfile:
+			return "an MCP-imported API key"
+		}
+	}
+	return source.Describe()
+}
+
+const (
+	TokenValid      = "valid"
+	TokenNearExpiry = "near_expiry"
+	TokenExpired    = "expired"
+	TokenNoExpiry   = "no_expiry" // borrowed tokens carry no expiry we can read
+)
+
+// TokenStatus is only meaningful when IsOAuth(); the near-expiry window matches
+// NeedsRefresh's 5 minutes.
+func (c *Config) TokenStatus() string {
+	if c.TokenExpiresAt.IsZero() {
+		return TokenNoExpiry
+	}
+	now := time.Now()
+	switch {
+	case now.After(c.TokenExpiresAt):
+		return TokenExpired
+	case c.TokenExpiresAt.Sub(now) <= 5*time.Minute:
+		return TokenNearExpiry
+	default:
+		return TokenValid
+	}
+}
+
+// CanAutoRefresh is false for borrowed MCP tokens, which carry no refresh token.
+func (c *Config) CanAutoRefresh() bool {
+	return c.IsOAuth() && c.RefreshToken != ""
 }
 
 // storedAPIKey is the API key on disk, ignoring any RC_API_KEY override.

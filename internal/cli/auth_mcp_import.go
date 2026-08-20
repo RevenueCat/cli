@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/revenuecat/cli/internal/config"
 )
 
 // Importing an existing RevenueCat MCP credential lets a dev who already has
@@ -138,11 +140,12 @@ func (c mcpCredential) label() string {
 // call, and we translate it into a browser-login nudge.
 func loginWithMCPCredential(ctx context.Context, rt *Runtime, cred mcpCredential) error {
 	if cred.durable {
-		return loginWithAPIKey(ctx, rt, cred.Token)
+		return loginWithAPIKeyOrigin(ctx, rt, cred.Token, config.AuthOriginMCPImport)
 	}
 	rt.Config.APIKey = ""
 	rt.Config.TokenType = "oauth"
 	rt.Config.AccessToken = cred.Token
+	rt.Config.AuthSource = config.AuthOriginMCPImport
 	// No refresh token and no expiry on purpose: this is a borrowed access
 	// token. Empty RefreshToken makes Config.NeedsRefresh() return false, so
 	// rc never tries (and never could) to refresh it — which also means it

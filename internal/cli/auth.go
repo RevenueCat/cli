@@ -311,6 +311,7 @@ To remove the profile entirely, use: rc profiles delete <name>`,
 			rt.Config.TokenType = ""
 			rt.Config.AccountEmail = ""
 			rt.Config.AccountName = ""
+			rt.Config.AuthSource = ""
 			rt.Config.ProjectID = ""
 
 			if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
@@ -387,7 +388,7 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 				conflict = map[string]any{
 					"active_source":   string(credSource),
 					"ignored_sources": ignored,
-					"message":         credentialConflictMessage(credSource, present),
+					"message":         credentialConflictMessage(rt.Config, credSource, present),
 				}
 			}
 
@@ -413,7 +414,10 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 				rt.Out.Success(fmt.Sprintf("Logged in (profile: %s)", profileName))
 			}
 			if authenticated {
-				rt.Out.Field("Credential", credSource.Describe())
+				rt.Out.Field("Credential", rt.Config.CredentialDescription())
+				if credSource == config.SourceOAuth {
+					writeTokenStatus(rt)
+				}
 			}
 			if conflict != nil {
 				rt.warnCredentialConflict(credSource)
@@ -436,15 +440,29 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 				return nil
 			}
 			out := map[string]any{
-				"profile":           profileName,
-				"authenticated":     authenticated,
-				"account_email":     rt.Config.AccountEmail,
-				"account_name":      rt.Config.AccountName,
-				"method":            method,
-				"credential_source": string(credSource),
-				"project_id":        rt.Config.ProjectID,
-				"project_status":    projectStatus,
-				"base_url":          rt.Config.BaseURL,
+				"profile":                profileName,
+				"authenticated":          authenticated,
+				"account_email":          rt.Config.AccountEmail,
+				"account_name":           rt.Config.AccountName,
+				"method":                 method,
+				"credential_source":      string(credSource),
+				"credential_description": rt.Config.CredentialDescription(),
+				"project_id":             rt.Config.ProjectID,
+				"project_status":         projectStatus,
+				"base_url":               rt.Config.BaseURL,
+			}
+			// Only report auth_origin when the stored credential is the active
+			// one; under a flag/env override it's the wrong credential's origin.
+			if authenticated && rt.Config.AuthSource != "" &&
+				(credSource == config.SourceOAuth || credSource == config.SourceProfile) {
+				out["auth_origin"] = rt.Config.AuthSource
+			}
+			if credSource == config.SourceOAuth {
+				out["token_status"] = rt.Config.TokenStatus()
+				out["token_can_refresh"] = rt.Config.CanAutoRefresh()
+				if !rt.Config.TokenExpiresAt.IsZero() {
+					out["token_expires_at"] = rt.Config.TokenExpiresAt.Format(time.RFC3339)
+				}
 			}
 			if conflict != nil {
 				out["credential_conflict"] = conflict
@@ -462,6 +480,29 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 	}
 	cmd.Flags().BoolVar(&showScopes, "scopes", false, "show the active credential's scopes (when determinable)")
 	return cmd
+}
+
+func writeTokenStatus(rt *Runtime) {
+	when := rt.Config.TokenExpiresAt.Local().Format("2006-01-02 15:04")
+	canRefresh := rt.Config.CanAutoRefresh()
+	switch rt.Config.TokenStatus() {
+	case config.TokenValid:
+		rt.Out.Field("Token", "valid until "+when)
+	case config.TokenNearExpiry:
+		if canRefresh {
+			rt.Out.Field("Token", "expires "+when+" (refreshes automatically)")
+		} else {
+			rt.Out.Warn("Token expires " + when + " and can't auto-refresh; run `rc login`")
+		}
+	case config.TokenExpired:
+		if canRefresh {
+			rt.Out.Field("Token", "expired "+when+" (refreshes on next use)")
+		} else {
+			rt.Out.Warn("Token expired " + when + "; run `rc login` to re-authenticate")
+		}
+	default:
+		rt.Out.Field("Token", "expiry unknown")
+	}
 }
 
 // credentialScopes best-effort reports the scopes of the active credential.
@@ -526,7 +567,12 @@ func loginWithAPIKeyInteractive(ctx context.Context, rt *Runtime) error {
 }
 
 func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
+	return loginWithAPIKeyOrigin(ctx, rt, key, config.AuthOriginAPIKey)
+}
+
+func loginWithAPIKeyOrigin(ctx context.Context, rt *Runtime, key, origin string) error {
 	rt.Config.SetAPIKey(key)
+	rt.Config.AuthSource = origin
 	rt.Config.TokenType = ""
 	rt.Config.AccessToken = ""
 	rt.Config.RefreshToken = ""
@@ -642,6 +688,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	rt.Config.RefreshToken = tr.RefreshToken
 	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
 	rt.Config.APIKey = ""
+	rt.Config.AuthSource = config.AuthOriginOAuthLogin
 	clearProjectBinding(rt)
 
 	rt.client = nil
@@ -713,6 +760,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	rt.Config.APIKey = ""
 	rt.Config.AccountEmail = email
 	rt.Config.AccountName = name
+	rt.Config.AuthSource = config.AuthOriginOAuthLogin
 	clearProjectBinding(rt)
 	rt.client = nil
 
