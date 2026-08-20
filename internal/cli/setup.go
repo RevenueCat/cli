@@ -134,8 +134,7 @@ func runSetup(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	projectLabel, projectDetected := detectAppProject(dir)
-	platform := platformFromLabel(projectLabel)
+	projectLabel, platform, projStatus, appDirs := detectAppProject(dir)
 	agents := detectAgents()
 
 	rt.Out.Title("RevenueCat setup  ·  " + filepath.Base(dir))
@@ -167,7 +166,12 @@ func runSetup(cmd *cobra.Command) error {
 	stage := detectSetupStage(cmd, rt, platform)
 	rt.Out.Field("Stage", stage.Label)
 
-	if !projectDetected {
+	switch projStatus {
+	case projectAmbiguous:
+		rt.Out.Info("Several project markers here — the agent will figure out which app and platform to set up.")
+	case projectNonMobile:
+		rt.Out.Info("This doesn't look like a mobile app — the agent will confirm what needs RevenueCat and pick the platform.")
+	case projectNone:
 		cont, err := tui.ConfirmDefault(false, "No app project detected in this directory. Set up here anyway?", false)
 		if err != nil {
 			return err
@@ -192,7 +196,7 @@ func runSetup(cmd *cobra.Command) error {
 		rt.Out.Answer("Agent", "none — copy the prompt")
 		rt.Out.Blank()
 		rt.Out.Info("Run rc skills install, then paste this into any agent:")
-		rt.Out.Info(setupAgentPrompt(rt, stage, applePending))
+		rt.Out.Info(setupAgentPrompt(rt, stage, applePending, projStatus, appDirs))
 		rt.Out.Hint("more starter prompts:  rc skills prompts")
 		return nil
 	}
@@ -235,7 +239,7 @@ func runSetup(cmd *cobra.Command) error {
 	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
 	appleDeferred := applePending
 
-	prompt := setupAgentPrompt(rt, stage, appleDeferred)
+	prompt := setupAgentPrompt(rt, stage, appleDeferred, projStatus, appDirs)
 
 	rt.Out.Plan([]string{
 		"Install the RevenueCat AI Toolkit skills for " + choice.Name,
@@ -386,12 +390,42 @@ func activeProjectLabel(cmd *cobra.Command, rt *Runtime) string {
 
 // setupAgentPrompt is the starter prompt handed to the agent, with the
 // Apple-deferred instruction appended when relevant.
-func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool) string {
-	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt)
+// joinSubdirs renders relative app subdirectories as "./a, ./b" for agent notes.
+func joinSubdirs(dirs []string) string {
+	out := make([]string, len(dirs))
+	for i, d := range dirs {
+		out[i] = "./" + d
+	}
+	return strings.Join(out, ", ")
+}
+
+func setupAgentPrompt(rt *Runtime, stage setupStage, appleDeferred bool, status projectStatus, appDirs []string) string {
+	prompt := starterPromptByID(stage.PromptID) + setupToolingNote(rt) + setupProjectNote(status, appDirs)
 	if appleDeferred {
 		prompt += "\n\nApple: I have deliberately deferred connecting my Apple account. Do NOT pause, wait, or poll for Apple credentials at any point — complete every stage that does not require Apple (Test Store catalog, paywall, SDK integration, build verification) and finish your run by listing the Apple steps as remaining work with the exact commands I should run later."
 	}
 	return prompt
+}
+
+func setupProjectNote(status projectStatus, appDirs []string) string {
+	switch status {
+	case projectClear:
+		if len(appDirs) == 1 {
+			return "\n\nProject detection: the app is in ./" + appDirs[0] + ", not the current directory — cd into it (or target that path) before making changes."
+		}
+		return ""
+	case projectAmbiguous:
+		if len(appDirs) > 0 {
+			return "\n\nProject detection: several app projects live in subdirectories (" + joinSubdirs(appDirs) + "); the current directory has none. Identify the specific app and platform that needs RevenueCat before making changes — do not infer one."
+		}
+		return "\n\nProject detection: this directory has several project markers, so it may be a monorepo or nested checkout. Identify the specific app and platform that needs RevenueCat before making changes — do not infer one from the directory."
+	case projectNonMobile:
+		return "\n\nProject detection: this directory does not look like a mobile app (it resembles a web or backend project). Confirm with the user what should get RevenueCat and which platform, rather than assuming iOS."
+	case projectNone:
+		return "\n\nProject detection: no recognizable app project was found here. Confirm the target app and platform with the user before proceeding."
+	default:
+		return ""
+	}
 }
 
 // runSetupAgentPrompt emits the stage-aware setup prompt for a non-interactive
@@ -401,14 +435,13 @@ func runSetupAgentPrompt(cmd *cobra.Command, rt *Runtime) error {
 	if err != nil {
 		return err
 	}
-	projectLabel, _ := detectAppProject(dir)
-	platform := platformFromLabel(projectLabel)
+	_, platform, projStatus, appDirs := detectAppProject(dir)
 	stage := detectSetupStage(cmd, rt, platform)
 	authed := rt.Config != nil && rt.Config.BearerToken() != ""
 	applePending := (platform == "ios" || platform == "cross") &&
 		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
 
-	prompt := setupAgentPrompt(rt, stage, applePending) + setupAuthHandbackNote(authed)
+	prompt := setupAgentPrompt(rt, stage, applePending, projStatus, appDirs) + setupAuthHandbackNote(authed)
 
 	if rt.Globals.JSON {
 		return rt.Out.Render(map[string]any{
@@ -518,9 +551,9 @@ func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupSta
 	}
 
 	// Apple applies when an App Store app exists, or none does but the
-	// directory looks like an iOS/cross-platform app. Android-only projects
-	// skip straight to the Play path.
-	appleRelevant := appStore != nil || (playStore == nil && platform != "android")
+	// directory is clearly iOS/cross-platform. An empty platform (nested,
+	// non-mobile, or undetermined) defers to the agent rather than assuming Apple.
+	appleRelevant := appStore != nil || (playStore == nil && (platform == "ios" || platform == "cross"))
 	if appleRelevant {
 		if appStore == nil || appStore.AppStore == nil ||
 			!appStore.AppStore.SubscriptionKeyConfigured || !appStore.AppStore.AppStoreConnectAPIKeyConfigured {
@@ -538,6 +571,13 @@ func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupSta
 		if !hasProducts(playStore) {
 			return setupStage{"Play Store app exists — catalog not synced", "sync-store-catalog"}
 		}
+	}
+	// Reachable only when the platform is undetermined (empty): a clear iOS,
+	// cross, or Android platform is handled above. With offerings but no store
+	// app connected, onboarding is not finished — keep it going and let the
+	// agent pick the store rather than reporting an audit-only "all synced".
+	if appStore == nil && playStore == nil {
+		return setupStage{"Test Store ready — store app not connected", "test-store-ready"}
 	}
 	return setupStage{"store apps connected and catalogs synced", "check-project"}
 }
@@ -622,46 +662,204 @@ func detectAgents() []agentClient {
 	return found
 }
 
-// detectAppProject decides whether dir looks like an app project root and
-// names what it found. The label rides the Directory field so a wrong-cwd
-// mistake is visible before anything runs.
-func detectAppProject(dir string) (label string, ok bool) {
-	if home, err := os.UserHomeDir(); err == nil && dir == home {
-		return "this is your home directory, not an app", false
+type projectStatus int
+
+const (
+	projectClear projectStatus = iota
+	projectAmbiguous
+	projectNonMobile
+	projectNone
+)
+
+type projectMarker struct {
+	label    string
+	platform string
+}
+
+func detectProjectMarkers(dir string) []projectMarker {
+	var markers []projectMarker
+	add := func(label string) {
+		markers = append(markers, projectMarker{label, platformFromLabel(label)})
 	}
-	if matches, _ := filepath.Glob(filepath.Join(dir, "*.xcodeproj")); len(matches) > 0 {
-		return "Xcode project (" + filepath.Base(matches[0]) + ")", true
+
+	// Capacitor and similar wrappers keep the Xcode project one level down in
+	// ios/App, so an ios/ directory holds no marker of its own without this. Only
+	// glob the nested App/ for an ios/ directory: a bare ./App beside a web or
+	// tooling root isn't a Capacitor project and must not read as a root iOS app.
+	xcodeprojGlobs := []string{filepath.Join(dir, "*.xcodeproj")}
+	xcworkspaceGlobs := []string{filepath.Join(dir, "*.xcworkspace")}
+	if filepath.Base(dir) == "ios" {
+		xcodeprojGlobs = append(xcodeprojGlobs, filepath.Join(dir, "App", "*.xcodeproj"))
+		xcworkspaceGlobs = append(xcworkspaceGlobs, filepath.Join(dir, "App", "*.xcworkspace"))
 	}
-	if matches, _ := filepath.Glob(filepath.Join(dir, "*.xcworkspace")); len(matches) > 0 {
-		return "Xcode workspace (" + filepath.Base(matches[0]) + ")", true
+	for _, g := range xcodeprojGlobs {
+		if matches, _ := filepath.Glob(g); len(matches) > 0 {
+			add("Xcode project (" + filepath.Base(matches[0]) + ")")
+			break
+		}
+	}
+	for _, g := range xcworkspaceGlobs {
+		if matches, _ := filepath.Glob(g); len(matches) > 0 {
+			add("Xcode workspace (" + filepath.Base(matches[0]) + ")")
+			break
+		}
 	}
 	if _, err := os.Stat(filepath.Join(dir, "pubspec.yaml")); err == nil {
-		return "Flutter app", true
+		add("Flutter app")
 	}
 	if data, err := os.ReadFile(filepath.Join(dir, "package.json")); err == nil {
 		switch {
 		case strings.Contains(string(data), `"react-native"`):
-			return "React Native app", true
+			add("React Native app")
 		case strings.Contains(string(data), `"expo"`):
-			return "Expo app", true
+			add("Expo app")
 		default:
-			return "JavaScript project", true
+			add("JavaScript project")
 		}
 	}
 	for _, tuist := range []string{"Project.swift", "Workspace.swift"} {
 		if _, err := os.Stat(filepath.Join(dir, tuist)); err == nil {
-			return "Tuist project (iOS)", true
+			add("Tuist project (iOS)")
+			break
 		}
 	}
 	if _, err := os.Stat(filepath.Join(dir, "Package.swift")); err == nil {
-		return "Swift package", true
+		add("Swift package")
 	}
+	// A bare Gradle module (e.g. a JVM backend) is not an Android app. Require
+	// the Android Gradle plugin or an Android manifest before claiming the
+	// platform, so a Gradle service next to a web project isn't picked as mobile.
+	gradlePresent, androidPlugin := false, false
 	for _, gradle := range []string{"settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts"} {
-		if _, err := os.Stat(filepath.Join(dir, gradle)); err == nil {
-			return "Android project", true
+		data, err := os.ReadFile(filepath.Join(dir, gradle))
+		if err != nil {
+			continue
+		}
+		gradlePresent = true
+		if strings.Contains(string(data), "com.android") {
+			androidPlugin = true
+			break
 		}
 	}
-	return "no app project detected", false
+	if gradlePresent && (androidPlugin || hasAndroidManifest(dir)) {
+		add("Android project")
+	}
+	return markers
+}
+
+// hasAndroidManifest looks for an Android manifest at the manifest's conventional
+// locations relative to an app or module root.
+func hasAndroidManifest(dir string) bool {
+	for _, rel := range []string{
+		"AndroidManifest.xml",
+		filepath.Join("src", "main", "AndroidManifest.xml"),
+		filepath.Join("app", "src", "main", "AndroidManifest.xml"),
+	} {
+		if _, err := os.Stat(filepath.Join(dir, rel)); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+// classifyDir inspects one directory's markers. hasMarkers is false when it has
+// none, so the caller can decide whether to look elsewhere (e.g. one level down).
+func classifyDir(dir string) (label, platform string, status projectStatus, hasMarkers bool) {
+	markers := detectProjectMarkers(dir)
+	if len(markers) == 0 {
+		return "", "", projectNone, false
+	}
+
+	// A non-mobile marker (a package.json for tooling like Fastlane or Prettier)
+	// sits in many mobile repos, so it doesn't make the target ambiguous — only
+	// distinct mobile platforms do.
+	var mobile []projectMarker
+	buckets := map[string]bool{}
+	for _, m := range markers {
+		if m.platform == "unknown" {
+			continue
+		}
+		mobile = append(mobile, m)
+		buckets[m.platform] = true
+	}
+
+	switch {
+	case len(buckets) > 1:
+		labels := make([]string, len(mobile))
+		for i, m := range mobile {
+			labels[i] = m.label
+		}
+		return "multiple projects detected (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous, true
+	case len(buckets) == 1:
+		return mobile[0].label, mobile[0].platform, projectClear, true
+	default:
+		return markers[0].label + " (not a mobile app)", "", projectNonMobile, true
+	}
+}
+
+// detectAppProject classifies the working directory, returning an empty platform
+// for every non-clear case so applePending never fires and the flow defers to
+// the agent. When the directory has no markers of its own, it looks one level
+// down for apps in subdirectories (a common layout: the app lives in ./ios,
+// ./app, or ./apps/mobile). appDirs holds those relative subdirectories — one
+// for a single clear app, several for an ambiguous set — and is empty when the
+// app (or the ambiguity) is the working directory itself.
+func detectAppProject(dir string) (label, platform string, status projectStatus, appDirs []string) {
+	if home, err := os.UserHomeDir(); err == nil && dir == home {
+		return "this is your home directory, not an app", "", projectNone, nil
+	}
+	rootLabel, rootPlatform, rootStatus, hasMarkers := classifyDir(dir)
+	// A clear or ambiguous mobile root is the target. A non-mobile root (a web
+	// or tooling package.json) can still sit above a nested mobile app, so fall
+	// through to the subdir scan and only settle on non-mobile if nothing
+	// clearer turns up one level down.
+	if hasMarkers && rootStatus != projectNonMobile {
+		return rootLabel, rootPlatform, rootStatus, nil
+	}
+
+	var subs []struct{ label, platform, rel string }
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		if !e.IsDir() || skipSubdir(e.Name()) {
+			continue
+		}
+		// Only a single clear mobile app in a subdir counts; a web/tooling subdir
+		// or a subdir that is itself ambiguous doesn't compete.
+		if l, p, s, ok := classifyDir(filepath.Join(dir, e.Name())); ok && s == projectClear {
+			subs = append(subs, struct{ label, platform, rel string }{l, p, e.Name()})
+		}
+	}
+
+	switch len(subs) {
+	case 1:
+		return subs[0].label + " (in ./" + subs[0].rel + ")", subs[0].platform, projectClear, []string{subs[0].rel}
+	case 0:
+		if hasMarkers {
+			return rootLabel, rootPlatform, rootStatus, nil
+		}
+		return "no app project detected", "", projectNone, nil
+	default:
+		labels := make([]string, len(subs))
+		rels := make([]string, len(subs))
+		for i, s := range subs {
+			labels[i] = s.label + " (./" + s.rel + ")"
+			rels[i] = s.rel
+		}
+		return "multiple app projects in subdirectories (" + strings.Join(labels, ", ") + ")", "", projectAmbiguous, rels
+	}
+}
+
+// skipSubdir skips directories that never hold an app root but are expensive or
+// misleading to scan: VCS metadata, dependencies, and build output.
+func skipSubdir(name string) bool {
+	if strings.HasPrefix(name, ".") {
+		return true
+	}
+	switch name {
+	case "node_modules", "Pods", "Carthage", "build", "Build", "DerivedData", "vendor", "dist", "out", "target":
+		return true
+	}
+	return false
 }
 
 // setupSessionName names the launched agent's session after the app directory.

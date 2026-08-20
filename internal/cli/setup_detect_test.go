@@ -1,24 +1,72 @@
 package cli
 
 import (
+	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/config"
+	"github.com/revenuecat/cli/internal/output"
+	"github.com/spf13/cobra"
 )
 
 func TestDetectAppProject(t *testing.T) {
 	cases := []struct {
-		name  string
-		files []string
-		want  string
-		ok    bool
+		name         string
+		files        []string
+		wantLabel    string
+		wantPlatform string
+		wantStatus   projectStatus
+		wantAppDirs  []string
 	}{
-		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", true},
-		{"flutter", []string{"pubspec.yaml"}, "Flutter app", true},
-		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", true},
-		{"android", []string{"settings.gradle"}, "Android project", true},
-		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", true},
-		{"empty", nil, "no app project detected", false},
+		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
+		{"flutter", []string{"pubspec.yaml"}, "Flutter app", "cross", projectClear, nil},
+		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", "cross", projectClear, nil},
+		{"android", []string{"build.gradle:plugins { id \"com.android.application\" }"}, "Android project", "android", projectClear, nil},
+		// A Gradle app declared only by its manifest (no plugin id in build.gradle) is still Android.
+		{"android-via-manifest", []string{"build.gradle:plugins {}", "app/src/main/AndroidManifest.xml"}, "Android project", "android", projectClear, nil},
+		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", "ios", projectClear, nil},
+		// A CocoaPods iOS project surfaces twice but is still one clear app.
+		{"xcode-with-workspace", []string{"MyApp.xcodeproj/project.pbxproj", "MyApp.xcworkspace/contents.xcworkspacedata"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
+
+		{"js-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}"}, "JavaScript project (not a mobile app)", "", projectNonMobile, nil},
+
+		// A mobile app carrying a tooling package.json is still one clear app.
+		{"ios-with-tooling-package-json", []string{"MyApp.xcodeproj/project.pbxproj", "package.json:{\"dependencies\":{\"prettier\":\"3\"}}"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
+		{"android-with-tooling-package-json", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "build.gradle:plugins { id \"com.android.application\" }"}, "Android project", "android", projectClear, nil},
+
+		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "build.gradle:plugins { id \"com.android.application\" }"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous, nil},
+
+		// No markers at the root, but a single app one level down is picked up.
+		{"single-app-in-subdir", []string{"ios/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
+		{"two-apps-in-subdirs", []string{"android-app/build.gradle:plugins { id \"com.android.application\" }", "ios-app/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android-app), Xcode project (MyApp.xcodeproj) (./ios-app))", "", projectAmbiguous, []string{"android-app", "ios-app"}},
+		{"subdir-scan-skips-dependencies", []string{"node_modules/pubspec.yaml"}, "no app project detected", "", projectNone, nil},
+
+		// Capacitor-style layout: Xcode project nested in ios/App, Gradle app in android/.
+		{"capacitor-nested-both", []string{"package.json:{\"dependencies\":{\"@capacitor/core\":\"5\"}}", "android/build.gradle:plugins { id \"com.android.application\" }", "ios/App/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android), Xcode project (MyApp.xcodeproj) (./ios))", "", projectAmbiguous, []string{"android", "ios"}},
+		{"capacitor-nested-ios-only", []string{"package.json:{\"dependencies\":{\"@capacitor/core\":\"5\"}}", "ios/App/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
+		// A bare ./App/*.xcodeproj at a web/tooling root is not Capacitor-shaped: the
+		// root must not read as a root-level iOS app (clear iOS, empty appDirs).
+		// It falls through to the subdir scan, which points the agent at ./App.
+		{"web-root-with-bare-app-xcodeproj", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "App/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./App)", "ios", projectClear, []string{"App"}},
+		// A bare ./App must not short-circuit the root into a clear iOS app: with an
+		// Android app beside it the scan still sees both and defers to the agent.
+		{"bare-app-beside-mobile-subdir", []string{"App/MyApp.xcodeproj/project.pbxproj", "android/build.gradle:plugins { id \"com.android.application\" }"}, "multiple app projects in subdirectories (Xcode project (MyApp.xcodeproj) (./App), Android project (./android))", "", projectAmbiguous, []string{"App", "android"}},
+		// A JVM/Gradle backend next to a web project is not a mobile app.
+		{"web-root-with-gradle-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "backend/build.gradle:plugins { id \"org.jetbrains.kotlin.jvm\" }"}, "JavaScript project (not a mobile app)", "", projectNonMobile, nil},
+
+		// A non-mobile root (web/tooling package.json) must not hide a nested app.
+		{"web-root-with-nested-ios", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "ios/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
+		// A non-mobile root with no mobile app below still classifies as non-mobile.
+		{"web-root-no-nested-app", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "docs/README.md"}, "JavaScript project (not a mobile app)", "", projectNonMobile, nil},
+
+		{"empty", nil, "no app project detected", "", projectNone, nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -36,11 +84,52 @@ func TestDetectAppProject(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			label, ok := detectAppProject(dir)
-			if label != tc.want || ok != tc.ok {
-				t.Fatalf("detectAppProject = %q,%v want %q,%v", label, ok, tc.want, tc.ok)
+			label, platform, status, appDirs := detectAppProject(dir)
+			if label != tc.wantLabel || platform != tc.wantPlatform || status != tc.wantStatus || !equalStrings(appDirs, tc.wantAppDirs) {
+				t.Fatalf("detectAppProject = %q,%q,%d,%v want %q,%q,%d,%v",
+					label, platform, status, appDirs, tc.wantLabel, tc.wantPlatform, tc.wantStatus, tc.wantAppDirs)
 			}
 		})
+	}
+}
+
+func TestDetectSetupStage_EmptyPlatformDoesNotForceApple(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/apps"):
+			_, _ = io.WriteString(w, `{"items":[]}`)
+		case strings.HasSuffix(r.URL.Path, "/offerings"):
+			_, _ = io.WriteString(w, `{"items":[{"id":"ofrng_x"}]}`)
+		case strings.HasSuffix(r.URL.Path, "/products"):
+			_, _ = io.WriteString(w, `{"items":[]}`)
+		default:
+			http.Error(w, "unexpected "+r.URL.Path, http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+
+	rt := &Runtime{
+		Globals: &Globals{NoInput: true, Version: "test"},
+		Config:  &config.Config{APIKey: "sk_test", ProjectID: "proj", BaseURL: srv.URL},
+		Out:     output.NewRenderer(io.Discard, io.Discard, false, false, false, ""),
+		client:  api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL}),
+	}
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// A Test Store exists but no store apps do. An empty platform must defer to
+	// the agent, not route to Apple; a clear iOS platform still connects Apple.
+	// An empty platform with offerings but no store apps must keep onboarding
+	// going, not fall through to the audit-only "all synced" stage.
+	if stage := detectSetupStage(cmd, rt, ""); stage.PromptID == "connect-apple" {
+		t.Fatalf("empty platform routed to Apple: %+v", stage)
+	}
+	if stage := detectSetupStage(cmd, rt, ""); stage.PromptID == "check-project" {
+		t.Fatalf("empty platform with no store apps must not report all synced: %+v", stage)
+	}
+	if stage := detectSetupStage(cmd, rt, "ios"); stage.PromptID != "connect-apple" {
+		t.Fatalf("iOS platform should connect Apple, got %+v", stage)
 	}
 }
 
@@ -67,6 +156,30 @@ func TestPlatformFromLabel(t *testing.T) {
 		if got := platformFromLabel(label); got != want {
 			t.Errorf("platformFromLabel(%q) = %q, want %q", label, got, want)
 		}
+	}
+}
+
+func TestSetupProjectNote(t *testing.T) {
+	if note := setupProjectNote(projectClear, nil); note != "" {
+		t.Errorf("clear project should add no note, got %q", note)
+	}
+	for _, status := range []projectStatus{projectAmbiguous, projectNonMobile, projectNone} {
+		note := setupProjectNote(status, nil)
+		if note == "" {
+			t.Errorf("status %d should hand the platform decision to the agent, got empty note", status)
+		}
+		if !strings.Contains(note, "Project detection:") {
+			t.Errorf("status %d note missing detection prefix: %q", status, note)
+		}
+	}
+	// A clear app in a subdirectory tells the agent where it is.
+	if note := setupProjectNote(projectClear, []string{"ios"}); !strings.Contains(note, "./ios") {
+		t.Errorf("subdir note should point at ./ios, got %q", note)
+	}
+	// Ambiguous apps in subdirectories forward every path, not "this directory".
+	note := setupProjectNote(projectAmbiguous, []string{"android-app", "ios-app"})
+	if !strings.Contains(note, "./android-app") || !strings.Contains(note, "./ios-app") {
+		t.Errorf("ambiguous-subdir note should list the subdirs, got %q", note)
 	}
 }
 
