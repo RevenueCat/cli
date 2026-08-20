@@ -153,16 +153,20 @@ func newSetupGoogleCmd() *cobra.Command {
 				if !rt.CanPrompt() {
 					return errors.New("--developer-id is required under --no-input (Google exposes no API to discover it; find it in your Play Console URL)")
 				}
-				rt.Out.Info("Find your Play developer account ID (Google has no API for it):")
-				rt.Out.Info("  • Open https://play.google.com/console/ and copy it from the URL:")
-				rt.Out.Info("    play.google.com/console/developers/1234567890123456789/app-list")
-				rt.Out.Info("  • Or Play Console → Developer account → About you (the 19-digit ID)")
-				rt.Out.Info("  • Help: https://support.google.com/googleplay/android-developer/answer/13634081")
+				rt.Out.Notice(
+					"Google has no API for your Play developer account ID, so paste it here.",
+				)
+				rt.Out.Info("1. Open your Play Console:  https://play.google.com/console/")
+				rt.Out.Info("2. Copy the page's address from your browser. It looks like:")
+				rt.Out.Info("      https://play.google.com/console/u/0/developers/1234567890123456789/app-list")
+				rt.Out.Info("3. Paste the whole thing below — I'll pull out the ID.")
+				rt.Out.Info("   (Or paste just the 19-digit number if you have it.)")
+				rt.Out.Hint("Can't find it? https://support.google.com/googleplay/android-developer/answer/13634081")
 				var raw string
 				if err := tui.Form(rt.Globals.NoInput).
 					Field(huh.NewInput().
-						Title("Play Console URL or developer account ID").
-						Description("Paste the whole Console URL (it contains …/developers/NUMBER/…) or just the 19-digit number.").
+						Title("Paste your Play Console URL (or the 19-digit ID)").
+						Placeholder("https://play.google.com/console/u/0/developers/1234567890123456789/app-list").
 						Value(&raw).Validate(tui.Required("developer account ID"))).
 					Run(); err != nil {
 					return err
