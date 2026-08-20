@@ -62,6 +62,11 @@ type Config struct {
 
 	// flagAPIKey holds an --api-key value for this invocation; never serialized.
 	flagAPIKey string
+
+	// Provenance of a --project-id flag applied for this invocation only. Like
+	// the env/dir overrides it is reverted in Save, so a one-shot flag is never
+	// baked into the profile default by an incidental save (e.g. a token refresh).
+	flagProjectID envOverride
 }
 
 // CredentialSource names where the active credential came from.
@@ -508,6 +513,20 @@ func (c *Config) UseProjectID(id string) {
 	c.ProjectID = id
 	c.envProjectID.set = false
 	c.dirProjectID.set = false
+	c.flagProjectID.set = false
+}
+
+// OverrideProjectID applies a --project-id flag for this invocation only. Unlike
+// UseProjectID it keeps the value out of the profile: it records provenance so
+// Save reverts it, so an ordinary command that happens to persist config (an
+// OAuth token refresh, say) never bakes a one-shot flag into the stored default.
+// Login adopts an explicit --project-id as the new default with UseProjectID.
+func (c *Config) OverrideProjectID(id string) {
+	if id == "" {
+		return
+	}
+	c.flagProjectID = envOverride{env: id, disk: c.ProjectID, set: true}
+	c.ProjectID = id
 }
 
 // StoredProjectID returns the profile's on-disk project default, unwinding any
@@ -519,6 +538,9 @@ func (c *Config) StoredProjectID() string {
 	}
 	if c.envProjectID.set {
 		return c.envProjectID.disk
+	}
+	if c.flagProjectID.set {
+		return c.flagProjectID.disk
 	}
 	return c.ProjectID
 }
@@ -555,9 +577,10 @@ func Save(profile string, cfg *Config) error {
 		}
 	}
 	revert(cfg.envAPIKey, &out.APIKey)
-	// Order matters: the env override's disk value is the per-dir binding when
-	// both applied, so unwind env first, then the per-dir binding, landing back
-	// on the profile's own project.
+	// Order matters: each override's disk value is the layer beneath it, so
+	// unwind from the top down — the --project-id flag, then RC_PROJECT_ID, then
+	// the per-dir binding — landing back on the profile's own project.
+	revert(cfg.flagProjectID, &out.ProjectID)
 	revert(cfg.envProjectID, &out.ProjectID)
 	revert(cfg.dirProjectID, &out.ProjectID)
 	revert(cfg.envBaseURL, &out.BaseURL)

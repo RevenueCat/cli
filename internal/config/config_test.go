@@ -569,7 +569,7 @@ func TestLogin_FlagProjectMatchingDirBindingPersists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Mirrors root.go applying --project-id equal to the tree binding.
+	// Mirrors login (clearProjectBinding) adopting --project-id equal to the tree binding.
 	cfg.UseProjectID("proj_dir")
 	if err := config.Save("default", cfg); err != nil {
 		t.Fatal(err)
@@ -696,6 +696,68 @@ func TestUseProjectID_PersistsChoiceEqualToDirBinding(t *testing.T) {
 	}
 	if got.ProjectID != "proj_dir" {
 		t.Errorf("explicit UseProjectID matching the dir binding must persist, got %q", got.ProjectID)
+	}
+}
+
+func TestOverrideProjectID_NotPersistedByIncidentalSave(t *testing.T) {
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": t.TempDir(), "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+	if err := config.Save("default", &config.Config{ProjectID: "proj_profile"}); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A general command runs with --project-id; the override is in effect...
+	cfg.OverrideProjectID("proj_flag")
+	if cfg.ProjectID != "proj_flag" {
+		t.Fatalf("override should take effect for this invocation, got %q", cfg.ProjectID)
+	}
+	if got := cfg.StoredProjectID(); got != "proj_profile" {
+		t.Errorf("override must not change the stored default, StoredProjectID got %q", got)
+	}
+	// ...and then something persists config (e.g. an OAuth token refresh).
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ProjectID != "proj_profile" {
+		t.Errorf("a one-shot --project-id must not be baked into the profile default, got %q", got.ProjectID)
+	}
+}
+
+func TestOverrideProjectID_MatchingDirBindingNotPersisted(t *testing.T) {
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": t.TempDir(), "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+	if err := config.Save("default", &config.Config{ProjectID: "proj_profile"}); err != nil {
+		t.Fatal(err)
+	}
+
+	work := t.TempDir()
+	writeProjectFile(t, work, "proj_dir")
+	t.Chdir(work)
+
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// --project-id equal to the tree binding, on a non-login command.
+	cfg.OverrideProjectID("proj_dir")
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Chdir(t.TempDir())
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ProjectID != "proj_profile" {
+		t.Errorf("--project-id matching the dir binding must revert on an incidental save, got %q", got.ProjectID)
 	}
 }
 

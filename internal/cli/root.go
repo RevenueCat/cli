@@ -76,9 +76,10 @@ Agent-friendly entrypoints:
 				return err
 			}
 			cfg.SetFlagAPIKey(g.APIKey)
-			if g.ProjectID != "" {
-				cfg.UseProjectID(g.ProjectID)
-			}
+			// --project-id is a transient per-invocation override for general
+			// commands; only login adopts it as the stored default (see
+			// clearProjectBinding).
+			cfg.OverrideProjectID(g.ProjectID)
 			if err := cfg.ProjectBindingError(g.ProjectID != ""); err != nil {
 				return err
 			}

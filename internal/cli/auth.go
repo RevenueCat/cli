@@ -831,6 +831,9 @@ func signupAuthenticationError(err error) error {
 // --project-id / RC_PROJECT_ID passed alongside the login is kept.
 func clearProjectBinding(rt *Runtime) {
 	if rt.Globals.ProjectID != "" {
+		// Login is the one path that adopts an explicit --project-id as the new
+		// default; promote it from a transient override to a persisted choice.
+		rt.Config.UseProjectID(rt.Globals.ProjectID)
 		return
 	}
 	if stored := rt.Config.StoredProjectID(); stored != "" {
