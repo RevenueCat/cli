@@ -62,12 +62,14 @@ func readinessSeverity(v readinessVerdict) int {
 }
 
 func worstReadiness(products []productReadiness) readinessVerdict {
-	worst := readinessReady
-	for i, p := range products {
-		if i == 0 {
-			worst = p.Verdict
-			continue
-		}
+	// Nothing verified is not READY: an empty list means every plan item was
+	// unreadable (e.g. a create that left its product ID unset), so claiming
+	// READY would report success without a single live check.
+	if len(products) == 0 {
+		return readinessUnknown
+	}
+	worst := products[0].Verdict
+	for _, p := range products[1:] {
 		if readinessSeverity(p.Verdict) > readinessSeverity(worst) {
 			worst = p.Verdict
 		}
@@ -230,14 +232,20 @@ type storeStateReader interface {
 func verifyStoreStateReadiness(ctx context.Context, rt *Runtime, reader storeStateReader, projectID string, plan *api.StoreStatePlan) *readinessReport {
 	report := &readinessReport{}
 	for _, item := range plan.PlanItems {
+		displayID := optionalString(item.ProductID, optionalString(item.StoreIdentifier, ""))
+		if item.ApplyStatus != nil && *item.ApplyStatus == "failed" {
+			report.Products = append(report.Products, productReadiness{ProductID: displayID, Verdict: readinessFailed})
+			continue
+		}
 		if item.ProductID == nil {
+			// A create can leave the RevenueCat product ID unset on the plan item,
+			// so there's nothing to read back. Record UNKNOWN rather than dropping
+			// the item — otherwise a create-only apply reports READY without a live
+			// check.
+			report.Products = append(report.Products, productReadiness{ProductID: displayID, Verdict: readinessUnknown})
 			continue
 		}
 		productID := *item.ProductID
-		if item.ApplyStatus != nil && *item.ApplyStatus == "failed" {
-			report.Products = append(report.Products, productReadiness{ProductID: productID, Verdict: readinessFailed})
-			continue
-		}
 		state, err := reader.Get(ctx, projectID, productID)
 		if err != nil {
 			if isStoreStateNotFound(err) {

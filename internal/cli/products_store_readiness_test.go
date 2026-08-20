@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/output"
 )
 
 func strPtr(s string) *string { return &s }
@@ -185,9 +187,39 @@ func TestWorstReadiness(t *testing.T) {
 	if got := worstReadiness(products); got != readinessFailed {
 		t.Fatalf("worst = %s, want FAILED", got)
 	}
-	if got := worstReadiness(nil); got != readinessReady {
-		t.Fatalf("worst of none = %s, want READY", got)
+	if got := worstReadiness(nil); got != readinessUnknown {
+		t.Fatalf("worst of none = %s, want UNKNOWN", got)
 	}
+}
+
+// A create apply can return plan items whose RevenueCat product ID is still
+// unset. Those items must be recorded as UNKNOWN (unverifiable), never dropped,
+// so a create-only apply never reports READY without a live check.
+func TestVerifyStoreStateReadiness_CreateWithNilProductID(t *testing.T) {
+	rt := &Runtime{Globals: &Globals{NoInput: true}, Out: output.NewRenderer(io.Discard, io.Discard, false, true, false, "")}
+	reader := readerFunc(func(ctx context.Context, projectID, productID string) (*api.LiveStoreState, error) {
+		t.Fatalf("live state must not be read for a nil product ID, got %q", productID)
+		return nil, nil
+	})
+	plan := &api.StoreStatePlan{PlanItems: []api.StoreStatePlanItem{
+		{ProductID: nil, StoreIdentifier: strPtr("com.example.pro"), Action: "create", ApplyStatus: strPtr("applied")},
+	}}
+	report := verifyStoreStateReadiness(context.Background(), rt, reader, "proj", plan)
+	if report.Overall != readinessUnknown {
+		t.Fatalf("overall = %s, want UNKNOWN", report.Overall)
+	}
+	if len(report.Products) != 1 || report.Products[0].Verdict != readinessUnknown {
+		t.Fatalf("products = %+v, want one UNKNOWN item", report.Products)
+	}
+	if report.Products[0].ProductID != "com.example.pro" {
+		t.Fatalf("product display id = %q, want the store identifier", report.Products[0].ProductID)
+	}
+}
+
+type readerFunc func(ctx context.Context, projectID, productID string) (*api.LiveStoreState, error)
+
+func (f readerFunc) Get(ctx context.Context, projectID, productID string) (*api.LiveStoreState, error) {
+	return f(ctx, projectID, productID)
 }
 
 func TestDesiredStates_EqualizeBaseTerritory(t *testing.T) {
