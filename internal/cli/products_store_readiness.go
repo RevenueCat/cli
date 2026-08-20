@@ -130,7 +130,7 @@ func readinessNextActions(pr productReadiness, store string) []string {
 	if len(pr.UnpricedTerritories) > 0 {
 		switch store {
 		case "app_store":
-			actions = append(actions, "set prices for the unpriced territories, or fill them from a base territory: re-run with --equalize-base-territory <TERRITORY> (e.g. US)")
+			actions = append(actions, "set prices for the unpriced territories, or fill them from a base territory: re-run `products store plan`/`sync` (not `apply`) with --equalize-base-territory <TERRITORY> (e.g. US)")
 		case "play_store":
 			actions = append(actions, "set prices for the unpriced territories, or let Google fill them from a base-plan other-regions price (usd_price / eur_price)")
 		default:
