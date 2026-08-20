@@ -230,6 +230,84 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project_id:
+                    type: string
+                  product_id:
+                    type: string
+                  store:
+                    type: string
+                    enum: [app_store, play_store]
+                  store_status:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        description: RevenueCat-normalized health.
+                        enum: [ok, needs_action, not_found]
+                      raw_store_status:
+                        type: string
+                        nullable: true
+                        description: >-
+                          The store's own status, passed through verbatim. For the
+                          App Store this is Apple's product/subscription state (e.g.
+                          MISSING_METADATA, READY_TO_SUBMIT, APPROVED). Null when the
+                          product has no store presence yet (e.g. Test Store).
+                  common:
+                    type: object
+                    properties:
+                      availability:
+                        type: object
+                        properties:
+                          territories:
+                            type: object
+                            description: region -> available.
+                            additionalProperties:
+                              type: boolean
+                      pricing:
+                        type: object
+                        properties:
+                          territory_prices:
+                            type: object
+                            description: region -> next effective price.
+                            additionalProperties:
+                              type: object
+                              properties:
+                                amount_micros:
+                                  type: integer
+                                  format: int64
+                                currency:
+                                  type: string
+                                start_date:
+                                  type: string
+                                  nullable: true
+                      localizations:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            description:
+                              type: string
+                              nullable: true
+                  store_state:
+                    type: object
+                    additionalProperties: true
+                    description: >-
+                      Store-specific payload; the shape differs by store (App Store
+                      vs Play Store) and is intentionally freeform.
+                  warnings:
+                    type: array
+                    description: >-
+                      Live-only human-readable notes about what's missing or needs
+                      attention (e.g. incomplete territory pricing).
+                    items:
+                      type: string
     post:
       summary: Set a product store state
       description: "Accepts desired store metadata for a product and enqueues an asynchronous\n\
