@@ -63,3 +63,28 @@ func TestAppsCreate_NoInputWithoutTypeErrorsBeforeCreating(t *testing.T) {
 		t.Fatalf("expected created app in output: %s", out)
 	}
 }
+
+// Regression: under --json (non-interactive) the command must error on missing
+// required input, not attempt a prompt and then fail confusingly.
+func TestAppsCreate_JSONErrorsOnMissingInputInsteadOfPrompting(t *testing.T) {
+	configDir := t.TempDir()
+	t.Setenv("RC_CONFIG_DIR", configDir)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("no request should be made when required input is missing: %s %s", r.Method, r.URL.Path)
+		http.Error(w, "unexpected", http.StatusNotFound)
+	}))
+	t.Cleanup(server.Close)
+	if err := config.Save("", &config.Config{APIKey: "sk_test", ProjectID: "proj_x", BaseURL: server.URL}); err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err := runCmdInConfigDir(t, configDir, "apps", "create", "--json")
+	if err == nil || !strings.Contains(err.Error(), "--name") {
+		t.Fatalf("want a clean --name error under --json, got: %v", err)
+	}
+
+	_, _, err = runCmdInConfigDir(t, configDir, "apps", "create", "--json", "--name", "Acme", "--type", "app_store")
+	if err == nil || !strings.Contains(err.Error(), "--bundle-id") {
+		t.Fatalf("want a clean --bundle-id error under --json, got: %v", err)
+	}
+}

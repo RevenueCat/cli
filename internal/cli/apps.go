@@ -174,13 +174,18 @@ with rc apps apple setup.`,
 			if err != nil {
 				return err
 			}
-			form := tui.Form(rt.Globals.NoInput).
-				Field(huh.NewInput().Title("App name").Value(&name).Validate(tui.Required("name")))
-			if appType == "" && rt.CanPrompt() {
-				form.Field(huh.NewSelect[string]().Title("Type").Options(appTypes...).Value(&appType))
+			if rt.CanPrompt() {
+				form := tui.Form(rt.Globals.NoInput).
+					Field(huh.NewInput().Title("App name").Value(&name).Validate(tui.Required("name")))
+				if appType == "" {
+					form.Field(huh.NewSelect[string]().Title("Type").Options(appTypes...).Value(&appType))
+				}
+				if err := form.Run(); err != nil {
+					return err
+				}
 			}
-			if err := form.Run(); err != nil {
-				return err
+			if name == "" {
+				return fmt.Errorf("--name is required")
 			}
 			if !validAppType(appType) {
 				return fmt.Errorf("--type is required: app_store|play_store|amazon|roku|stripe|rc_billing|paddle")
@@ -268,20 +273,38 @@ with rc apps apple setup.`,
 }
 
 func promptForAppPlatformFields(rt *Runtime, appType string, bundleID, packageName, appName *string) error {
-	form := tui.Form(rt.Globals.NoInput)
-	switch appType {
-	case "amazon":
-		form.Field(huh.NewInput().Title("Package name").Value(packageName).Validate(tui.Required("package name")))
-	case "app_store":
-		form.Field(huh.NewInput().Title("Bundle ID").Value(bundleID).Validate(tui.Required("bundle ID")))
-	case "play_store":
-		form.Field(huh.NewInput().Title("Package name").Value(packageName).Validate(tui.Required("package name")))
-	case "rc_billing":
-		form.Field(huh.NewInput().Title("App name").Value(appName).Validate(tui.Required("app name")))
-	default:
-		return nil
+	if rt.CanPrompt() {
+		form := tui.Form(rt.Globals.NoInput)
+		switch appType {
+		case "amazon":
+			form.Field(huh.NewInput().Title("Package name").Value(packageName).Validate(tui.Required("package name")))
+		case "app_store":
+			form.Field(huh.NewInput().Title("Bundle ID").Value(bundleID).Validate(tui.Required("bundle ID")))
+		case "play_store":
+			form.Field(huh.NewInput().Title("Package name").Value(packageName).Validate(tui.Required("package name")))
+		case "rc_billing":
+			form.Field(huh.NewInput().Title("App name").Value(appName).Validate(tui.Required("app name")))
+		default:
+			return nil
+		}
+		return form.Run()
 	}
-	return form.Run()
+	// Non-interactive: the platform's required identifier must come from a flag.
+	switch appType {
+	case "amazon", "play_store":
+		if *packageName == "" {
+			return fmt.Errorf("--package-name is required for %s", appType)
+		}
+	case "app_store":
+		if *bundleID == "" {
+			return fmt.Errorf("--bundle-id is required for app_store")
+		}
+	case "rc_billing":
+		if *appName == "" {
+			return fmt.Errorf("--app-name is required for rc_billing")
+		}
+	}
+	return nil
 }
 
 func validAppType(appType string) bool {

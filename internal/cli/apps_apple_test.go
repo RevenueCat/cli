@@ -309,6 +309,52 @@ func TestAppsAppleSetup_PartialFailureExitsNonZeroAndReportsFailedKey(t *testing
 	}
 }
 
+// A --force replace that fails leaves the previously-configured key in place, so
+// the card must say "kept existing", not "not created".
+func TestAppsAppleSetup_FailedReplaceReadsAsKeptExisting(t *testing.T) {
+	forbidden := errors.New("403 FORBIDDEN_ERROR: The API key in use does not allow this request")
+	apiKey := &appleconnect.Key{Kind: appleconnect.AppStoreConnectKey, ID: "asc1", IssuerID: "iss", PrivateKey: "asc-pem"}
+
+	revenueCat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/projects/proj/apps/app" {
+			_, _ = io.WriteString(w, `{"id":"app","name":"iOS","type":"app_store","created_at":1,"app_store":{"bundle_id":"com.example.app","subscription_key_configured":true,"app_store_connect_api_key_configured":false}}`)
+			return
+		}
+		http.Error(w, "unexpected request", http.StatusMethodNotAllowed)
+	}))
+	t.Cleanup(revenueCat.Close)
+
+	// In-app key already configured; --force tries to replace it and Apple refuses.
+	apple := &fakeAppleSetupClient{
+		inApp: func() (*appleconnect.Key, error) { return nil, forbidden },
+		api:   func() (*appleconnect.Key, error) { return apiKey, nil },
+	}
+	var stdout, stderr bytes.Buffer
+	rt := &Runtime{
+		Globals: &Globals{NoInput: true, AssumeYes: true, Version: "test"},
+		Config:  &config.Config{APIKey: "sk_test", ProjectID: "proj", BaseURL: revenueCat.URL},
+		Ctx:     context.Background(),
+		Out:     output.NewRenderer(&stdout, &stderr, false, true, false, ""),
+		client:  api.NewClient(api.Options{APIKey: "sk_test", BaseURL: revenueCat.URL}),
+	}
+	cmd := newAppsAppleCmdWithFactory(func() (appleConnectClient, error) { return apple, nil })
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+	cmd.SetContext(WithRuntime(context.Background(), rt))
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+	cmd.SetArgs([]string{
+		"setup", "app", "--force",
+		"--apple-id", "dev@example.com", "--apple-password", "secret", "--verification-code", "123456",
+	})
+	_ = cmd.Execute() // exits non-zero for the failed key; we only assert the label here
+
+	if !strings.Contains(stdout.String(), "kept existing (replace failed") {
+		t.Fatalf("a failed replace of a configured key should read as kept existing, got:\n%s", stdout.String())
+	}
+}
+
 func TestCreateAppStoreAppRecord_NonFatalOnAppleFailure(t *testing.T) {
 	cases := []struct {
 		name        string
