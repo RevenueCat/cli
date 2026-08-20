@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	cloudresourcemanager "google.golang.org/api/cloudresourcemanager/v3"
@@ -37,6 +38,23 @@ func TestParseDeveloperID(t *testing.T) {
 		if got != c.want {
 			t.Errorf("ParseDeveloperID(%q) = %q, want %q", c.in, got, c.want)
 		}
+	}
+}
+
+func TestProjectIDFromName(t *testing.T) {
+	valid := regexp.MustCompile(`^[a-z][a-z0-9-]{4,28}[a-z0-9]$`)
+	for _, name := range []string{"RevenueCat Play Test", "My App!!", "123 numbers first", "x", "A very long display name that exceeds the limit by quite a lot"} {
+		got := ProjectIDFromName(name)
+		if len(got) < 6 || len(got) > 30 {
+			t.Errorf("ProjectIDFromName(%q) = %q: length %d out of 6..30", name, got, len(got))
+		}
+		if !valid.MatchString(got) {
+			t.Errorf("ProjectIDFromName(%q) = %q: not a valid project ID", name, got)
+		}
+	}
+	// Different calls should differ (random suffix).
+	if ProjectIDFromName("same") == ProjectIDFromName("same") {
+		t.Error("expected a random suffix to make IDs differ")
 	}
 }
 
