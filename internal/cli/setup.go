@@ -682,11 +682,19 @@ func detectProjectMarkers(dir string) []projectMarker {
 		markers = append(markers, projectMarker{label, platformFromLabel(label)})
 	}
 
-	if matches, _ := filepath.Glob(filepath.Join(dir, "*.xcodeproj")); len(matches) > 0 {
-		add("Xcode project (" + filepath.Base(matches[0]) + ")")
+	// Capacitor and similar wrappers keep the Xcode project one level down in
+	// ./App, so an ios/ directory holds no marker of its own without this.
+	for _, g := range []string{filepath.Join(dir, "*.xcodeproj"), filepath.Join(dir, "App", "*.xcodeproj")} {
+		if matches, _ := filepath.Glob(g); len(matches) > 0 {
+			add("Xcode project (" + filepath.Base(matches[0]) + ")")
+			break
+		}
 	}
-	if matches, _ := filepath.Glob(filepath.Join(dir, "*.xcworkspace")); len(matches) > 0 {
-		add("Xcode workspace (" + filepath.Base(matches[0]) + ")")
+	for _, g := range []string{filepath.Join(dir, "*.xcworkspace"), filepath.Join(dir, "App", "*.xcworkspace")} {
+		if matches, _ := filepath.Glob(g); len(matches) > 0 {
+			add("Xcode workspace (" + filepath.Base(matches[0]) + ")")
+			break
+		}
 	}
 	if _, err := os.Stat(filepath.Join(dir, "pubspec.yaml")); err == nil {
 		add("Flutter app")
@@ -710,13 +718,40 @@ func detectProjectMarkers(dir string) []projectMarker {
 	if _, err := os.Stat(filepath.Join(dir, "Package.swift")); err == nil {
 		add("Swift package")
 	}
+	// A bare Gradle module (e.g. a JVM backend) is not an Android app. Require
+	// the Android Gradle plugin or an Android manifest before claiming the
+	// platform, so a Gradle service next to a web project isn't picked as mobile.
+	gradlePresent, androidPlugin := false, false
 	for _, gradle := range []string{"settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts"} {
-		if _, err := os.Stat(filepath.Join(dir, gradle)); err == nil {
-			add("Android project")
+		data, err := os.ReadFile(filepath.Join(dir, gradle))
+		if err != nil {
+			continue
+		}
+		gradlePresent = true
+		if strings.Contains(string(data), "com.android") {
+			androidPlugin = true
 			break
 		}
 	}
+	if gradlePresent && (androidPlugin || hasAndroidManifest(dir)) {
+		add("Android project")
+	}
 	return markers
+}
+
+// hasAndroidManifest looks for an Android manifest at the manifest's conventional
+// locations relative to an app or module root.
+func hasAndroidManifest(dir string) bool {
+	for _, rel := range []string{
+		"AndroidManifest.xml",
+		filepath.Join("src", "main", "AndroidManifest.xml"),
+		filepath.Join("app", "src", "main", "AndroidManifest.xml"),
+	} {
+		if _, err := os.Stat(filepath.Join(dir, rel)); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // classifyDir inspects one directory's markers. hasMarkers is false when it has

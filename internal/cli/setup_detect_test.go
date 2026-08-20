@@ -28,7 +28,9 @@ func TestDetectAppProject(t *testing.T) {
 		{"xcode", []string{"MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
 		{"flutter", []string{"pubspec.yaml"}, "Flutter app", "cross", projectClear, nil},
 		{"react-native", []string{"package.json:{\"dependencies\":{\"react-native\":\"0.74\"}}"}, "React Native app", "cross", projectClear, nil},
-		{"android", []string{"settings.gradle"}, "Android project", "android", projectClear, nil},
+		{"android", []string{"build.gradle:plugins { id \"com.android.application\" }"}, "Android project", "android", projectClear, nil},
+		// A Gradle app declared only by its manifest (no plugin id in build.gradle) is still Android.
+		{"android-via-manifest", []string{"build.gradle:plugins {}", "app/src/main/AndroidManifest.xml"}, "Android project", "android", projectClear, nil},
 		{"tuist", []string{"Project.swift"}, "Tuist project (iOS)", "ios", projectClear, nil},
 		// A CocoaPods iOS project surfaces twice but is still one clear app.
 		{"xcode-with-workspace", []string{"MyApp.xcodeproj/project.pbxproj", "MyApp.xcworkspace/contents.xcworkspacedata"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
@@ -37,14 +39,20 @@ func TestDetectAppProject(t *testing.T) {
 
 		// A mobile app carrying a tooling package.json is still one clear app.
 		{"ios-with-tooling-package-json", []string{"MyApp.xcodeproj/project.pbxproj", "package.json:{\"dependencies\":{\"prettier\":\"3\"}}"}, "Xcode project (MyApp.xcodeproj)", "ios", projectClear, nil},
-		{"android-with-tooling-package-json", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "settings.gradle"}, "Android project", "android", projectClear, nil},
+		{"android-with-tooling-package-json", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "build.gradle:plugins { id \"com.android.application\" }"}, "Android project", "android", projectClear, nil},
 
-		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "settings.gradle"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous, nil},
+		{"nested-ios-and-android", []string{"MyApp.xcodeproj/project.pbxproj", "build.gradle:plugins { id \"com.android.application\" }"}, "multiple projects detected (Xcode project (MyApp.xcodeproj), Android project)", "", projectAmbiguous, nil},
 
 		// No markers at the root, but a single app one level down is picked up.
 		{"single-app-in-subdir", []string{"ios/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
-		{"two-apps-in-subdirs", []string{"android-app/settings.gradle", "ios-app/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android-app), Xcode project (MyApp.xcodeproj) (./ios-app))", "", projectAmbiguous, []string{"android-app", "ios-app"}},
+		{"two-apps-in-subdirs", []string{"android-app/build.gradle:plugins { id \"com.android.application\" }", "ios-app/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android-app), Xcode project (MyApp.xcodeproj) (./ios-app))", "", projectAmbiguous, []string{"android-app", "ios-app"}},
 		{"subdir-scan-skips-dependencies", []string{"node_modules/pubspec.yaml"}, "no app project detected", "", projectNone, nil},
+
+		// Capacitor-style layout: Xcode project nested in ios/App, Gradle app in android/.
+		{"capacitor-nested-both", []string{"package.json:{\"dependencies\":{\"@capacitor/core\":\"5\"}}", "android/build.gradle:plugins { id \"com.android.application\" }", "ios/App/MyApp.xcodeproj/project.pbxproj"}, "multiple app projects in subdirectories (Android project (./android), Xcode project (MyApp.xcodeproj) (./ios))", "", projectAmbiguous, []string{"android", "ios"}},
+		{"capacitor-nested-ios-only", []string{"package.json:{\"dependencies\":{\"@capacitor/core\":\"5\"}}", "ios/App/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
+		// A JVM/Gradle backend next to a web project is not a mobile app.
+		{"web-root-with-gradle-backend", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "backend/build.gradle:plugins { id \"org.jetbrains.kotlin.jvm\" }"}, "JavaScript project (not a mobile app)", "", projectNonMobile, nil},
 
 		// A non-mobile root (web/tooling package.json) must not hide a nested app.
 		{"web-root-with-nested-ios", []string{"package.json:{\"dependencies\":{\"express\":\"4\"}}", "ios/MyApp.xcodeproj/project.pbxproj"}, "Xcode project (MyApp.xcodeproj) (in ./ios)", "ios", projectClear, []string{"ios"}},
