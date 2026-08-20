@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 
 	"github.com/revenuecat/cli/internal/google"
 	"github.com/revenuecat/cli/internal/output"
@@ -119,16 +121,13 @@ func newSetupGoogleCmd() *cobra.Command {
 			}
 			result := googleSetupResult{Email: creds.Email}
 
-			// 2. Choose the GCP project.
+			// 2. Choose the GCP project — or create a new one.
 			if projectID == "" {
 				projects, err := google.ListProjects(ctx, creds.TokenSource)
 				if err != nil {
 					return err
 				}
-				if len(projects) == 0 {
-					return errors.New("no Google Cloud projects are accessible to this account")
-				}
-				choices := make([]Choice[string], 0, len(projects))
+				choices := []Choice[string]{{Value: createNewProjectSentinel, Label: "➕ Create a new project", Flag: "--project"}}
 				for _, p := range projects {
 					label := p.ID
 					if p.DisplayName != "" {
@@ -139,6 +138,12 @@ func newSetupGoogleCmd() *cobra.Command {
 				projectID, err = decide(rt, "Google Cloud project", nil, choices)
 				if err != nil {
 					return err
+				}
+				if projectID == createNewProjectSentinel {
+					projectID, err = createGoogleProject(ctx, rt, creds.TokenSource)
+					if err != nil {
+						return err
+					}
 				}
 			}
 			result.ProjectID = projectID
@@ -297,6 +302,36 @@ func newSetupGoogleCmd() *cobra.Command {
 	cmd.Flags().StringVar(&packageName, "package", "", "Android package name (env: RC_GOOGLE_PACKAGE)")
 	cmd.Flags().StringVar(&keyOut, "key-out", "revenuecat-play-key.json", "path to write the service-account key for upload to RevenueCat")
 	return cmd
+}
+
+// createNewProjectSentinel is the picker value that means "make a new project"
+// rather than selecting an existing one.
+const createNewProjectSentinel = "\x00create-new-project"
+
+// createGoogleProject prompts for a name, derives a valid project ID (editable),
+// and creates the project, returning its ID.
+func createGoogleProject(ctx context.Context, rt *Runtime, ts oauth2.TokenSource) (string, error) {
+	var name string
+	if err := tui.Form(rt.Globals.NoInput).
+		Field(huh.NewInput().Title("New project name").Placeholder("RevenueCat Play").
+			Value(&name).Validate(tui.Required("project name"))).
+		Run(); err != nil {
+		return "", err
+	}
+	projectID := google.ProjectIDFromName(name)
+	if err := tui.Form(rt.Globals.NoInput).
+		Field(huh.NewInput().Title("Project ID").
+			Description("Globally unique, 6–30 chars, lowercase letters/digits/hyphens. Edit if you like.").
+			Value(&projectID).Validate(tui.Required("project ID"))).
+		Run(); err != nil {
+		return "", err
+	}
+	rt.Out.Info("Creating project " + projectID + " (this can take a moment)…")
+	if err := google.CreateProject(ctx, ts, projectID, name); err != nil {
+		return "", err
+	}
+	rt.Out.Success("Created project " + projectID)
+	return projectID, nil
 }
 
 // googleHint adds actionable guidance for the common org-policy failures.
