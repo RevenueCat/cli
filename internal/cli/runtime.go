@@ -209,16 +209,13 @@ func ExitCodeFor(err error) int {
 	if errors.As(err, &ue) || errors.As(err, &uce) || isCobraUsage(err) {
 		return 2
 	}
-	var apiErr *api.APIError
-	if errors.As(err, &apiErr) {
-		switch apiErr.Type {
-		case "unauthorized", "authentication_error":
-			return 4
-		case "resource_missing":
-			return 5
-		case "rate_limit_exceeded":
-			return 6
-		}
+	switch {
+	case api.IsUnauthorized(err):
+		return 4
+	case api.IsNotFound(err):
+		return 5
+	case api.IsRateLimited(err):
+		return 6
 	}
 	if errors.Is(err, ErrNotAuthenticated) {
 		return 4
