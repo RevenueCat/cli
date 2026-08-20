@@ -473,6 +473,58 @@ func TestLoad_PerDirProjectFile(t *testing.T) {
 	})
 }
 
+func TestLoad_MalformedPerDirFileErrors(t *testing.T) {
+	t.Run("invalid JSON", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, config.ProjectFileName), []byte("not json"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		t.Chdir(dir)
+		if _, err := config.Load("default"); err == nil {
+			t.Fatal("want error on malformed .revenuecat.json, got nil")
+		}
+	})
+
+	t.Run("missing project_id key", func(t *testing.T) {
+		t.Setenv("RC_CONFIG_DIR", t.TempDir())
+		clearProjectEnv(t)
+		if err := config.Save("default", &config.Config{ProjectID: "proj_profile"}); err != nil {
+			t.Fatal(err)
+		}
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, config.ProjectFileName), []byte(`{"projectId": "typo_key"}`), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		t.Chdir(dir)
+		if _, err := config.Load("default"); err == nil {
+			t.Fatal("want error when .revenuecat.json has no project_id, got nil")
+		}
+	})
+}
+
+func TestLoadStored_IgnoresPerDirBindingAndEnv(t *testing.T) {
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	clearProjectEnv(t)
+	if err := config.Save("default", &config.Config{ProjectID: "proj_profile"}); err != nil {
+		t.Fatal(err)
+	}
+
+	dir := t.TempDir()
+	writeProjectFile(t, dir, "proj_dir")
+	t.Chdir(dir)
+	t.Setenv("RC_PROJECT_ID", "proj_env")
+
+	cfg, err := config.LoadStored("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ProjectID != "proj_profile" {
+		t.Errorf("LoadStored should report the profile's stored default, got %q", cfg.ProjectID)
+	}
+}
+
 func TestSave_DoesNotPersistPerDirProject(t *testing.T) {
 	setEnv(t, map[string]string{"RC_CONFIG_DIR": t.TempDir(), "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
 	if err := config.Save("default", &config.Config{APIKey: "sk_disk", ProjectID: "proj_profile"}); err != nil {

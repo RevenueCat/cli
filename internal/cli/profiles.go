@@ -54,7 +54,7 @@ func newProfilesListCmd() *cobra.Command {
 				if n == active {
 					marker = "*"
 				}
-				cfg, _ := config.Load(n)
+				cfg, _ := config.LoadStored(n)
 				project := ""
 				if cfg != nil {
 					project = cfg.ProjectID

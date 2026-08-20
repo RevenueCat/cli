@@ -405,31 +405,31 @@ func findProjectFile(start string) (string, bool) {
 	}
 }
 
-func dirProjectID() (string, bool) {
+func dirProjectID() (string, bool, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return "", false
+		return "", false, nil
 	}
 	return dirProjectIDFrom(wd)
 }
 
-func dirProjectIDFrom(start string) (string, bool) {
+func dirProjectIDFrom(start string) (string, bool, error) {
 	path, ok := findProjectFile(start)
 	if !ok {
-		return "", false
+		return "", false, nil
 	}
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return "", false
+		return "", false, fmt.Errorf("read %s: %w", path, err)
 	}
 	var f projectFile
 	if err := json.Unmarshal(b, &f); err != nil {
-		return "", false
+		return "", false, fmt.Errorf("parse %s: %w", path, err)
 	}
 	if f.ProjectID == "" {
-		return "", false
+		return "", false, fmt.Errorf("%s: missing or empty project_id", path)
 	}
-	return f.ProjectID, true
+	return f.ProjectID, true, nil
 }
 
 // Load reads a profile from disk, layering the per-directory project binding
@@ -438,7 +438,12 @@ func dirProjectIDFrom(start string) (string, bool) {
 // nearest .revenuecat.json in the directory tree > profile default.
 // Missing files are not an error — they return a zero Config so first-run
 // commands like `rc login` work cleanly.
-func Load(profile string) (*Config, error) {
+// LoadStored reads a profile's config as written on disk, overlaying keyring
+// secrets, without applying any per-invocation override (the per-directory
+// binding, RC_* env vars, or --project-id). Use it to report a profile's own
+// stored defaults, e.g. `profiles list`; use Load for the active resolved
+// config a command should act on.
+func LoadStored(profile string) (*Config, error) {
 	cfg := &Config{BaseURL: ""}
 	path, err := profilePath(profile)
 	if err != nil {
@@ -454,10 +459,24 @@ func Load(profile string) (*Config, error) {
 	// Credentials live in the OS keyring when available; overlay them onto
 	// whatever the file held (the file carries them only as a fallback).
 	loadSecrets(profile, cfg)
+	return cfg, nil
+}
+
+func Load(profile string) (*Config, error) {
+	cfg, err := LoadStored(profile)
+	if err != nil {
+		return nil, err
+	}
 	// The per-directory binding overrides the profile default but sits below
 	// RC_PROJECT_ID and --project-id, which are applied after it. Recorded as an
 	// override so Save reverts it rather than persisting a tree-local project.
-	if pid, ok := dirProjectID(); ok {
+	// A binding file that exists but can't be read or parsed is an error, not a
+	// silent fall-through to another project.
+	pid, ok, err := dirProjectID()
+	if err != nil {
+		return nil, err
+	}
+	if ok {
 		cfg.dirProjectID = envOverride{env: pid, disk: cfg.ProjectID, set: true}
 		cfg.ProjectID = pid
 	}
