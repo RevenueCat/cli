@@ -153,11 +153,16 @@ func newSetupGoogleCmd() *cobra.Command {
 				if !rt.CanPrompt() {
 					return errors.New("--developer-id is required under --no-input (Google exposes no API to discover it; find it in your Play Console URL)")
 				}
+				rt.Out.Info("Find your Play developer account ID (Google has no API for it):")
+				rt.Out.Info("  • Open https://play.google.com/console/ and copy it from the URL:")
+				rt.Out.Info("    play.google.com/console/developers/1234567890123456789/app-list")
+				rt.Out.Info("  • Or Play Console → Developer account → About you (the 19-digit ID)")
+				rt.Out.Info("  • Help: https://support.google.com/googleplay/android-developer/answer/13634081")
 				var raw string
 				if err := tui.Form(rt.Globals.NoInput).
 					Field(huh.NewInput().
 						Title("Play Console URL or developer account ID").
-						Description("Google has no API for this. Paste your Play Console URL (…/developers/NUMBER/…) or the numeric ID.").
+						Description("Paste the whole Console URL (it contains …/developers/NUMBER/…) or just the 19-digit number.").
 						Value(&raw).Validate(tui.Required("developer account ID"))).
 					Run(); err != nil {
 					return err
