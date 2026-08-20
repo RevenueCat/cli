@@ -57,31 +57,6 @@ func TestDesignSystemBoundaries(t *testing.T) {
 			useThis: "use confirmOrAbort(rt, msg) so --yes/--no-input behave uniformly",
 		},
 		{
-			// A raw select in a command is how interactive-only decisions
-			// sneak in with no flag and no --no-input path (the recurring
-			// agent-can't-reach-it bug). Route branching choices through
-			// decide()/requireID, which own the three-mode contract.
-			name:   "branching choices only through decide / requireID",
-			needle: "huh.NewSelect",
-			roots:  []string{"internal/tui"},
-			allow: map[string]string{
-				"decide.go":  "the decide() primitive itself",
-				"resolve.go": "the requireID picker itself",
-				"rico.go":    "altscreen resume picker",
-				"setup.go":   "agent picker + autonomy: launch-time choices with no server side, flags tracked separately",
-				// Pre-decide() backlog: each is flag-guarded (the field is
-				// skipped when a flag set the value) so agents already have a
-				// path; migrate to decide() opportunistically.
-				"apps.go":       "app type; flag-guarded, pre-decide backlog",
-				"apps_apple.go": "ASC team pick; flag-guarded (--team-id), pre-decide backlog",
-				"auth.go":       "login method + product updates; flag-guarded, pre-decide backlog",
-				"customers.go":  "grant duration + entity picks; flag-guarded, pre-decide backlog",
-				"products.go":   "product type; flag-guarded, pre-decide backlog",
-				"projects.go":   "project pick; flag-guarded, pre-decide backlog",
-			},
-			useThis: "use decide(rt, title, presetFromFlag, choices) so every branch has a flag and a --no-input path",
-		},
-		{
 			name:   "prompt-gate only through rt.CanPrompt",
 			needle: "tui.IsInteractive(",
 			roots:  []string{"internal/tui"},
@@ -90,7 +65,6 @@ func TestDesignSystemBoundaries(t *testing.T) {
 				"apps_apple.go":  "output-only gates, suppressed under --json",
 				"paywalls_ai.go": "self-gating requireProject/requireID branch",
 				"open.go":        "guarded by an IsJSON early-return above",
-				"decide.go":      "caller-guarded prompt primitive",
 			},
 			useThis: "use rt.CanPrompt() instead of hand-rolling the --json/--no-input/TTY check",
 		},

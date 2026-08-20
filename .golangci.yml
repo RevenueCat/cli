@@ -1,0 +1,83 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - staticcheck
+    - forbidigo
+  settings:
+    staticcheck:
+      # Match the standalone `staticcheck` tool's default set (the CI step this
+      # subsumes): its quickfix (QF*) and SA9003 checks are off by default, so
+      # keep them off here to preserve coverage parity rather than widen it.
+      checks:
+        - all
+        - -ST1000
+        - -ST1003
+        - -ST1016
+        - -ST1020
+        - -ST1021
+        - -ST1022
+        - -ST1023
+        - -QF1001
+        - -QF1002
+        - -QF1003
+        - -QF1004
+        - -QF1005
+        - -QF1006
+        - -QF1007
+        - -QF1008
+        - -QF1009
+        - -QF1010
+        - -QF1011
+        - -QF1012
+        - -SA9003
+    forbidigo:
+      forbid:
+        - pattern: 'huh\.NewSelect'
+          msg: >-
+            hand-rolled huh.NewSelect skips the --no-input/--json/TTY guard and
+            silently picks the first option for agents; route branching choices
+            through decide() or the requireID picker (resolve.go), which check
+            the mode before building the select.
+  exclusions:
+    rules:
+      # The guarded pickers own the safe path: they check the mode BEFORE
+      # constructing the select, so the select itself lives here.
+      - path: internal/cli/decide\.go$
+        linters:
+          - forbidigo
+      - path: internal/cli/resolve\.go$
+        linters:
+          - forbidigo
+      # The themed TUI layer builds primitives on purpose.
+      - path: internal/tui/
+        linters:
+          - forbidigo
+      # Pre-decide() backlog: existing hand-rolled selects, each flag-guarded so
+      # agents already have a path. Migration to decide() is a follow-up; listing
+      # them explicitly keeps a NEW file from adding a select without tripping.
+      - path: internal/cli/apps\.go$
+        linters:
+          - forbidigo
+      - path: internal/cli/apps_apple\.go$
+        linters:
+          - forbidigo
+      - path: internal/cli/auth\.go$
+        linters:
+          - forbidigo
+      - path: internal/cli/customers\.go$
+        linters:
+          - forbidigo
+      - path: internal/cli/products\.go$
+        linters:
+          - forbidigo
+      - path: internal/cli/projects\.go$
+        linters:
+          - forbidigo
+      - path: internal/cli/rico\.go$
+        linters:
+          - forbidigo
+      - path: internal/cli/setup\.go$
+        linters:
+          - forbidigo
