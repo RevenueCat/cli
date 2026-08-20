@@ -430,12 +430,12 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 	if paywall.OfferingID != "" {
 		offeringID = &paywall.OfferingID
 	}
-	// Persist guards the PATCH with the session revision; normalize a server
-	// response without one, like currentDraftRevision does.
-	revision := 0
-	if version.Revision != nil {
-		revision = *version.Revision
+	// The revision is the PATCH's stale-write token; persistPaywallDesign sends
+	// it without refetching, so a missing one has to error rather than seed 0.
+	if version.Revision == nil {
+		return nil, fmt.Errorf("paywall %s has no draft or published revision to update against", paywallID)
 	}
+	revision := *version.Revision
 	return &paywallAISession{
 		Version:   1,
 		ProjectID: projectID,
@@ -754,7 +754,16 @@ func currentDraftRevision(ctx context.Context, client *api.Client, projectID, pa
 	if err != nil {
 		return 0, err
 	}
-	return paywallRevision(paywall), nil
+	if paywall.Components != nil {
+		if d := paywall.Components.Draft; d != nil && d.Revision != nil {
+			return *d.Revision, nil
+		}
+		if p := paywall.Components.Published; p != nil && p.Revision != nil {
+			return *p.Revision, nil
+		}
+	}
+	// revision is the update PATCH's stale-write token, so error rather than send a bogus 0.
+	return 0, fmt.Errorf("paywall %s has no draft or published revision to update against", paywallID)
 }
 
 // reportPaywallAIActivity prints activity items not yet shown; snapshots carry
