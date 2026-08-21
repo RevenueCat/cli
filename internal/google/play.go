@@ -110,20 +110,19 @@ func AddServiceAccountToPlay(ctx context.Context, ts oauth2.TokenSource, develop
 }
 
 func findUser(ctx context.Context, svc *androidpublisher.Service, parent, email string) (*androidpublisher.User, error) {
-	var found *androidpublisher.User
-	call := svc.Users.List(parent)
-	err := call.Pages(ctx, func(page *androidpublisher.ListUsersResponse) error {
-		for _, u := range page.Users {
-			if strings.EqualFold(u.Email, email) {
-				found = u
-			}
-		}
-		return nil
-	})
+	// Android Publisher's users.list doesn't support pagination: it requires
+	// pageSize = -1 and returns everything in one response. Using the generic
+	// paginator sets a page size Google rejects with a 400.
+	resp, err := svc.Users.List(parent).PageSize(-1).Context(ctx).Do()
 	if err != nil {
 		return nil, fmt.Errorf("list Play users: %w", err)
 	}
-	return found, nil
+	for _, u := range resp.Users {
+		if strings.EqualFold(u.Email, email) {
+			return u, nil
+		}
+	}
+	return nil, nil
 }
 
 func grantPackage(grantName string) string {
