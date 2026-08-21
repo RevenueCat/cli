@@ -23,7 +23,13 @@ var RequiredAPIs = []string{
 // batchEnable is idempotent — already-enabled services are a no-op — so re-runs
 // are safe. (Google caps batchEnable at 20 service IDs; we have 5.)
 func EnableAPIs(ctx context.Context, ts oauth2.TokenSource, projectID string) error {
-	svc, err := serviceusage.NewService(ctx, option.WithTokenSource(ts), option.WithQuotaProject(projectID))
+	// NOTE: no WithQuotaProject here on purpose. batchEnable itself uses the
+	// Service Usage API, which a brand-new target project doesn't have enabled
+	// yet — so it can't bootstrap itself. Bill this one call against the OAuth
+	// client's project (which has Service Usage enabled); it still enables the
+	// services ON the target project. Every call AFTER enablement bills to the
+	// target (where the APIs are now on).
+	svc, err := serviceusage.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
 		return fmt.Errorf("service usage client: %w", err)
 	}
