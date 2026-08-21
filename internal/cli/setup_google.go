@@ -240,11 +240,10 @@ func newSetupGoogleCmd() *cobra.Command {
 
 			// 5. Execute.
 			rt.Out.Info("Enabling Google APIs…")
-			if err := google.EnableAPIs(ctx, creds.TokenSource, projectID); err != nil {
-				return googleHint(rt, err)
+			if err := enableAPIsWithToS(ctx, rt, creds.TokenSource, projectID, noBrowser); err != nil {
+				return err
 			}
 			result.EnabledAPIs = google.RequiredAPIs
-			rt.Out.Success("Required APIs enabled")
 
 			rt.Out.Info("Creating the RevenueCat service account…")
 			created, email, err := google.EnsureServiceAccount(ctx, creds.TokenSource, projectID)
@@ -335,6 +334,39 @@ func newSetupGoogleCmd() *cobra.Command {
 	cmd.Flags().StringVar(&keyOut, "key-out", "revenuecat-play-key.json", "path to write the service-account key for upload to RevenueCat")
 	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "don't open a browser automatically; print the sign-in URL to open manually")
 	return cmd
+}
+
+// enableAPIsWithToS enables the required APIs, and when Google reports the
+// Android Publisher terms of service aren't accepted yet, it walks the user
+// through accepting them (opens the page, waits) and retries — rather than
+// failing the whole run and discarding all the answers already given.
+func enableAPIsWithToS(ctx context.Context, rt *Runtime, ts oauth2.TokenSource, projectID string, noBrowser bool) error {
+	for attempt := 0; ; attempt++ {
+		err := google.EnableAPIs(ctx, ts, projectID)
+		if err == nil {
+			rt.Out.Success("Required APIs enabled")
+			return nil
+		}
+		var tos *google.TosError
+		if !errors.As(err, &tos) || !rt.CanPrompt() || attempt >= 4 {
+			return googleHint(rt, err)
+		}
+		rt.Out.Blank()
+		rt.Out.Warn("Google needs you to accept the Android Publisher API terms of service — a one-time step for this Google account.")
+		rt.Out.Info("Accept it on this page (opening it now), then come back here:")
+		rt.Out.LinkLine(tos.URL)
+		if !noBrowser {
+			_ = openBrowser(tos.URL)
+		}
+		ok, err := tui.ConfirmDefault(rt.Globals.NoInput, "Press Enter once you've accepted the terms to continue", true)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return errors.New("cancelled — accept the Android Publisher terms and run rc setup google again")
+		}
+		rt.Out.Info("Retrying…")
+	}
 }
 
 // choosePackage lets the user pick from their Play apps (via the Reporting
