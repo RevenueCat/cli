@@ -94,6 +94,27 @@ func (f *Flow) Input(title, placeholder string, validate func(string) error, des
 	return strings.TrimSpace(im.ti.Value()), nil
 }
 
+// Password is like Input but masks the entry and never echoes the value back in
+// the resolved receipt.
+func (f *Flow) Password(title string, validate func(string) error, desc ...string) (string, error) {
+	if f.plain {
+		return "", errors.New("cannot prompt for input in non-interactive mode")
+	}
+	ti := textinput.New()
+	ti.EchoMode = textinput.EchoPassword
+	ti.Focus()
+	m, err := runRailPrompt(f.w, inputModel{title: title, desc: desc, ti: ti, validate: validate, masked: true})
+	if err != nil {
+		return "", err
+	}
+	im := m.(inputModel)
+	if im.cancelled {
+		return "", ErrPromptCancelled
+	}
+	// Never trim a password — leading/trailing spaces can be significant.
+	return im.ti.Value(), nil
+}
+
 func runRailPrompt(w io.Writer, m tea.Model) (tea.Model, error) {
 	return tea.NewProgram(m, tea.WithOutput(w)).Run()
 }
@@ -218,6 +239,7 @@ type inputModel struct {
 	desc      []string
 	ti        textinput.Model
 	validate  func(string) error
+	masked    bool
 	errMsg    string
 	done      bool
 	cancelled bool
@@ -252,8 +274,12 @@ func (m inputModel) View() string {
 	var b strings.Builder
 	b.WriteString(railSpacer() + "\n")
 	if m.done {
+		shown := strings.TrimSpace(m.ti.Value())
+		if m.masked {
+			shown = "••••••"
+		}
 		b.WriteString(railHead("◇", m.title) + "\n")
-		b.WriteString(railBody(prOKSty.Render("✓")+" "+strings.TrimSpace(m.ti.Value())) + "\n")
+		b.WriteString(railBody(prOKSty.Render("✓")+" "+shown) + "\n")
 		return b.String()
 	}
 	b.WriteString(railHead("◆", m.title) + "\n")

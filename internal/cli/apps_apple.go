@@ -13,7 +13,6 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/appleconnect"
-	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -200,7 +199,7 @@ func appleConfiguredLabel(configured bool) string {
 // answer over a silent guess: interactive setups are asked per key (create
 // missing ones, or replace existing ones); non-interactive runs create what
 // is missing and only replace with --force. --skip-* always wins.
-func decideAppleKey(rt *Runtime, name string, configured, skip, force, mayPrompt bool) (bool, error) {
+func decideAppleKey(fl *tui.Flow, rt *Runtime, name string, configured, skip, force, mayPrompt bool) (bool, error) {
 	switch {
 	case skip:
 		return false, nil
@@ -209,9 +208,9 @@ func decideAppleKey(rt *Runtime, name string, configured, skip, force, mayPrompt
 	case !mayPrompt || rt.Globals.AssumeYes || !rt.CanPrompt():
 		return !configured, nil
 	case configured:
-		return tui.ConfirmDefault(false, "Replace the existing "+name+"? (a new key is created in App Store Connect and uploaded)", false)
+		return fl.Confirm("Replace the existing "+name+"? (a new key is created in App Store Connect and uploaded)", false)
 	default:
-		return tui.ConfirmDefault(false, "Create and upload a new "+name+"?", true)
+		return fl.Confirm("Create and upload a new "+name+"?", true)
 	}
 }
 
@@ -350,17 +349,19 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			if extras, err := rc.Apps.GetExtras(cmd.Context(), projectID, appID); err == nil {
 				existingVendor = extras.AppStoreVendorNumber()
 			}
-			if !checkOnly {
+			fl := tui.NewFlow(rt.Out.Stderr(), !rt.CanPrompt(), rt.Out.NoColor(), rt.Globals.Quiet)
+			if checkOnly {
+				fl.Intro("App Store Connect check — " + app.Name)
+			} else {
 				vendorLabel := existingVendor
 				if vendorLabel == "" {
 					vendorLabel = "not configured"
 				}
-				rt.Out.Title("Apple configuration — " + app.Name)
-				rt.Out.Lead("Signs in to App Store Connect and sets up the keys RevenueCat needs — nothing changes without your OK.")
-				rt.Out.Field("App", appID)
-				rt.Out.Field("In-app purchase key", appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured), "validates App Store purchases")
-				rt.Out.Field("App Store Connect API key", appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured), "manages products and prices")
-				rt.Out.Field("Vendor number", vendorLabel, "links sales reports to revenue charts")
+				fl.Intro("App Store Connect setup — " + app.Name)
+				fl.Step("Current configuration")
+				fl.Item("In-app purchase key · " + appleConfiguredLabel(app.AppStore.SubscriptionKeyConfigured))
+				fl.Item("App Store Connect API key · " + appleConfiguredLabel(app.AppStore.AppStoreConnectAPIKeyConfigured))
+				fl.Item("Vendor number · " + vendorLabel)
 			}
 			// Interactive setups defer the per-key decisions until after Apple
 			// sign-in so they can be made against live App Store Connect state
@@ -373,7 +374,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			allConfigured := app.AppStore.SubscriptionKeyConfigured &&
 				app.AppStore.AppStoreConnectAPIKeyConfigured && existingVendor != ""
 			if promptDecisions && allConfigured && !force && vendorNumber == "" {
-				cont, err := tui.ConfirmDefault(rt.Globals.NoInput, "Everything is already configured. Continue and replace parts of it?", false)
+				cont, err := fl.Confirm("Everything is already configured. Continue and replace parts of it?", false)
 				if err != nil {
 					return err
 				}
@@ -384,11 +385,11 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			}
 			createInAppKey, createAPIKey := false, false
 			if !promptDecisions {
-				createInAppKey, err = decideAppleKey(rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, false)
+				createInAppKey, err = decideAppleKey(fl, rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, false)
 				if err != nil {
 					return err
 				}
-				createAPIKey, err = decideAppleKey(rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, false)
+				createAPIKey, err = decideAppleKey(fl, rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, false)
 				if err != nil {
 					return err
 				}
@@ -407,15 +408,8 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			needsApple := checkOnly || promptDecisions || createInAppKey || createAPIKey
 
 			if needsApple {
-				if !rt.Globals.NoInput && tui.IsInteractive() {
-					if checkOnly {
-						rt.Out.Info(appleCheckInstructions)
-						rt.Out.Info(privacy)
-					} else {
-					}
-				}
 				if !checkOnly && !rt.Out.IsJSON() {
-					steps := []string{"Sign in to App Store Connect with your Apple Account"}
+					steps := []string{"Sign in to App Store Connect"}
 					if app.AppStore.BundleID != "" {
 						steps = append(steps, "Verify the App Store Connect app for "+app.AppStore.BundleID)
 					}
@@ -438,11 +432,14 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						steps = append(steps, "Look up and confirm the vendor number")
 					}
 					steps = append(steps, "Save to RevenueCat")
-					rt.Out.Plan(steps)
+					fl.Step("Review")
+					for _, s := range steps {
+						fl.Item(s)
+					}
 				}
 				if rt.CanPrompt() {
 					if !checkOnly && !rt.Globals.AssumeYes {
-						confirmed, err := tui.Confirm(rt.Globals.NoInput, "Sign in to App Store Connect now?")
+						confirmed, err := fl.Confirm("Sign in to App Store Connect now?", true)
 						if err != nil {
 							return err
 						}
@@ -450,19 +447,19 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 							return errors.New("cancelled")
 						}
 					}
-					if !rt.Globals.NoInput && tui.IsInteractive() {
-						rt.Out.Notice(
-							"Your Apple email and password go only to Apple and are never saved —",
-							"RevenueCat never sees them.",
-							"Apple keys created here upload straight to your RevenueCat project — they are",
-							"never saved on this computer or displayed.",
-						)
+					fl.Step("Sign in to App Store Connect")
+					fl.Say("Your Apple email and password go only to Apple — RevenueCat never sees them, and keys never touch this disk.")
+					if appleID == "" {
+						appleID, err = fl.Input("Apple Account email", "you@example.com", tui.Required("Apple Account email"))
+						if err != nil {
+							return err
+						}
 					}
-					if err := tui.Form(rt.Globals.NoInput).
-						Field(huh.NewInput().Title("Apple Account email").Value(&appleID).Validate(tui.Required("Apple Account email"))).
-						Field(huh.NewInput().Title("Apple Account password").EchoMode(huh.EchoModePassword).Value(&password).Validate(tui.Required("Apple Account password"))).
-						Run(); err != nil {
-						return err
+					if password == "" {
+						password, err = fl.Password("Apple Account password", tui.Required("Apple Account password"))
+						if err != nil {
+							return err
+						}
 					}
 				}
 				if appleID == "" || password == "" {
@@ -486,8 +483,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				if err != nil {
 					return err
 				}
-				rt.Out.Blank()
-				rt.Out.Info("Signing in to App Store Connect as " + appleID + "…")
+				fl.Say("Signing in as " + appleID + "…")
 				session, err := apple.Login(cmd.Context(), appleID, password)
 				if err != nil {
 					var twoFactor *appleconnect.TwoFactorRequiredError
@@ -500,10 +496,12 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					}
 					if verificationCode == "" && rt.CanPrompt() {
 						title := fmt.Sprintf("Apple %s verification code", strings.ReplaceAll(challenge.Method, "_", " "))
+						var desc []string
 						if challenge.Destination != "" {
-							title += " sent to " + challenge.Destination
+							desc = append(desc, "Sent to "+challenge.Destination)
 						}
-						if err := tui.Form(false).Field(huh.NewInput().Title(title).Value(&verificationCode).Validate(tui.Required("verification code"))).Run(); err != nil {
+						verificationCode, err = fl.Input(title, "123456", tui.Required("verification code"), desc...)
+						if err != nil {
 							return err
 						}
 					}
@@ -522,15 +520,14 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						}
 						return fmt.Errorf("--team-id is required for an Apple Account with multiple providers; available: %s", strings.Join(available, ", "))
 					}
-					var selected int64
-					options := make([]huh.Option[int64], 0, len(session.Providers))
+					opts := make([]tui.Option, 0, len(session.Providers))
 					for _, provider := range session.Providers {
-						options = append(options, huh.NewOption(fmt.Sprintf("%s (%d)", provider.Name, provider.ID), provider.ID))
+						opts = append(opts, tui.Option{Label: fmt.Sprintf("%s (%d)", provider.Name, provider.ID), Value: strconv.FormatInt(provider.ID, 10)})
 					}
-					if err := tui.Form(false).Field(huh.NewSelect[int64]().Title("App Store Connect team").Options(options...).Value(&selected)).Run(); err != nil {
+					teamID, err = fl.Select("App Store Connect team", opts)
+					if err != nil {
 						return err
 					}
-					teamID = strconv.FormatInt(selected, 10)
 				}
 				if teamID != "" {
 					providerID, err := strconv.ParseInt(teamID, 10, 64)
@@ -544,7 +541,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				result.ProviderID = session.Provider.ID
 				result.ProviderName = session.Provider.Name
 				if session.Provider.Name != "" {
-					rt.Out.Answer("Team", fmt.Sprintf("%s (%d)", session.Provider.Name, session.Provider.ID))
+					fl.Receipt("Team", fmt.Sprintf("%s (%d)", session.Provider.Name, session.Provider.ID))
 				}
 				if checkOnly {
 					if err := apple.CheckKeyAccess(cmd.Context(), session, appleconnect.InAppPurchaseKey); err != nil {
@@ -561,24 +558,19 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 					if createAPIKey {
 						result.WouldCreate = append(result.WouldCreate, string(appleconnect.AppStoreConnectKey))
 					}
-					rt.Out.Success("Apple check succeeded; no keys were created and RevenueCat was not changed")
+					if rt.Out.IsJSON() {
+						return rt.Out.Render(result)
+					}
 					wouldCreate := "nothing — all keys configured"
 					if len(result.WouldCreate) > 0 {
 						wouldCreate = strings.Join(result.WouldCreate, ", ")
 					}
-					return rt.Out.RenderCard(output.Card{
-						Title:    fmt.Sprintf("%s (%s)", app.Name, appID),
-						Subtitle: fmt.Sprintf("App Store Connect team %s (%d)", result.ProviderName, result.ProviderID),
-						Sections: []output.CardSection{{
-							Heading: "Apple access",
-							Lines: []output.CardLine{
-								{Key: "In-app purchase keys", Value: "accessible"},
-								{Key: "App Store Connect keys", Value: "accessible"},
-								{Key: "A real run would create", Value: wouldCreate},
-							},
-						}},
-						Raw: result,
-					})
+					fl.Step("Access")
+					fl.Receipt("In-app purchase keys", "accessible")
+					fl.Receipt("App Store Connect keys", "accessible")
+					fl.Item("A real run would create: " + wouldCreate)
+					fl.Outro("Apple check passed — nothing was created or changed")
+					return nil
 				}
 
 				if err := ensureAppStoreAppRecord(cmd.Context(), rt, apple, session, app); err != nil {
@@ -586,56 +578,56 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				}
 
 				if promptDecisions {
-					createInAppKey, err = decideAppleKey(rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, true)
+					createInAppKey, err = decideAppleKey(fl, rt, "in-app purchase key", app.AppStore.SubscriptionKeyConfigured, skipInAppKey, force, true)
 					if err != nil {
 						return err
 					}
-					rt.Out.Answer("In-app purchase key", keyDecisionLabel(createInAppKey, app.AppStore.SubscriptionKeyConfigured))
-					createAPIKey, err = decideAppleKey(rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, true)
+					fl.Receipt("In-app purchase key", keyDecisionLabel(createInAppKey, app.AppStore.SubscriptionKeyConfigured))
+					createAPIKey, err = decideAppleKey(fl, rt, "App Store Connect API key", app.AppStore.AppStoreConnectAPIKeyConfigured, skipAPIKey, force, true)
 					if err != nil {
 						return err
 					}
-					rt.Out.Answer("App Store Connect API key", keyDecisionLabel(createAPIKey, app.AppStore.AppStoreConnectAPIKeyConfigured))
+					fl.Receipt("App Store Connect API key", keyDecisionLabel(createAPIKey, app.AppStore.AppStoreConnectAPIKeyConfigured))
 				}
 
 				if vendorNumber == "" {
-					rt.Out.Info("Looking up your vendor number in App Store Connect…")
+					fl.Step("Vendor number")
+					fl.Say("Looking it up in App Store Connect…")
 					fetched, err := apple.FetchVendorNumber(cmd.Context(), session)
 					switch {
 					case err == nil && fetched == existingVendor:
-						rt.Out.Info("Vendor number " + fetched + " already matches the RevenueCat app; nothing to change.")
+						fl.Receipt("Vendor number", fetched+" (unchanged)")
 					case err == nil:
-						rt.Out.Success("Found vendor number " + fetched)
 						use := true
 						if !rt.Globals.AssumeYes && rt.CanPrompt() {
-							question := "Set vendor number " + fetched + " on the RevenueCat app?"
+							question := "Set vendor number " + fetched + "?"
 							if existingVendor != "" {
-								question = "Replace vendor number " + existingVendor + " with " + fetched + " on the RevenueCat app?"
+								question = "Replace vendor number " + existingVendor + " with " + fetched + "?"
 							}
-							use, err = tui.ConfirmDefault(rt.Globals.NoInput, question, true)
+							use, err = fl.Confirm(question, true)
 							if err != nil {
 								return err
 							}
 						}
 						if use {
 							vendorNumber = fetched
-							rt.Out.Answer("Vendor number", fetched)
+							fl.Receipt("Vendor number", fetched)
 						} else {
-							rt.Out.Answer("Vendor number", "unchanged")
+							fl.Receipt("Vendor number", "unchanged")
 						}
 					case rt.CanPrompt():
-						rt.Out.Warn("Could not fetch it automatically: " + err.Error())
-						rt.Out.Info("Find it in App Store Connect → Payments and Financial Reports, next to your legal entity name.")
-						if err := tui.Form(rt.Globals.NoInput).
-							Field(huh.NewInput().Title("Vendor number (blank keeps the current setting)").Value(&vendorNumber)).
-							Run(); err != nil {
+						fl.Warn("Couldn't fetch it automatically: " + err.Error())
+						fl.Say("Find it in App Store Connect → Payments and Financial Reports.")
+						vendorNumber, err = fl.Input("Vendor number (blank keeps the current setting)", "", nil)
+						if err != nil {
 							return err
 						}
 					default:
-						rt.Out.Warn("Could not fetch the vendor number automatically; set it later with --vendor-number. (" + err.Error() + ")")
+						fl.Warn("Couldn't fetch the vendor number; set it later with --vendor-number. (" + err.Error() + ")")
 					}
 				}
 
+				fl.Step("Keys")
 				keys := createAppleKeys(cmd.Context(), rt, apple, session, createInAppKey, createAPIKey, inAppKeyName, apiKeyName)
 				failedKeys = keys.Failed
 				if key := keys.InAppPurchaseKey; key != nil {
@@ -655,26 +647,29 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			}
 			if vendorNumber != "" {
 				update.AppStore.AppStoreConnectVendorNumber = &vendorNumber
-				rt.Out.Info("Setting vendor number " + vendorNumber + "…")
 			}
+			fl.Step("Save")
 			if len(createdIDs) > 0 || vendorNumber != "" {
-				rt.Out.Info("Saving to RevenueCat…")
+				fl.Say("Saving to RevenueCat…")
 				if _, err := rc.Apps.Update(cmd.Context(), projectID, appID, update); err != nil {
 					return appleConfigurationError(fmt.Errorf("upload Apple configuration to RevenueCat: %w", err), createdIDs)
 				}
 			} else {
-				rt.Out.Info("No RevenueCat changes to upload.")
+				fl.Say("No RevenueCat changes to upload.")
 			}
 			result.VendorNumberConfigured = vendorNumber != ""
 			result.Failed = failedKeys
-			if len(failedKeys) > 0 {
-				rt.Out.Warn("Partly done: couldn't create the " + strings.Join(failedKeys, " and the ") + ". What succeeded was saved to RevenueCat. A failed attempt can still leave a key in App Store Connect that counts toward Apple's limit — check Users and Access → Integrations and reuse or revoke it before re-running.")
-			} else {
-				rt.Out.Success("Apple credentials configured")
-			}
-			subtitle := ""
-			if result.ProviderName != "" {
-				subtitle = fmt.Sprintf("App Store Connect team %s (%d)", result.ProviderName, result.ProviderID)
+			// A refused key means the run didn't do what was asked — exit non-zero
+			// so scripts don't see success. Applies in JSON and human modes alike.
+			partial := len(failedKeys) > 0
+			if rt.Out.IsJSON() {
+				if err := rt.Out.Render(result); err != nil {
+					return err
+				}
+				if partial {
+					return &SilentExitError{Code: 1}
+				}
+				return nil
 			}
 			keptOrCreated := func(id, label string, wasConfigured bool) string {
 				for _, f := range failedKeys {
@@ -682,9 +677,9 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 						// A failed create leaves RevenueCat untouched, so a key that
 						// was already configured is still in place, not gone.
 						if wasConfigured {
-							return "kept existing (replace failed — see note above)"
+							return "kept existing (replace failed — see note below)"
 						}
-						return "not created — see note above"
+						return "not created — see note below"
 					}
 				}
 				if id == "" {
@@ -698,26 +693,14 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 			if vendorNumber != "" {
 				vendorLine = vendorNumber
 			}
-			if err := rt.Out.RenderCard(output.Card{
-				Title:    fmt.Sprintf("%s (%s)", app.Name, appID),
-				Subtitle: subtitle,
-				Sections: []output.CardSection{{
-					Heading: "Configured",
-					Lines: []output.CardLine{
-						{Key: "In-app purchase key", Value: keptOrCreated(result.InAppPurchaseKeyID, inAppKeyLabel, inAppWasConfigured)},
-						{Key: "App Store Connect API key", Value: keptOrCreated(result.AppStoreConnectAPIKeyID, ascKeyLabel, ascWasConfigured)},
-						{Key: "Vendor number", Value: vendorLine},
-					},
-				}},
-				Raw: result,
-			}); err != nil {
-				return err
-			}
-			// Partial progress is saved, but a refused key still means the run
-			// didn't do what was asked — exit non-zero so scripts don't see success.
-			if len(failedKeys) > 0 {
+			fl.Receipt("In-app purchase key", keptOrCreated(result.InAppPurchaseKeyID, inAppKeyLabel, inAppWasConfigured))
+			fl.Receipt("App Store Connect API key", keptOrCreated(result.AppStoreConnectAPIKeyID, ascKeyLabel, ascWasConfigured))
+			fl.Receipt("Vendor number", vendorLine)
+			if partial {
+				fl.Outro("Partly done", "Couldn't create the "+strings.Join(failedKeys, " and the ")+". What succeeded was saved. A failed attempt can leave a key in App Store Connect that counts toward Apple's limit — check Users and Access → Integrations and reuse or revoke it before re-running.")
 				return &SilentExitError{Code: 1}
 			}
+			fl.Outro("Apple credentials configured 🎉")
 			return nil
 		},
 	}
