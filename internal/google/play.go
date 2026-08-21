@@ -53,8 +53,14 @@ type PlayResult struct {
 // (creating or updating the grant as needed). Idempotent.
 //
 // Requires the signed-in human to be a Play Console Owner/Admin.
-func AddServiceAccountToPlay(ctx context.Context, ts oauth2.TokenSource, developerID, saEmail, packageName string) (*PlayResult, error) {
-	svc, err := androidpublisher.NewService(ctx, option.WithTokenSource(ts))
+func AddServiceAccountToPlay(ctx context.Context, ts oauth2.TokenSource, developerID, saEmail, packageName, quotaProject string) (*PlayResult, error) {
+	opts := []option.ClientOption{option.WithTokenSource(ts)}
+	if quotaProject != "" {
+		// Bill Android Publisher against the user's own project (where the API
+		// is enabled), not the OAuth client's project.
+		opts = append(opts, option.WithQuotaProject(quotaProject))
+	}
+	svc, err := androidpublisher.NewService(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("android publisher client: %w", err)
 	}

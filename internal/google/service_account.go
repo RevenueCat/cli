@@ -35,7 +35,7 @@ func ServiceAccountEmail(projectID string) string {
 // doesn't exist. Idempotent: an existing account is returned without error.
 // The bool reports whether it was newly created (for user-facing messaging).
 func EnsureServiceAccount(ctx context.Context, ts oauth2.TokenSource, projectID string) (created bool, email string, err error) {
-	svc, err := iam.NewService(ctx, option.WithTokenSource(ts))
+	svc, err := iam.NewService(ctx, option.WithTokenSource(ts), option.WithQuotaProject(projectID))
 	if err != nil {
 		return false, "", fmt.Errorf("iam client: %w", err)
 	}
@@ -62,7 +62,7 @@ func EnsureServiceAccount(ctx context.Context, ts oauth2.TokenSource, projectID 
 // project. Read-modify-write on the project IAM policy; idempotent (roles the
 // member already has are skipped). Returns the roles it actually added.
 func GrantProjectRoles(ctx context.Context, ts oauth2.TokenSource, projectID, saEmail string) ([]string, error) {
-	crm, err := cloudresourcemanager.NewService(ctx, option.WithTokenSource(ts))
+	crm, err := cloudresourcemanager.NewService(ctx, option.WithTokenSource(ts), option.WithQuotaProject(projectID))
 	if err != nil {
 		return nil, fmt.Errorf("cloud resource manager client: %w", err)
 	}
@@ -111,7 +111,7 @@ func addMember(policy *cloudresourcemanager.Policy, role, member string) bool {
 // bytes. The private key material is returned inline by Google (only on create)
 // so it never touches disk here — the caller keeps it in memory.
 func CreateKey(ctx context.Context, ts oauth2.TokenSource, projectID, saEmail string) ([]byte, error) {
-	svc, err := iam.NewService(ctx, option.WithTokenSource(ts))
+	svc, err := iam.NewService(ctx, option.WithTokenSource(ts), option.WithQuotaProject(projectID))
 	if err != nil {
 		return nil, fmt.Errorf("iam client: %w", err)
 	}
