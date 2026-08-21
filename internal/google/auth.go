@@ -28,12 +28,14 @@ import (
 const (
 	ScopeAndroidPublisher = "https://www.googleapis.com/auth/androidpublisher"
 	ScopeCloudPlatform    = "https://www.googleapis.com/auth/cloud-platform"
+	ScopePlayReporting    = "https://www.googleapis.com/auth/playdeveloperreporting"
 	scopeOpenID           = "openid"
 	scopeEmail            = "https://www.googleapis.com/auth/userinfo.email"
 )
 
-// DefaultScopes covers the whole setup flow.
-var DefaultScopes = []string{ScopeAndroidPublisher, ScopeCloudPlatform, scopeOpenID, scopeEmail}
+// DefaultScopes covers the whole setup flow. playdeveloperreporting is what
+// lets us list the developer's Play apps so they don't have to type a package.
+var DefaultScopes = []string{ScopeAndroidPublisher, ScopeCloudPlatform, ScopePlayReporting, scopeOpenID, scopeEmail}
 
 // DefaultClientID / DefaultClientSecret are the RevenueCat-owned Desktop OAuth
 // client baked into the binary. They are intentionally empty until RevenueCat
