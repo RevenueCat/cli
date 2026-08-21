@@ -66,6 +66,16 @@ func (f *Flow) Link(text, label, url string) {
 	f.body(flowDimSty.Render(text) + " " + linkText(label, url))
 }
 
+// URL prints a full URL on the rail — clickable in capable terminals and
+// selectable to copy everywhere.
+func (f *Flow) URL(url string) {
+	if f.plain {
+		f.body(url)
+		return
+	}
+	f.body(linkText(url, url))
+}
+
 // Receipt echoes a confirmed choice as "✓ key  value" on the rail.
 func (f *Flow) Receipt(key, value string) {
 	line := flowOKSty.Render("✓") + " " + key

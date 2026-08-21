@@ -120,15 +120,20 @@ func newSetupGoogleCmd() *cobra.Command {
 					fmt.Fprintln(os.Stderr, "Sign in to Google to continue: "+u)
 					return nil
 				}
-				switch {
-				case noBrowser:
-					fl.Link("Sign in here:", "Google sign-in ↗", u)
-				default:
-					if err := openBrowser(u); err != nil {
-						fl.Link("Couldn't open your browser — sign in here:", "Google sign-in ↗", u)
-					} else {
-						fl.Link("Opened your browser · didn't open?", "reopen ↗", u)
+				openIt := !noBrowser
+				if openIt && rt.CanPrompt() {
+					ok, err := fl.Confirm("Open Google sign-in in your browser?", true)
+					if err != nil {
+						return err
 					}
+					openIt = ok
+				}
+				switch {
+				case openIt && openBrowser(u) == nil:
+					fl.Say("Opened your browser. Sign in with the right account.")
+				default:
+					fl.Say("Sign in with this link (click it, or copy it into your browser):")
+					fl.URL(u)
 				}
 				fl.Say("Waiting for sign-in…")
 				return nil
