@@ -256,71 +256,85 @@ func newSetupGoogleCmd() *cobra.Command {
 				return err
 			}
 
-			// 5. Execute.
+			// 5. Execute. Enable APIs first — it can pause for the Android
+			// Publisher terms of service, so it runs before the live ledger takes
+			// over the screen. The remaining steps fill in on the ledger.
 			rt.Out.Info("Enabling Google APIs…")
 			if err := enableAPIsWithToS(ctx, rt, creds.TokenSource, projectID, noBrowser, creds.Email); err != nil {
 				return err
 			}
 			result.EnabledAPIs = google.RequiredAPIs
+			result.ServiceAccount = saEmail
+			result.GrantedRoles = google.ProjectRoles
+			result.PackageName = packageName
 
-			rt.Out.Info("Creating the RevenueCat service account…")
-			created, email, err := google.EnsureServiceAccount(ctx, creds.TokenSource, projectID)
+			led := tui.NewLedger(os.Stderr, !rt.CanPrompt(),
+				"Create the RevenueCat service account",
+				"Grant Google Cloud roles",
+				"Create the service-account key",
+				"Add the service account to Google Play",
+				"Save the credential",
+			)
+			led.Start()
+
+			created, _, err := google.EnsureServiceAccount(ctx, creds.TokenSource, projectID)
 			if err != nil {
+				led.Fail(0, "failed")
+				led.Stop()
 				return googleHint(rt, err)
 			}
-			saEmail = email
-			result.ServiceAccount = saEmail
 			result.ServiceAccountNew = created
 			if created {
-				rt.Out.Success("Created service account " + saEmail)
+				led.Done(0, "created")
 			} else {
-				rt.Out.Success("Found existing service account " + saEmail)
+				led.Done(0, "already existed")
 			}
 
-			rt.Out.Info("Granting Google Cloud roles…")
+			led.Running(1)
 			added, err := google.GrantProjectRoles(ctx, creds.TokenSource, projectID, saEmail)
 			if err != nil {
+				led.Fail(1, "failed")
+				led.Stop()
 				return googleHint(rt, err)
 			}
-			result.GrantedRoles = google.ProjectRoles
 			if len(added) == 0 {
-				rt.Out.Success("Cloud roles already granted")
+				led.Done(1, "already granted")
 			} else {
-				rt.Out.Success("Granted " + strings.Join(added, ", "))
+				led.Done(1, "")
 			}
 
-			rt.Out.Info("Creating the service-account key…")
+			led.Running(2)
 			keyData, keyName, err := google.CreateKey(ctx, creds.TokenSource, projectID, saEmail)
 			if err != nil {
+				led.Fail(2, "failed")
+				led.Stop()
 				return googleHint(rt, err)
 			}
-			rt.Out.Success("Created service-account key (in memory)")
+			led.Done(2, "in memory")
 
-			rt.Out.Info("Adding the service account to Google Play…")
+			led.Running(3)
 			play, err := google.AddServiceAccountToPlay(ctx, creds.TokenSource, developerID, saEmail, packageName, projectID)
 			if err != nil {
+				led.Fail(3, "failed")
+				led.Stop()
 				return googleHint(rt, err)
 			}
 			result.PlayUserCreated = play.UserCreated
 			result.PlayGrantConfigured = true
-			switch {
-			case play.UserCreated:
-				rt.Out.Success("Added the service account to Play and granted access to " + packageName)
-			case play.GrantUpdated:
-				rt.Out.Success("Updated Play permissions for " + packageName)
-			case play.GrantCreated:
-				rt.Out.Success("Granted Play access to " + packageName)
-			default:
-				rt.Out.Success("Play access already configured for " + packageName)
-			}
+			led.Done(3, packageName)
 
 			// Persist the credential before pruning older keys — Google returns
-			// private key material only once, so a failure here must not happen
-			// after the old keys are already deleted.
+			// private key material only once, so a failure here must not delete
+			// the old keys first.
+			led.Running(4)
 			if err := os.WriteFile(keyOut, keyData, 0o600); err != nil {
+				led.Fail(4, "failed")
+				led.Stop()
 				return fmt.Errorf("write key to %s: %w", keyOut, err)
 			}
 			result.KeyPath = keyOut
+			led.Done(4, keyOut)
+			led.Stop()
 
 			if !keepOldKeys {
 				if pruned, perr := google.PruneUserKeys(ctx, creds.TokenSource, projectID, saEmail, keyName); perr != nil {
@@ -330,7 +344,7 @@ func newSetupGoogleCmd() *cobra.Command {
 				}
 			}
 
-			rt.Out.Success("Google Play setup complete")
+			rt.Out.Success("Google Play connected 🎉")
 			if err := rt.Out.RenderCard(output.Card{
 				Title:    "Google Play — " + packageName,
 				Subtitle: creds.Email,
