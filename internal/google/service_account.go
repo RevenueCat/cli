@@ -115,6 +115,31 @@ func addMember(policy *cloudresourcemanager.Policy, role, member string) bool {
 	return true
 }
 
+// PruneUserKeys deletes the user-managed keys on the RevenueCat service account
+// and reports how many it removed. This keeps re-runs from piling keys up toward
+// Google's ~10-per-account limit. It only ever runs against the rc-owned
+// service account, and only touches USER_MANAGED keys — Google's SYSTEM_MANAGED
+// signing keys are never listed or deleted.
+func PruneUserKeys(ctx context.Context, ts oauth2.TokenSource, projectID, saEmail string) (int, error) {
+	svc, err := iam.NewService(ctx, option.WithTokenSource(ts), option.WithQuotaProject(projectID))
+	if err != nil {
+		return 0, fmt.Errorf("iam client: %w", err)
+	}
+	name := fmt.Sprintf("projects/%s/serviceAccounts/%s", projectID, saEmail)
+	resp, err := svc.Projects.ServiceAccounts.Keys.List(name).KeyTypes("USER_MANAGED").Context(ctx).Do()
+	if err != nil {
+		return 0, fmt.Errorf("list service account keys: %w", err)
+	}
+	removed := 0
+	for _, k := range resp.Keys {
+		if _, err := svc.Projects.ServiceAccounts.Keys.Delete(k.Name).Context(ctx).Do(); err != nil {
+			return removed, fmt.Errorf("delete service account key: %w", err)
+		}
+		removed++
+	}
+	return removed, nil
+}
+
 // CreateKey creates a JSON service-account key and returns the decoded key file
 // bytes. The private key material is returned inline by Google (only on create)
 // so it never touches disk here — the caller keeps it in memory.
