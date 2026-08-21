@@ -280,7 +280,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			rt.Out.Success("Created service-account key (in memory)")
 
 			rt.Out.Info("Adding the service account to Google Play…")
-			play, err := google.AddServiceAccountToPlay(ctx, creds.TokenSource, developerID, saEmail, packageName)
+			play, err := google.AddServiceAccountToPlay(ctx, creds.TokenSource, developerID, saEmail, packageName, projectID)
 			if err != nil {
 				return googleHint(rt, err)
 			}
