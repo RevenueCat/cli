@@ -98,29 +98,42 @@ func newSetupGoogleCmd() *cobra.Command {
 				}
 			}
 
-			// 1. Authenticate.
+			// 1. Authenticate. Print the URL first, then let the user open it
+			// (Stripe-style) so they can pick the browser / Google account that
+			// has their Play + Cloud access.
 			if !rt.Globals.AssumeYes && rt.CanPrompt() {
 				rt.Out.Notice(
 					"Your Google sign-in stays local — RevenueCat never sees your Google",
 					"credentials or tokens. The service-account key is created in memory.",
 				)
-				ok, err := tui.Confirm(rt.Globals.NoInput, "Sign in to Google now?")
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return errors.New("cancelled")
-				}
 			}
 			open := func(u string) error {
-				if noBrowser {
-					rt.Out.Info("Open this URL to sign in (use whichever browser/Google account has your Play + Cloud access):")
-					rt.Out.Info("  " + u)
-					return nil
-				}
-				rt.Out.Info("Opening your browser to sign in. To use a different browser or Google account, open this instead:")
+				rt.Out.Blank()
+				rt.Out.Info("Sign in to Google to continue — use the browser/account that has your Play + Cloud access:")
 				rt.Out.Info("  " + u)
-				return openBrowser(u)
+				rt.Out.Blank()
+				switch {
+				case noBrowser:
+					rt.Out.Info("Waiting for you to finish sign-in in your browser…")
+					return nil
+				case rt.Globals.AssumeYes || !rt.CanPrompt():
+					// non-interactive / --yes: open without pausing
+				default:
+					openIt, err := tui.ConfirmDefault(rt.Globals.NoInput, "Press Enter to open it in your browser (or choose No to open it yourself)", true)
+					if err != nil {
+						return err
+					}
+					if !openIt {
+						rt.Out.Info("Open the URL above to finish. Waiting…")
+						return nil
+					}
+				}
+				if err := openBrowser(u); err != nil {
+					rt.Out.Warn("Couldn't open a browser automatically — open the URL above. Waiting…")
+				} else {
+					rt.Out.Info("Opened your browser. Waiting for sign-in to complete…")
+				}
+				return nil
 			}
 			creds, err := google.Authenticate(ctx, clientID, clientSecret, google.DefaultScopes, open)
 			if err != nil {
