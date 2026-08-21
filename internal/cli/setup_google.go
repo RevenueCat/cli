@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -138,7 +139,11 @@ func newSetupGoogleCmd() *cobra.Command {
 				if method == "open" && openBrowser(u) == nil {
 					fl.Say("Opened your browser. Sign in with the right account.")
 				} else {
-					fl.Say("Sign in with this link:")
+					if clipboard.WriteAll(u) == nil {
+						fl.Say("Copied the link to your clipboard — paste it into your browser:")
+					} else {
+						fl.Say("Sign in with this link:")
+					}
 					fl.URL(u)
 				}
 				fl.Say("Waiting for sign-in…")
