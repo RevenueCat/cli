@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -240,7 +241,7 @@ func newSetupGoogleCmd() *cobra.Command {
 
 			// 5. Execute.
 			rt.Out.Info("Enabling Google APIs…")
-			if err := enableAPIsWithToS(ctx, rt, creds.TokenSource, projectID, noBrowser); err != nil {
+			if err := enableAPIsWithToS(ctx, rt, creds.TokenSource, projectID, noBrowser, creds.Email); err != nil {
 				return err
 			}
 			result.EnabledAPIs = google.RequiredAPIs
@@ -340,7 +341,7 @@ func newSetupGoogleCmd() *cobra.Command {
 // Android Publisher terms of service aren't accepted yet, it walks the user
 // through accepting them (opens the page, waits) and retries — rather than
 // failing the whole run and discarding all the answers already given.
-func enableAPIsWithToS(ctx context.Context, rt *Runtime, ts oauth2.TokenSource, projectID string, noBrowser bool) error {
+func enableAPIsWithToS(ctx context.Context, rt *Runtime, ts oauth2.TokenSource, projectID string, noBrowser bool, email string) error {
 	for attempt := 0; ; attempt++ {
 		err := google.EnableAPIs(ctx, ts, projectID)
 		if err == nil {
@@ -351,12 +352,24 @@ func enableAPIsWithToS(ctx context.Context, rt *Runtime, ts oauth2.TokenSource, 
 		if !errors.As(err, &tos) || !rt.CanPrompt() || attempt >= 4 {
 			return googleHint(rt, err)
 		}
+		acceptURL := addParam(addParam(tos.URL, "authuser", email), "project", projectID)
 		rt.Out.Blank()
-		rt.Out.Warn("Google needs you to accept the Android Publisher API terms of service — a one-time step for this Google account.")
-		rt.Out.Info("Accept it on this page (opening it now), then come back here:")
-		rt.Out.LinkLine(tos.URL)
-		if !noBrowser {
-			_ = openBrowser(tos.URL)
+		if attempt == 0 {
+			rt.Out.Warn("Google needs you to accept the Android Publisher API terms of service — a one-time step.")
+		} else {
+			rt.Out.Warn("Still not accepted. This must be accepted by the SAME Google account you signed in with — not whatever account your default browser happens to use.")
+		}
+		if email != "" {
+			rt.Out.Info("Accept it while signed in as " + email + ":")
+		} else {
+			rt.Out.Info("Accept it while signed in as the account you used to sign in here:")
+		}
+		rt.Out.LinkLine(acceptURL)
+		// Open the browser only on the first try — reopening every retry is
+		// noise, and if it landed on the wrong account the link above (with
+		// authuser) plus the explicit account name is the fix, not another tab.
+		if attempt == 0 && !noBrowser {
+			_ = openBrowser(acceptURL)
 		}
 		ok, err := tui.ConfirmDefault(rt.Globals.NoInput, "Press Enter once you've accepted the terms to continue", true)
 		if err != nil {
@@ -367,6 +380,20 @@ func enableAPIsWithToS(ctx context.Context, rt *Runtime, ts oauth2.TokenSource, 
 		}
 		rt.Out.Info("Retrying…")
 	}
+}
+
+// addParam appends a query parameter to a URL (empty values are skipped). Used
+// to steer the ToS page to the right Google account (authuser) and project —
+// acceptance is scoped to the project, so both matter.
+func addParam(u, key, value string) string {
+	if value == "" {
+		return u
+	}
+	sep := "?"
+	if strings.Contains(u, "?") {
+		sep = "&"
+	}
+	return u + sep + key + "=" + url.QueryEscape(value)
 }
 
 // choosePackage lets the user pick from their Play apps (via the Reporting
