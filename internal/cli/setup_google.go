@@ -241,7 +241,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			fl.Say("Grant " + strings.Join(google.ProjectRoles, " + "))
 			fl.Say(keyPlanStep(keepOldKeys))
 			fl.Say("Add to Google Play · grant access to " + packageName)
-			fl.Say("Save the credential to " + keyOut)
+			fl.Say("Upload the credential to RevenueCat")
 			if !rt.Globals.AssumeYes {
 				ok, err := fl.Confirm("Continue?", true)
 				if err != nil {
@@ -268,7 +268,7 @@ func newSetupGoogleCmd() *cobra.Command {
 				"Grant Google Cloud roles",
 				"Create the service-account key",
 				"Add the service account to Google Play",
-				"Save the credential",
+				"Upload the credential to RevenueCat",
 			)
 			led.Start()
 
@@ -318,17 +318,28 @@ func newSetupGoogleCmd() *cobra.Command {
 			result.PlayGrantConfigured = true
 			led.Done(3, packageName)
 
-			// Persist the credential before pruning older keys — Google returns
-			// private key material only once, so a failure here must not delete
-			// the old keys first.
+			// Upload the credential to RevenueCat via API v2. If that fails, fall
+			// back to writing the key so the human can upload it in the dashboard —
+			// but surface the real error so a transient/auth/validation failure
+			// isn't silently mistaken for "endpoint not available". This runs
+			// before pruning old keys: Google returns key material only once.
 			led.Running(4)
-			if err := os.WriteFile(keyOut, keyData, 0o600); err != nil {
+			credJSON := string(keyData)
+			_, upErr := rc.Apps.Update(ctx, rcProject, chosenApp.ID, api.AppUpdate{
+				PlayStore: &api.PlayStoreAppConfig{PlayServiceAccountCredentialsJSON: &credJSON},
+			})
+			if upErr == nil {
+				result.CredentialUploaded = true
+				led.Done(4, "uploaded to RevenueCat")
+			} else if writeErr := os.WriteFile(keyOut, keyData, 0o600); writeErr == nil {
+				result.KeyPath = keyOut
+				led.Done(4, "saved to "+keyOut+" (upload it in the dashboard)")
+				fl.Warn("RevenueCat didn't accept the upload: " + upErr.Error())
+			} else {
 				led.Fail(4, "failed")
 				led.Stop()
-				return fmt.Errorf("write key to %s: %w", keyOut, err)
+				return fmt.Errorf("upload credential (%v) and write key to %s (%v)", upErr, keyOut, writeErr)
 			}
-			result.KeyPath = keyOut
-			led.Done(4, keyOut)
 			led.Stop()
 
 			if !keepOldKeys {
@@ -343,10 +354,16 @@ func newSetupGoogleCmd() *cobra.Command {
 				return rt.Out.Render(result)
 			}
 			uploadURL := "https://app.revenuecat.com/projects/" + rcProject + "/apps/" + chosenApp.ID
-			fl.Outro("Google Play connected 🎉",
-				"One step left (until the API accepts it directly): upload the credential to your app.",
-				rt.Out.LinkText("Upload "+keyOut+" ↗", uploadURL),
-			)
+			if result.CredentialUploaded {
+				fl.Outro("Google Play connected 🎉",
+					rt.Out.LinkText("Open your app in RevenueCat ↗", uploadURL),
+				)
+			} else {
+				fl.Outro("Almost there",
+					"Upload the credential to finish:",
+					rt.Out.LinkText("Upload "+keyOut+" ↗", uploadURL),
+				)
+			}
 			return nil
 		},
 	}
