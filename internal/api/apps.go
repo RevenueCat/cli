@@ -24,8 +24,9 @@ type AppCreate struct {
 }
 
 type AppUpdate struct {
-	Name     *string            `json:"name,omitempty"`
-	AppStore *AppStoreAppConfig `json:"app_store,omitempty"`
+	Name      *string             `json:"name,omitempty"`
+	AppStore  *AppStoreAppConfig  `json:"app_store,omitempty"`
+	PlayStore *PlayStoreAppConfig `json:"play_store,omitempty"`
 }
 
 // AppExtras carries App read-model fields added after the generated types
@@ -81,7 +82,11 @@ type PaddleAppConfig struct {
 }
 
 type PlayStoreAppConfig struct {
-	PackageName string `json:"package_name"`
+	PackageName string `json:"package_name,omitempty"`
+	// PlayServiceAccountCredentialsJSON is the Google service-account key JSON,
+	// write-only. Set on an app update to upload the Play credential. The read
+	// model never returns it — see PlayServiceAccountCredentialsConfigured.
+	PlayServiceAccountCredentialsJSON *string `json:"play_service_account_credentials_json,omitempty"`
 }
 
 type RCBillingConfig struct {
