@@ -52,6 +52,7 @@ func newSetupGoogleCmd() *cobra.Command {
 	var clientID, clientSecret string
 	var projectID, developerID, packageName, keyOut string
 	var noBrowser bool
+	var keepOldKeys bool
 
 	cmd := &cobra.Command{
 		Use:   "google",
@@ -231,7 +232,7 @@ func newSetupGoogleCmd() *cobra.Command {
 				"Enable " + fmt.Sprintf("%d", len(google.RequiredAPIs)) + " Google APIs on " + projectID,
 				"Create service account " + saEmail,
 				"Grant " + strings.Join(google.ProjectRoles, " + "),
-				"Create a service-account key (in memory)",
+				keyPlanStep(keepOldKeys),
 				"Add the service account to Play and grant access to " + packageName,
 				"Write the key to " + keyOut + " for upload to RevenueCat",
 			})
@@ -272,6 +273,13 @@ func newSetupGoogleCmd() *cobra.Command {
 				rt.Out.Success("Granted " + strings.Join(added, ", "))
 			}
 
+			if !keepOldKeys {
+				if pruned, perr := google.PruneUserKeys(ctx, creds.TokenSource, projectID, saEmail); perr != nil {
+					rt.Out.Warn("Couldn't remove older keys on the service account: " + perr.Error())
+				} else if pruned > 0 {
+					rt.Out.Info(fmt.Sprintf("Removed %d older key(s) from the RevenueCat service account (pass --keep-old-keys to keep them).", pruned))
+				}
+			}
 			rt.Out.Info("Creating the service-account key…")
 			keyData, err := google.CreateKey(ctx, creds.TokenSource, projectID, saEmail)
 			if err != nil {
@@ -334,6 +342,7 @@ func newSetupGoogleCmd() *cobra.Command {
 	cmd.Flags().StringVar(&packageName, "package", "", "Android package name (env: RC_GOOGLE_PACKAGE)")
 	cmd.Flags().StringVar(&keyOut, "key-out", "revenuecat-play-key.json", "path to write the service-account key for upload to RevenueCat")
 	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "don't open a browser automatically; print the sign-in URL to open manually")
+	cmd.Flags().BoolVar(&keepOldKeys, "keep-old-keys", false, "keep existing keys on the RevenueCat service account instead of replacing them (each run otherwise removes old keys before creating a fresh one)")
 	return cmd
 }
 
@@ -394,6 +403,15 @@ func addParam(u, key, value string) string {
 		sep = "&"
 	}
 	return u + sep + key + "=" + url.QueryEscape(value)
+}
+
+// keyPlanStep names the key step in the plan so consent reflects whether old
+// keys will be replaced.
+func keyPlanStep(keepOldKeys bool) string {
+	if keepOldKeys {
+		return "Create a service-account key (in memory)"
+	}
+	return "Replace any old keys and create a fresh service-account key (in memory)"
 }
 
 // choosePackage lets the user pick from their Play apps (via the Reporting
