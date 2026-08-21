@@ -61,6 +61,11 @@ func (f *Flow) Step(title string) {
 // Say prints a dim narration line on the rail.
 func (f *Flow) Say(line string) { f.body(flowDimSty.Render(line)) }
 
+// Item prints a bulleted list item on the rail, indented under the current step.
+func (f *Flow) Item(line string) {
+	f.body(flowRailSty.Render("•") + " " + flowDimSty.Render(line))
+}
+
 // Link prints a narration line ending in a clickable label.
 func (f *Flow) Link(text, label, url string) {
 	f.body(flowDimSty.Render(text) + " " + linkText(label, url))

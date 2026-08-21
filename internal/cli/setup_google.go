@@ -236,12 +236,12 @@ func newSetupGoogleCmd() *cobra.Command {
 
 			// Review + single consent.
 			fl.Step("Review")
-			fl.Say(fmt.Sprintf("Enable %d Google APIs", len(google.RequiredAPIs)))
-			fl.Say("Create " + saEmail)
-			fl.Say("Grant " + strings.Join(google.ProjectRoles, " + "))
-			fl.Say(keyPlanStep(keepOldKeys))
-			fl.Say("Add to Google Play · grant access to " + packageName)
-			fl.Say("Upload the credential to RevenueCat")
+			fl.Item(fmt.Sprintf("Enable %d Google APIs", len(google.RequiredAPIs)))
+			fl.Item("Create " + saEmail)
+			fl.Item("Grant " + strings.Join(google.ProjectRoles, " + "))
+			fl.Item(keyPlanStep(keepOldKeys))
+			fl.Item("Add to Google Play · grant access to " + packageName)
+			fl.Item("Upload the credential to RevenueCat")
 			if !rt.Globals.AssumeYes {
 				ok, err := fl.Confirm("Continue?", true)
 				if err != nil {
