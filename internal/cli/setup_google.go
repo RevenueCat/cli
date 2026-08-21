@@ -412,8 +412,15 @@ func createGoogleProject(ctx context.Context, rt *Runtime, ts oauth2.TokenSource
 	return projectID, nil
 }
 
-// googleHint adds actionable guidance for the common org-policy failures.
+// googleHint adds actionable guidance for the common one-time-setup failures.
 func googleHint(rt *Runtime, err error) error {
+	var tos *google.TosError
+	if errors.As(err, &tos) {
+		rt.Out.Warn("Google needs you to accept the Android Publisher API terms of service first (a one-time step for this Google account).")
+		rt.Out.Info("Accept it here, then re-run rc setup google:")
+		rt.Out.LinkLine(tos.URL)
+		return err
+	}
 	var op *google.OrgPolicyError
 	if errors.As(err, &op) {
 		switch op.Constraint {
