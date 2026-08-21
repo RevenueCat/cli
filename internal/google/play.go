@@ -23,6 +23,11 @@ var PlayAppPermissions = []string{
 	"CAN_MANAGE_ORDERS",
 }
 
+// bootstrapPermission is the least-sensitive account-level permission, used
+// only transiently: users.create needs at least one account permission, so we
+// create with this, add the package grant, then remove it.
+const bootstrapPermission = "CAN_VIEW_NON_FINANCIAL_DATA_GLOBAL"
+
 // developerIDPattern extracts the numeric Play developer account ID from a Play
 // Console URL (…/developers/{id}/…) or accepts a bare ID.
 var developerIDPattern = regexp.MustCompile(`developers/(\d{15,25})`)
@@ -72,37 +77,61 @@ func AddServiceAccountToPlay(ctx context.Context, ts oauth2.TokenSource, develop
 	}
 
 	result := &PlayResult{}
+	userName := fmt.Sprintf("%s/users/%s", parent, saEmail)
+	grantParent := userName
+	grantName := fmt.Sprintf("%s/grants/%s", userName, packageName)
+
 	if existing == nil {
-		if _, err := svc.Users.Create(parent, &androidpublisher.User{Email: saEmail}).Context(ctx).Do(); err != nil {
+		// users.create requires at least one account-level permission (grants
+		// are output-only and can't be set at creation). Bootstrap the user with
+		// the least-sensitive account permission, add the package-scoped grant,
+		// then strip the account permission — leaving least-privilege, per-app
+		// access.
+		if _, err := svc.Users.Create(parent, &androidpublisher.User{
+			Email:                       saEmail,
+			DeveloperAccountPermissions: []string{bootstrapPermission},
+		}).Context(ctx).Do(); err != nil {
 			return nil, fmt.Errorf("add %s to Play developer account: %w", saEmail, err)
 		}
 		result.UserCreated = true
+
+		if _, err := svc.Grants.Create(grantParent, &androidpublisher.Grant{
+			PackageName:         packageName,
+			AppLevelPermissions: PlayAppPermissions,
+		}).Context(ctx).Do(); err != nil {
+			return nil, fmt.Errorf("grant Play access to %s: %w", packageName, err)
+		}
+		result.GrantCreated = true
+
+		// Best-effort: drop the bootstrap account-wide permission now that a
+		// per-app grant exists. If it fails, access still works — the account
+		// only retains read-only "view app info", so we don't abort.
+		_, _ = svc.Users.Patch(userName, &androidpublisher.User{
+			DeveloperAccountPermissions: []string{},
+			ForceSendFields:             []string{"DeveloperAccountPermissions"},
+		}).UpdateMask("developerAccountPermissions").Context(ctx).Do()
+		return result, nil
 	}
 
-	// Does the user already have a grant for this package with our permissions?
-	grantName := fmt.Sprintf("%s/users/%s/grants/%s", parent, saEmail, packageName)
-	if existing != nil {
-		for _, g := range existing.Grants {
-			if grantPackage(g.Name) == packageName {
-				if hasAllPermissions(g.AppLevelPermissions) {
-					return result, nil // fully configured
-				}
-				g.AppLevelPermissions = PlayAppPermissions
-				if _, err := svc.Grants.Patch(grantName, g).UpdateMask("appLevelPermissions").Context(ctx).Do(); err != nil {
-					return nil, fmt.Errorf("update Play permissions for %s: %w", packageName, err)
-				}
-				result.GrantUpdated = true
-				return result, nil
+	// Existing user: ensure the package grant has our permissions, leaving any
+	// account-level permissions the user set up themselves untouched.
+	for _, g := range existing.Grants {
+		if grantPackage(g.Name) == packageName {
+			if hasAllPermissions(g.AppLevelPermissions) {
+				return result, nil // fully configured
 			}
+			g.AppLevelPermissions = PlayAppPermissions
+			if _, err := svc.Grants.Patch(grantName, g).UpdateMask("appLevelPermissions").Context(ctx).Do(); err != nil {
+				return nil, fmt.Errorf("update Play permissions for %s: %w", packageName, err)
+			}
+			result.GrantUpdated = true
+			return result, nil
 		}
 	}
-
-	grantParent := fmt.Sprintf("%s/users/%s", parent, saEmail)
-	_, err = svc.Grants.Create(grantParent, &androidpublisher.Grant{
+	if _, err := svc.Grants.Create(grantParent, &androidpublisher.Grant{
 		PackageName:         packageName,
 		AppLevelPermissions: PlayAppPermissions,
-	}).Context(ctx).Do()
-	if err != nil {
+	}).Context(ctx).Do(); err != nil {
 		return nil, fmt.Errorf("grant Play access to %s: %w", packageName, err)
 	}
 	result.GrantCreated = true
