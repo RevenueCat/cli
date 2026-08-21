@@ -101,12 +101,10 @@ func newSetupGoogleCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fl.Step("App")
-			chosenApp, err := resolvePlayApp(ctx, rt, rc, rcProject, argAt(args, 0))
+			chosenApp, err := resolvePlayApp(ctx, rt, rc, fl, rcProject, argAt(args, 0))
 			if err != nil {
 				return err
 			}
-			fl.Receipt("App", playAppLabel(chosenApp))
 			if packageName == "" {
 				packageName = chosenApp.PlayStore.PackageName
 			}
@@ -145,21 +143,20 @@ func newSetupGoogleCmd() *cobra.Command {
 			result := googleSetupResult{Email: creds.Email, RCAppID: chosenApp.ID}
 
 			// Google Cloud project — or create a new one.
-			fl.Step("Google Cloud project")
 			if projectID == "" {
 				projects, err := google.ListProjects(ctx, creds.TokenSource)
 				if err != nil {
 					return err
 				}
-				choices := []Choice[string]{{Value: createNewProjectSentinel, Label: "➕ Create a new project", Flag: "--project"}}
+				opts := []tui.Option{{Label: "➕ Create a new project", Value: createNewProjectSentinel}}
 				for _, p := range projects {
 					label := p.ID
 					if p.DisplayName != "" {
 						label = fmt.Sprintf("%s (%s)", p.DisplayName, p.ID)
 					}
-					choices = append(choices, Choice[string]{Value: p.ID, Label: label, Flag: "--project"})
+					opts = append(opts, tui.Option{Label: label, Value: p.ID})
 				}
-				projectID, err = decide(rt, "Project", nil, choices)
+				projectID, err = fl.Select("Google Cloud project", opts)
 				if err != nil {
 					return err
 				}
@@ -170,26 +167,23 @@ func newSetupGoogleCmd() *cobra.Command {
 					}
 				}
 			} else {
+				fl.Step("Google Cloud project")
 				fl.Receipt("Project", projectID)
 			}
 			result.ProjectID = projectID
 
 			// Play developer account (no discovery API — must be supplied).
-			fl.Step("Play developer account")
 			if developerID == "" {
 				if !rt.CanPrompt() {
 					return errors.New("--developer-id is required under --no-input (Google exposes no API to discover it; find it in your Play Console URL)")
 				}
-				fl.Say("Google has no API for this — copy it from your Play Console URL.")
-				fl.Link("Open", "Play Console ↗", "https://play.google.com/console/")
-				fl.Say("Your ID is the number after /developers/ in the URL.")
-				var raw string
-				if err := tui.Form(rt.Globals.NoInput).
-					Field(huh.NewInput().
-						Title("Play Console URL or 19-digit ID").
-						Placeholder("…/developers/1234567890123456789/…").
-						Value(&raw).Validate(tui.Required("developer account ID"))).
-					Run(); err != nil {
+				desc := []string{
+					"Google has no API for this — copy it from your Play Console URL.",
+					rt.Out.LinkText("Open Play Console ↗", "https://play.google.com/console/"),
+					"Your ID is the number after /developers/ in the URL.",
+				}
+				raw, err := fl.Input("Play developer account", "…/developers/1234567890123456789/…", tui.Required("developer account ID"), desc...)
+				if err != nil {
 					return err
 				}
 				developerID, err = google.ParseDeveloperID(raw)
@@ -197,13 +191,14 @@ func newSetupGoogleCmd() *cobra.Command {
 					return err
 				}
 			} else {
+				fl.Step("Play developer account")
 				developerID, err = google.ParseDeveloperID(developerID)
 				if err != nil {
 					return err
 				}
+				fl.Receipt("Developer account", developerID)
 			}
 			result.DeveloperID = developerID
-			fl.Receipt("Developer account", developerID)
 
 			// 4. Package name comes from the chosen RevenueCat app. Only prompt if
 			// that app has no package set yet.
@@ -231,8 +226,14 @@ func newSetupGoogleCmd() *cobra.Command {
 			fl.Say(keyPlanStep(keepOldKeys))
 			fl.Say("Add to Google Play · grant access to " + packageName)
 			fl.Say("Save the credential to " + keyOut)
-			if err := confirmOrAbort(rt, "Continue?"); err != nil {
-				return err
+			if !rt.Globals.AssumeYes {
+				ok, err := fl.Confirm("Continue?", true)
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return errors.New("cancelled")
+				}
 			}
 
 			// Setting up. Enable APIs first — it can pause for the Android Publisher
@@ -416,7 +417,7 @@ func keyPlanStep(keepOldKeys bool) string {
 // resolvePlayApp picks the RevenueCat Play app to configure: use the given id
 // (confirmed), confirm the only one, or pick among several. Returns the app so
 // its package name can drive the Google setup.
-func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID, appIDArg string) (*api.App, error) {
+func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, fl *tui.Flow, projectID, appIDArg string) (*api.App, error) {
 	if appIDArg != "" {
 		app, err := rc.Apps.Get(ctx, projectID, appIDArg)
 		if err != nil {
@@ -425,7 +426,7 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID,
 		if app.Type != "play_store" || app.PlayStore == nil {
 			return nil, fmt.Errorf("app %s is not a Google Play app", appIDArg)
 		}
-		if err := confirmPlayApp(rt, app); err != nil {
+		if err := confirmPlayApp(rt, fl, app); err != nil {
 			return nil, err
 		}
 		return app, nil
@@ -444,7 +445,7 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID,
 	case 0:
 		return nil, errors.New("no Google Play apps in this project — create one first (rc apps create)")
 	case 1:
-		if err := confirmPlayApp(rt, &play[0]); err != nil {
+		if err := confirmPlayApp(rt, fl, &play[0]); err != nil {
 			return nil, err
 		}
 		return &play[0], nil
@@ -452,11 +453,11 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID,
 		if !rt.CanPrompt() {
 			return nil, errors.New("multiple Google Play apps in this project — pass the app id: rc setup google <app-id>")
 		}
-		items := make([]PickerItem, len(play))
+		opts := make([]tui.Option, len(play))
 		for i := range play {
-			items[i] = PickerItem{ID: play[i].ID, Label: playAppLabel(&play[i])}
+			opts[i] = tui.Option{Label: playAppLabel(&play[i]), Value: play[i].ID}
 		}
-		id, err := selectID(rt, "Google Play app", items, "")
+		id, err := fl.Select("App", opts)
 		if err != nil {
 			return nil, err
 		}
@@ -470,11 +471,11 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID,
 }
 
 // confirmPlayApp asks the human to confirm the app before doing anything to it.
-func confirmPlayApp(rt *Runtime, app *api.App) error {
+func confirmPlayApp(rt *Runtime, fl *tui.Flow, app *api.App) error {
 	if rt.Globals.AssumeYes || !rt.CanPrompt() {
 		return nil
 	}
-	ok, err := tui.ConfirmDefault(rt.Globals.NoInput, "Set up Google Play for "+playAppLabel(app)+"?", true)
+	ok, err := fl.Confirm("Set up Google Play for "+playAppLabel(app)+"?", true)
 	if err != nil {
 		return err
 	}
