@@ -31,6 +31,9 @@ func EnableAPIs(ctx context.Context, ts oauth2.TokenSource, projectID string) er
 	req := &serviceusage.BatchEnableServicesRequest{ServiceIds: RequiredAPIs}
 	op, err := svc.Services.BatchEnable(parent, req).Context(ctx).Do()
 	if err != nil {
+		if tos := classifyTos(err); tos != err {
+			return fmt.Errorf("enable APIs: %w", tos)
+		}
 		return fmt.Errorf("enable APIs: %w", classifyOrgPolicy(err))
 	}
 	// The operation may complete asynchronously; for enablement the returned op

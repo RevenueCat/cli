@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"golang.org/x/oauth2"
@@ -142,6 +143,42 @@ func (e *OrgPolicyError) Error() string {
 	return fmt.Sprintf("blocked by Google Cloud organization policy %q: %v", e.Constraint, e.err)
 }
 func (e *OrgPolicyError) Unwrap() error { return e.err }
+
+// TosError signals that the signed-in account hasn't accepted a required
+// Google API terms of service (e.g. Android Publisher), which blocks enabling
+// those APIs until the human accepts them once in the Console.
+type TosError struct {
+	URL string // the terms-acceptance page to visit
+	err error
+}
+
+func (e *TosError) Error() string {
+	return fmt.Sprintf("a Google API terms of service must be accepted at %s: %v", e.URL, e.err)
+}
+func (e *TosError) Unwrap() error { return e.err }
+
+var tosURLPattern = regexp.MustCompile(`https://[^\s)]+/terms/[^\s)]+`)
+
+// classifyTos maps Google's UREQ_TOS_NOT_ACCEPTED response into a TosError
+// carrying the acceptance URL. Other errors pass through unchanged.
+func classifyTos(err error) error {
+	if err == nil {
+		return nil
+	}
+	var apiErr *googleapi.Error
+	if !errors.As(err, &apiErr) {
+		return err
+	}
+	msg := apiErr.Message
+	if !strings.Contains(msg, "terms of service") && !strings.Contains(strings.ToUpper(msg), "TOS") {
+		return err
+	}
+	url := "https://console.developers.google.com/terms"
+	if m := tosURLPattern.FindString(msg); m != "" {
+		url = m
+	}
+	return &TosError{URL: url, err: err}
+}
 
 // classifyOrgPolicy maps Google's FAILED_PRECONDITION / 400 responses for the
 // common service-account org-policy constraints into an OrgPolicyError. Other
