@@ -13,7 +13,7 @@ func TestRenderLedger(t *testing.T) {
 		{label: "Grant roles", note: "quota exceeded", status: ledgerFailed},
 		{label: "Create key", status: ledgerPending},
 	}
-	out := renderLedger(steps, "* ")
+	out := renderLedger(steps, "* ", "  ")
 
 	for _, want := range []string{"Enable APIs", "Create service account", "Grant roles", "Create key", "quota exceeded"} {
 		if !strings.Contains(out, want) {

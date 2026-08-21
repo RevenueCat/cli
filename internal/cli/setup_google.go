@@ -14,7 +14,6 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/google"
-	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -85,15 +84,15 @@ func newSetupGoogleCmd() *cobra.Command {
 				return google.ErrNoClientID
 			}
 
-			rt.Out.Title("Google Play configuration")
-			rt.Out.Lead("Signs in to Google locally and creates the credential RevenueCat needs. Nothing changes without your OK.")
+			fl := tui.NewFlow(os.Stderr, !rt.CanPrompt())
+			fl.Intro("RevenueCat · Google Play setup")
 
 			if !rt.CanPrompt() && !rt.Globals.AssumeYes {
 				return errors.New("rc setup google is interactive: run it in a terminal, or pass --yes with the app id, --project, and --developer-id")
 			}
 
-			// Choose the RevenueCat Play app to configure — confirm the only one,
-			// or pick among several. Its package name drives the Google setup.
+			// App — confirm the only one, or pick among several. Its package name
+			// drives the Google setup.
 			rc, err := rt.API()
 			if err != nil {
 				return err
@@ -102,23 +101,20 @@ func newSetupGoogleCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			fl.Step("App")
 			chosenApp, err := resolvePlayApp(ctx, rt, rc, rcProject, argAt(args, 0))
 			if err != nil {
 				return err
 			}
+			fl.Receipt("App", playAppLabel(chosenApp))
 			if packageName == "" {
 				packageName = chosenApp.PlayStore.PackageName
 			}
 
-			// 1. Authenticate. Print the URL first, then let the user open it
-			// (Stripe-style) so they can pick the browser / Google account that
-			// has their Play + Cloud access.
-			if !rt.Globals.AssumeYes && rt.CanPrompt() {
-				rt.Out.Notice(
-					"Your Google sign-in stays local — RevenueCat never sees your Google",
-					"credentials or tokens. The service-account key is created in memory.",
-				)
-			}
+			// Sign in.
+			fl.Step("Sign in to Google")
+			fl.Say("Your sign-in stays local — RevenueCat never sees your Google credentials.")
+			fl.Say("Use the account with access to this app's Play Console and Cloud project.")
 			open := func(u string) error {
 				if rt.Out.IsJSON() {
 					// Info/LinkLine are suppressed in JSON mode, but the sign-in URL
@@ -126,31 +122,17 @@ func newSetupGoogleCmd() *cobra.Command {
 					fmt.Fprintln(os.Stderr, "Sign in to Google to continue: "+u)
 					return nil
 				}
-				rt.Out.Blank()
-				rt.Out.Info("Sign in to Google to continue — use the browser/account that has your Play + Cloud access:")
-				rt.Out.LinkLine(u)
-				rt.Out.Blank()
 				switch {
 				case noBrowser:
-					rt.Out.Info("Waiting for you to finish sign-in in your browser…")
-					return nil
-				case rt.Globals.AssumeYes || !rt.CanPrompt():
-					// non-interactive / --yes: open without pausing
+					fl.Link("Sign in here:", "Google sign-in ↗", u)
 				default:
-					openIt, err := tui.ConfirmDefault(rt.Globals.NoInput, "Press Enter to open it in your browser (or choose No to open it yourself)", true)
-					if err != nil {
-						return err
-					}
-					if !openIt {
-						rt.Out.Info("Open the URL above to finish. Waiting…")
-						return nil
+					if err := openBrowser(u); err != nil {
+						fl.Link("Couldn't open your browser — sign in here:", "Google sign-in ↗", u)
+					} else {
+						fl.Link("Opened your browser · didn't open?", "reopen ↗", u)
 					}
 				}
-				if err := openBrowser(u); err != nil {
-					rt.Out.Warn("Couldn't open a browser automatically — open the URL above. Waiting…")
-				} else {
-					rt.Out.Info("Opened your browser. Waiting for sign-in to complete…")
-				}
+				fl.Say("Waiting for sign-in…")
 				return nil
 			}
 			creds, err := google.Authenticate(ctx, clientID, clientSecret, google.DefaultScopes, open)
@@ -158,11 +140,12 @@ func newSetupGoogleCmd() *cobra.Command {
 				return err
 			}
 			if creds.Email != "" {
-				rt.Out.Answer("Signed in", creds.Email)
+				fl.Receipt("Signed in", creds.Email)
 			}
 			result := googleSetupResult{Email: creds.Email, RCAppID: chosenApp.ID}
 
-			// 2. Choose the GCP project — or create a new one.
+			// Google Cloud project — or create a new one.
+			fl.Step("Google Cloud project")
 			if projectID == "" {
 				projects, err := google.ListProjects(ctx, creds.TokenSource)
 				if err != nil {
@@ -176,7 +159,7 @@ func newSetupGoogleCmd() *cobra.Command {
 					}
 					choices = append(choices, Choice[string]{Value: p.ID, Label: label, Flag: "--project"})
 				}
-				projectID, err = decide(rt, "Google Cloud project", nil, choices)
+				projectID, err = decide(rt, "Project", nil, choices)
 				if err != nil {
 					return err
 				}
@@ -186,29 +169,25 @@ func newSetupGoogleCmd() *cobra.Command {
 						return err
 					}
 				}
+			} else {
+				fl.Receipt("Project", projectID)
 			}
 			result.ProjectID = projectID
 
-			// 3. Play developer account ID (no discovery API — must be supplied).
+			// Play developer account (no discovery API — must be supplied).
+			fl.Step("Play developer account")
 			if developerID == "" {
 				if !rt.CanPrompt() {
 					return errors.New("--developer-id is required under --no-input (Google exposes no API to discover it; find it in your Play Console URL)")
 				}
-				rt.Out.Notice(
-					"Google has no API for your Play developer account ID, so paste it here.",
-				)
-				rt.Out.Info("1. Open your Play Console:")
-				rt.Out.LinkLine("https://play.google.com/console/")
-				rt.Out.Info("2. Copy the page URL — it looks like:")
-				rt.Out.Info("      …/developers/1234567890123456789/app-list   (that number is your ID)")
-				rt.Out.Info("3. Paste the whole URL below — I'll pull out the ID (or paste just the number).")
-				rt.Out.Info("Can't find it?")
-				rt.Out.LinkLine("https://support.google.com/googleplay/android-developer/answer/13634081")
+				fl.Say("Google has no API for this — copy it from your Play Console URL.")
+				fl.Link("Open", "Play Console ↗", "https://play.google.com/console/")
+				fl.Say("Your ID is the number after /developers/ in the URL.")
 				var raw string
 				if err := tui.Form(rt.Globals.NoInput).
 					Field(huh.NewInput().
-						Title("Paste your Play Console URL (or the 19-digit ID)").
-						Placeholder("https://play.google.com/console/u/0/developers/1234567890123456789/app-list").
+						Title("Play Console URL or 19-digit ID").
+						Placeholder("…/developers/1234567890123456789/…").
 						Value(&raw).Validate(tui.Required("developer account ID"))).
 					Run(); err != nil {
 					return err
@@ -224,6 +203,7 @@ func newSetupGoogleCmd() *cobra.Command {
 				}
 			}
 			result.DeveloperID = developerID
+			fl.Receipt("Developer account", developerID)
 
 			// 4. Package name comes from the chosen RevenueCat app. Only prompt if
 			// that app has no package set yet.
@@ -243,23 +223,21 @@ func newSetupGoogleCmd() *cobra.Command {
 				keyOut = "revenuecat-play-key.json"
 			}
 
-			// Plan + single consent.
-			rt.Out.Plan([]string{
-				"Enable " + fmt.Sprintf("%d", len(google.RequiredAPIs)) + " Google APIs on " + projectID,
-				"Create service account " + saEmail,
-				"Grant " + strings.Join(google.ProjectRoles, " + "),
-				keyPlanStep(keepOldKeys),
-				"Add the service account to Play and grant access to " + packageName,
-				"Write the key to " + keyOut + " for upload to RevenueCat",
-			})
+			// Review + single consent.
+			fl.Step("Review")
+			fl.Say(fmt.Sprintf("Enable %d Google APIs", len(google.RequiredAPIs)))
+			fl.Say("Create " + saEmail)
+			fl.Say("Grant " + strings.Join(google.ProjectRoles, " + "))
+			fl.Say(keyPlanStep(keepOldKeys))
+			fl.Say("Add to Google Play · grant access to " + packageName)
+			fl.Say("Save the credential to " + keyOut)
 			if err := confirmOrAbort(rt, "Continue?"); err != nil {
 				return err
 			}
 
-			// 5. Execute. Enable APIs first — it can pause for the Android
-			// Publisher terms of service, so it runs before the live ledger takes
-			// over the screen. The remaining steps fill in on the ledger.
-			rt.Out.Info("Enabling Google APIs…")
+			// Setting up. Enable APIs first — it can pause for the Android Publisher
+			// terms of service — then the rest fills in on the rail ledger.
+			fl.Step("Setting up")
 			if err := enableAPIsWithToS(ctx, rt, creds.TokenSource, projectID, noBrowser, creds.Email); err != nil {
 				return err
 			}
@@ -268,7 +246,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			result.GrantedRoles = google.ProjectRoles
 			result.PackageName = packageName
 
-			led := tui.NewLedger(os.Stderr, !rt.CanPrompt(),
+			led := fl.Ledger(
 				"Create the RevenueCat service account",
 				"Grant Google Cloud roles",
 				"Create the service-account key",
@@ -338,32 +316,20 @@ func newSetupGoogleCmd() *cobra.Command {
 
 			if !keepOldKeys {
 				if pruned, perr := google.PruneUserKeys(ctx, creds.TokenSource, projectID, saEmail, keyName); perr != nil {
-					rt.Out.Warn("Couldn't remove older keys on the service account: " + perr.Error())
+					fl.Warn("Couldn't remove older keys on the service account: " + perr.Error())
 				} else if pruned > 0 {
-					rt.Out.Info(fmt.Sprintf("Removed %d older key(s) from the RevenueCat service account (pass --keep-old-keys to keep them).", pruned))
+					fl.Say(fmt.Sprintf("Removed %d older key(s) (pass --keep-old-keys to keep them).", pruned))
 				}
 			}
 
-			rt.Out.Success("Google Play connected 🎉")
-			if err := rt.Out.RenderCard(output.Card{
-				Title:    "Google Play — " + packageName,
-				Subtitle: creds.Email,
-				Sections: []output.CardSection{{
-					Heading: "Configured",
-					Lines: []output.CardLine{
-						{Key: "GCP project", Value: projectID},
-						{Key: "Service account", Value: saEmail},
-						{Key: "Cloud roles", Value: strings.Join(google.ProjectRoles, ", ")},
-						{Key: "Play access", Value: packageName + " (view + financial + orders)"},
-						{Key: "Credential key", Value: keyOut},
-					},
-				}},
-				Raw: result,
-			}); err != nil {
-				return err
+			if rt.Out.IsJSON() {
+				return rt.Out.Render(result)
 			}
-			rt.Out.Info("RevenueCat can't yet accept the Play credential over the API. For now, upload " + keyOut + " to this app in the dashboard:")
-			rt.Out.LinkLine("https://app.revenuecat.com/projects/" + rcProject + "/apps/" + chosenApp.ID)
+			uploadURL := "https://app.revenuecat.com/projects/" + rcProject + "/apps/" + chosenApp.ID
+			fl.Outro("Google Play connected 🎉",
+				"One step left (until the API accepts it directly): upload the credential to your app.",
+				rt.Out.LinkText("Upload "+keyOut+" ↗", uploadURL),
+			)
 			return nil
 		},
 	}

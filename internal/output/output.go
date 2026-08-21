@@ -371,6 +371,28 @@ func (r *Renderer) Info(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+msg)
 }
 
+// Step is a guided-flow section header: a blank line, then a brand ◇ glyph and a
+// bold title. Heavier than Info, lighter than Title (which owns the top-of-flow
+// ▍ banner) — use it to break a long interactive flow into legible sections.
+func (r *Renderer) Step(title string) {
+	if r.json || r.quiet {
+		return
+	}
+	fmt.Fprintln(r.stderr)
+	fmt.Fprintln(r.stderr, r.style(r.accent, "◇ ")+r.style(StyleTitle, title))
+}
+
+// LinkText renders a clickable hyperlink (OSC 8) with a custom label instead of
+// the raw URL, so long auth URLs don't dominate the output. With color off it
+// falls back to "label (url)" so the URL stays copyable.
+func (r *Renderer) LinkText(label, url string) string {
+	if r.noColor {
+		return label + " (" + url + ")"
+	}
+	styled := lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(label)
+	return "\x1b]8;;" + url + "\x1b\\" + styled + "\x1b]8;;\x1b\\"
+}
+
 // Link renders a URL as a clickable terminal hyperlink (OSC 8), underlined and
 // in the brand accent so it stands out from surrounding text. Falls back to the
 // plain URL when color is off (also our proxy for a dumb/non-interactive term),
