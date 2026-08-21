@@ -11,3 +11,7 @@ npm-dist/
 # Python bytecode cache (spec tooling)
 __pycache__/
 *.pyc
+
+# Google Play service-account credential written by `rc setup google`
+revenuecat-play-key.json
+*-play-key.json
