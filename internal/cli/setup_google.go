@@ -110,7 +110,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			open := func(u string) error {
 				rt.Out.Blank()
 				rt.Out.Info("Sign in to Google to continue — use the browser/account that has your Play + Cloud access:")
-				rt.Out.Info("  " + u)
+				rt.Out.LinkLine(u)
 				rt.Out.Blank()
 				switch {
 				case noBrowser:
@@ -179,12 +179,13 @@ func newSetupGoogleCmd() *cobra.Command {
 				rt.Out.Notice(
 					"Google has no API for your Play developer account ID, so paste it here.",
 				)
-				rt.Out.Info("1. Open your Play Console:  https://play.google.com/console/")
-				rt.Out.Info("2. Copy the page's address from your browser. It looks like:")
-				rt.Out.Info("      https://play.google.com/console/u/0/developers/1234567890123456789/app-list")
-				rt.Out.Info("3. Paste the whole thing below — I'll pull out the ID.")
-				rt.Out.Info("   (Or paste just the 19-digit number if you have it.)")
-				rt.Out.Hint("Can't find it? https://support.google.com/googleplay/android-developer/answer/13634081")
+				rt.Out.Info("1. Open your Play Console:")
+				rt.Out.LinkLine("https://play.google.com/console/")
+				rt.Out.Info("2. Copy the page URL — it looks like:")
+				rt.Out.Info("      …/developers/1234567890123456789/app-list   (that number is your ID)")
+				rt.Out.Info("3. Paste the whole URL below — I'll pull out the ID (or paste just the number).")
+				rt.Out.Info("Can't find it?")
+				rt.Out.LinkLine("https://support.google.com/googleplay/android-developer/answer/13634081")
 				var raw string
 				if err := tui.Form(rt.Globals.NoInput).
 					Field(huh.NewInput().
@@ -206,15 +207,14 @@ func newSetupGoogleCmd() *cobra.Command {
 			}
 			result.DeveloperID = developerID
 
-			// 4. Package name.
+			// 4. Package name — local detection already ran; otherwise offer a
+			// picker of the user's Play apps, falling back to manual entry.
 			if packageName == "" {
 				if !rt.CanPrompt() {
 					return errors.New("--package is required under --no-input (couldn't detect it from this project)")
 				}
-				if err := tui.Form(rt.Globals.NoInput).
-					Field(huh.NewInput().Title("Android package name").Placeholder("com.example.app").
-						Value(&packageName).Validate(tui.Required("package name"))).
-					Run(); err != nil {
+				packageName, err = choosePackage(ctx, rt, creds.TokenSource)
+				if err != nil {
 					return err
 				}
 			}
@@ -335,6 +335,51 @@ func newSetupGoogleCmd() *cobra.Command {
 	cmd.Flags().StringVar(&keyOut, "key-out", "revenuecat-play-key.json", "path to write the service-account key for upload to RevenueCat")
 	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "don't open a browser automatically; print the sign-in URL to open manually")
 	return cmd
+}
+
+// choosePackage lets the user pick from their Play apps (via the Reporting
+// API) or enter a package manually. Falls back to manual entry if listing
+// isn't available (e.g. the Reporting API isn't enabled or returns nothing).
+func choosePackage(ctx context.Context, rt *Runtime, ts oauth2.TokenSource) (string, error) {
+	const manual = "\x00manual-package"
+	apps, err := google.ListPlayApps(ctx, ts)
+	if err != nil {
+		rt.Out.Warn("Couldn't list your Play apps automatically: " + err.Error())
+		rt.Out.Hint("Enable the Play Developer Reporting API on your OAuth client's project to get a picker, or just enter the package below.")
+		return promptPackage(rt)
+	}
+	if len(apps) == 0 {
+		rt.Out.Info("No Play apps found for this account yet — enter the package name.")
+		return promptPackage(rt)
+	}
+	choices := make([]Choice[string], 0, len(apps)+1)
+	for _, a := range apps {
+		label := a.PackageName
+		if a.DisplayName != "" {
+			label = fmt.Sprintf("%s (%s)", a.DisplayName, a.PackageName)
+		}
+		choices = append(choices, Choice[string]{Value: a.PackageName, Label: label, Flag: "--package"})
+	}
+	choices = append(choices, Choice[string]{Value: manual, Label: "✎ Enter a package name manually", Flag: "--package"})
+	pkg, err := decide(rt, "Google Play app", nil, choices)
+	if err != nil {
+		return "", err
+	}
+	if pkg == manual {
+		return promptPackage(rt)
+	}
+	return pkg, nil
+}
+
+func promptPackage(rt *Runtime) (string, error) {
+	var pkg string
+	if err := tui.Form(rt.Globals.NoInput).
+		Field(huh.NewInput().Title("Android package name").Placeholder("com.example.app").
+			Value(&pkg).Validate(tui.Required("package name"))).
+		Run(); err != nil {
+		return "", err
+	}
+	return pkg, nil
 }
 
 // createNewProjectSentinel is the picker value that means "make a new project"
