@@ -52,8 +52,12 @@ func TestProjectIDFromName(t *testing.T) {
 			t.Errorf("ProjectIDFromName(%q) = %q: not a valid project ID", name, got)
 		}
 	}
-	// Different calls should differ (random suffix).
-	if ProjectIDFromName("same") == ProjectIDFromName("same") {
+	// Different calls should differ (random suffix). Assign first — comparing
+	// the two calls inline reads as an identical-expression bug to staticcheck
+	// (SA4000), which can't see that the function is non-deterministic.
+	first := ProjectIDFromName("same")
+	second := ProjectIDFromName("same")
+	if first == second {
 		t.Error("expected a random suffix to make IDs differ")
 	}
 }
