@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
+	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/google"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
@@ -30,6 +31,7 @@ type googleSetupResult struct {
 	PlayGrantConfigured bool     `json:"play_grant_configured"`
 	KeyPath             string   `json:"key_path,omitempty"`
 	CredentialUploaded  bool     `json:"credential_uploaded"`
+	RCAppID             string   `json:"rc_app_id,omitempty"`
 }
 
 const googleSetupInstructions = `This setup will:
@@ -87,17 +89,25 @@ func newSetupGoogleCmd() *cobra.Command {
 			rt.Out.Lead("Signs in to Google locally and creates the credential RevenueCat needs. Nothing changes without your OK.")
 
 			if !rt.CanPrompt() && !rt.Globals.AssumeYes {
-				return errors.New("rc setup google is interactive: run it in a terminal, or pass --yes with --project, --developer-id, and --package")
+				return errors.New("rc setup google is interactive: run it in a terminal, or pass --yes with the app id, --project, and --developer-id")
 			}
 
-			// Default the package name from the local project if not supplied.
+			// Choose the RevenueCat Play app to configure — confirm the only one,
+			// or pick among several. Its package name drives the Google setup.
+			rc, err := rt.API()
+			if err != nil {
+				return err
+			}
+			rcProject, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			chosenApp, err := resolvePlayApp(ctx, rt, rc, rcProject, argAt(args, 0))
+			if err != nil {
+				return err
+			}
 			if packageName == "" {
-				if wd, err := os.Getwd(); err == nil {
-					if detected := google.DetectPackageName(wd); detected != "" {
-						packageName = detected
-						rt.Out.Info("Detected package name from this project: " + detected)
-					}
-				}
+				packageName = chosenApp.PlayStore.PackageName
 			}
 
 			// 1. Authenticate. Print the URL first, then let the user open it
@@ -144,7 +154,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			if creds.Email != "" {
 				rt.Out.Answer("Signed in", creds.Email)
 			}
-			result := googleSetupResult{Email: creds.Email}
+			result := googleSetupResult{Email: creds.Email, RCAppID: chosenApp.ID}
 
 			// 2. Choose the GCP project — or create a new one.
 			if projectID == "" {
@@ -209,13 +219,13 @@ func newSetupGoogleCmd() *cobra.Command {
 			}
 			result.DeveloperID = developerID
 
-			// 4. Package name — local detection already ran; otherwise offer a
-			// picker of the user's Play apps, falling back to manual entry.
+			// 4. Package name comes from the chosen RevenueCat app. Only prompt if
+			// that app has no package set yet.
 			if packageName == "" {
 				if !rt.CanPrompt() {
-					return errors.New("--package is required under --no-input (couldn't detect it from this project)")
+					return fmt.Errorf("app %s has no package name set — pass --package", chosenApp.ID)
 				}
-				packageName, err = choosePackage(ctx, rt, creds.TokenSource)
+				packageName, err = promptPackage(rt)
 				if err != nil {
 					return err
 				}
@@ -330,7 +340,8 @@ func newSetupGoogleCmd() *cobra.Command {
 			}); err != nil {
 				return err
 			}
-			rt.Out.Hint("RevenueCat can't yet accept the Play credential over the API (DX-985). For now, upload " + keyOut + " in the dashboard: Project settings → your Play app → Service Account credentials JSON.")
+			rt.Out.Info("RevenueCat can't yet accept the Play credential over the API (DX-985). For now, upload " + keyOut + " to this app in the dashboard:")
+			rt.Out.LinkLine("https://app.revenuecat.com/projects/" + rcProject + "/apps/" + chosenApp.ID)
 			return nil
 		},
 	}
@@ -414,38 +425,82 @@ func keyPlanStep(keepOldKeys bool) string {
 	return "Replace any old keys and create a fresh service-account key (in memory)"
 }
 
-// choosePackage lets the user pick from their Play apps (via the Reporting
-// API) or enter a package manually. Falls back to manual entry if listing
-// isn't available (e.g. the Reporting API isn't enabled or returns nothing).
-func choosePackage(ctx context.Context, rt *Runtime, ts oauth2.TokenSource) (string, error) {
-	const manual = "\x00manual-package"
-	apps, err := google.ListPlayApps(ctx, ts)
-	if err != nil {
-		rt.Out.Warn("Couldn't list your Play apps automatically: " + err.Error())
-		rt.Out.Hint("Enable the Play Developer Reporting API on your OAuth client's project to get a picker, or just enter the package below.")
-		return promptPackage(rt)
-	}
-	if len(apps) == 0 {
-		rt.Out.Info("No Play apps found for this account yet — enter the package name.")
-		return promptPackage(rt)
-	}
-	choices := make([]Choice[string], 0, len(apps)+1)
-	for _, a := range apps {
-		label := a.PackageName
-		if a.DisplayName != "" {
-			label = fmt.Sprintf("%s (%s)", a.DisplayName, a.PackageName)
+// resolvePlayApp picks the RevenueCat Play app to configure: use the given id
+// (confirmed), confirm the only one, or pick among several. Returns the app so
+// its package name can drive the Google setup.
+func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID, appIDArg string) (*api.App, error) {
+	if appIDArg != "" {
+		app, err := rc.Apps.Get(ctx, projectID, appIDArg)
+		if err != nil {
+			return nil, err
 		}
-		choices = append(choices, Choice[string]{Value: a.PackageName, Label: label, Flag: "--package"})
+		if app.Type != "play_store" || app.PlayStore == nil {
+			return nil, fmt.Errorf("app %s is not a Google Play app", appIDArg)
+		}
+		if err := confirmPlayApp(rt, app); err != nil {
+			return nil, err
+		}
+		return app, nil
 	}
-	choices = append(choices, Choice[string]{Value: manual, Label: "✎ Enter a package name manually", Flag: "--package"})
-	pkg, err := decide(rt, "Google Play app", nil, choices)
+	page, err := rc.Apps.List(ctx, projectID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if pkg == manual {
-		return promptPackage(rt)
+	var play []api.App
+	for _, a := range page.Items {
+		if a.Type == "play_store" && a.PlayStore != nil {
+			play = append(play, a)
+		}
 	}
-	return pkg, nil
+	switch len(play) {
+	case 0:
+		return nil, errors.New("no Google Play apps in this project — create one first (rc apps create)")
+	case 1:
+		if err := confirmPlayApp(rt, &play[0]); err != nil {
+			return nil, err
+		}
+		return &play[0], nil
+	default:
+		if !rt.CanPrompt() {
+			return nil, errors.New("multiple Google Play apps in this project — pass the app id: rc setup google <app-id>")
+		}
+		items := make([]PickerItem, len(play))
+		for i := range play {
+			items[i] = PickerItem{ID: play[i].ID, Label: playAppLabel(&play[i])}
+		}
+		id, err := selectID(rt, "Google Play app", items, "")
+		if err != nil {
+			return nil, err
+		}
+		for i := range play {
+			if play[i].ID == id {
+				return &play[i], nil
+			}
+		}
+		return nil, fmt.Errorf("app %s not found", id)
+	}
+}
+
+// confirmPlayApp asks the human to confirm the app before doing anything to it.
+func confirmPlayApp(rt *Runtime, app *api.App) error {
+	if rt.Globals.AssumeYes || !rt.CanPrompt() {
+		return nil
+	}
+	ok, err := tui.ConfirmDefault(rt.Globals.NoInput, "Set up Google Play for "+playAppLabel(app)+"?", true)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New("cancelled")
+	}
+	return nil
+}
+
+func playAppLabel(app *api.App) string {
+	if app.PlayStore != nil && app.PlayStore.PackageName != "" {
+		return app.Name + " (" + app.PlayStore.PackageName + ")"
+	}
+	return app.Name + " (" + app.ID + ")"
 }
 
 func promptPackage(rt *Runtime) (string, error) {
