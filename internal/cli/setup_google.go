@@ -50,6 +50,7 @@ const googlePrivacyNotice = `Privacy:
 func newSetupGoogleCmd() *cobra.Command {
 	var clientID, clientSecret string
 	var projectID, developerID, packageName, keyOut string
+	var noBrowser bool
 
 	cmd := &cobra.Command{
 		Use:   "google",
@@ -111,8 +112,17 @@ func newSetupGoogleCmd() *cobra.Command {
 					return errors.New("cancelled")
 				}
 			}
-			rt.Out.Info("Opening your browser to sign in to Google…")
-			creds, err := google.Authenticate(ctx, clientID, clientSecret, google.DefaultScopes, openBrowser)
+			open := func(u string) error {
+				if noBrowser {
+					rt.Out.Info("Open this URL to sign in (use whichever browser/Google account has your Play + Cloud access):")
+					rt.Out.Info("  " + u)
+					return nil
+				}
+				rt.Out.Info("Opening your browser to sign in. To use a different browser or Google account, open this instead:")
+				rt.Out.Info("  " + u)
+				return openBrowser(u)
+			}
+			creds, err := google.Authenticate(ctx, clientID, clientSecret, google.DefaultScopes, open)
 			if err != nil {
 				return err
 			}
@@ -310,6 +320,7 @@ func newSetupGoogleCmd() *cobra.Command {
 	cmd.Flags().StringVar(&developerID, "developer-id", "", "Play developer account ID or Console URL (env: RC_GOOGLE_DEVELOPER_ID)")
 	cmd.Flags().StringVar(&packageName, "package", "", "Android package name (env: RC_GOOGLE_PACKAGE)")
 	cmd.Flags().StringVar(&keyOut, "key-out", "revenuecat-play-key.json", "path to write the service-account key for upload to RevenueCat")
+	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "don't open a browser automatically; print the sign-in URL to open manually")
 	return cmd
 }
 
