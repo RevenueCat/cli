@@ -109,10 +109,8 @@ func newSetupGoogleCmd() *cobra.Command {
 				packageName = chosenApp.PlayStore.PackageName
 			}
 
-			// Sign in.
-			fl.Step("Sign in to Google")
-			fl.Say("Your sign-in stays local — RevenueCat never sees your Google credentials.")
-			fl.Say("Use the account with access to this app's Play Console and Cloud project.")
+			// Sign in. Offer two equally-fine ways in (not a yes/no — "no" reads
+			// as wrong when copying the link is a perfectly good choice).
 			open := func(u string) error {
 				if rt.Out.IsJSON() {
 					// Info/LinkLine are suppressed in JSON mode, but the sign-in URL
@@ -120,19 +118,27 @@ func newSetupGoogleCmd() *cobra.Command {
 					fmt.Fprintln(os.Stderr, "Sign in to Google to continue: "+u)
 					return nil
 				}
-				openIt := !noBrowser
-				if openIt && rt.CanPrompt() {
-					ok, err := fl.Confirm("Open Google sign-in in your browser?", true)
+				method := "open"
+				if noBrowser {
+					method = "copy"
+				} else if rt.CanPrompt() {
+					choice, err := fl.Select("Sign in to Google",
+						[]tui.Option{
+							{Label: "Open in my browser", Value: "open"},
+							{Label: "Copy the link — I'll open it myself", Value: "copy"},
+						},
+						"Your sign-in stays local — RevenueCat never sees your Google credentials.",
+						"Use the account with access to this app's Play Console and Cloud project.",
+					)
 					if err != nil {
 						return err
 					}
-					openIt = ok
+					method = choice
 				}
-				switch {
-				case openIt && openBrowser(u) == nil:
+				if method == "open" && openBrowser(u) == nil {
 					fl.Say("Opened your browser. Sign in with the right account.")
-				default:
-					fl.Say("Sign in with this link (click it, or copy it into your browser):")
+				} else {
+					fl.Say("Sign in with this link:")
 					fl.URL(u)
 				}
 				fl.Say("Waiting for sign-in…")
