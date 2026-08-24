@@ -8,13 +8,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/google"
-	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -85,15 +85,13 @@ func newSetupGoogleCmd() *cobra.Command {
 				return google.ErrNoClientID
 			}
 
-			rt.Out.Title("Google Play configuration")
-			rt.Out.Lead("Signs in to Google locally and creates the credential RevenueCat needs. Nothing changes without your OK.")
+			fl := tui.NewFlow(os.Stderr, !rt.CanPrompt(), rt.Out.NoColor(), rt.Globals.Quiet)
+			fl.Intro("RevenueCat · Google Play setup")
 
 			if !rt.CanPrompt() && !rt.Globals.AssumeYes {
 				return errors.New("rc setup google is interactive: run it in a terminal, or pass --yes with the app id, --project, and --developer-id")
 			}
 
-			// Choose the RevenueCat Play app to configure — confirm the only one,
-			// or pick among several. Its package name drives the Google setup.
 			rc, err := rt.API()
 			if err != nil {
 				return err
@@ -102,7 +100,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chosenApp, err := resolvePlayApp(ctx, rt, rc, rcProject, argAt(args, 0))
+			chosenApp, err := resolvePlayApp(ctx, rt, rc, fl, rcProject, argAt(args, 0))
 			if err != nil {
 				return err
 			}
@@ -110,15 +108,8 @@ func newSetupGoogleCmd() *cobra.Command {
 				packageName = chosenApp.PlayStore.PackageName
 			}
 
-			// 1. Authenticate. Print the URL first, then let the user open it
-			// (Stripe-style) so they can pick the browser / Google account that
-			// has their Play + Cloud access.
-			if !rt.Globals.AssumeYes && rt.CanPrompt() {
-				rt.Out.Notice(
-					"Your Google sign-in stays local — RevenueCat never sees your Google",
-					"credentials or tokens. The service-account key is created in memory.",
-				)
-			}
+			// Sign in. Offer two equally-fine ways in (not a yes/no — "no" reads
+			// as wrong when copying the link is a perfectly good choice).
 			open := func(u string) error {
 				if rt.Out.IsJSON() {
 					// Info/LinkLine are suppressed in JSON mode, but the sign-in URL
@@ -126,31 +117,34 @@ func newSetupGoogleCmd() *cobra.Command {
 					fmt.Fprintln(os.Stderr, "Sign in to Google to continue: "+u)
 					return nil
 				}
-				rt.Out.Blank()
-				rt.Out.Info("Sign in to Google to continue — use the browser/account that has your Play + Cloud access:")
-				rt.Out.LinkLine(u)
-				rt.Out.Blank()
-				switch {
-				case noBrowser:
-					rt.Out.Info("Waiting for you to finish sign-in in your browser…")
-					return nil
-				case rt.Globals.AssumeYes || !rt.CanPrompt():
-					// non-interactive / --yes: open without pausing
-				default:
-					openIt, err := tui.ConfirmDefault(rt.Globals.NoInput, "Press Enter to open it in your browser (or choose No to open it yourself)", true)
+				method := "open"
+				if noBrowser {
+					method = "copy"
+				} else if rt.CanPrompt() && !rt.Globals.AssumeYes {
+					choice, err := fl.Select("Sign in to Google",
+						[]tui.Option{
+							{Label: "Open in my browser", Value: "open"},
+							{Label: "Copy the link — I'll open it myself", Value: "copy"},
+						},
+						"Your sign-in stays local — RevenueCat never sees your Google credentials.",
+						"Use the account with access to this app's Play Console and Cloud project.",
+					)
 					if err != nil {
 						return err
 					}
-					if !openIt {
-						rt.Out.Info("Open the URL above to finish. Waiting…")
-						return nil
-					}
+					method = choice
 				}
-				if err := openBrowser(u); err != nil {
-					rt.Out.Warn("Couldn't open a browser automatically — open the URL above. Waiting…")
+				if method == "open" && openBrowser(u) == nil {
+					fl.Say("Opened your browser. Sign in with the right account.")
 				} else {
-					rt.Out.Info("Opened your browser. Waiting for sign-in to complete…")
+					if clipboard.WriteAll(u) == nil {
+						fl.Say("Copied the link to your clipboard — paste it into your browser:")
+					} else {
+						fl.Say("Sign in with this link:")
+					}
+					fl.URL(u)
 				}
+				fl.Say("Waiting for sign-in…")
 				return nil
 			}
 			creds, err := google.Authenticate(ctx, clientID, clientSecret, google.DefaultScopes, open)
@@ -158,25 +152,27 @@ func newSetupGoogleCmd() *cobra.Command {
 				return err
 			}
 			if creds.Email != "" {
-				rt.Out.Answer("Signed in", creds.Email)
+				fl.Receipt("Signed in", creds.Email)
 			}
 			result := googleSetupResult{Email: creds.Email, RCAppID: chosenApp.ID}
 
-			// 2. Choose the GCP project — or create a new one.
 			if projectID == "" {
+				if !rt.CanPrompt() {
+					return errors.New("--project is required under --no-input")
+				}
 				projects, err := google.ListProjects(ctx, creds.TokenSource)
 				if err != nil {
 					return err
 				}
-				choices := []Choice[string]{{Value: createNewProjectSentinel, Label: "➕ Create a new project", Flag: "--project"}}
+				opts := []tui.Option{{Label: "➕ Create a new project", Value: createNewProjectSentinel}}
 				for _, p := range projects {
 					label := p.ID
 					if p.DisplayName != "" {
 						label = fmt.Sprintf("%s (%s)", p.DisplayName, p.ID)
 					}
-					choices = append(choices, Choice[string]{Value: p.ID, Label: label, Flag: "--project"})
+					opts = append(opts, tui.Option{Label: label, Value: p.ID})
 				}
-				projectID, err = decide(rt, "Google Cloud project", nil, choices)
+				projectID, err = fl.Select("Google Cloud project", opts)
 				if err != nil {
 					return err
 				}
@@ -186,31 +182,24 @@ func newSetupGoogleCmd() *cobra.Command {
 						return err
 					}
 				}
+			} else {
+				fl.Step("Google Cloud project")
+				fl.Receipt("Project", projectID)
 			}
 			result.ProjectID = projectID
 
-			// 3. Play developer account ID (no discovery API — must be supplied).
+			// Play developer account (no discovery API — must be supplied).
 			if developerID == "" {
 				if !rt.CanPrompt() {
 					return errors.New("--developer-id is required under --no-input (Google exposes no API to discover it; find it in your Play Console URL)")
 				}
-				rt.Out.Notice(
-					"Google has no API for your Play developer account ID, so paste it here.",
-				)
-				rt.Out.Info("1. Open your Play Console:")
-				rt.Out.LinkLine("https://play.google.com/console/")
-				rt.Out.Info("2. Copy the page URL — it looks like:")
-				rt.Out.Info("      …/developers/1234567890123456789/app-list   (that number is your ID)")
-				rt.Out.Info("3. Paste the whole URL below — I'll pull out the ID (or paste just the number).")
-				rt.Out.Info("Can't find it?")
-				rt.Out.LinkLine("https://support.google.com/googleplay/android-developer/answer/13634081")
-				var raw string
-				if err := tui.Form(rt.Globals.NoInput).
-					Field(huh.NewInput().
-						Title("Paste your Play Console URL (or the 19-digit ID)").
-						Placeholder("https://play.google.com/console/u/0/developers/1234567890123456789/app-list").
-						Value(&raw).Validate(tui.Required("developer account ID"))).
-					Run(); err != nil {
+				desc := []string{
+					"Google has no API for this — copy it from your Play Console URL.",
+					rt.Out.LinkText("Open Play Console ↗", "https://play.google.com/console/"),
+					"Your ID is the number after /developers/ in the URL.",
+				}
+				raw, err := fl.Input("Play developer account", "…/developers/1234567890123456789/…", tui.Required("developer account ID"), desc...)
+				if err != nil {
 					return err
 				}
 				developerID, err = google.ParseDeveloperID(raw)
@@ -218,15 +207,15 @@ func newSetupGoogleCmd() *cobra.Command {
 					return err
 				}
 			} else {
+				fl.Step("Play developer account")
 				developerID, err = google.ParseDeveloperID(developerID)
 				if err != nil {
 					return err
 				}
+				fl.Receipt("Developer account", developerID)
 			}
 			result.DeveloperID = developerID
 
-			// 4. Package name comes from the chosen RevenueCat app. Only prompt if
-			// that app has no package set yet.
 			if packageName == "" {
 				if !rt.CanPrompt() {
 					return fmt.Errorf("app %s has no package name set — pass --package", chosenApp.ID)
@@ -239,117 +228,138 @@ func newSetupGoogleCmd() *cobra.Command {
 			result.PackageName = packageName
 
 			saEmail := google.ServiceAccountEmail(projectID)
-			if keyOut == "" {
-				keyOut = "revenuecat-play-key.json"
+
+			fl.Step("Review")
+			fl.Item(fmt.Sprintf("Enable %d Google APIs", len(google.RequiredAPIs)))
+			fl.Item("Create " + saEmail)
+			fl.Item("Grant " + strings.Join(google.ProjectRoles, " + "))
+			fl.Item(keyPlanStep(keepOldKeys))
+			fl.Item("Add to Google Play · grant access to " + packageName)
+			fl.Item("Upload the credential to RevenueCat")
+			if !rt.Globals.AssumeYes {
+				ok, err := fl.Confirm("Continue?", true)
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return errors.New("cancelled")
+				}
 			}
 
-			// Plan + single consent.
-			rt.Out.Plan([]string{
-				"Enable " + fmt.Sprintf("%d", len(google.RequiredAPIs)) + " Google APIs on " + projectID,
-				"Create service account " + saEmail,
-				"Grant " + strings.Join(google.ProjectRoles, " + "),
-				keyPlanStep(keepOldKeys),
-				"Add the service account to Play and grant access to " + packageName,
-				"Write the key to " + keyOut + " for upload to RevenueCat",
-			})
-			if err := confirmOrAbort(rt, "Continue?"); err != nil {
-				return err
-			}
-
-			// 5. Execute.
-			rt.Out.Info("Enabling Google APIs…")
+			// Enable APIs first — it can pause for the Android Publisher terms of
+			// service, which needs the human before the ledger steps can run.
+			fl.Step("Setting up")
 			if err := enableAPIsWithToS(ctx, rt, creds.TokenSource, projectID, noBrowser, creds.Email); err != nil {
 				return err
 			}
 			result.EnabledAPIs = google.RequiredAPIs
+			result.ServiceAccount = saEmail
+			result.GrantedRoles = google.ProjectRoles
 
-			rt.Out.Info("Creating the RevenueCat service account…")
-			created, email, err := google.EnsureServiceAccount(ctx, creds.TokenSource, projectID)
+			led := fl.Ledger(
+				"Create the RevenueCat service account",
+				"Grant Google Cloud roles",
+				"Create the service-account key",
+				"Add the service account to Google Play",
+				"Upload the credential to RevenueCat",
+			)
+			led.Start()
+
+			led.Running(0)
+			created, _, err := google.EnsureServiceAccount(ctx, creds.TokenSource, projectID)
 			if err != nil {
+				led.Fail(0, "failed")
+				led.Stop()
 				return googleHint(rt, err)
 			}
-			saEmail = email
-			result.ServiceAccount = saEmail
 			result.ServiceAccountNew = created
 			if created {
-				rt.Out.Success("Created service account " + saEmail)
+				led.Done(0, "created")
 			} else {
-				rt.Out.Success("Found existing service account " + saEmail)
+				led.Done(0, "already existed")
 			}
 
-			rt.Out.Info("Granting Google Cloud roles…")
+			led.Running(1)
 			added, err := google.GrantProjectRoles(ctx, creds.TokenSource, projectID, saEmail)
 			if err != nil {
+				led.Fail(1, "failed")
+				led.Stop()
 				return googleHint(rt, err)
 			}
-			result.GrantedRoles = google.ProjectRoles
 			if len(added) == 0 {
-				rt.Out.Success("Cloud roles already granted")
+				led.Done(1, "already granted")
 			} else {
-				rt.Out.Success("Granted " + strings.Join(added, ", "))
+				led.Done(1, "")
 			}
 
-			rt.Out.Info("Creating the service-account key…")
+			led.Running(2)
 			keyData, keyName, err := google.CreateKey(ctx, creds.TokenSource, projectID, saEmail)
 			if err != nil {
+				led.Fail(2, "failed")
+				led.Stop()
 				return googleHint(rt, err)
 			}
-			rt.Out.Success("Created service-account key (in memory)")
+			led.Done(2, "in memory")
 
-			rt.Out.Info("Adding the service account to Google Play…")
+			led.Running(3)
 			play, err := google.AddServiceAccountToPlay(ctx, creds.TokenSource, developerID, saEmail, packageName, projectID)
 			if err != nil {
+				led.Fail(3, "failed")
+				led.Stop()
+				rt.Out.Hint("Granting Play access needs the signed-in account to be a Play Console owner/admin, and the app (" + packageName + ") must exist in Play Console — create it there first if it doesn't.")
 				return googleHint(rt, err)
 			}
 			result.PlayUserCreated = play.UserCreated
 			result.PlayGrantConfigured = true
-			switch {
-			case play.UserCreated:
-				rt.Out.Success("Added the service account to Play and granted access to " + packageName)
-			case play.GrantUpdated:
-				rt.Out.Success("Updated Play permissions for " + packageName)
-			case play.GrantCreated:
-				rt.Out.Success("Granted Play access to " + packageName)
-			default:
-				rt.Out.Success("Play access already configured for " + packageName)
-			}
+			led.Done(3, packageName)
 
-			// Persist the credential before pruning older keys — Google returns
-			// private key material only once, so a failure here must not happen
-			// after the old keys are already deleted.
-			if err := os.WriteFile(keyOut, keyData, 0o600); err != nil {
-				return fmt.Errorf("write key to %s: %w", keyOut, err)
+			// Upload the credential to RevenueCat via API v2. If that fails, fall
+			// back to writing the key so the human can upload it in the dashboard —
+			// but surface the real error so a transient/auth/validation failure
+			// isn't silently mistaken for "endpoint not available". This runs
+			// before pruning old keys: Google returns key material only once.
+			led.Running(4)
+			credJSON := string(keyData)
+			_, upErr := rc.Apps.Update(ctx, rcProject, chosenApp.ID, api.AppUpdate{
+				PlayStore: &api.PlayStoreAppConfig{PlayServiceAccountCredentialsJSON: &credJSON},
+			})
+			if upErr == nil {
+				result.CredentialUploaded = true
+				led.Done(4, "uploaded to RevenueCat")
+			} else if writeErr := os.WriteFile(keyOut, keyData, 0o600); writeErr == nil {
+				result.KeyPath = keyOut
+				led.Done(4, "saved to "+keyOut+" (upload it in the dashboard)")
+				fl.Warn("RevenueCat didn't accept the upload: " + upErr.Error())
+			} else {
+				led.Fail(4, "failed")
+				led.Stop()
+				return fmt.Errorf("upload credential (%v) and write key to %s (%v)", upErr, keyOut, writeErr)
 			}
-			result.KeyPath = keyOut
+			led.Stop()
 
 			if !keepOldKeys {
 				if pruned, perr := google.PruneUserKeys(ctx, creds.TokenSource, projectID, saEmail, keyName); perr != nil {
-					rt.Out.Warn("Couldn't remove older keys on the service account: " + perr.Error())
+					fl.Warn("Couldn't remove older keys on the service account: " + perr.Error())
 				} else if pruned > 0 {
-					rt.Out.Info(fmt.Sprintf("Removed %d older key(s) from the RevenueCat service account (pass --keep-old-keys to keep them).", pruned))
+					fl.Say(fmt.Sprintf("Removed %d older key(s) (pass --keep-old-keys to keep them).", pruned))
 				}
 			}
 
-			rt.Out.Success("Google Play setup complete")
-			if err := rt.Out.RenderCard(output.Card{
-				Title:    "Google Play — " + packageName,
-				Subtitle: creds.Email,
-				Sections: []output.CardSection{{
-					Heading: "Configured",
-					Lines: []output.CardLine{
-						{Key: "GCP project", Value: projectID},
-						{Key: "Service account", Value: saEmail},
-						{Key: "Cloud roles", Value: strings.Join(google.ProjectRoles, ", ")},
-						{Key: "Play access", Value: packageName + " (view + financial + orders)"},
-						{Key: "Credential key", Value: keyOut},
-					},
-				}},
-				Raw: result,
-			}); err != nil {
-				return err
+			if rt.Out.IsJSON() {
+				return rt.Out.Render(result)
 			}
-			rt.Out.Info("RevenueCat can't yet accept the Play credential over the API. For now, upload " + keyOut + " to this app in the dashboard:")
-			rt.Out.LinkLine("https://app.revenuecat.com/projects/" + rcProject + "/apps/" + chosenApp.ID)
+			uploadURL := "https://app.revenuecat.com/projects/" + rcProject + "/apps/" + chosenApp.ID
+			if result.CredentialUploaded {
+				fl.Outro("Google Play connected 🎉",
+					rt.Out.LinkText("Open your app in RevenueCat ↗", uploadURL),
+				)
+			} else {
+				fl.Outro("Almost there",
+					"Upload the credential to finish:",
+					rt.Out.LinkText("Upload "+keyOut+" ↗", uploadURL),
+					keyOut+" is a private key — delete it once uploaded.",
+				)
+			}
 			return nil
 		},
 	}
@@ -436,7 +446,7 @@ func keyPlanStep(keepOldKeys bool) string {
 // resolvePlayApp picks the RevenueCat Play app to configure: use the given id
 // (confirmed), confirm the only one, or pick among several. Returns the app so
 // its package name can drive the Google setup.
-func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID, appIDArg string) (*api.App, error) {
+func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, fl *tui.Flow, projectID, appIDArg string) (*api.App, error) {
 	if appIDArg != "" {
 		app, err := rc.Apps.Get(ctx, projectID, appIDArg)
 		if err != nil {
@@ -445,7 +455,7 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID,
 		if app.Type != "play_store" || app.PlayStore == nil {
 			return nil, fmt.Errorf("app %s is not a Google Play app", appIDArg)
 		}
-		if err := confirmPlayApp(rt, app); err != nil {
+		if err := confirmPlayApp(rt, fl, app); err != nil {
 			return nil, err
 		}
 		return app, nil
@@ -464,7 +474,7 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID,
 	case 0:
 		return nil, errors.New("no Google Play apps in this project — create one first (rc apps create)")
 	case 1:
-		if err := confirmPlayApp(rt, &play[0]); err != nil {
+		if err := confirmPlayApp(rt, fl, &play[0]); err != nil {
 			return nil, err
 		}
 		return &play[0], nil
@@ -472,11 +482,11 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID,
 		if !rt.CanPrompt() {
 			return nil, errors.New("multiple Google Play apps in this project — pass the app id: rc setup google <app-id>")
 		}
-		items := make([]PickerItem, len(play))
+		opts := make([]tui.Option, len(play))
 		for i := range play {
-			items[i] = PickerItem{ID: play[i].ID, Label: playAppLabel(&play[i])}
+			opts[i] = tui.Option{Label: playAppLabel(&play[i]), Value: play[i].ID}
 		}
-		id, err := selectID(rt, "Google Play app", items, "")
+		id, err := fl.Select("App", opts)
 		if err != nil {
 			return nil, err
 		}
@@ -490,11 +500,11 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, projectID,
 }
 
 // confirmPlayApp asks the human to confirm the app before doing anything to it.
-func confirmPlayApp(rt *Runtime, app *api.App) error {
+func confirmPlayApp(rt *Runtime, fl *tui.Flow, app *api.App) error {
 	if rt.Globals.AssumeYes || !rt.CanPrompt() {
 		return nil
 	}
-	ok, err := tui.ConfirmDefault(rt.Globals.NoInput, "Set up Google Play for "+playAppLabel(app)+"?", true)
+	ok, err := fl.Confirm("Set up Google Play for "+playAppLabel(app)+"?", true)
 	if err != nil {
 		return err
 	}

@@ -22,6 +22,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/itchyny/gojq"
+	"github.com/muesli/termenv"
 )
 
 // ErrBadFormat signals an unparseable --format expression. CLI maps this to
@@ -47,6 +48,13 @@ type Renderer struct {
 
 func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format string) *Renderer {
 	noColor = noColor || os.Getenv("NO_COLOR") != ""
+	if noColor {
+		// Make --no-color reach direct lipgloss usage too (guided rail, prompts,
+		// ledger), not just this Renderer's own styling. termenv already honors
+		// the NO_COLOR env var; this covers the flag. Not restored — it's a global
+		// for the lifetime of a one-shot CLI process that's about to exit.
+		lipgloss.SetColorProfile(termenv.Ascii)
+	}
 	r := &Renderer{
 		stdout:  stdout,
 		stderr:  stderr,
@@ -67,6 +75,10 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 }
 
 func (r *Renderer) IsJSON() bool { return r.json }
+
+// NoColor reports whether all ANSI output is disabled (--no-color or NO_COLOR),
+// so callers composing their own escapes (e.g. OSC 8 hyperlinks) can skip them.
+func (r *Renderer) NoColor() bool { return r.noColor }
 
 // Tone is a semantic style for callers that compose their own output.
 type Tone int
@@ -371,16 +383,31 @@ func (r *Renderer) Info(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+msg)
 }
 
-// Link renders a URL as a clickable terminal hyperlink (OSC 8), underlined and
-// in the brand accent so it stands out from surrounding text. Falls back to the
-// plain URL when color is off (also our proxy for a dumb/non-interactive term),
-// so nothing leaks escape codes into piped or --no-color output.
+// Hyperlink wraps styledLabel in an OSC 8 terminal hyperlink pointing at url.
+// Supporting terminals make it clickable; others render the label text. This is
+// the one place the OSC 8 escape lives.
+func Hyperlink(styledLabel, url string) string {
+	return "\x1b]8;;" + url + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
+}
+
+// LinkText renders a clickable hyperlink (OSC 8) with a custom label instead of
+// the raw URL, so long auth URLs don't dominate the output. With color off it
+// falls back to "label (url)" so the URL stays copyable.
+func (r *Renderer) LinkText(label, url string) string {
+	if r.noColor {
+		return label + " (" + url + ")"
+	}
+	return Hyperlink(lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(label), url)
+}
+
+// Link renders a URL as a clickable, underlined brand-accent hyperlink. Falls
+// back to the plain URL when color is off (our proxy for a dumb/non-interactive
+// terminal), so nothing leaks escape codes into piped or --no-color output.
 func (r *Renderer) Link(url string) string {
 	if r.noColor {
 		return url
 	}
-	styled := lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(url)
-	return "\x1b]8;;" + url + "\x1b\\" + styled + "\x1b]8;;\x1b\\"
+	return Hyperlink(lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(url), url)
 }
 
 // LinkLine prints a single indented, clickable link on its own line (stderr

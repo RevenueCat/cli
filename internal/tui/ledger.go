@@ -26,11 +26,12 @@ import (
 //	l.Running(1); /* work */; l.Fail(1, "quota exceeded")
 //	l.Stop()
 type Ledger struct {
-	w     io.Writer
-	plain bool
-	steps []ledgerStep
-	prog  *tea.Program
-	done  chan struct{}
+	w      io.Writer
+	plain  bool
+	gutter string // left prefix for each line (e.g. a flow rail); default "  "
+	steps  []ledgerStep
+	prog   *tea.Program
+	done   chan struct{}
 }
 
 type ledgerStatus int
@@ -61,7 +62,7 @@ func NewLedger(w io.Writer, plain bool, labels ...string) *Ledger {
 	for i, l := range labels {
 		steps[i] = ledgerStep{label: l}
 	}
-	return &Ledger{w: w, plain: plain, steps: steps}
+	return &Ledger{w: w, plain: plain, gutter: "  ", steps: steps}
 }
 
 // Start begins rendering. On a TTY it launches the live region; in plain mode it
@@ -76,7 +77,7 @@ func (l *Ledger) Start() {
 	// (raw mode, eaten keystrokes), and WithoutSignalHandler leaves Ctrl+C to
 	// the process — otherwise it would quit only the spinner while setup keeps
 	// mutating cloud resources, so a cancel could look successful.
-	l.prog = tea.NewProgram(ledgerModel{steps: l.steps, sp: sp},
+	l.prog = tea.NewProgram(ledgerModel{steps: l.steps, sp: sp, gutter: l.gutter},
 		tea.WithOutput(l.w), tea.WithInput(nil), tea.WithoutSignalHandler())
 	l.done = make(chan struct{})
 	go func() {
@@ -138,8 +139,9 @@ func (l *Ledger) printPlain(s ledgerStep) {
 
 // ledgerModel is the bubbletea model driving the live (TTY) render.
 type ledgerModel struct {
-	steps []ledgerStep
-	sp    spinner.Model
+	steps  []ledgerStep
+	sp     spinner.Model
+	gutter string
 }
 
 type ledgerStatusMsg struct {
@@ -171,23 +173,24 @@ func (m ledgerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m ledgerModel) View() string {
-	return renderLedger(m.steps, m.sp.View())
+	return renderLedger(m.steps, m.sp.View(), m.gutter)
 }
 
 // renderLedger draws the step list; spinnerFrame is the glyph for the running
-// step. Pulled out so it can be unit-tested without a running program.
-func renderLedger(steps []ledgerStep, spinnerFrame string) string {
+// step and gutter is the per-line left prefix. Pulled out so it can be
+// unit-tested without a running program.
+func renderLedger(steps []ledgerStep, spinnerFrame, gutter string) string {
 	var b strings.Builder
 	for _, s := range steps {
 		switch s.status {
 		case ledgerDone:
-			b.WriteString("  " + ledgerCheck.Render("✓") + " " + s.label)
+			b.WriteString(gutter + ledgerCheck.Render("✓") + " " + s.label)
 		case ledgerFailed:
-			b.WriteString("  " + ledgerCross.Render("✗") + " " + s.label)
+			b.WriteString(gutter + ledgerCross.Render("✗") + " " + s.label)
 		case ledgerRunning:
-			b.WriteString("  " + spinnerFrame + s.label)
+			b.WriteString(gutter + spinnerFrame + s.label)
 		default:
-			b.WriteString("  " + ledgerPendSty.Render("○ "+s.label))
+			b.WriteString(gutter + ledgerPendSty.Render("○ "+s.label))
 		}
 		if s.note != "" {
 			b.WriteString(ledgerNoteSty.Render("  " + s.note))
