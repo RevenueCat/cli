@@ -94,6 +94,9 @@ func AddServiceAccountToPlay(ctx context.Context, ts oauth2.TokenSource, develop
 			return nil, fmt.Errorf("add %s to Play developer account: %w", saEmail, err)
 		}
 		result.UserCreated = true
+		// Strip the bootstrap permission on the way out even if the grant below
+		// fails — otherwise a failed run leaves the account-wide permission set.
+		defer stripBootstrap(ctx, svc, userName)
 
 		if _, err := svc.Grants.Create(grantParent, &androidpublisher.Grant{
 			PackageName:         packageName,
@@ -102,19 +105,18 @@ func AddServiceAccountToPlay(ctx context.Context, ts oauth2.TokenSource, develop
 			return nil, fmt.Errorf("grant Play access to %s: %w", packageName, err)
 		}
 		result.GrantCreated = true
-
-		// Best-effort: drop the bootstrap account-wide permission now that a
-		// per-app grant exists. If it fails, access still works — the account
-		// only retains read-only "view app info", so we don't abort.
-		_, _ = svc.Users.Patch(userName, &androidpublisher.User{
-			DeveloperAccountPermissions: []string{},
-			ForceSendFields:             []string{"DeveloperAccountPermissions"},
-		}).UpdateMask("developerAccountPermissions").Context(ctx).Do()
 		return result, nil
 	}
 
-	// Existing user: ensure the package grant has our permissions, leaving any
-	// account-level permissions the user set up themselves untouched.
+	// Existing user: a prior interrupted run may have left our bootstrap
+	// permission behind. Clean it up, but never touch account-level permissions
+	// the user set up themselves (anything other than exactly our bootstrap).
+	if onlyBootstrap(existing.DeveloperAccountPermissions) {
+		defer stripBootstrap(ctx, svc, userName)
+	}
+
+	// Ensure the package grant has our permissions, leaving any account-level
+	// permissions the user set up themselves untouched.
 	for _, g := range existing.Grants {
 		if grantPackage(g.Name) == packageName {
 			if hasAllPermissions(g.AppLevelPermissions) {
@@ -136,6 +138,20 @@ func AddServiceAccountToPlay(ctx context.Context, ts oauth2.TokenSource, develop
 	}
 	result.GrantCreated = true
 	return result, nil
+}
+
+// stripBootstrap best-effort clears the transient account-wide bootstrap
+// permission. Access still works without it (read-only "view app info" at
+// worst), so callers ignore failures rather than abort.
+func stripBootstrap(ctx context.Context, svc *androidpublisher.Service, userName string) {
+	_, _ = svc.Users.Patch(userName, &androidpublisher.User{
+		DeveloperAccountPermissions: []string{},
+		ForceSendFields:             []string{"DeveloperAccountPermissions"},
+	}).UpdateMask("developerAccountPermissions").Context(ctx).Do()
+}
+
+func onlyBootstrap(perms []string) bool {
+	return len(perms) == 1 && perms[0] == bootstrapPermission
 }
 
 func findUser(ctx context.Context, svc *androidpublisher.Service, parent, email string) (*androidpublisher.User, error) {

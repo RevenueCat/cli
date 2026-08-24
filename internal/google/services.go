@@ -3,6 +3,7 @@ package google
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
@@ -35,13 +36,35 @@ func EnableAPIs(ctx context.Context, ts oauth2.TokenSource, projectID string) er
 	}
 	parent := "projects/" + projectID
 	req := &serviceusage.BatchEnableServicesRequest{ServiceIds: RequiredAPIs}
-	// batchEnable returns a long-running op, but for enablement it's effectively
-	// synchronous — later calls fail clearly if a service isn't ready yet.
-	if _, err := svc.Services.BatchEnable(parent, req).Context(ctx).Do(); err != nil {
+	op, err := svc.Services.BatchEnable(parent, req).Context(ctx).Do()
+	if err != nil {
 		if tos := classifyTos(err); tos != err {
 			return fmt.Errorf("enable APIs: %w", tos)
 		}
 		return fmt.Errorf("enable APIs: %w", classifyOrgPolicy(err))
+	}
+	// Wait for enablement to finish — the immediate service-account and Play
+	// steps that follow will fail on a fresh project if the APIs aren't on yet.
+	return waitForEnable(ctx, svc, op)
+}
+
+// waitForEnable polls the batchEnable operation until it reports Done, so the
+// caller doesn't race ahead of a still-enabling project.
+func waitForEnable(ctx context.Context, svc *serviceusage.Service, op *serviceusage.Operation) error {
+	for !op.Done {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(2 * time.Second):
+		}
+		got, err := svc.Operations.Get(op.Name).Context(ctx).Do()
+		if err != nil {
+			return fmt.Errorf("enable APIs: %w", err)
+		}
+		op = got
+	}
+	if op.Error != nil {
+		return fmt.Errorf("enable APIs: %s", op.Error.Message)
 	}
 	return nil
 }
