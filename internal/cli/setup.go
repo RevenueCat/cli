@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -190,15 +191,20 @@ func runSetup(cmd *cobra.Command) error {
 	applePending := (platform == "ios" || platform == "cross") &&
 		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
 
-	fl.Step("Choose your agent")
-	choice, err := pickSetupAgent(fl, agents)
-	if err != nil {
-		return err
+	// With no agent installed there's nothing to pick — skip straight to the
+	// copyable prompt rather than showing a one-option picker.
+	var choice *agentClient
+	if len(agents) > 0 {
+		fl.Step("Choose your agent")
+		choice, err = pickSetupAgent(fl, agents)
+		if err != nil {
+			return err
+		}
 	}
 	if choice == nil {
-		fl.Receipt("Agent", "none — copy the prompt")
+		fl.Step("Copy the prompt")
 		fl.Say("Run rc skills install, then paste this prompt into any agent:")
-		fl.Outro("Copy the prompt below")
+		fl.Outro("Prompt below")
 		// The prompt is copyable data — print it raw (no rail gutter) to stdout so
 		// it stays selectable and paste-clean.
 		fmt.Fprintln(cmd.OutOrStdout(), setupAgentPrompt(rt, stage, applePending, projStatus, appDirs))
@@ -254,8 +260,7 @@ func runSetup(cmd *cobra.Command) error {
 		}
 	}
 	if !ok {
-		fl.Outro("Cancelled — nothing was changed")
-		return nil
+		return errors.New("cancelled")
 	}
 
 	// deferred to here so canceling setup above doesn't wipe the active project
@@ -272,10 +277,7 @@ func runSetup(cmd *cobra.Command) error {
 	}
 
 	fl.Step("Setting up")
-	led := fl.Ledger(
-		"Install the RevenueCat skills",
-		"Configure the RevenueCat MCP for "+choice.Name,
-	)
+	led := fl.Ledger("Install the RevenueCat skills")
 	led.Start()
 	led.Running(0)
 	if err := installSetupSkills(cmd, choice, skillsScope, toolkitSource); err != nil {
@@ -284,16 +286,17 @@ func runSetup(cmd *cobra.Command) error {
 		return err
 	}
 	led.Done(0, "")
-	led.Running(1)
-	mcp := configureAgentMCP(cmd, rt, choice)
-	if mcp.warn != "" {
-		led.Fail(1, "not configured")
-	} else {
-		led.Done(1, mcp.note)
-	}
 	led.Stop()
-	if mcp.warn != "" {
+
+	// MCP config isn't a clean pass/fail — it can succeed, be left alone (custom
+	// entry), or need a manual step (agents rc can't configure) — so it's narrated
+	// rather than shown as a ledger ✓/✗ that would over- or under-state it.
+	mcp := configureAgentMCP(cmd, rt, choice)
+	switch {
+	case mcp.warn != "":
 		fl.Warn(mcp.warn)
+	case mcp.note != "":
+		fl.Say("RevenueCat MCP · " + mcp.note)
 	}
 	if mcp.hint != "" {
 		fl.Hint(mcp.hint)
@@ -389,6 +392,7 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, fl *tui.Flow, dir stri
 				return false, fmt.Errorf("couldn't open the project picker — run `rc projects use`, then rerun setup")
 			}
 			use.SetContext(cmd.Context())
+			fl.Say("Opening the project picker…")
 			if err := use.RunE(use, nil); err != nil {
 				fl.Warn("Project not changed: " + err.Error())
 				continue
@@ -641,10 +645,12 @@ func setupAuthenticate(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
 	// Both branches hand off to a sub-command with its own UI (browser OAuth or
 	// the signup form); the rail pauses for it and resumes afterward.
 	if choice == "signup" {
+		fl.Say("Starting signup…")
 		signup := newAuthSignupCmd()
 		signup.SetContext(cmd.Context())
 		return signup.RunE(signup, nil)
 	}
+	fl.Say("Opening your browser to sign in…")
 	return loginWithOAuth(cmd.Context(), rt)
 }
 

@@ -47,19 +47,18 @@ func firstBundleID(path string, pattern *regexp.Regexp) string {
 	return ""
 }
 
-// configureAgentMCP registers the RevenueCat MCP server for the chosen agent
-// with the CLI's credential, so the agent has authenticated MCP access from
-// its first turn. mcp.revenuecat.ai accepts both OAuth tokens and v2 secret
-// API keys as Bearer credentials.
 // mcpResult reports how MCP configuration went so the caller can render it on
-// the rail: note is a short status for the ledger step, hint is optional
-// follow-up guidance, and warn is set (non-fatal) when configuration failed.
+// the rail; warn is set (non-fatal) when configuration failed.
 type mcpResult struct {
 	note string
 	hint string
 	warn string
 }
 
+// configureAgentMCP registers the RevenueCat MCP server for the chosen agent
+// with the CLI's credential, so the agent has authenticated MCP access from
+// its first turn. mcp.revenuecat.ai accepts both OAuth tokens and v2 secret
+// API keys as Bearer credentials.
 func configureAgentMCP(cmd *cobra.Command, rt *Runtime, agent *agentClient) mcpResult {
 	token := ""
 	if rt.Config != nil {
