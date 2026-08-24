@@ -101,12 +101,15 @@ func (l *Ledger) set(i int, status ledgerStatus, note string) {
 	if i < 0 || i >= len(l.steps) {
 		return
 	}
-	l.steps[i].status = status
-	l.steps[i].note = note
 	if l.plain {
+		// Plain mode owns l.steps outright (no bubbletea goroutine).
+		l.steps[i].status = status
+		l.steps[i].note = note
 		l.printPlain(l.steps[i])
 		return
 	}
+	// TTY: the bubbletea goroutine owns the model's copy of the steps — mutate it
+	// only through the message, never l.steps here, or the two goroutines race.
 	if l.prog != nil {
 		l.prog.Send(ledgerStatusMsg{index: i, status: status, note: note})
 	}
