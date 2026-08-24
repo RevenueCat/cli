@@ -120,7 +120,7 @@ func newSetupGoogleCmd() *cobra.Command {
 				method := "open"
 				if noBrowser {
 					method = "copy"
-				} else if rt.CanPrompt() {
+				} else if rt.CanPrompt() && !rt.Globals.AssumeYes {
 					choice, err := fl.Select("Sign in to Google",
 						[]tui.Option{
 							{Label: "Open in my browser", Value: "open"},
@@ -265,6 +265,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			)
 			led.Start()
 
+			led.Running(0)
 			created, _, err := google.EnsureServiceAccount(ctx, creds.TokenSource, projectID)
 			if err != nil {
 				led.Fail(0, "failed")
