@@ -54,7 +54,7 @@ func revenueCatStarterPrompts() []starterPrompt {
 		{
 			ID:     "connect-apple",
 			Title:  "Connect my Apple account",
-			Prompt: "Continue this app's RevenueCat setup with the Apple stage of the create-revenuecat-project skill. Verify the App Store app and bundle ID, run the read-only Apple check first, then give me the local interactive rc apps apple setup command for Apple sign-in and 2FA. Verify the missing In-App Purchase and App Store Connect keys are configured without asking me to paste Apple credentials into chat.",
+			Prompt: "Continue this app's RevenueCat setup with the Apple stage of the create-revenuecat-project skill. Verify the App Store app and bundle ID, run the read-only Apple check first, then give me the local interactive rc setup apple command for Apple sign-in and 2FA. Verify the missing In-App Purchase and App Store Connect keys are configured without asking me to paste Apple credentials into chat.",
 		},
 		{
 			ID:     "sync-store-catalog",
