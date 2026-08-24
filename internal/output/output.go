@@ -371,6 +371,27 @@ func (r *Renderer) Info(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+msg)
 }
 
+// Link renders a URL as a clickable terminal hyperlink (OSC 8), underlined and
+// in the brand accent so it stands out from surrounding text. Falls back to the
+// plain URL when color is off (also our proxy for a dumb/non-interactive term),
+// so nothing leaks escape codes into piped or --no-color output.
+func (r *Renderer) Link(url string) string {
+	if r.noColor {
+		return url
+	}
+	styled := lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(url)
+	return "\x1b]8;;" + url + "\x1b\\" + styled + "\x1b]8;;\x1b\\"
+}
+
+// LinkLine prints a single indented, clickable link on its own line (stderr
+// chatter), for "open this URL" moments in guided flows.
+func (r *Renderer) LinkLine(url string) {
+	if r.json || r.quiet {
+		return
+	}
+	fmt.Fprintln(r.stderr, "  "+r.Link(url))
+}
+
 // Hint is guidance about what to do next — a whole line, dimmed, so it never
 // competes with results.
 func (r *Renderer) Hint(msg string) {

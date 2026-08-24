@@ -121,6 +121,7 @@ the step-by-step commands in the docs.`,
 			return runSetup(cmd)
 		},
 	}
+	cmd.AddCommand(newSetupGoogleCmd())
 	return cmd
 }
 

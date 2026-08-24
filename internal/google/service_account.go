@@ -115,24 +115,54 @@ func addMember(policy *cloudresourcemanager.Policy, role, member string) bool {
 	return true
 }
 
-// CreateKey creates a JSON service-account key and returns the decoded key file
-// bytes. The private key material is returned inline by Google (only on create)
-// so it never touches disk here — the caller keeps it in memory.
-func CreateKey(ctx context.Context, ts oauth2.TokenSource, projectID, saEmail string) ([]byte, error) {
+// PruneUserKeys deletes the user-managed keys on the RevenueCat service account,
+// skipping keepKeyName, and reports how many it removed. This keeps re-runs from
+// piling keys up toward Google's ~10-per-account limit. It only ever runs against
+// the rc-owned service account, and only touches USER_MANAGED keys — Google's
+// SYSTEM_MANAGED signing keys are never listed or deleted. Pass the newly created
+// key's name as keepKeyName so pruning never deletes the credential just issued.
+func PruneUserKeys(ctx context.Context, ts oauth2.TokenSource, projectID, saEmail, keepKeyName string) (int, error) {
 	svc, err := iam.NewService(ctx, option.WithTokenSource(ts), option.WithQuotaProject(projectID))
 	if err != nil {
-		return nil, fmt.Errorf("iam client: %w", err)
+		return 0, fmt.Errorf("iam client: %w", err)
+	}
+	name := fmt.Sprintf("projects/%s/serviceAccounts/%s", projectID, saEmail)
+	resp, err := svc.Projects.ServiceAccounts.Keys.List(name).KeyTypes("USER_MANAGED").Context(ctx).Do()
+	if err != nil {
+		return 0, fmt.Errorf("list service account keys: %w", err)
+	}
+	removed := 0
+	for _, k := range resp.Keys {
+		if k.Name == keepKeyName {
+			continue
+		}
+		if _, err := svc.Projects.ServiceAccounts.Keys.Delete(k.Name).Context(ctx).Do(); err != nil {
+			return removed, fmt.Errorf("delete service account key: %w", err)
+		}
+		removed++
+	}
+	return removed, nil
+}
+
+// CreateKey creates a JSON service-account key and returns the decoded key file
+// bytes and the key's resource name. The private key material is returned inline
+// by Google (only on create) so it never touches disk here — the caller keeps it
+// in memory. The name lets the caller prune older keys without deleting this one.
+func CreateKey(ctx context.Context, ts oauth2.TokenSource, projectID, saEmail string) ([]byte, string, error) {
+	svc, err := iam.NewService(ctx, option.WithTokenSource(ts), option.WithQuotaProject(projectID))
+	if err != nil {
+		return nil, "", fmt.Errorf("iam client: %w", err)
 	}
 	name := fmt.Sprintf("projects/%s/serviceAccounts/%s", projectID, saEmail)
 	key, err := svc.Projects.ServiceAccounts.Keys.Create(name, &iam.CreateServiceAccountKeyRequest{}).Context(ctx).Do()
 	if err != nil {
-		return nil, fmt.Errorf("create service account key: %w", classifyOrgPolicy(err))
+		return nil, "", fmt.Errorf("create service account key: %w", classifyOrgPolicy(err))
 	}
 	data, err := base64.StdEncoding.DecodeString(key.PrivateKeyData)
 	if err != nil {
-		return nil, fmt.Errorf("decode key material: %w", err)
+		return nil, "", fmt.Errorf("decode key material: %w", err)
 	}
-	return data, nil
+	return data, key.Name, nil
 }
 
 func isNotFound(err error) bool {

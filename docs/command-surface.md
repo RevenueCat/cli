@@ -89,6 +89,7 @@ names; there's no list endpoint.
 ```
 # Onboarding entry points (the two scoped npx surfaces)
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
+rc setup google [app-id]                                 # interactive: local Google sign-in, bootstrap the Play service-account credential, grant package-scoped access, upload to RC
 rc capital setup                                         # EXPERIMENTAL (hidden from --help until Capital ships): App Store Connect key flow (wraps apps apple setup)
 rc                                                       # bare rc -> getting-started help; --all reveals experimental commands
 
