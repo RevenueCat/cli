@@ -22,6 +22,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/itchyny/gojq"
+	"github.com/muesli/termenv"
 )
 
 // ErrBadFormat signals an unparseable --format expression. CLI maps this to
@@ -47,6 +48,12 @@ type Renderer struct {
 
 func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format string) *Renderer {
 	noColor = noColor || os.Getenv("NO_COLOR") != ""
+	if noColor {
+		// Make --no-color reach direct lipgloss usage too (guided rail, prompts,
+		// ledger), not just this Renderer's own styling. termenv already honors
+		// the NO_COLOR env var; this covers the flag.
+		lipgloss.SetColorProfile(termenv.Ascii)
+	}
 	r := &Renderer{
 		stdout:  stdout,
 		stderr:  stderr,
