@@ -160,6 +160,9 @@ func newSetupGoogleCmd() *cobra.Command {
 
 			// Google Cloud project — or create a new one.
 			if projectID == "" {
+				if !rt.CanPrompt() {
+					return errors.New("--project is required under --no-input")
+				}
 				projects, err := google.ListProjects(ctx, creds.TokenSource)
 				if err != nil {
 					return err
@@ -216,7 +219,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			}
 			result.DeveloperID = developerID
 
-			// 4. Package name comes from the chosen RevenueCat app. Only prompt if
+			// Package name comes from the chosen RevenueCat app. Only prompt if
 			// that app has no package set yet.
 			if packageName == "" {
 				if !rt.CanPrompt() {
@@ -230,9 +233,6 @@ func newSetupGoogleCmd() *cobra.Command {
 			result.PackageName = packageName
 
 			saEmail := google.ServiceAccountEmail(projectID)
-			if keyOut == "" {
-				keyOut = "revenuecat-play-key.json"
-			}
 
 			// Review + single consent.
 			fl.Step("Review")
@@ -261,7 +261,6 @@ func newSetupGoogleCmd() *cobra.Command {
 			result.EnabledAPIs = google.RequiredAPIs
 			result.ServiceAccount = saEmail
 			result.GrantedRoles = google.ProjectRoles
-			result.PackageName = packageName
 
 			led := fl.Ledger(
 				"Create the RevenueCat service account",
@@ -312,6 +311,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			if err != nil {
 				led.Fail(3, "failed")
 				led.Stop()
+				rt.Out.Hint("Granting Play access needs the signed-in account to be a Play Console owner/admin, and the app (" + packageName + ") must exist in Play Console — create it there first if it doesn't.")
 				return googleHint(rt, err)
 			}
 			result.PlayUserCreated = play.UserCreated
@@ -362,6 +362,7 @@ func newSetupGoogleCmd() *cobra.Command {
 				fl.Outro("Almost there",
 					"Upload the credential to finish:",
 					rt.Out.LinkText("Upload "+keyOut+" ↗", uploadURL),
+					keyOut+" is a private key — delete it once uploaded.",
 				)
 			}
 			return nil

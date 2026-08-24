@@ -33,6 +33,7 @@ var (
 	prSelSty    = lipgloss.NewStyle().Foreground(output.AccentViolet).Bold(true)
 	prDimSty    = lipgloss.NewStyle().Faint(true)
 	prOKSty     = lipgloss.NewStyle().Foreground(output.GreenOK).Bold(true)
+	prWarnSty   = lipgloss.NewStyle().Foreground(output.WarnAmber)
 )
 
 func railSpacer() string { return prRailSty.Render("│") }

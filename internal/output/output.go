@@ -371,15 +371,11 @@ func (r *Renderer) Info(msg string) {
 	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+msg)
 }
 
-// Step is a guided-flow section header: a blank line, then a brand ◇ glyph and a
-// bold title. Heavier than Info, lighter than Title (which owns the top-of-flow
-// ▍ banner) — use it to break a long interactive flow into legible sections.
-func (r *Renderer) Step(title string) {
-	if r.json || r.quiet {
-		return
-	}
-	fmt.Fprintln(r.stderr)
-	fmt.Fprintln(r.stderr, r.style(r.accent, "◇ ")+r.style(StyleTitle, title))
+// Hyperlink wraps styledLabel in an OSC 8 terminal hyperlink pointing at url.
+// Supporting terminals make it clickable; others render the label text. This is
+// the one place the OSC 8 escape lives.
+func Hyperlink(styledLabel, url string) string {
+	return "\x1b]8;;" + url + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
 }
 
 // LinkText renders a clickable hyperlink (OSC 8) with a custom label instead of
@@ -389,20 +385,17 @@ func (r *Renderer) LinkText(label, url string) string {
 	if r.noColor {
 		return label + " (" + url + ")"
 	}
-	styled := lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(label)
-	return "\x1b]8;;" + url + "\x1b\\" + styled + "\x1b]8;;\x1b\\"
+	return Hyperlink(lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(label), url)
 }
 
-// Link renders a URL as a clickable terminal hyperlink (OSC 8), underlined and
-// in the brand accent so it stands out from surrounding text. Falls back to the
-// plain URL when color is off (also our proxy for a dumb/non-interactive term),
-// so nothing leaks escape codes into piped or --no-color output.
+// Link renders a URL as a clickable, underlined brand-accent hyperlink. Falls
+// back to the plain URL when color is off (our proxy for a dumb/non-interactive
+// terminal), so nothing leaks escape codes into piped or --no-color output.
 func (r *Renderer) Link(url string) string {
 	if r.noColor {
 		return url
 	}
-	styled := lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(url)
-	return "\x1b]8;;" + url + "\x1b\\" + styled + "\x1b]8;;\x1b\\"
+	return Hyperlink(lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(url), url)
 }
 
 // LinkLine prints a single indented, clickable link on its own line (stderr

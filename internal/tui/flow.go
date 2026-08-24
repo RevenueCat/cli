@@ -15,8 +15,9 @@ import (
 // flows so the whole command reads as one designed experience rather than a
 // scatter of lines.
 //
-// Interactive prompts (tui.Form / decide / confirm) happen between rail calls —
-// they're the active moments the rail pauses for, then resumes.
+// Interactive prompts (Confirm/Select/Input) happen between rail calls — they're
+// the active moments the rail pauses for, then resumes. Shares its styles and
+// rail helpers with the prompt models (prompt_rail.go).
 //
 // On a non-TTY (plain), the glyphs are dropped for clean append-only lines.
 type Flow struct {
@@ -24,19 +25,8 @@ type Flow struct {
 	plain bool
 }
 
-var (
-	flowRailSty  = lipgloss.NewStyle().Foreground(output.BrandRed)
-	flowCapSty   = lipgloss.NewStyle().Foreground(output.BrandRed).Bold(true)
-	flowTitleSty = lipgloss.NewStyle().Bold(true)
-	flowDimSty   = lipgloss.NewStyle().Faint(true)
-	flowOKSty    = lipgloss.NewStyle().Foreground(output.GreenOK).Bold(true)
-	flowWarnSty  = lipgloss.NewStyle().Foreground(output.WarnAmber)
-)
-
 // NewFlow builds a flow writing to w. plain drops the rail (non-TTY/CI).
 func NewFlow(w io.Writer, plain bool) *Flow { return &Flow{w: w, plain: plain} }
-
-func (f *Flow) rail() string { return flowRailSty.Render("│") }
 
 // Intro opens the flow with a ┌ cap and title.
 func (f *Flow) Intro(title string) {
@@ -44,8 +34,8 @@ func (f *Flow) Intro(title string) {
 		fmt.Fprintln(f.w, title)
 		return
 	}
-	fmt.Fprintln(f.w, flowCapSty.Render("┌")+"  "+flowTitleSty.Render(title))
-	fmt.Fprintln(f.w, f.rail())
+	fmt.Fprintln(f.w, prActiveSty.Render("┌")+"  "+prTitleSty.Render(title))
+	fmt.Fprintln(f.w, railSpacer())
 }
 
 // Step starts a new section with a ◇ marker, preceded by a rail spacer.
@@ -54,21 +44,16 @@ func (f *Flow) Step(title string) {
 		fmt.Fprintf(f.w, "\n%s\n", title)
 		return
 	}
-	fmt.Fprintln(f.w, f.rail())
-	fmt.Fprintln(f.w, flowCapSty.Render("◇")+"  "+flowTitleSty.Render(title))
+	fmt.Fprintln(f.w, railSpacer())
+	fmt.Fprintln(f.w, prActiveSty.Render("◇")+"  "+prTitleSty.Render(title))
 }
 
 // Say prints a dim narration line on the rail.
-func (f *Flow) Say(line string) { f.body(flowDimSty.Render(line)) }
+func (f *Flow) Say(line string) { f.body(prDimSty.Render(line)) }
 
 // Item prints a bulleted list item on the rail, indented under the current step.
 func (f *Flow) Item(line string) {
-	f.body(flowRailSty.Render("•") + " " + flowDimSty.Render(line))
-}
-
-// Link prints a narration line ending in a clickable label.
-func (f *Flow) Link(text, label, url string) {
-	f.body(flowDimSty.Render(text) + " " + linkText(label, url))
+	f.body(prRailSty.Render("•") + " " + prDimSty.Render(line))
 }
 
 // URL prints a full URL on the rail — clickable in capable terminals and
@@ -78,20 +63,20 @@ func (f *Flow) URL(url string) {
 		f.body(url)
 		return
 	}
-	f.body(linkText(url, url))
+	f.body(hyperlink(url, url))
 }
 
 // Receipt echoes a confirmed choice as "✓ key  value" on the rail.
 func (f *Flow) Receipt(key, value string) {
-	line := flowOKSty.Render("✓") + " " + key
+	line := prOKSty.Render("✓") + " " + key
 	if value != "" {
-		line += "  " + flowDimSty.Render(value)
+		line += "  " + prDimSty.Render(value)
 	}
 	f.body(line)
 }
 
 // Warn prints a warning line on the rail.
-func (f *Flow) Warn(line string) { f.body(flowWarnSty.Render("! " + line)) }
+func (f *Flow) Warn(line string) { f.body(prWarnSty.Render("! " + line)) }
 
 // Outro closes the flow with a └ cap; extras are indented under it.
 func (f *Flow) Outro(title string, extras ...string) {
@@ -102,8 +87,8 @@ func (f *Flow) Outro(title string, extras ...string) {
 		}
 		return
 	}
-	fmt.Fprintln(f.w, f.rail())
-	fmt.Fprintln(f.w, flowCapSty.Render("└")+"  "+flowTitleSty.Render(title))
+	fmt.Fprintln(f.w, railSpacer())
+	fmt.Fprintln(f.w, prActiveSty.Render("└")+"  "+prTitleSty.Render(title))
 	for _, e := range extras {
 		fmt.Fprintln(f.w, "   "+e)
 	}
@@ -113,7 +98,7 @@ func (f *Flow) Outro(title string, extras ...string) {
 func (f *Flow) Ledger(labels ...string) *Ledger {
 	l := NewLedger(f.w, f.plain, labels...)
 	if !f.plain {
-		l.gutter = f.rail() + "  "
+		l.gutter = railSpacer() + "  "
 	}
 	return l
 }
@@ -123,13 +108,11 @@ func (f *Flow) body(s string) {
 		fmt.Fprintln(f.w, "  "+s)
 		return
 	}
-	fmt.Fprintln(f.w, f.rail()+"  "+s)
+	fmt.Fprintln(f.w, railBody(s))
 }
 
-// linkText mirrors output.Renderer.LinkText for use inside the flow (OSC 8
-// clickable label; plain-ish fallback when styling is unavailable is handled by
-// the terminal ignoring the escapes).
-func linkText(label, url string) string {
-	styled := lipgloss.NewStyle().Foreground(output.BrandRed).Underline(true).Render(label)
-	return "\x1b]8;;" + url + "\x1b\\" + styled + "\x1b]8;;\x1b\\"
+// hyperlink renders label as a clickable OSC 8 link to url, underlined in the
+// brand accent.
+func hyperlink(label, url string) string {
+	return output.Hyperlink(lipgloss.NewStyle().Foreground(output.BrandRed).Underline(true).Render(label), url)
 }
