@@ -90,7 +90,8 @@ names; there's no list endpoint.
 # Onboarding entry points (the two scoped npx surfaces)
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
 rc setup google [app-id]                                 # interactive: local Google sign-in, bootstrap the Play service-account credential, grant package-scoped access, upload to RC
-rc capital setup                                         # EXPERIMENTAL (hidden from --help until Capital ships): App Store Connect key flow (wraps apps apple setup)
+rc setup apple [app-id]                                  # interactive: App Store Connect sign-in + 2FA, create/upload IAP & ASC keys, vendor number (rc apps apple setup is a hidden alias)
+rc capital setup                                         # EXPERIMENTAL (hidden from --help until Capital ships): App Store Connect key flow (wraps setup apple)
 rc                                                       # bare rc -> getting-started help; --all reveals experimental commands
 
 # Auth / meta
@@ -126,7 +127,7 @@ rc apps delete <id>
 rc apps keys <app-id>                                    # typed public SDK keys for app integration
 rc apps storekit-config <app-id>                         # store_kit_config; optionally writes .storekit JSON
 rc apps apple check [app-id]                             # validate Apple login, 2FA, team, and key access (read-only)
-rc apps apple setup [app-id]                             # interactive: create ASC app record if missing, per-key consent for IAP/ASC keys, auto-fetch vendor number
+rc apps apple setup [app-id]                             # hidden alias of rc setup apple (kept for back-compat)
 
 # Customers — busiest noun
 rc customers show [id]                                    # already embeds active_entitlements; we'll add subs + purchases
