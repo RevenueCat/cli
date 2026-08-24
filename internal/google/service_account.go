@@ -171,15 +171,15 @@ func isNotFound(err error) bool {
 }
 
 // IsKeyLimitErr reports whether err is Google refusing to create a key because
-// the service account is already at its user-managed key limit (~10). At that
-// point the caller must free a slot (prune) before a create can succeed.
+// the service account is already at its user-managed key limit (~10), so the
+// caller can point the human at freeing a slot. Matches only Google's specific
+// limit message — a broad match would catch unrelated key-creation failures
+// (org policy, quota) that this guidance doesn't apply to.
 func IsKeyLimitErr(err error) bool {
 	if err == nil {
 		return false
 	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "maximum number of keys") ||
-		strings.Contains(msg, "precondition") && strings.Contains(msg, "key")
+	return strings.Contains(strings.ToLower(err.Error()), "maximum number of keys")
 }
 
 // OrgPolicyError signals that a Google Cloud organization policy blocked the
