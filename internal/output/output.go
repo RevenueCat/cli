@@ -68,6 +68,10 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 
 func (r *Renderer) IsJSON() bool { return r.json }
 
+// NoColor reports whether all ANSI output is disabled (--no-color or NO_COLOR),
+// so callers composing their own escapes (e.g. OSC 8 hyperlinks) can skip them.
+func (r *Renderer) NoColor() bool { return r.noColor }
+
 // Tone is a semantic style for callers that compose their own output.
 type Tone int
 

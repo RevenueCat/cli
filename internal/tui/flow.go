@@ -21,11 +21,14 @@ import (
 //
 // On a non-TTY (plain), the glyphs are dropped for clean append-only lines.
 type Flow struct {
-	w     io.Writer
-	plain bool
+	w       io.Writer
+	plain   bool
+	noColor bool
 }
 
-func NewFlow(w io.Writer, plain bool) *Flow { return &Flow{w: w, plain: plain} }
+func NewFlow(w io.Writer, plain, noColor bool) *Flow {
+	return &Flow{w: w, plain: plain, noColor: noColor}
+}
 
 func (f *Flow) Intro(title string) {
 	if f.plain {
@@ -54,7 +57,7 @@ func (f *Flow) Item(line string) {
 // URL prints the raw URL, not a hyperlink label, so it stays selectable to copy
 // on terminals that don't support OSC 8.
 func (f *Flow) URL(url string) {
-	if f.plain {
+	if f.plain || f.noColor {
 		f.body(url)
 		return
 	}

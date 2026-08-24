@@ -85,7 +85,7 @@ func newSetupGoogleCmd() *cobra.Command {
 				return google.ErrNoClientID
 			}
 
-			fl := tui.NewFlow(os.Stderr, !rt.CanPrompt())
+			fl := tui.NewFlow(os.Stderr, !rt.CanPrompt(), rt.Out.NoColor())
 			fl.Intro("RevenueCat · Google Play setup")
 
 			if !rt.CanPrompt() && !rt.Globals.AssumeYes {
