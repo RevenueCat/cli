@@ -71,7 +71,13 @@ func (l *Ledger) Start() {
 		return
 	}
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
-	l.prog = tea.NewProgram(ledgerModel{steps: l.steps, sp: sp}, tea.WithOutput(l.w))
+	// This is a display-only spinner running while the caller does the real
+	// work on its own goroutine. WithInput(nil) keeps it from grabbing stdin
+	// (raw mode, eaten keystrokes), and WithoutSignalHandler leaves Ctrl+C to
+	// the process — otherwise it would quit only the spinner while setup keeps
+	// mutating cloud resources, so a cancel could look successful.
+	l.prog = tea.NewProgram(ledgerModel{steps: l.steps, sp: sp},
+		tea.WithOutput(l.w), tea.WithInput(nil), tea.WithoutSignalHandler())
 	l.done = make(chan struct{})
 	go func() {
 		_, _ = l.prog.Run()
