@@ -144,6 +144,9 @@ func runSetup(cmd *cobra.Command) error {
 	fl.Say("An AI agent sets up RevenueCat for this app — you approve each step.")
 	fl.Receipt("Project", projectLabel)
 	fl.Receipt("Location", collapseHome(dir))
+	if account := setupAccountIdentity(rt); account != "" {
+		fl.Receipt("Account", account)
+	}
 	if len(agents) == 0 {
 		fl.Warn("No AI agents found — install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below.")
 	}
@@ -406,6 +409,26 @@ func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, fl *tui.Flow, dir stri
 				return false, err
 			}
 		}
+	}
+}
+
+// setupAccountIdentity returns the logged-in account label (name <email>, or
+// whichever is known) for the setup header, or "" when logged out. Mirrors the
+// identity format used by rc auth status.
+func setupAccountIdentity(rt *Runtime) string {
+	if rt.Config == nil || rt.Config.BearerToken() == "" {
+		return ""
+	}
+	email, name := rt.Config.AccountEmail, rt.Config.AccountName
+	switch {
+	case name != "" && email != "":
+		return fmt.Sprintf("%s <%s>", name, email)
+	case email != "":
+		return email
+	case name != "":
+		return name
+	default:
+		return "logged in"
 	}
 }
 
