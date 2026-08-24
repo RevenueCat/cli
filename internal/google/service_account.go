@@ -67,7 +67,12 @@ func GrantProjectRoles(ctx context.Context, ts oauth2.TokenSource, projectID, sa
 		return nil, fmt.Errorf("cloud resource manager client: %w", err)
 	}
 	resource := "projects/" + projectID
-	policy, err := crm.Projects.GetIamPolicy(resource, &cloudresourcemanager.GetIamPolicyRequest{}).Context(ctx).Do()
+	// Request policy version 3 so conditional bindings come back intact — a v1
+	// read can represent them incompletely, and writing that back would drop the
+	// conditions on any existing conditional bindings.
+	policy, err := crm.Projects.GetIamPolicy(resource, &cloudresourcemanager.GetIamPolicyRequest{
+		Options: &cloudresourcemanager.GetPolicyOptions{RequestedPolicyVersion: 3},
+	}).Context(ctx).Do()
 	if err != nil {
 		return nil, fmt.Errorf("get IAM policy: %w", classifyOrgPolicy(err))
 	}
@@ -88,16 +93,19 @@ func GrantProjectRoles(ctx context.Context, ts oauth2.TokenSource, projectID, sa
 	return added, nil
 }
 
-// addMember adds member to the binding for role, creating the binding if needed.
-// Returns true if a change was made.
+// addMember grants member the role via an unconditional binding, creating one if
+// needed. Returns true if a change was made. Conditional bindings for the role
+// are skipped when looking for one to reuse — appending to them would give the
+// service account access limited by someone else's condition (e.g. an expiry),
+// not the unconditional access this setup expects.
 func addMember(policy *cloudresourcemanager.Policy, role, member string) bool {
 	for _, b := range policy.Bindings {
-		if b.Role != role {
+		if b.Role != role || b.Condition != nil {
 			continue
 		}
 		for _, m := range b.Members {
 			if m == member {
-				return false // already present
+				return false // already present, unconditionally
 			}
 		}
 		b.Members = append(b.Members, member)

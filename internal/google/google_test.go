@@ -86,6 +86,31 @@ func TestAddMember(t *testing.T) {
 	}
 }
 
+func TestAddMemberSkipsConditionalBindings(t *testing.T) {
+	member := "serviceAccount:sa@p.iam.gserviceaccount.com"
+	// An existing conditional binding for the role must not be reused — the SA
+	// would inherit the condition. addMember should add a fresh unconditional one.
+	policy := &cloudresourcemanager.Policy{
+		Bindings: []*cloudresourcemanager.Binding{{
+			Role:      "roles/pubsub.editor",
+			Members:   []string{"user:someone@example.com"},
+			Condition: &cloudresourcemanager.Expr{Expression: "request.time < timestamp('2030-01-01T00:00:00Z')"},
+		}},
+	}
+	if !addMember(policy, "roles/pubsub.editor", member) {
+		t.Fatal("expected a change: a new unconditional binding")
+	}
+	if len(policy.Bindings) != 2 {
+		t.Fatalf("expected 2 bindings (conditional untouched + new unconditional), got %d", len(policy.Bindings))
+	}
+	if policy.Bindings[0].Condition == nil {
+		t.Error("existing conditional binding should be left intact")
+	}
+	if policy.Bindings[1].Condition != nil {
+		t.Error("newly added binding should be unconditional")
+	}
+}
+
 func TestHasAllPermissions(t *testing.T) {
 	if !hasAllPermissions(PlayAppPermissions) {
 		t.Error("exact permission set should satisfy hasAllPermissions")
