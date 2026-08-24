@@ -24,13 +24,17 @@ type Flow struct {
 	w       io.Writer
 	plain   bool
 	noColor bool
+	quiet   bool
 }
 
-func NewFlow(w io.Writer, plain, noColor bool) *Flow {
-	return &Flow{w: w, plain: plain, noColor: noColor}
+func NewFlow(w io.Writer, plain, noColor, quiet bool) *Flow {
+	return &Flow{w: w, plain: plain, noColor: noColor, quiet: quiet}
 }
 
 func (f *Flow) Intro(title string) {
+	if f.quiet {
+		return
+	}
 	if f.plain {
 		fmt.Fprintln(f.w, title)
 		return
@@ -40,6 +44,9 @@ func (f *Flow) Intro(title string) {
 }
 
 func (f *Flow) Step(title string) {
+	if f.quiet {
+		return
+	}
 	if f.plain {
 		fmt.Fprintf(f.w, "\n%s\n", title)
 		return
@@ -75,6 +82,9 @@ func (f *Flow) Receipt(key, value string) {
 func (f *Flow) Warn(line string) { f.body(prWarnSty.Render("! " + line)) }
 
 func (f *Flow) Outro(title string, extras ...string) {
+	if f.quiet {
+		return
+	}
 	if f.plain {
 		fmt.Fprintln(f.w, title)
 		for _, e := range extras {
@@ -90,6 +100,9 @@ func (f *Flow) Outro(title string, extras ...string) {
 }
 
 func (f *Flow) Ledger(labels ...string) *Ledger {
+	if f.quiet {
+		return NewLedger(io.Discard, true, labels...)
+	}
 	l := NewLedger(f.w, f.plain, labels...)
 	if !f.plain {
 		l.gutter = railSpacer() + "  "
@@ -98,6 +111,9 @@ func (f *Flow) Ledger(labels ...string) *Ledger {
 }
 
 func (f *Flow) body(s string) {
+	if f.quiet {
+		return
+	}
 	if f.plain {
 		fmt.Fprintln(f.w, "  "+s)
 		return

@@ -51,7 +51,8 @@ func NewRenderer(stdout, stderr io.Writer, jsonMode, noColor, quiet bool, format
 	if noColor {
 		// Make --no-color reach direct lipgloss usage too (guided rail, prompts,
 		// ledger), not just this Renderer's own styling. termenv already honors
-		// the NO_COLOR env var; this covers the flag.
+		// the NO_COLOR env var; this covers the flag. Not restored — it's a global
+		// for the lifetime of a one-shot CLI process that's about to exit.
 		lipgloss.SetColorProfile(termenv.Ascii)
 	}
 	r := &Renderer{
