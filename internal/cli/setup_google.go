@@ -292,13 +292,6 @@ func newSetupGoogleCmd() *cobra.Command {
 			rt.Out.Info("Creating the service-account key…")
 			keyData, keyName, err := google.CreateKey(ctx, creds.TokenSource, projectID, saEmail)
 			if err != nil {
-				if google.IsKeyLimitErr(err) {
-					// At Google's ~10-key cap a create can't succeed until a slot is
-					// freed. Don't auto-delete to make room — we can't tell which key
-					// is the one RevenueCat is live on, so pruning first could break
-					// the credential. Point the human at the Console instead.
-					rt.Out.Hint("The RevenueCat service account is at Google's key limit. Delete an unused key in the Cloud Console (IAM & Admin → Service Accounts → this account → Keys), then re-run rc setup google.")
-				}
 				return googleHint(rt, err)
 			}
 			rt.Out.Success("Created service-account key (in memory)")
