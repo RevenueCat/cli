@@ -28,14 +28,12 @@ import (
 const (
 	ScopeAndroidPublisher = "https://www.googleapis.com/auth/androidpublisher"
 	ScopeCloudPlatform    = "https://www.googleapis.com/auth/cloud-platform"
-	ScopePlayReporting    = "https://www.googleapis.com/auth/playdeveloperreporting"
 	scopeOpenID           = "openid"
 	scopeEmail            = "https://www.googleapis.com/auth/userinfo.email"
 )
 
-// DefaultScopes covers the whole setup flow. playdeveloperreporting is what
-// lets us list the developer's Play apps so they don't have to type a package.
-var DefaultScopes = []string{ScopeAndroidPublisher, ScopeCloudPlatform, ScopePlayReporting, scopeOpenID, scopeEmail}
+// DefaultScopes covers the whole setup flow.
+var DefaultScopes = []string{ScopeAndroidPublisher, ScopeCloudPlatform, scopeOpenID, scopeEmail}
 
 // DefaultClientID / DefaultClientSecret are the RevenueCat-owned Desktop OAuth
 // client baked into the binary. They are intentionally empty until RevenueCat
@@ -142,7 +140,11 @@ func Authenticate(ctx context.Context, clientID, clientSecret string, scopes []s
 	defer server.Close()
 
 	if open != nil {
-		_ = open(authURL)
+		// Honor the opener's error so a cancelled sign-in (e.g. the user backs
+		// out of the picker) aborts instead of blocking forever on the callback.
+		if err := open(authURL); err != nil {
+			return nil, err
+		}
 	}
 
 	var code string
@@ -167,9 +169,6 @@ func Authenticate(ctx context.Context, clientID, clientSecret string, scopes []s
 	}
 	return &Credentials{TokenSource: ts, Email: email}, nil
 }
-
-// AuthURL is the loopback URL to print when the browser can't open. It is not
-// used in the happy path but kept for parity with the CLI's other OAuth flow.
 
 func fetchEmail(ctx context.Context, client *http.Client) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://openidconnect.googleapis.com/v1/userinfo", nil)

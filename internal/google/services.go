@@ -35,15 +35,13 @@ func EnableAPIs(ctx context.Context, ts oauth2.TokenSource, projectID string) er
 	}
 	parent := "projects/" + projectID
 	req := &serviceusage.BatchEnableServicesRequest{ServiceIds: RequiredAPIs}
-	op, err := svc.Services.BatchEnable(parent, req).Context(ctx).Do()
-	if err != nil {
+	// batchEnable returns a long-running op, but for enablement it's effectively
+	// synchronous — later calls fail clearly if a service isn't ready yet.
+	if _, err := svc.Services.BatchEnable(parent, req).Context(ctx).Do(); err != nil {
 		if tos := classifyTos(err); tos != err {
 			return fmt.Errorf("enable APIs: %w", tos)
 		}
 		return fmt.Errorf("enable APIs: %w", classifyOrgPolicy(err))
 	}
-	// The operation may complete asynchronously; for enablement the returned op
-	// is typically already done, and subsequent calls will fail clearly if not.
-	_ = op
 	return nil
 }

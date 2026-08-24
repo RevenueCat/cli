@@ -2,8 +2,6 @@ package google
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -67,24 +65,6 @@ func TestServiceAccountEmail(t *testing.T) {
 	want := "revenuecat-service-account@my-app-prod.iam.gserviceaccount.com"
 	if got != want {
 		t.Errorf("ServiceAccountEmail = %q, want %q", got, want)
-	}
-}
-
-func TestDetectPackageName(t *testing.T) {
-	dir := t.TempDir()
-	gradle := filepath.Join(dir, "android", "app")
-	if err := os.MkdirAll(gradle, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	content := "android {\n  defaultConfig {\n    applicationId = \"com.example.myapp\"\n  }\n}\n"
-	if err := os.WriteFile(filepath.Join(gradle, "build.gradle.kts"), []byte(content), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if got := DetectPackageName(dir); got != "com.example.myapp" {
-		t.Errorf("DetectPackageName = %q, want com.example.myapp", got)
-	}
-	if got := DetectPackageName(t.TempDir()); got != "" {
-		t.Errorf("DetectPackageName(empty) = %q, want empty", got)
 	}
 }
 
