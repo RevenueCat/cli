@@ -310,7 +310,8 @@ func TestAppsAppleSetup_PartialFailureExitsNonZeroAndReportsFailedKey(t *testing
 }
 
 // A --force replace that fails leaves the previously-configured key in place, so
-// the card must say "kept existing", not "not created".
+// the result must read "kept existing", not "not created". (Guided receipts go
+// to stderr — stdout stays data-only, JSON under --json.)
 func TestAppsAppleSetup_FailedReplaceReadsAsKeptExisting(t *testing.T) {
 	forbidden := errors.New("403 FORBIDDEN_ERROR: The API key in use does not allow this request")
 	apiKey := &appleconnect.Key{Kind: appleconnect.AppStoreConnectKey, ID: "asc1", IssuerID: "iss", PrivateKey: "asc-pem"}
@@ -350,8 +351,8 @@ func TestAppsAppleSetup_FailedReplaceReadsAsKeptExisting(t *testing.T) {
 	})
 	_ = cmd.Execute() // exits non-zero for the failed key; we only assert the label here
 
-	if !strings.Contains(stdout.String(), "kept existing (replace failed") {
-		t.Fatalf("a failed replace of a configured key should read as kept existing, got:\n%s", stdout.String())
+	if !strings.Contains(stderr.String(), "kept existing (replace failed") {
+		t.Fatalf("a failed replace of a configured key should read as kept existing, got:\n%s", stderr.String())
 	}
 }
 

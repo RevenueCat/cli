@@ -80,6 +80,11 @@ func (r *Renderer) IsJSON() bool { return r.json }
 // so callers composing their own escapes (e.g. OSC 8 hyperlinks) can skip them.
 func (r *Renderer) NoColor() bool { return r.noColor }
 
+// Stderr returns the chatter writer so guided-flow components (tui.Flow,
+// ledger, rail prompts) render to the same stream as the rest of the CLI — and
+// are captured in tests — instead of writing to os.Stderr directly.
+func (r *Renderer) Stderr() io.Writer { return r.stderr }
+
 // Tone is a semantic style for callers that compose their own output.
 type Tone int
 
