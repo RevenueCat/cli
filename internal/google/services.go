@@ -49,9 +49,13 @@ func EnableAPIs(ctx context.Context, ts oauth2.TokenSource, projectID string) er
 }
 
 // waitForEnable polls the batchEnable operation until it reports Done, so the
-// caller doesn't race ahead of a still-enabling project.
+// caller doesn't race ahead of a still-enabling project. Bounded (~2 min) so a
+// stuck operation can't hang the CLI, since the root context has no deadline.
 func waitForEnable(ctx context.Context, svc *serviceusage.Service, op *serviceusage.Operation) error {
-	for !op.Done {
+	for attempts := 0; !op.Done; attempts++ {
+		if attempts >= 60 {
+			return fmt.Errorf("enable APIs: timed out waiting for enablement to finish")
+		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
