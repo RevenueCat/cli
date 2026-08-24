@@ -69,7 +69,7 @@ func ensureAppStoreAppRecord(ctx context.Context, rt *Runtime, apple appleConnec
 	}
 	rt.Out.Warn("No App Store Connect app exists for " + bundleID + " — products and TestFlight need one.")
 	if !rt.CanPrompt() {
-		rt.Out.Warn("Create it in App Store Connect, or re-run rc apps apple setup interactively to create it from here.")
+		rt.Out.Warn("Create it in App Store Connect, or re-run rc setup apple interactively to create it from here.")
 		return nil
 	}
 	create, err := tui.ConfirmDefault(rt.Globals.NoInput,
@@ -270,12 +270,23 @@ Requires an interactive terminal and Apple 2FA: a human must run it. Apple
 credentials go straight to Apple and are never saved or sent to RevenueCat. Use
 check for a read-only dry run before setup.`,
 		Example: `  rc apps apple check app_x     # read-only: verify sign-in and key access
-  rc apps apple setup app_x     # create keys and configure the app`,
+  rc setup apple app_x          # create keys and configure the app`,
 	}
-	cmd.AddCommand(
-		newAppsAppleWorkflowCmd(true, factory),
-		newAppsAppleWorkflowCmd(false, factory),
-	)
+	// The setup subcommand is reachable here for back-compat but hidden from
+	// help — rc setup apple is the promoted path.
+	setup := newAppsAppleWorkflowCmd(false, factory)
+	setup.Hidden = true
+	cmd.AddCommand(newAppsAppleWorkflowCmd(true, factory), setup)
+	return cmd
+}
+
+// newSetupAppleCmd is the promoted rc setup apple, a sibling of rc setup google.
+// Same workflow as rc apps apple setup, named for the setup group.
+func newSetupAppleCmd() *cobra.Command {
+	cmd := newAppsAppleWorkflowCmd(false, newAppleConnectClient)
+	cmd.Use = "apple [app-id]"
+	cmd.Short = "Set up Apple credentials for an App Store app"
+	cmd.Example = "  rc setup apple app_x\n  rc setup apple app_x --sms --phone-number +15551234567"
 	return cmd
 }
 

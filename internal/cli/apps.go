@@ -165,7 +165,7 @@ name, type, and the platform's required identifier (bundle ID, package name, or
 app name) when run interactively.
 
 App Store apps still need Apple credentials before purchases validate — finish
-with rc apps apple setup.`,
+with rc setup apple.`,
 		Example: `  rc apps create --name "Acme iOS" --type app_store --bundle-id com.acme.app
   rc apps create --name "Acme Android" --type play_store --package-name com.acme.app`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -243,7 +243,7 @@ with rc apps apple setup.`,
 			rt.Out.Success(fmt.Sprintf("Created app %s", a.ID))
 			if appType == "app_store" && subscriptionPrivateKey == "" {
 				rt.Out.Warn("Apple credentials are still required before App Store purchases can be validated.")
-				rt.Out.Hint(fmt.Sprintf("Next:  rc apps apple setup %s  (Apple sign-in with 2FA — a human must run this)", a.ID))
+				rt.Out.Hint(fmt.Sprintf("Next:  rc setup apple %s  (Apple sign-in with 2FA — a human must run this)", a.ID))
 			}
 			return rt.Out.Render(a)
 		},
@@ -442,9 +442,9 @@ func appCredentialStatus(a api.App) string {
 	case a.AppStore.SubscriptionKeyConfigured && a.AppStore.AppStoreConnectAPIKeyConfigured:
 		return "ready"
 	case a.AppStore.SubscriptionKeyConfigured || a.AppStore.AppStoreConnectAPIKeyConfigured:
-		return "partial — run: rc apps apple setup"
+		return "partial — run: rc setup apple"
 	default:
-		return "missing — run: rc apps apple setup"
+		return "missing — run: rc setup apple"
 	}
 }
 
@@ -458,7 +458,7 @@ func appleSetupHintForApps(rt *Runtime, apps []api.App) {
 		}
 		if !a.AppStore.SubscriptionKeyConfigured || !a.AppStore.AppStoreConnectAPIKeyConfigured {
 			rt.Out.Warn(fmt.Sprintf("%s is missing Apple credentials — App Store purchases can't be validated until they're set.", a.ID))
-			rt.Out.Hint(fmt.Sprintf("Fix it:  rc apps apple setup %s  (interactive Apple sign-in with 2FA)", a.ID))
+			rt.Out.Hint(fmt.Sprintf("Fix it:  rc setup apple %s  (interactive Apple sign-in with 2FA)", a.ID))
 		}
 	}
 }
