@@ -53,6 +53,7 @@ func TestDesignSystemBoundaries(t *testing.T) {
 				"skills.go":       "install-consent policy check, not a prompt",
 				"apps_apple.go":   "guided-flow prompt-eligibility checks",
 				"setup_google.go": "guided-flow prompt-eligibility checks",
+				"setup.go":        "guided-flow launch gate; --yes skips it on the rail",
 				"rico.go":         "tool-approval policy for destructive agent actions",
 			},
 			useThis: "use confirmOrAbort(rt, msg) so --yes/--no-input behave uniformly",

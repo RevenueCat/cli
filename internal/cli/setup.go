@@ -6,9 +6,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -138,17 +138,18 @@ func runSetup(cmd *cobra.Command) error {
 	projectLabel, platform, projStatus, appDirs := detectAppProject(dir)
 	agents := detectAgents()
 
-	rt.Out.Title("RevenueCat setup  ·  " + filepath.Base(dir))
-	rt.Out.Lead("An AI agent sets up RevenueCat for this app — you approve each step.")
-	rt.Out.Field("Project", projectLabel)
-	rt.Out.Field("Location", collapseHome(dir))
+	fl := tui.NewFlow(rt.Out.Stderr(), !rt.CanPrompt(), rt.Out.NoColor(), rt.Globals.Quiet)
+	fl.Intro("RevenueCat setup · " + filepath.Base(dir))
+	fl.Say("An AI agent sets up RevenueCat for this app — you approve each step.")
+	fl.Receipt("Project", projectLabel)
+	fl.Receipt("Location", collapseHome(dir))
 	if len(agents) == 0 {
-		rt.Out.Field("Agents", "none found", "install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below")
+		fl.Warn("No AI agents found — install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below.")
 	}
 
 	justAuthed := false
 	if rt.Config == nil || rt.Config.BearerToken() == "" {
-		if err := setupAuthenticate(cmd, rt); err != nil {
+		if err := setupAuthenticate(cmd, rt, fl); err != nil {
 			return err
 		}
 		justAuthed = true
@@ -157,29 +158,30 @@ func runSetup(cmd *cobra.Command) error {
 	newProjectPending := false
 	if rt.Config != nil && rt.Config.BearerToken() != "" {
 		var err error
-		newProjectPending, err = confirmSetupAccount(cmd, rt, dir, justAuthed)
+		newProjectPending, err = confirmSetupAccount(cmd, rt, fl, dir, justAuthed)
 		if err != nil {
 			return err
 		}
 	}
 
-	rt.Out.Info("Checking where this project stands…")
+	fl.Step("Where this project stands")
+	fl.Say("Checking…")
 	stage := detectSetupStage(cmd, rt, platform)
-	rt.Out.Field("Stage", stage.Label)
+	fl.Receipt("Stage", stage.Label)
 
 	switch projStatus {
 	case projectAmbiguous:
-		rt.Out.Info("Several project markers here — the agent will figure out which app and platform to set up.")
+		fl.Say("Several project markers here — the agent will figure out which app and platform to set up.")
 	case projectNonMobile:
-		rt.Out.Info("This doesn't look like a mobile app — the agent will confirm what needs RevenueCat and pick the platform.")
+		fl.Say("This doesn't look like a mobile app — the agent will confirm what needs RevenueCat and pick the platform.")
 	case projectNone:
-		cont, err := tui.ConfirmDefault(false, "No app project detected in this directory. Set up here anyway?", false)
+		cont, err := fl.Confirm("No app project detected in this directory. Set up here anyway?", false)
 		if err != nil {
 			return err
 		}
 		if !cont {
-			rt.Out.Info("Nothing changed.")
-			rt.Out.Hint("cd into your app's root directory (the one with the Xcode project, package.json, or pubspec.yaml) and run rc setup again")
+			fl.Outro("Nothing changed",
+				"cd into your app's root directory (the one with the Xcode project, package.json, or pubspec.yaml) and run rc setup again.")
 			return nil
 		}
 	}
@@ -188,94 +190,130 @@ func runSetup(cmd *cobra.Command) error {
 	applePending := (platform == "ios" || platform == "cross") &&
 		(stage.PromptID == "test-store-ready" || stage.PromptID == "connect-apple")
 
-	rt.Out.Title("Step 1 · Choose your agent")
-	choice, err := pickSetupAgent(agents)
+	fl.Step("Choose your agent")
+	choice, err := pickSetupAgent(fl, agents)
 	if err != nil {
 		return err
 	}
 	if choice == nil {
-		rt.Out.Answer("Agent", "none — copy the prompt")
-		rt.Out.Blank()
-		rt.Out.Info("Run rc skills install, then paste this into any agent:")
-		rt.Out.Info(setupAgentPrompt(rt, stage, applePending, projStatus, appDirs))
+		fl.Receipt("Agent", "none — copy the prompt")
+		fl.Say("Run rc skills install, then paste this prompt into any agent:")
+		fl.Outro("Copy the prompt below")
+		// The prompt is copyable data — print it raw (no rail gutter) to stdout so
+		// it stays selectable and paste-clean.
+		fmt.Fprintln(cmd.OutOrStdout(), setupAgentPrompt(rt, stage, applePending, projStatus, appDirs))
 		rt.Out.Hint("more starter prompts:  rc skills prompts")
 		return nil
 	}
-	rt.Out.Answer("Agent", choice.Name)
+	fl.Receipt("Agent", choice.Name)
 
-	rt.Out.Title("Step 2 · Autonomy")
-	autonomy := autonomyAuto
-	if err := tui.Form(false).
-		Field(huh.NewSelect[string]().
-			Title("How much can "+choice.Name+" do without stopping to ask?").
-			Description("You can interrupt anytime.").
-			Options(
-				huh.NewOption("Auto — use "+choice.Name+"'s built-in auto-approve mode", autonomyAuto),
-				huh.NewOption("Run freely — no approval prompts", autonomyFull),
-				huh.NewOption("Pre-approve rc, edits, and builds; ask for anything unusual", autonomyTrusted),
-				huh.NewOption("Ask me before each step", autonomyManual),
-			).
-			Value(&autonomy)).
-		Run(); err != nil {
+	fl.Step("Autonomy")
+	autonomy, err := fl.Select("How much can "+choice.Name+" do without stopping to ask?",
+		[]tui.Option{
+			{Label: "Auto — use " + choice.Name + "'s built-in auto-approve mode", Value: autonomyAuto},
+			{Label: "Run freely — no approval prompts", Value: autonomyFull},
+			{Label: "Pre-approve rc, edits, and builds; ask for anything unusual", Value: autonomyTrusted},
+			{Label: "Ask me before each step", Value: autonomyManual},
+		},
+		"You can interrupt anytime.",
+	)
+	if err != nil {
 		return err
 	}
-	rt.Out.Answer("Autonomy", autonomyLabels[autonomy])
+	fl.Receipt("Autonomy", autonomyLabels[autonomy])
 
-	rt.Out.Title("Step 3 · Skills")
-	skillsScope := "project"
-	if err := tui.Form(false).
-		Field(huh.NewSelect[string]().
-			Title("Install the RevenueCat skills here or globally?").
-			Description("Project keeps them with this repo; global shares them across every project on this machine.").
-			Options(
-				huh.NewOption("This project only", "project"),
-				huh.NewOption("Globally (all projects on this machine)", "global"),
-			).
-			Value(&skillsScope)).
-		Run(); err != nil {
+	fl.Step("Skills")
+	skillsScope, err := fl.Select("Install the RevenueCat skills here or globally?",
+		[]tui.Option{
+			{Label: "This project only", Value: "project"},
+			{Label: "Globally (all projects on this machine)", Value: "global"},
+		},
+		"Project keeps them with this repo; global shares them across every project on this machine.",
+	)
+	if err != nil {
 		return err
 	}
-	rt.Out.Answer("Skills", skillsScopeLabels[skillsScope])
+	fl.Receipt("Skills", skillsScopeLabels[skillsScope])
 
 	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
 	appleDeferred := applePending
-
 	prompt := setupAgentPrompt(rt, stage, appleDeferred, projStatus, appDirs)
 
-	rt.Out.Plan([]string{
-		"Install the RevenueCat AI Toolkit skills for " + choice.Name,
-		"Configure the RevenueCat MCP for " + choice.Name,
-		"Launch " + choice.Name + " to build your Test Store catalog, paywall, and SDK integration",
-	})
+	fl.Step("Ready to launch " + choice.Name)
+	fl.Item("Install the RevenueCat AI Toolkit skills for " + choice.Name)
+	fl.Item("Configure the RevenueCat MCP for " + choice.Name)
+	fl.Item("Launch " + choice.Name + " to build your Test Store catalog, paywall, and SDK integration")
 	if appleDeferred {
-		rt.Out.Info("Apple is deferred — the agent finishes everything that doesn't need it, then hands you the exact commands to connect App Store Connect when you're ready to ship.")
+		fl.Say("Apple is deferred — the agent finishes everything that doesn't need it, then hands you the exact commands to connect App Store Connect when you're ready to ship.")
 	}
-	if err := confirmOrAbort(rt, "Launch "+choice.Name+" now?"); err != nil {
-		return err
+	ok := rt.Globals.AssumeYes // --yes skips the final launch gate, as before
+	if !ok {
+		ok, err = fl.Confirm("Launch "+choice.Name+" now?", true)
+		if err != nil {
+			return err
+		}
+	}
+	if !ok {
+		fl.Outro("Cancelled — nothing was changed")
+		return nil
 	}
 
 	// deferred to here so canceling setup above doesn't wipe the active project
 	if newProjectPending {
 		if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
-			rt.Out.Warn("Couldn't save the cleared project to your profile: " + err.Error())
+			fl.Warn("Couldn't save the cleared project to your profile: " + err.Error())
 		}
 	}
 
-	rt.Out.Info("Installing the RevenueCat AI Toolkit skills…")
 	toolkitSource := officialToolkitSource
 	if branch := os.Getenv("RC_SKILLS_BRANCH"); branch != "" {
 		toolkitSource = "https://github.com/RevenueCat/ai-toolkit/tree/" + branch
-		rt.Out.Info("Using toolkit branch " + branch + " (RC_SKILLS_BRANCH)")
+		fl.Say("Using toolkit branch " + branch + " (RC_SKILLS_BRANCH)")
 	}
+
+	fl.Step("Setting up")
+	led := fl.Ledger(
+		"Install the RevenueCat skills",
+		"Configure the RevenueCat MCP for "+choice.Name,
+	)
+	led.Start()
+	led.Running(0)
+	if err := installSetupSkills(cmd, choice, skillsScope, toolkitSource); err != nil {
+		led.Fail(0, "failed")
+		led.Stop()
+		return err
+	}
+	led.Done(0, "")
+	led.Running(1)
+	mcp := configureAgentMCP(cmd, rt, choice)
+	if mcp.warn != "" {
+		led.Fail(1, "not configured")
+	} else {
+		led.Done(1, mcp.note)
+	}
+	led.Stop()
+	if mcp.warn != "" {
+		fl.Warn(mcp.warn)
+	}
+	if mcp.hint != "" {
+		fl.Hint(mcp.hint)
+	}
+
+	fl.Outro("Launching " + choice.Name + " …")
+	agent := exec.CommandContext(cmd.Context(), choice.Binary, choice.LaunchArgs(prompt, autonomy)...)
+	agent.Stdin, agent.Stdout, agent.Stderr = os.Stdin, os.Stdout, os.Stderr
+	return agent.Run()
+}
+
+// installSetupSkills runs the toolkit install silently — setup owns the
+// questions, so the skills CLI's own UI appears only on failure (via the error).
+func installSetupSkills(cmd *cobra.Command, choice *agentClient, skillsScope, toolkitSource string) error {
 	installArgs := []string{"--yes", "skills", "add", toolkitSource, "--agent", choice.ToolkitKey}
 	if skillsScope == "global" {
 		installArgs = append(installArgs, "--global")
 	}
 	installArgs = append(installArgs, "--skill")
 	installArgs = append(installArgs, defaultToolkitSkills...)
-	// The skills CLI is a whole guided UI of its own; inside setup it runs
-	// silently — our flow owns the questions, its output appears only on
-	// failure.
 	npxPath, err := exec.LookPath("npx")
 	if err != nil {
 		return fmt.Errorf("npx is required to install the RevenueCat AI Toolkit: %w", err)
@@ -288,15 +326,7 @@ func runSetup(cmd *cobra.Command) error {
 		}
 		return fmt.Errorf("install skills: %w\n%s", err, strings.TrimSpace(tail))
 	}
-	rt.Out.Info("Skills installed")
-
-	configureAgentMCP(cmd, rt, choice)
-
-	rt.Out.Info("Launching " + choice.Name + "…")
-	rt.Out.Blank()
-	agent := exec.CommandContext(cmd.Context(), choice.Binary, choice.LaunchArgs(prompt, autonomy)...)
-	agent.Stdin, agent.Stdout, agent.Stderr = os.Stdin, os.Stdout, os.Stderr
-	return agent.Run()
+	return nil
 }
 
 var autonomyLabels = map[string]string{
@@ -313,59 +343,59 @@ var skillsScopeLabels = map[string]string{
 
 // confirmSetupAccount confirms the account and picks the project for this app,
 // defaulting a new app to a fresh project rather than the active one.
-func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, dir string, justAuthed bool) (newProjectPending bool, err error) {
-	const (
-		optNewProject = iota
-		optExistingProject
-		optSwitchAccount
-		optContinue
-	)
+func confirmSetupAccount(cmd *cobra.Command, rt *Runtime, fl *tui.Flow, dir string, justAuthed bool) (newProjectPending bool, err error) {
+	fl.Step("Project")
 	for {
 		active := rt.Config != nil && rt.Config.ProjectID != ""
+		activeLbl := ""
 		title := "Create a new RevenueCat project for " + filepath.Base(dir) + "?"
-		opts := []huh.Option[int]{
-			huh.NewOption("Yes — new project", optNewProject),
-			huh.NewOption("Use an existing project", optExistingProject),
+		opts := []tui.Option{
+			{Label: "Yes — new project", Value: "new"},
+			{Label: "Use an existing project", Value: "existing"},
 		}
-		choice := optNewProject
 		if active {
-			// New stays the default: the active project is profile-global, not this dir's
+			// New stays first: the active project is profile-global, not this dir's.
+			activeLbl = activeProjectLabel(cmd, rt)
 			title = "Set up " + filepath.Base(dir) + " — new project, or continue an existing one?"
-			opts = []huh.Option[int]{
-				huh.NewOption("New project for "+filepath.Base(dir), optNewProject),
-				huh.NewOption("Continue with "+activeProjectLabel(cmd, rt), optContinue),
-				huh.NewOption("Use a different project", optExistingProject),
+			opts = []tui.Option{
+				{Label: "New project for " + filepath.Base(dir), Value: "new"},
+				{Label: "Continue with " + activeLbl, Value: "continue"},
+				{Label: "Use a different project", Value: "existing"},
 			}
 		}
 		// Switching accounts only makes sense if we didn't just log them in.
 		if !justAuthed {
-			opts = append(opts, huh.NewOption("Switch account", optSwitchAccount))
+			opts = append(opts, tui.Option{Label: "Switch account", Value: "switch"})
 		}
-		if err := tui.Form(false).
-			Field(huh.NewSelect[int]().Title(title).Options(opts...).Value(&choice)).
-			Run(); err != nil {
+		choice, err := fl.Select(title, opts)
+		if err != nil {
 			return false, err
 		}
 
 		switch choice {
-		case optContinue:
+		case "continue":
+			fl.Receipt("Project", activeLbl)
 			return false, nil
-		case optNewProject:
+		case "new":
 			// persisted after launch is confirmed, not here
 			rt.Config.ProjectID = ""
+			fl.Receipt("Project", "new project for "+filepath.Base(dir))
 			return true, nil
-		case optExistingProject:
+		case "existing":
+			// The project picker is its own command with its own UI — the rail
+			// pauses for it, then resumes with the chosen project.
 			use, _, err := cmd.Root().Find([]string{"projects", "use"})
 			if err != nil || use == nil {
 				return false, fmt.Errorf("couldn't open the project picker — run `rc projects use`, then rerun setup")
 			}
 			use.SetContext(cmd.Context())
 			if err := use.RunE(use, nil); err != nil {
-				rt.Out.Warn("Project not changed: " + err.Error())
+				fl.Warn("Project not changed: " + err.Error())
 				continue
 			}
+			fl.Receipt("Project", activeProjectLabel(cmd, rt))
 			return false, nil
-		case optSwitchAccount:
+		case "switch":
 			rt.Config.AccountEmail = ""
 			rt.Config.AccountName = ""
 			if err := loginWithOAuth(cmd.Context(), rt); err != nil {
@@ -598,24 +628,19 @@ func setupToolingNote(rt *Runtime) string {
 // setupAuthenticate resolves auth before the terminal is handed to an agent:
 // browser login and signup are human actions, and doing them mid-agent-run
 // means fighting the agent for the terminal.
-func setupAuthenticate(cmd *cobra.Command, rt *Runtime) error {
-	const (
-		optLogin = iota
-		optSignup
-	)
-	choice := optLogin
-	if err := tui.Form(false).
-		Field(huh.NewSelect[int]().
-			Title("You're not logged in — how would you like to sign in?").
-			Options(
-				huh.NewOption("Log in (opens your browser)", optLogin),
-				huh.NewOption("Create a RevenueCat account", optSignup),
-			).
-			Value(&choice)).
-		Run(); err != nil {
+func setupAuthenticate(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
+	fl.Step("Sign in")
+	choice, err := fl.Select("You're not logged in — how would you like to sign in?",
+		[]tui.Option{
+			{Label: "Log in (opens your browser)", Value: "login"},
+			{Label: "Create a RevenueCat account", Value: "signup"},
+		})
+	if err != nil {
 		return err
 	}
-	if choice == optSignup {
+	// Both branches hand off to a sub-command with its own UI (browser OAuth or
+	// the signup form); the rail pauses for it and resumes afterward.
+	if choice == "signup" {
 		signup := newAuthSignupCmd()
 		signup.SetContext(cmd.Context())
 		return signup.RunE(signup, nil)
@@ -632,25 +657,21 @@ func starterPromptByID(id string) string {
 	return "Use the create-revenuecat-project skill to set up RevenueCat for the app in this directory."
 }
 
-func pickSetupAgent(agents []agentClient) (*agentClient, error) {
-	options := make([]huh.Option[int], 0, len(agents)+1)
+func pickSetupAgent(fl *tui.Flow, agents []agentClient) (*agentClient, error) {
+	opts := make([]tui.Option, 0, len(agents)+1)
 	for i, a := range agents {
-		options = append(options, huh.NewOption(a.Name, i))
+		opts = append(opts, tui.Option{Label: a.Name, Value: strconv.Itoa(i)})
 	}
-	options = append(options, huh.NewOption("None — just show me the prompt", -1))
-	selected := 0
-	if len(agents) == 0 {
-		selected = -1
-	}
-	if err := tui.Form(false).
-		Field(huh.NewSelect[int]().Title("Which agent should run the setup?").Options(options...).Value(&selected)).
-		Run(); err != nil {
+	opts = append(opts, tui.Option{Label: "None — just show me the prompt", Value: "-1"})
+	choice, err := fl.Select("Which agent should run the setup?", opts)
+	if err != nil {
 		return nil, err
 	}
-	if selected < 0 {
+	idx, _ := strconv.Atoi(choice)
+	if idx < 0 {
 		return nil, nil
 	}
-	return &agents[selected], nil
+	return &agents[idx], nil
 }
 
 func detectAgents() []agentClient {

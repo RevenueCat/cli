@@ -81,6 +81,10 @@ func (f *Flow) Receipt(key, value string) {
 
 func (f *Flow) Warn(line string) { f.body(prWarnSty.Render("! " + line)) }
 
+// Hint prints a dim guidance line on the rail (rail-native equivalent of
+// Renderer.Hint, so hints stay on the gutter mid-flow).
+func (f *Flow) Hint(line string) { f.body(prDimSty.Render("→ " + line)) }
+
 func (f *Flow) Outro(title string, extras ...string) {
 	if f.quiet {
 		return
