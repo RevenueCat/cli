@@ -120,6 +120,12 @@ func newSetupGoogleCmd() *cobra.Command {
 				)
 			}
 			open := func(u string) error {
+				if rt.Out.IsJSON() {
+					// Info/LinkLine are suppressed in JSON mode, but the sign-in URL
+					// is the only way to finish auth — always surface it on stderr.
+					fmt.Fprintln(os.Stderr, "Sign in to Google to continue: "+u)
+					return nil
+				}
 				rt.Out.Blank()
 				rt.Out.Info("Sign in to Google to continue — use the browser/account that has your Play + Cloud access:")
 				rt.Out.LinkLine(u)
@@ -285,6 +291,15 @@ func newSetupGoogleCmd() *cobra.Command {
 
 			rt.Out.Info("Creating the service-account key…")
 			keyData, keyName, err := google.CreateKey(ctx, creds.TokenSource, projectID, saEmail)
+			if err != nil && !keepOldKeys && google.IsKeyLimitErr(err) {
+				// Creating before pruning is safe against data loss, but at Google's
+				// ~10-key cap the create can't succeed until a slot is freed. Prune
+				// the old keys and retry once.
+				if pruned, perr := google.PruneUserKeys(ctx, creds.TokenSource, projectID, saEmail, ""); perr == nil && pruned > 0 {
+					rt.Out.Info(fmt.Sprintf("Service account was at Google's key limit — removed %d older key(s) and retrying…", pruned))
+					keyData, keyName, err = google.CreateKey(ctx, creds.TokenSource, projectID, saEmail)
+				}
+			}
 			if err != nil {
 				return googleHint(rt, err)
 			}
