@@ -20,7 +20,6 @@ import (
 // ErrPromptCancelled is returned when the user aborts a rail prompt (esc/ctrl-c).
 var ErrPromptCancelled = errors.New("cancelled")
 
-// Option is one choice in a rail Select.
 type Option struct {
 	Label string
 	Value string
@@ -42,8 +41,7 @@ func railHead(glyph, title string) string {
 }
 func railBody(s string) string { return prRailSty.Render("│") + "  " + s }
 
-// Confirm asks a yes/no question on the rail. Returns the choice; def is the
-// initial selection. In plain mode it returns def without prompting.
+// Confirm returns def without prompting in plain mode.
 func (f *Flow) Confirm(question string, def bool) (bool, error) {
 	if f.plain {
 		return def, nil
@@ -59,7 +57,6 @@ func (f *Flow) Confirm(question string, def bool) (bool, error) {
 	return cm.yes, nil
 }
 
-// Select shows a single-choice list on the rail and returns the chosen value.
 func (f *Flow) Select(title string, opts []Option, desc ...string) (string, error) {
 	if f.plain {
 		return "", errors.New("cannot show a picker in non-interactive mode")
@@ -78,7 +75,7 @@ func (f *Flow) Select(title string, opts []Option, desc ...string) (string, erro
 	return sm.opts[sm.cursor].Value, nil
 }
 
-// Input asks for a line of text on the rail. validate may be nil.
+// Input's validate may be nil.
 func (f *Flow) Input(title, placeholder string, validate func(string) error, desc ...string) (string, error) {
 	if f.plain {
 		return "", errors.New("cannot prompt for input in non-interactive mode")

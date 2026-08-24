@@ -92,8 +92,6 @@ func newSetupGoogleCmd() *cobra.Command {
 				return errors.New("rc setup google is interactive: run it in a terminal, or pass --yes with the app id, --project, and --developer-id")
 			}
 
-			// App — confirm the only one, or pick among several. Its package name
-			// drives the Google setup.
 			rc, err := rt.API()
 			if err != nil {
 				return err
@@ -158,7 +156,6 @@ func newSetupGoogleCmd() *cobra.Command {
 			}
 			result := googleSetupResult{Email: creds.Email, RCAppID: chosenApp.ID}
 
-			// Google Cloud project — or create a new one.
 			if projectID == "" {
 				if !rt.CanPrompt() {
 					return errors.New("--project is required under --no-input")
@@ -219,8 +216,6 @@ func newSetupGoogleCmd() *cobra.Command {
 			}
 			result.DeveloperID = developerID
 
-			// Package name comes from the chosen RevenueCat app. Only prompt if
-			// that app has no package set yet.
 			if packageName == "" {
 				if !rt.CanPrompt() {
 					return fmt.Errorf("app %s has no package name set — pass --package", chosenApp.ID)
@@ -234,7 +229,6 @@ func newSetupGoogleCmd() *cobra.Command {
 
 			saEmail := google.ServiceAccountEmail(projectID)
 
-			// Review + single consent.
 			fl.Step("Review")
 			fl.Item(fmt.Sprintf("Enable %d Google APIs", len(google.RequiredAPIs)))
 			fl.Item("Create " + saEmail)
@@ -252,8 +246,8 @@ func newSetupGoogleCmd() *cobra.Command {
 				}
 			}
 
-			// Setting up. Enable APIs first — it can pause for the Android Publisher
-			// terms of service — then the rest fills in on the rail ledger.
+			// Enable APIs first — it can pause for the Android Publisher terms of
+			// service, which needs the human before the ledger steps can run.
 			fl.Step("Setting up")
 			if err := enableAPIsWithToS(ctx, rt, creds.TokenSource, projectID, noBrowser, creds.Email); err != nil {
 				return err
