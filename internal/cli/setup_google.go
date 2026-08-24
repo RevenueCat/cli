@@ -283,15 +283,8 @@ func newSetupGoogleCmd() *cobra.Command {
 				rt.Out.Success("Granted " + strings.Join(added, ", "))
 			}
 
-			if !keepOldKeys {
-				if pruned, perr := google.PruneUserKeys(ctx, creds.TokenSource, projectID, saEmail); perr != nil {
-					rt.Out.Warn("Couldn't remove older keys on the service account: " + perr.Error())
-				} else if pruned > 0 {
-					rt.Out.Info(fmt.Sprintf("Removed %d older key(s) from the RevenueCat service account (pass --keep-old-keys to keep them).", pruned))
-				}
-			}
 			rt.Out.Info("Creating the service-account key…")
-			keyData, err := google.CreateKey(ctx, creds.TokenSource, projectID, saEmail)
+			keyData, keyName, err := google.CreateKey(ctx, creds.TokenSource, projectID, saEmail)
 			if err != nil {
 				return googleHint(rt, err)
 			}
@@ -315,12 +308,21 @@ func newSetupGoogleCmd() *cobra.Command {
 				rt.Out.Success("Play access already configured for " + packageName)
 			}
 
-			// 6. RevenueCat upload is not yet supported by API v2 (see DX-985):
-			// write the key so the human can upload it, until the API field exists.
+			// Persist the credential before pruning older keys — Google returns
+			// private key material only once, so a failure here must not happen
+			// after the old keys are already deleted.
 			if err := os.WriteFile(keyOut, keyData, 0o600); err != nil {
 				return fmt.Errorf("write key to %s: %w", keyOut, err)
 			}
 			result.KeyPath = keyOut
+
+			if !keepOldKeys {
+				if pruned, perr := google.PruneUserKeys(ctx, creds.TokenSource, projectID, saEmail, keyName); perr != nil {
+					rt.Out.Warn("Couldn't remove older keys on the service account: " + perr.Error())
+				} else if pruned > 0 {
+					rt.Out.Info(fmt.Sprintf("Removed %d older key(s) from the RevenueCat service account (pass --keep-old-keys to keep them).", pruned))
+				}
+			}
 
 			rt.Out.Success("Google Play setup complete")
 			if err := rt.Out.RenderCard(output.Card{
@@ -340,7 +342,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			}); err != nil {
 				return err
 			}
-			rt.Out.Info("RevenueCat can't yet accept the Play credential over the API (DX-985). For now, upload " + keyOut + " to this app in the dashboard:")
+			rt.Out.Info("RevenueCat can't yet accept the Play credential over the API. For now, upload " + keyOut + " to this app in the dashboard:")
 			rt.Out.LinkLine("https://app.revenuecat.com/projects/" + rcProject + "/apps/" + chosenApp.ID)
 			return nil
 		},
