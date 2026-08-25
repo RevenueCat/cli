@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -197,9 +198,14 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return fmt.Errorf("decoding simulated purchase response: %w", err)
 			}
 			rt.Out.Success(fmt.Sprintf("Simulated purchase for %s", appUserID))
+			// The raw customer_info is the SDK (/receipts) shape — entitlements keyed
+			// by identifier, which differs from `customers show`. Surface the active
+			// entitlement identifiers directly so the purchase can be verified from
+			// this one command instead of switching to `customers show`.
 			return rt.Out.Render(map[string]any{
 				"app_id": appID, "app_user_id": appUserID, "product": *selected,
 				"fetch_token": fetchToken, "customer_info": customerInfo,
+				"active_entitlements": activeEntitlementIDs(raw),
 			})
 		},
 	}
@@ -208,6 +214,42 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 	cmd.Flags().StringVar(&appUserID, "app-user-id", os.Getenv("RC_APP_USER_ID"), "customer app user ID (or RC_APP_USER_ID)")
 	cmd.Flags().StringVar(&publicAPIKey, "public-api-key", os.Getenv("RC_PUBLIC_API_KEY"), "Test Store public SDK key; discovered from the app if omitted (or RC_PUBLIC_API_KEY)")
 	return cmd
+}
+
+// activeEntitlementIDs returns the identifiers of entitlements active in an SDK
+// /receipts (customer_info) response — expiry in the future, or none (lifetime).
+// It lets a simulated purchase be verified from this command instead of switching
+// to `customers show` (which uses the different v2 shape). Best-effort: malformed
+// or unparseable entries are skipped rather than reported as active.
+func activeEntitlementIDs(raw json.RawMessage) []string {
+	var resp struct {
+		Subscriber struct {
+			Entitlements map[string]struct {
+				ExpiresDate *string `json:"expires_date"`
+			} `json:"entitlements"`
+		} `json:"subscriber"`
+	}
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return nil
+	}
+	now := time.Now()
+	var ids []string
+	for id, e := range resp.Subscriber.Entitlements {
+		if e.ExpiresDate == nil {
+			ids = append(ids, id) // non-expiring / lifetime
+			continue
+		}
+		for _, layout := range []string{time.RFC3339, time.RFC3339Nano} {
+			if t, err := time.Parse(layout, *e.ExpiresDate); err == nil {
+				if t.After(now) {
+					ids = append(ids, id)
+				}
+				break
+			}
+		}
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 func simulatedStoreFetchToken() (string, error) {
