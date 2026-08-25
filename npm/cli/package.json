@@ -6,7 +6,7 @@
   "homepage": "https://github.com/RevenueCat/revenuecat-cli",
   "repository": { "type": "git", "url": "git+https://github.com/RevenueCat/revenuecat-cli.git" },
   "license": "MIT",
-  "bin": { "rc": "bin/rc.js" },
+  "bin": { "rc": "bin/rc.js", "revenuecat": "bin/rc.js" },
   "files": ["bin/rc.js", "README.md"],
   "engines": { "node": ">=18" },
   "optionalDependencies": {

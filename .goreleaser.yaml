@@ -82,5 +82,6 @@ brews:
     license: "MIT"
     install: |
       bin.install "rc"
+      bin.install_symlink "rc" => "revenuecat"
     test: |
       system "#{bin}/rc", "--version"
