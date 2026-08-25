@@ -112,6 +112,22 @@ const publishOrder = [...built.map(b => b.pkgDir), launcherDir];
 // A local publish (e.g. the first bootstrap publish) must omit it or npm errors.
 const provenance = publish && process.env.GITHUB_ACTIONS === "true";
 for (const dir of publishOrder) {
+  if (publish) {
+    // Skip versions already on the registry so a re-run (or a release whose
+    // version was published out-of-band) is idempotent instead of failing.
+    const pj = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+    let alreadyPublished = false;
+    try {
+      execFileSync("npm", ["view", `${pj.name}@${pj.version}`, "version"], { stdio: "ignore" });
+      alreadyPublished = true;
+    } catch {
+      alreadyPublished = false;
+    }
+    if (alreadyPublished) {
+      console.log(`skip (already published): ${pj.name}@${pj.version}`);
+      continue;
+    }
+  }
   const args = publish
     ? ["publish", "--access", "public", ...(provenance ? ["--provenance"] : [])]
     : ["pack", "--pack-destination", path.resolve(outDir)];
