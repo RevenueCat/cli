@@ -108,9 +108,12 @@ writeJSON(path.join(launcherDir, "package.json"), launcherPkg);
 // Platform packages publish before the launcher so the launcher's
 // optionalDependencies always resolve.
 const publishOrder = [...built.map(b => b.pkgDir), launcherDir];
+// Provenance requires OIDC, which only exists in a supported CI (GitHub Actions).
+// A local publish (e.g. the first bootstrap publish) must omit it or npm errors.
+const provenance = publish && process.env.GITHUB_ACTIONS === "true";
 for (const dir of publishOrder) {
   const args = publish
-    ? ["publish", "--access", "public", "--provenance"]
+    ? ["publish", "--access", "public", ...(provenance ? ["--provenance"] : [])]
     : ["pack", "--pack-destination", path.resolve(outDir)];
   console.log(`npm ${args[0]}: ${dir}`);
   execFileSync("npm", args, { cwd: dir, stdio: "inherit" });
