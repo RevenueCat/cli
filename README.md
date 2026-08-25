@@ -1,12 +1,12 @@
-# rc — the RevenueCat CLI
+# RevenueCat CLI
 
-Manage your entire [RevenueCat](https://www.revenuecat.com) integration from the
-terminal — customers, subscriptions, products, paywalls, and store credentials —
-built to be driven equally well by you and by AI coding agents.
+`rc` manages your entire [RevenueCat](https://www.revenuecat.com) integration
+from the terminal: customers, subscriptions, products, paywalls, and store
+credentials. It's built to be driven equally well by you and by AI coding agents.
 
 - **Developers** who'd rather stay in the terminal than click through the dashboard
-- **CI pipelines** — stable `--json`, `--no-input`, and predictable exit codes
-- **AI agents** — full schema discovery, one-command setup, and installable skills
+- **CI pipelines** that need stable `--json`, `--no-input`, and predictable exit codes
+- **AI agents** with full schema discovery, one-command setup, and installable skills
 
 ```
 rc auth login
@@ -16,7 +16,7 @@ rc charts show mrr
 
 ## Set up in one command
 
-From your app's directory — no install, no dashboard clicking:
+From your app's directory, with no install and no dashboard clicking:
 
 ```bash
 npx @revenuecat/cli setup
@@ -42,7 +42,7 @@ Installed via Homebrew or npm, drop the `npx @revenuecat/cli` and just run
 brew install RevenueCat/tap/rc
 ```
 
-**npm / npx** — no Homebrew required; ideal for CI, agent sandboxes, and React Native projects. The package ships the same native Go binary; Node only dispatches:
+**npm / npx** (no Homebrew required; ideal for CI, agent sandboxes, and React Native projects). The package ships the same native Go binary; Node only dispatches:
 ```bash
 npx @revenuecat/cli --help
 # or install it
@@ -51,7 +51,7 @@ npm install -g @revenuecat/cli
 
 Or download a binary directly from the [releases page](../../releases).
 
-Every command also runs without installing, via `npx @revenuecat/cli <command>` —
+Every command also runs without installing, via `npx @revenuecat/cli <command>`,
 handy for CI and agent sandboxes.
 
 ## Quick start
@@ -66,7 +66,7 @@ rc auth login
 # Or create a new account and log in without a browser
 rc auth signup
 
-# 2. Set a default project — or choose "Ask me every time" for multi-project workflows
+# 2. Set a default project (or choose "Ask me every time" for multi-project workflows)
 rc projects use
 
 # Set up store-side credentials (App Store Connect / Google Play)
@@ -132,8 +132,8 @@ rc products store sync app_abc --file catalog.csv    # from a CSV or JSON adapte
 ```
 
 For CI and agents, separate review from mutation. `plan` returns a persisted
-plan ID that later commands apply by reference — nothing local needs to survive
-between steps:
+plan ID that later commands apply by reference, so nothing local needs to
+survive between steps:
 
 ```bash
 plan_id=$(rc products store plan app_abc --file catalog.csv --json --format '.data.id')
@@ -151,15 +151,15 @@ Set up the store-side credentials RevenueCat needs, without manual key downloads
 or console clicking. Both run locally so your store credentials go straight to
 Apple/Google and never through RevenueCat or a model.
 
-**Apple (App Store Connect)** — create the missing In-App Purchase and App Store
-Connect API keys, and upload them to an existing RevenueCat App Store app:
+**Apple (App Store Connect)** creates the missing In-App Purchase and App Store
+Connect API keys, and uploads them to an existing RevenueCat App Store app:
 
 ```bash
 rc setup apple app_abc
 ```
 
-**Google (Google Play)** — sign in locally, bootstrap the service-account
-credential, grant package-scoped Play access, and upload it to RevenueCat:
+**Google (Google Play)** signs in locally, bootstraps the service-account
+credential, grants package-scoped Play access, and uploads it to RevenueCat:
 
 ```bash
 rc setup google app_xyz
@@ -261,7 +261,7 @@ rc skills install --all      # the full skill catalog
 
 `rc` delegates to the Skills CLI (`npx skills add RevenueCat/ai-toolkit`) so the
 workflows update in one place rather than shipping a stale copy. Global installs
-run in an isolated temp dir — no lock file or hidden directory in your repo.
+run in an isolated temp dir, so no lock file or hidden directory lands in your repo.
 Re-run `rc skills install` to update, then reload your agent to pick up changes.
 
 Skills don't run on install; the agent selects one when a request matches its
@@ -294,7 +294,7 @@ toolkit discovers every command with `rc commands --json` and
 ## Custom request headers
 
 `RC_HEADERS` sends extra HTTP headers on every RevenueCat request (v2 API, Rico,
-and the Paywall AI editor) — newline-separated `Name: Value` pairs. Use it to
+and the Paywall AI editor), as newline-separated `Name: Value` pairs. Use it to
 route or tag traffic without baking anything into the binary:
 
 ```bash
@@ -335,8 +335,8 @@ Releases are fully automated via GoReleaser. To cut a release:
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for dev setup, testing, and how to send a PR.
 
-For deeper conventions — architecture, agent-friendly patterns, where things live — see [AGENTS.md](./AGENTS.md).
+For deeper conventions (architecture, agent-friendly patterns, where things live), see [AGENTS.md](./AGENTS.md).
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).

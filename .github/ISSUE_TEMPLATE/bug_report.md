@@ -36,4 +36,4 @@ Output here
 ```
 
 **Additional context**
-Anything else that might help — stack traces, related issues, screenshots.
+Anything else that might help: stack traces, related issues, screenshots.
