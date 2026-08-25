@@ -51,7 +51,6 @@ func newAuthSignupCmd() *cobra.Command {
 	var password string
 	var generatePassword bool
 	var savePassword bool
-	var fromSetup bool
 
 	cmd := &cobra.Command{
 		Use:   "signup",
@@ -177,17 +176,17 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 			}
 
 			if password == "" {
-				passwordBytes := make([]byte, 32)
-				if _, err := rand.Read(passwordBytes); err != nil {
-					return fmt.Errorf("generating signup credential: %w", err)
+				generated, err := generateSignupPassword()
+				if err != nil {
+					return err
 				}
-				password = base64.RawURLEncoding.EncodeToString(passwordBytes)
+				password = generated
 				generatePassword = true
 			}
 			if err := validateSignupPassword(password); err != nil {
 				return err
 			}
-			return signupWithOAuth(cmd.Context(), rt, email, name, password, marketingEmails, savePassword, generatePassword, fromSetup)
+			return signupWithOAuth(cmd.Context(), rt, email, name, password, marketingEmails, savePassword, generatePassword, false)
 		},
 	}
 
@@ -198,9 +197,6 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 	cmd.Flags().BoolVar(&savePassword, "save-password", false, "save the website password in the local macOS login Keychain; does not sync to Apple Passwords/iCloud")
 	cmd.Flags().BoolVar(&acceptTerms, "accept-terms", false, "accept the RevenueCat Terms of Service and Privacy Policy")
 	cmd.Flags().BoolVar(&marketingEmails, "marketing-emails", false, "receive RevenueCat product and marketing emails")
-	// Set by rc setup, which owns the post-signup next-steps guidance itself.
-	cmd.Flags().BoolVar(&fromSetup, "from-setup", false, "")
-	_ = cmd.Flags().MarkHidden("from-setup")
 	return cmd
 }
 
@@ -703,7 +699,14 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	return finishLogin(ctx, rt, client)
 }
 
-func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password string, marketingEmails, savePassword, generatedPassword, suppressNextSteps bool) error {
+func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password string, marketingEmails, savePassword, generatedPassword, fromSetup bool) error {
+	// When setup drives signup it renders progress on its own rail (a ledger),
+	// so suppress this command's standalone chatter to avoid off-rail lines.
+	say := func(msg string) {
+		if !fromSetup {
+			rt.Out.Info(msg)
+		}
+	}
 	verifier, challenge, err := api.GeneratePKCE()
 	if err != nil {
 		return fmt.Errorf("generating PKCE: %w", err)
@@ -721,7 +724,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	redirectURI := fmt.Sprintf("http://localhost:%d/callback", port)
 
 	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
-	rt.Out.Info("Creating your RevenueCat account…")
+	say("Creating your RevenueCat account…")
 	if err := svc.ProvisionAccount(ctx, api.ProvisionAccountRequest{
 		Email:                 email,
 		Name:                  name,
@@ -732,7 +735,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	}
 	passwordSaved := false
 	if savePassword {
-		rt.Out.Info("Saving the website password in macOS Keychain…")
+		say("Saving the website password in macOS Keychain…")
 		if err := saveRevenueCatPasswordToKeychain(email, password); err != nil {
 			rt.Out.Warn(fmt.Sprintf("Account created, but the password could not be saved to Keychain: %v", err))
 		} else {
@@ -740,17 +743,17 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 		}
 	}
 
-	rt.Out.Info("Starting a temporary secure login…")
+	say("Starting a temporary secure login…")
 	login, err := svc.Login(ctx, email, password)
 	if err != nil {
 		return signupAuthenticationError(err)
 	}
-	rt.Out.Info("Authorizing renewable CLI access…")
+	say("Authorizing renewable CLI access…")
 	code, err := svc.AuthorizeWithLoginToken(ctx, login.AuthenticationToken, redirectURI, challenge, state)
 	if err != nil {
 		return signupAuthenticationError(err)
 	}
-	rt.Out.Info("Exchanging the temporary session for OAuth tokens…")
+	say("Exchanging the temporary session for OAuth tokens…")
 	tokens, err := svc.ExchangeCode(ctx, code, redirectURI, verifier)
 	if err != nil {
 		return signupAuthenticationError(err)
@@ -768,19 +771,21 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	clearProjectBinding(rt)
 	rt.client = nil
 
-	rt.Out.Info("Saving OAuth credentials in the active CLI profile…")
+	say("Saving OAuth credentials in the active CLI profile…")
 	if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
 		return err
 	}
 	profile := config.ProfileName(rt.Globals.Profile)
-	rt.Out.Success(fmt.Sprintf("Account created and logged in (profile: %s)", profile))
+	if !fromSetup {
+		rt.Out.Success(fmt.Sprintf("Account created and logged in (profile: %s)", profile))
+	}
 	if generatedPassword && !passwordSaved {
 		rt.Out.Warn("The generated password was not saved. Use password reset if you need dashboard access later.")
 	}
-	rt.Out.Info("Check your email to verify the account.")
+	say("Check your email to verify the account.")
 	// When setup drives signup it owns the next-steps guidance on the rail, so
 	// skip signup's own standalone epilogue to avoid duplicated/contradictory hints.
-	if !suppressNextSteps {
+	if !fromSetup {
 		rt.Out.Info("Next, copy this into a new agent session:")
 		rt.Out.Info(projectSkillTrigger)
 		rt.Out.Hint("Install agent workflows:  rc skills install")
@@ -817,6 +822,15 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 		return rt.Out.Render(result)
 	}
 	return nil
+}
+
+// generateSignupPassword returns a strong random account password.
+func generateSignupPassword() (string, error) {
+	passwordBytes := make([]byte, 32)
+	if _, err := rand.Read(passwordBytes); err != nil {
+		return "", fmt.Errorf("generating signup credential: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(passwordBytes), nil
 }
 
 func validateSignupPassword(password string) error {

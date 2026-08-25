@@ -668,18 +668,89 @@ func setupAuthenticate(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
 	if err != nil {
 		return err
 	}
-	// Both branches hand off to a sub-command with its own UI (browser OAuth or
-	// the signup form), so the rail pauses for it and resumes afterward.
 	if choice == "signup" {
-		fl.Say("Starting signup — follow the prompts below.")
-		signup := newAuthSignupCmd()
-		signup.SetContext(cmd.Context())
-		// setup owns the post-signup next steps on the rail; suppress signup's own.
-		_ = signup.Flags().Set("from-setup", "true")
-		return signup.RunE(signup, nil)
+		return setupSignup(cmd, rt, fl)
 	}
+	// Login is a browser handoff — the interactive part is the browser, so there's
+	// no form to render; a short narration around it is enough.
 	fl.Say("Opening your browser to sign in…")
 	return loginWithOAuth(cmd.Context(), rt)
+}
+
+// setupSignup collects account details on the rail (rather than delegating to
+// rc auth signup, which draws its own off-rail UI) and creates the account under
+// a ledger step, so signup stays inside the guided experience.
+func setupSignup(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
+	email, err := fl.Input("Email", "you@example.com", tui.Required("email"))
+	if err != nil {
+		return err
+	}
+	name, err := fl.Input("Your name", "", tui.Required("name"),
+		"Your personal/display name — project naming comes later.")
+	if err != nil {
+		return err
+	}
+	marketing, err := fl.Confirm("Receive RevenueCat product updates?", false)
+	if err != nil {
+		return err
+	}
+
+	mode, err := fl.Select("Account password",
+		[]tui.Option{
+			{Label: "Generate a strong random password", Value: "generate"},
+			{Label: "Create my own", Value: "create"},
+		})
+	if err != nil {
+		return err
+	}
+	var password string
+	generated := mode == "generate"
+	if generated {
+		if password, err = generateSignupPassword(); err != nil {
+			return err
+		}
+	} else {
+		if password, err = fl.Password("Create a password", validateSignupPassword); err != nil {
+			return err
+		}
+		confirm, err := fl.Password("Confirm password", nil)
+		if err != nil {
+			return err
+		}
+		if password != confirm {
+			return errors.New("passwords do not match")
+		}
+	}
+
+	savePassword := false
+	if runtime.GOOS == "darwin" {
+		if savePassword, err = fl.Confirm("Save the password to your macOS Keychain?", true); err != nil {
+			return err
+		}
+	}
+
+	fl.Say("Terms: https://www.revenuecat.com/terms · Privacy: https://www.revenuecat.com/privacy")
+	accepted, err := fl.Confirm("Accept the Terms of Service and Privacy Policy?", true)
+	if err != nil {
+		return err
+	}
+	if !accepted {
+		return errors.New("signup requires accepting the Terms of Service and Privacy Policy")
+	}
+
+	fl.Step("Creating your account")
+	led := fl.Ledger("Create account & sign in")
+	led.Start()
+	led.Running(0)
+	if err := signupWithOAuth(cmd.Context(), rt, email, name, password, marketing, savePassword, generated, true); err != nil {
+		led.Fail(0, "failed")
+		led.Stop()
+		return err
+	}
+	led.Done(0, "")
+	led.Stop()
+	fl.Say("Check your email to verify the account.")
+	return nil
 }
 
 func starterPromptByID(id string) string {
