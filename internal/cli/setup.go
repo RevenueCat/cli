@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -139,6 +140,18 @@ func runSetup(cmd *cobra.Command) error {
 	projectLabel, platform, projStatus, appDirs := detectAppProject(dir)
 	agents := detectAgents()
 
+	// Sign-in is a prerequisite, not a rail step — resolve it (browser login or
+	// signup, each its own sub-command UI) before the guided rail opens, so the
+	// rail is one uninterrupted experience rather than being torn open by another
+	// command's output mid-flow.
+	justAuthed := false
+	if rt.Config == nil || rt.Config.BearerToken() == "" {
+		if err := setupAuthenticate(cmd, rt); err != nil {
+			return err
+		}
+		justAuthed = true
+	}
+
 	fl := tui.NewFlow(rt.Out.Stderr(), !rt.CanPrompt(), rt.Out.NoColor(), rt.Globals.Quiet)
 	fl.Intro("RevenueCat setup · " + filepath.Base(dir))
 	fl.Say("An AI agent sets up RevenueCat for this app — you approve each step.")
@@ -149,14 +162,6 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	if len(agents) == 0 {
 		fl.Warn("No AI agents found — install Claude Code, Codex, Cursor, or Gemini CLI, or copy the prompt below.")
-	}
-
-	justAuthed := false
-	if rt.Config == nil || rt.Config.BearerToken() == "" {
-		if err := setupAuthenticate(cmd, rt, fl); err != nil {
-			return err
-		}
-		justAuthed = true
 	}
 
 	newProjectPending := false
@@ -655,25 +660,30 @@ func setupToolingNote(rt *Runtime) string {
 // setupAuthenticate resolves auth before the terminal is handed to an agent:
 // browser login and signup are human actions, and doing them mid-agent-run
 // means fighting the agent for the terminal.
-func setupAuthenticate(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
-	fl.Step("Sign in")
-	choice, err := fl.Select("You're not logged in — how would you like to sign in?",
-		[]tui.Option{
-			{Label: "Log in (opens your browser)", Value: "login"},
-			{Label: "Create a RevenueCat account", Value: "signup"},
-		})
-	if err != nil {
+func setupAuthenticate(cmd *cobra.Command, rt *Runtime) error {
+	const (
+		optLogin = iota
+		optSignup
+	)
+	choice := optLogin
+	if err := tui.Form(false).
+		Field(huh.NewSelect[int]().
+			Title("You're not logged in — how would you like to sign in?").
+			Options(
+				huh.NewOption("Log in (opens your browser)", optLogin),
+				huh.NewOption("Create a RevenueCat account", optSignup),
+			).
+			Value(&choice)).
+		Run(); err != nil {
 		return err
 	}
-	// Both branches hand off to a sub-command with its own UI (browser OAuth or
-	// the signup form); the rail pauses for it and resumes afterward.
-	if choice == "signup" {
-		fl.Say("Starting signup…")
+	if choice == optSignup {
 		signup := newAuthSignupCmd()
 		signup.SetContext(cmd.Context())
+		// setup owns the post-signup next steps on the rail; suppress signup's own.
+		_ = signup.Flags().Set("from-setup", "true")
 		return signup.RunE(signup, nil)
 	}
-	fl.Say("Opening your browser to sign in…")
 	return loginWithOAuth(cmd.Context(), rt)
 }
 

@@ -51,6 +51,7 @@ func newAuthSignupCmd() *cobra.Command {
 	var password string
 	var generatePassword bool
 	var savePassword bool
+	var fromSetup bool
 
 	cmd := &cobra.Command{
 		Use:   "signup",
@@ -186,7 +187,7 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 			if err := validateSignupPassword(password); err != nil {
 				return err
 			}
-			return signupWithOAuth(cmd.Context(), rt, email, name, password, marketingEmails, savePassword, generatePassword)
+			return signupWithOAuth(cmd.Context(), rt, email, name, password, marketingEmails, savePassword, generatePassword, fromSetup)
 		},
 	}
 
@@ -197,6 +198,9 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 	cmd.Flags().BoolVar(&savePassword, "save-password", false, "save the website password in the local macOS login Keychain; does not sync to Apple Passwords/iCloud")
 	cmd.Flags().BoolVar(&acceptTerms, "accept-terms", false, "accept the RevenueCat Terms of Service and Privacy Policy")
 	cmd.Flags().BoolVar(&marketingEmails, "marketing-emails", false, "receive RevenueCat product and marketing emails")
+	// Set by rc setup, which owns the post-signup next-steps guidance itself.
+	cmd.Flags().BoolVar(&fromSetup, "from-setup", false, "")
+	_ = cmd.Flags().MarkHidden("from-setup")
 	return cmd
 }
 
@@ -699,7 +703,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	return finishLogin(ctx, rt, client)
 }
 
-func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password string, marketingEmails, savePassword, generatedPassword bool) error {
+func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password string, marketingEmails, savePassword, generatedPassword, suppressNextSteps bool) error {
 	verifier, challenge, err := api.GeneratePKCE()
 	if err != nil {
 		return fmt.Errorf("generating PKCE: %w", err)
@@ -774,10 +778,14 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 		rt.Out.Warn("The generated password was not saved. Use password reset if you need dashboard access later.")
 	}
 	rt.Out.Info("Check your email to verify the account.")
-	rt.Out.Info("Next, copy this into a new agent session:")
-	rt.Out.Info(projectSkillTrigger)
-	rt.Out.Hint("Install agent workflows:  rc skills install")
-	rt.Out.Hint("Or start manually:  rc projects create --name \"My App\" --use")
+	// When setup drives signup it owns the next-steps guidance on the rail, so
+	// skip signup's own standalone epilogue to avoid duplicated/contradictory hints.
+	if !suppressNextSteps {
+		rt.Out.Info("Next, copy this into a new agent session:")
+		rt.Out.Info(projectSkillTrigger)
+		rt.Out.Hint("Install agent workflows:  rc skills install")
+		rt.Out.Hint("Or start manually:  rc projects create --name \"My App\" --use")
+	}
 	result := map[string]any{
 		"account_created":             true,
 		"authenticated":               true,
