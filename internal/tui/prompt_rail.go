@@ -46,7 +46,7 @@ func (f *Flow) Confirm(question string, def bool) (bool, error) {
 	if f.plain {
 		return def, nil
 	}
-	m, err := runRailPrompt(f.w, confirmModel{title: question, yes: def})
+	m, err := runRailPrompt(f.w, f.in, confirmModel{title: question, yes: def})
 	if err != nil {
 		return false, err
 	}
@@ -64,7 +64,7 @@ func (f *Flow) Select(title string, opts []Option, desc ...string) (string, erro
 	if len(opts) == 0 {
 		return "", errors.New("no options to choose from")
 	}
-	m, err := runRailPrompt(f.w, selectModel{title: title, desc: desc, opts: opts})
+	m, err := runRailPrompt(f.w, f.in, selectModel{title: title, desc: desc, opts: opts})
 	if err != nil {
 		return "", err
 	}
@@ -83,7 +83,7 @@ func (f *Flow) Input(title, placeholder string, validate func(string) error, des
 	ti := textinput.New()
 	ti.Placeholder = placeholder
 	ti.Focus()
-	m, err := runRailPrompt(f.w, inputModel{title: title, desc: desc, ti: ti, validate: validate})
+	m, err := runRailPrompt(f.w, f.in, inputModel{title: title, desc: desc, ti: ti, validate: validate})
 	if err != nil {
 		return "", err
 	}
@@ -103,7 +103,7 @@ func (f *Flow) Password(title string, validate func(string) error, desc ...strin
 	ti := textinput.New()
 	ti.EchoMode = textinput.EchoPassword
 	ti.Focus()
-	m, err := runRailPrompt(f.w, inputModel{title: title, desc: desc, ti: ti, validate: validate, masked: true})
+	m, err := runRailPrompt(f.w, f.in, inputModel{title: title, desc: desc, ti: ti, validate: validate, masked: true})
 	if err != nil {
 		return "", err
 	}
@@ -115,8 +115,12 @@ func (f *Flow) Password(title string, validate func(string) error, desc ...strin
 	return im.ti.Value(), nil
 }
 
-func runRailPrompt(w io.Writer, m tea.Model) (tea.Model, error) {
-	return tea.NewProgram(m, tea.WithOutput(w)).Run()
+func runRailPrompt(w io.Writer, in io.Reader, m tea.Model) (tea.Model, error) {
+	opts := []tea.ProgramOption{tea.WithOutput(w)}
+	if in != nil {
+		opts = append(opts, tea.WithInput(in))
+	}
+	return tea.NewProgram(m, opts...).Run()
 }
 
 // ---- confirm ----

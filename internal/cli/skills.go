@@ -22,8 +22,10 @@ const (
 var defaultToolkitSkills = []string{
 	"create-revenuecat-project",
 	"integrate-revenuecat",
+	"revenuecat-cli",
 	"revenuecat-paywall",
 	"revenuecat-store-state",
+	"revenuecat-status",
 }
 
 var defaultToolkitAgents = []string{
@@ -257,7 +259,7 @@ func newSkillsInstallCmd(installer skillsInstaller) *cobra.Command {
 The standard Skills CLI detects supported agents and owns installation paths,
 lock files, security review, and updates. This command does not vendor or cache
 a separate copy of the toolkit inside rc. Pass --project to install into the
-current repository instead. The default installs the four skills needed for
+current repository instead. The default installs the core skills needed for
 complete project setup for RevenueCat's supported agent clients—Claude Code,
 Codex, Cursor, Gemini CLI, and GitHub Copilot/VS Code—without opening the
 underlying agent or skill pickers. Pass --agent to override the targets or

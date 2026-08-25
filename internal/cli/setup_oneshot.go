@@ -47,11 +47,19 @@ func firstBundleID(path string, pattern *regexp.Regexp) string {
 	return ""
 }
 
+// mcpResult reports how MCP configuration went so the caller can render it on
+// the rail; warn is set (non-fatal) when configuration failed.
+type mcpResult struct {
+	note string
+	hint string
+	warn string
+}
+
 // configureAgentMCP registers the RevenueCat MCP server for the chosen agent
 // with the CLI's credential, so the agent has authenticated MCP access from
 // its first turn. mcp.revenuecat.ai accepts both OAuth tokens and v2 secret
 // API keys as Bearer credentials.
-func configureAgentMCP(cmd *cobra.Command, rt *Runtime, agent *agentClient) {
+func configureAgentMCP(cmd *cobra.Command, rt *Runtime, agent *agentClient) mcpResult {
 	token := ""
 	if rt.Config != nil {
 		token = rt.Config.BearerToken()
@@ -66,8 +74,7 @@ func configureAgentMCP(cmd *cobra.Command, rt *Runtime, agent *agentClient) {
 		if strings.Contains(string(existing), "mcp.revenuecat.ai") {
 			_ = exec.CommandContext(cmd.Context(), "claude", "mcp", "remove", "--scope", "user", "RevenueCat").Run()
 		} else if strings.Contains(string(existing), "http") {
-			rt.Out.Info("A RevenueCat MCP entry with a custom URL already exists in Claude Code — leaving it untouched")
-			return
+			return mcpResult{note: "left your custom entry untouched"}
 		}
 		args := []string{"mcp", "add", "--scope", "user", "--transport", "http", "RevenueCat", revenueCatMCPURL}
 		if token != "" {
@@ -75,27 +82,22 @@ func configureAgentMCP(cmd *cobra.Command, rt *Runtime, agent *agentClient) {
 		}
 		run := exec.CommandContext(cmd.Context(), "claude", args...)
 		if out, err := run.CombinedOutput(); err != nil {
-			rt.Out.Warn("Couldn't configure the RevenueCat MCP for Claude Code: " + strings.TrimSpace(string(out)))
-			return
+			return mcpResult{warn: "Couldn't configure the RevenueCat MCP for Claude Code: " + strings.TrimSpace(string(out))}
 		}
-		rt.Out.Info("RevenueCat MCP configured for Claude Code (authenticated with your rc credential)")
+		return mcpResult{note: "authenticated with your rc credential"}
 	case "codex":
 		// Codex owns its own OAuth store, so registration and auth are
 		// separate: register if missing, then hint login only when needed.
 		list, _ := exec.CommandContext(cmd.Context(), "codex", "mcp", "list").CombinedOutput()
 		if strings.Contains(string(list), "RevenueCat") {
-			rt.Out.Info("RevenueCat MCP already registered for Codex")
-			rt.Out.Hint("if it shows as not logged in:  codex mcp login RevenueCat")
-			return
+			return mcpResult{note: "already registered", hint: "if it shows as not logged in:  codex mcp login RevenueCat"}
 		}
 		run := exec.CommandContext(cmd.Context(), "codex", "mcp", "add", "RevenueCat", "--url", revenueCatMCPURL)
 		if out, err := run.CombinedOutput(); err != nil {
-			rt.Out.Warn("Couldn't register the RevenueCat MCP for Codex: " + strings.TrimSpace(string(out)))
-			return
+			return mcpResult{warn: "Couldn't register the RevenueCat MCP for Codex: " + strings.TrimSpace(string(out))}
 		}
-		rt.Out.Info("RevenueCat MCP registered for Codex")
-		rt.Out.Hint("authenticate it once with:  codex mcp login RevenueCat")
+		return mcpResult{note: "registered", hint: "authenticate it once with:  codex mcp login RevenueCat"}
 	default:
-		rt.Out.Hint("connect the RevenueCat MCP in " + agent.Name + " settings:  " + revenueCatMCPURL)
+		return mcpResult{note: "connect it manually", hint: "connect the RevenueCat MCP in " + agent.Name + " settings:  " + revenueCatMCPURL}
 	}
 }
