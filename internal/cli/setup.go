@@ -725,15 +725,18 @@ func setupSignup(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
 			return err
 		}
 	} else {
-		if password, err = fl.Password("Create a password", validateSignupPassword); err != nil {
-			return err
-		}
-		confirm, err := fl.Password("Confirm password", nil)
-		if err != nil {
-			return err
-		}
-		if password != confirm {
-			return errors.New("passwords do not match")
+		for {
+			if password, err = fl.Password("Create a password", validateSignupPassword); err != nil {
+				return err
+			}
+			confirm, cerr := fl.Password("Confirm password", nil)
+			if cerr != nil {
+				return cerr
+			}
+			if password == confirm {
+				break
+			}
+			fl.Warn("Passwords do not match. Try again.")
 		}
 	}
 
