@@ -1,12 +1,40 @@
-# rc — RevenueCat CLI
+# RevenueCat CLI
 
-The official command line interface for [RevenueCat](https://www.revenuecat.com).
+`rc` manages your entire [RevenueCat](https://www.revenuecat.com) integration
+from the terminal: customers, subscriptions, products, paywalls, and store
+credentials. It's built to be driven equally well by you and by AI coding agents.
+
+- **Developers** who'd rather stay in the terminal than click through the dashboard
+- **CI pipelines** that need stable `--json`, `--no-input`, and predictable exit codes
+- **AI agents** with full schema discovery, one-command setup, and installable skills
 
 ```
 rc auth login
 rc customers show cus_abc
 rc charts show mrr
 ```
+
+## Set up in one command
+
+From your app's directory, with no install and no dashboard clicking:
+
+```bash
+npx @revenuecat/cli setup
+```
+
+An AI agent walks the whole RevenueCat setup while you approve each step, and
+emits a prompt your own coding agent can run non-interactively. Already have a
+project? Point it straight at a store:
+
+```bash
+rc setup apple <app-id>      # App Store Connect: create + upload keys, vendor number
+rc setup google <app-id>     # Google Play: bootstrap + upload the service-account credential
+```
+
+`<app-id>` is the RevenueCat app ID (like `app_abc`), not a bundle ID or a store
+app ID. Installed via Homebrew or npm, drop the `npx @revenuecat/cli` and just run
+`rc setup`. Details on the store flows are in
+[Store credential setup](#store-credential-setup-experimental) below.
 
 ## Install
 
@@ -15,7 +43,7 @@ rc charts show mrr
 brew install RevenueCat/tap/rc
 ```
 
-**npm / npx** — no Homebrew required; ideal for CI, agent sandboxes, and React Native projects. The package ships the same native Go binary; Node only dispatches:
+**npm / npx** (no Homebrew required; ideal for CI, agent sandboxes, and React Native projects). The package ships the same native Go binary; Node only dispatches:
 ```bash
 npx @revenuecat/cli --help
 # or install it
@@ -24,21 +52,13 @@ npm install -g @revenuecat/cli
 
 Or download a binary directly from the [releases page](../../releases).
 
-The two focused flows don't require installing anything:
-```bash
-npx @revenuecat/cli paywalls generate   # AI-design a paywall
-npx @revenuecat/cli capital setup        # connect App Store Connect for RevenueCat Capital
-```
+Every command also runs without installing, via `npx @revenuecat/cli <command>`,
+handy for CI and agent sandboxes.
 
 ## Quick start
 
-The fastest way in: from your app's directory, let an AI agent set up RevenueCat for you (you approve each step). It also emits a prompt for coding agents to run non-interactively.
-
-```bash
-rc setup
-```
-
-Prefer to do it by hand:
+The fastest way in is [`rc setup`](#set-up-in-one-command) above. Prefer to do it
+by hand:
 
 ```bash
 # 1. Log in (browser OAuth or paste an API key)
@@ -47,11 +67,11 @@ rc auth login
 # Or create a new account and log in without a browser
 rc auth signup
 
-# 2. Set a default project — or choose "Ask me every time" for multi-project workflows
+# 2. Set a default project (or choose "Ask me every time" for multi-project workflows)
 rc projects use
 
-# Connect App Store Connect (for Capital / App Store products)
-rc capital setup
+# Set up store-side credentials (App Store Connect / Google Play)
+rc setup apple app_abc
 
 # Look up a customer
 rc customers show cus_abc
@@ -64,6 +84,7 @@ rc charts show mrr
 
 | Area | Commands |
 |---|---|
+| **Setup** | `setup` (guided) · `setup apple` · `setup google` |
 | **Customers** | `show` · `list` · `grant` · `revoke` · `transfer` · `aliases` · `attributes` · `simulate-purchase` |
 | **Subscriptions** | `show` · `cancel` · `extend` · `refund` · `transactions` |
 | **Entitlements** | `list` · `show` · `create` · `update` · `attach` · `detach` |
@@ -71,9 +92,9 @@ rc charts show mrr
 | **Packages** | `list` (across all offerings) · `show` · `products` · `create` · `update` · `delete` · `attach` · `detach` |
 | **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `store sync` |
 | **Paywalls** | `list` · `show` · `create` · `generate` (AI) · `edit` (AI) · `rewind` · `publish` · `unpublish` · `attach` · `detach` · `delete` |
-| **Rico (AI assistant)** | `chat` (streaming, tool approvals) · `conversations list/show/delete` · `feedback` |
+| **Rico (AI assistant)** | `rico` (streaming chat, tool approvals) · `conversations list/show/delete` · `feedback` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
-| **Apps** | `list` · `show` · `create` · `update` · `delete` · `apple check` · `apple setup` |
+| **Apps** | `list` · `show` · `create` · `update` · `delete` · `apple check` |
 | **Audit log** | `rc audit` with `--limit` and `--since` |
 | **Webhooks** | `list` · `show` · `create` · `update` · `delete` |
 
@@ -103,62 +124,51 @@ dashboard paywall.
 
 ### Product store-state plans (experimental)
 
-Files and repositories are optional. For a one-time human workflow, run:
+Manage your App Store / Google Play catalog as a reviewable plan: describe the
+desired state, review the computed diff, then apply it.
 
 ```bash
-rc products store sync app_abc
+rc products store sync app_abc                       # interactive: review, then apply
+rc products store sync app_abc --file catalog.csv    # from a CSV or JSON adapter
 ```
 
-The CLI keeps interactive answers only in process memory, persists the complete
-desired state and computed diff as a RevenueCat plan, displays that plan, and
-asks before applying it. CSV and JSON are optional input adapters:
+For CI and agents, separate review from mutation. `plan` returns a persisted
+plan ID that later commands apply by reference, so nothing local needs to
+survive between steps:
 
 ```bash
-rc products store sync app_abc --file catalog.csv
-cat desired-states.json | rc products store sync app_abc --file - --input-format json
+plan_id=$(rc products store plan app_abc --file catalog.csv --json --format '.data.id')
+rc products store show "$plan_id" --json             # review the diff
+rc products store apply "$plan_id" --yes             # or: discard "$plan_id"
 ```
 
-Agents and CI should separate review from mutation. `plan` returns a persisted
-plan ID; later CLI processes use that exact ID, so no local file or process
-memory must survive between commands:
+CSV/JSON input is optional (`RC_STORE_STATE_FILE` can replace `--file`); the
+backend, not the local filesystem, is the durable handoff. This bulk import is
+experimental and may not be available on every account yet.
+
+### Store credential setup (experimental)
+
+Set up the store-side credentials RevenueCat needs, without manual key downloads
+or console clicking. Both run locally: your Apple/Google sign-in stays between
+you and Apple/Google, and the CLI uploads only the resulting API keys (Apple) or
+service-account credential (Google) to RevenueCat so it can talk to the store on
+your behalf.
+
+**Apple (App Store Connect)** creates the missing In-App Purchase and App Store
+Connect API keys, and uploads them to an existing RevenueCat App Store app:
 
 ```bash
-plan_id=$(cat desired-states.json |
-  rc products store plan app_abc \
-    --file - --input-format json --json --no-input \
-    --format '.data.id')
-
-rc products store show "$plan_id" --json --no-input
-rc products store apply "$plan_id" --yes --json --no-input
-# Or: rc products store discard "$plan_id" --yes --json --no-input
+rc setup apple app_abc
 ```
 
-Do not rerun `plan` after reviewing it; apply the returned ID. The backend,
-rather than the local filesystem, is the durable handoff. A future `.revenuecat`
-workspace may provide optional defaults, but it is never required and desired
-state is never silently stored globally. `RC_STORE_STATE_FILE` can replace
-`--file`. A full canonical CSV exported by the backend is accepted:
-
-```csv
-row_type,store,store_identifier,product_type,display_name,title,duration,territory,amount,currency,start_date,available,available_in_new_territories,locale,localized_name,localized_description
-price,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium Monthly,P1M,US,9.99,USD,,true,true,,,
-localization,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium Monthly,P1M,,,,,,,en-US,Premium Monthly,Monthly premium access
-```
-
-These v2 endpoints are still development-only and require a backend feature
-flag.
-
-### Apple credential setup (experimental)
-
-Create the missing In-App Purchase and App Store Connect API keys in your
-Apple account, download each private key once, and upload it directly to an
-existing RevenueCat App Store app:
+**Google (Google Play)** signs in locally, bootstraps the service-account
+credential, grants package-scoped Play access, and uploads it to RevenueCat:
 
 ```bash
-rc apps apple setup app_abc
+rc setup google app_xyz
 ```
 
-Test Apple sign-in, two-factor authentication, team selection, and read-only
+Preview Apple sign-in, two-factor authentication, team selection, and read-only
 key-management access without creating keys or changing RevenueCat:
 
 ```bash
@@ -181,8 +191,8 @@ Keep separate credentials for staging and production:
 rc auth login --profile staging
 rc auth login --profile prod
 
-rc --profile staging customer list
-rc --profile prod   customer list
+rc --profile staging customers list
+rc --profile prod   customers list
 ```
 
 ## Agentic signup
@@ -200,27 +210,21 @@ rc auth signup \
   --no-input --json
 ```
 
-`--name` is the user's personal/display name, not a project or company name.
-An agent may pass `--accept-terms` only after the user explicitly authorizes
-accepting the RevenueCat Terms of Service and Privacy Policy. Add
-`--marketing-emails` only when the user separately opts in.
+Key points:
 
-The macOS recipe above generates a one-time password in memory and saves it as
-the app.revenuecat.com internet password in the local login Keychain without
-printing it or placing it in process arguments. It does not appear in Apple
-Passwords or synchronize through iCloud Keychain because those stores require
-app entitlements unavailable to a standalone CLI. The agent must verify that the response has
-`account_created`, `authenticated`, and `password_saved_to_keychain` set to
-`true`. A locked Keychain may require local user approval. A user can instead
-provide `RC_PASSWORD`; avoid `--password` because command arguments can appear
-in shell history and process listings. The temporary login session is discarded
-after it is exchanged for renewable OAuth tokens, which are saved in the active
-mode-0600 profile just like `rc auth login`.
+- **Consent is explicit.** Pass `--accept-terms` only after the user authorizes
+  accepting the Terms of Service and Privacy Policy; add `--marketing-emails`
+  only on a separate opt-in. `--name` is a personal display name, not a company.
+- **Passwords stay out of the shell.** `--generate-password --save-password`
+  creates a one-time password in memory and stores it in the macOS login
+  Keychain without printing it. Prefer `RC_PASSWORD` over `--password`, which
+  can leak via shell history and process listings.
+- **Verify the result.** Check that `account_created`, `authenticated`, and
+  `password_saved_to_keychain` are `true`. Tokens are saved to the active
+  mode-0600 profile, same as `rc auth login`.
 
-The returned JSON tells the agent to verify the email and use the RevenueCat AI
-Toolkit to configure the project, apps, products, entitlements, and offerings.
-Install those maintained workflows with `rc skills install` if needed. For a
-manual start, run `rc projects create --name "My App" --use`.
+The returned JSON points the agent to verify the email and use the AI Toolkit
+(below) to configure the project. For a manual start: `rc projects create --name "My App" --use`.
 
 ## Scripting and agents
 
@@ -248,43 +252,23 @@ rc api POST /projects/proj_abc/offerings --body '{"lookup_key":"sale"}'
 
 ## AI Toolkit
 
-RevenueCat's official AI Toolkit owns agent workflows such as project setup,
-SDK integration, catalog management, and project health checks. Install its
-current skills through the standard Skills CLI:
+RevenueCat's official [AI Toolkit](https://www.revenuecat.com/docs/tools/overview)
+provides agent workflows for project setup, SDK integration, catalog management,
+and health checks. Install its skills through the standard Skills CLI:
 
 ```bash
-rc skills install
-# equivalent to: npx skills add RevenueCat/ai-toolkit --global
-
-rc skills install --project # opt into repository-local installation
+rc skills install            # global; installs the core project-setup skills
+rc skills install --project  # repository-local instead
+rc skills install --all      # the full skill catalog
 ```
 
-`rc` delegates installation to the standard Skills CLI, which also owns future
-updates, instead of shipping a second, potentially stale copy of RevenueCat
-workflows. Global installation is the default so RevenueCat workflows are
-available in every project. The CLI installs the four project-setup skills
-for Claude Code, Codex, Cursor, Gemini CLI, and GitHub Copilot/VS Code without
-showing the underlying agent or 36-skill pickers; pass `--agent` to override
-the targets or `--all` when the full catalog is wanted.
-`--project` creates the standard project-local skill files
-and lock file instead. Global installs run in an isolated temporary directory,
-so they do not add a lock file or hidden skill directory to the customer's
-current repository. Marketplace installations for Codex, Claude Code, Cursor,
-VS Code, and Gemini are documented at
-https://www.revenuecat.com/docs/tools/overview.
+`rc` delegates to the Skills CLI (`npx skills add RevenueCat/ai-toolkit`) so the
+workflows update in one place rather than shipping a stale copy. Global installs
+run in an isolated temp dir, so no lock file or hidden directory lands in your repo.
+Re-run `rc skills install` to update, then reload your agent to pick up changes.
 
-Run `rc skills install` again to update an existing installation, then start a
-new agent session or reload the agent so it discovers the new skill metadata.
-Skills do not run when installed. The agent selects one when the user's request
-matches its description. For predictable project creation, say:
-
-To test skills from an unreleased AI Toolkit branch, set the branch for that
-installation. The explicit flag overrides the environment variable:
-
-```bash
-RC_SKILLS_BRANCH=rc-cli-project-setup-workflows rc skills install
-rc skills install --branch rc-cli-project-setup-workflows
-```
+Skills don't run on install; the agent selects one when a request matches its
+description. You can also name one explicitly:
 
 ```text
 Use the create-revenuecat-project skill to make the app in this directory
@@ -292,39 +276,10 @@ RevenueCat Test Store-ready end to end, then report every production-store
 stage separately.
 ```
 
-Agents may also select that skill automatically for requests such as “Set up
-RevenueCat for my new iOS app.” Explicit naming is useful when testing or when a
-client does not reliably auto-select skills.
-
-Run `rc skills prompts` at any time to display copy-ready starter prompts.
-Bare `rc skills` only shows help; it never installs or changes anything.
-Examples:
-
-```text
-Use the create-revenuecat-project skill to inspect the app in this directory,
-create my RevenueCat account if needed, and finish the Test Store-ready stage
-end to end: products and prices, entitlement, offering and packages, dashboard
-paywall, dependencies, debug test_ key, app code, build, and simulated purchase.
-
-Continue this app's RevenueCat setup with the Apple stage of the
-create-revenuecat-project skill. Run the read-only Apple check first, then give
-me the local interactive rc apps apple setup command for Apple sign-in and 2FA.
-
-Use the revenuecat-store-state skill to plan App Store Connect products matching
-the verified Test Store catalog. Wait for approval before applying that same
-plan ID, then attach the Apple products and configure the release appl_ key.
-
-Use the revenuecat-status skill to audit my RevenueCat project, identify
-missing or inconsistent configuration, and give me exact recovery steps
-without changing anything first.
-```
-
-The toolkit can discover every CLI contract with `rc commands --json` and
-`rc schema <command> --json`. Project-setup primitives include
-`rc products prices set <id> --price USD=9.99`,
-`rc offerings set-current <id> --yes`, and `rc apps keys <app-id> --json`, so
-an agent can finish Test Store catalog setup and return typed public SDK keys
-without raw API calls.
+Run `rc skills prompts` for more copy-ready starter prompts. Under the hood the
+toolkit discovers every command with `rc commands --json` and
+`rc schema <cmd> --json`, and drives typed primitives (`rc products prices set`,
+`rc offerings set-current`, `rc apps keys`) instead of raw API calls.
 
 ## Global flags
 
@@ -342,7 +297,7 @@ without raw API calls.
 ## Custom request headers
 
 `RC_HEADERS` sends extra HTTP headers on every RevenueCat request (v2 API, Rico,
-and the Paywall AI editor) — newline-separated `Name: Value` pairs. Use it to
+and the Paywall AI editor), as newline-separated `Name: Value` pairs. Use it to
 route or tag traffic without baking anything into the binary:
 
 ```bash
@@ -399,4 +354,8 @@ Releases are fully automated via GoReleaser. To cut a release:
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for dev setup, testing, and how to send a PR.
 
-For deeper conventions — architecture, agent-friendly patterns, where things live — see [AGENTS.md](./AGENTS.md).
+For deeper conventions (architecture, agent-friendly patterns, where things live), see [AGENTS.md](./AGENTS.md).
+
+## License
+
+MIT. See [LICENSE](./LICENSE).

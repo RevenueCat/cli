@@ -1,43 +1,39 @@
 ---
 name: 🐛 Bug report
-about: Filling a bug report
+about: Report a bug in the RevenueCat CLI
 title: ''
 labels: bug
 assignees: ''
 
 ---
 
-- [ ] I have updated Purchases SDK to the latest version
-- [ ] I have read the [Contribution Guidelines](../blob/main/CONTRIBUTING.md)
-- [ ] I have searched the [Community](https://community.revenuecat.com)
-- [ ] I have read [docs.revenuecat.com](https://docs.revenuecat.com/)
-- [ ] I have searched for [existing Github issues](../issues)
+- [ ] I have updated to the latest version of the CLI (`rc --version`)
+- [ ] I have searched for [existing GitHub issues](../issues)
 
 **Describe the bug**
-A clear and concise description of what the bug is. The more detail you can provide the faster our team will be able to triage and resolve the issue. **Do not remove any of the steps from the template below. If a step is not applicable to your issue, please leave that step empty.**
+A clear and concise description of what the bug is.
 
-1. Environment
-   1. Platform:
-   2. SDK version:
-   3. OS version:
-   4. Device and/or simulator:
-      - [ ] Device
-      - [ ] Simulator
-   5. Environment:
-      - [ ] Sandbox
-      - [ ] Production
-   6. How widespread is the issue. Percentage of devices affected.
-2. [Debug logs](https://docs.revenuecat.com/docs/debugging) that reproduce the issue. **Complete logs with `Purchases.logLevel = .verbose` will help us debug this issue.**
+**Environment**
+1. `rc --version`:
+2. OS and version:
+3. Install method (Homebrew, `go install`, released binary, built from source):
+
+**Command**
+The exact `rc` command you ran (redact any secrets, tokens, or API keys).
 
 ```
-Logs here
+rc ...
 ```
 
-3. Steps to reproduce, with a description of expected vs. actual behavior
+**Steps to reproduce**
+A description of expected vs. actual behavior.
 
-_Please fill in_
- 
-4. **Other information** (e.g. stacktraces, related issues, suggestions how to fix, links for us to have context, eg. stackoverflow, etc.)
+**Output / logs**
+Relevant output. Re-run with `--verbose` if it helps, and redact anything sensitive.
 
-5. **Additional context**
-Add any other context about the problem here.
+```
+Output here
+```
+
+**Additional context**
+Anything else that might help: stack traces, related issues, screenshots.
