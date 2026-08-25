@@ -113,7 +113,7 @@ func (r *Runtime) API() (*api.Client, error) {
 		CredentialSource: string(source),
 		BaseURL:          r.Config.BaseURL,
 		UserAgent:        userAgent(r.Globals.Version),
-		ExtraHeaders:     customHeaders(),
+		ExtraHeaders:     requestHeaders(r.Globals),
 	})
 	return r.client, nil
 }
@@ -185,7 +185,7 @@ func userAgent(version string) string {
 	if version == "" {
 		version = "dev"
 	}
-	return fmt.Sprintf("revenuecat-cli/%s (%s/%s)", version, runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf("revenuecat-cli/%s (%s %s; go%s)", version, runtime.GOOS, runtime.GOARCH, strings.TrimPrefix(runtime.Version(), "go"))
 }
 
 var ErrNotAuthenticated = errors.New("not authenticated: run `rc login` or pass --api-key / set RC_API_KEY")

@@ -351,6 +351,22 @@ RC_HEADERS=$'X-Some-Header: value' rc offerings list
 
 One header per line; supplied headers override the CLI's defaults.
 
+## Usage analytics
+
+Every authenticated v2 API request carries a few headers so RevenueCat can see
+which commands are used and whether the CLI is driven by a human, an agent, or
+CI — derived from normal request logs, with no separate telemetry and no
+identifier of any kind:
+
+- `User-Agent` — `revenuecat-cli/<version> (<os> <arch>; go<goversion>)`.
+- `X-RC-CLI-Command` — the command path only (e.g. `paywalls.generate`), never
+  arguments, flag values, IDs, emails, or prompts.
+- `X-RC-CLI-Mode` — `interactive`, `agent` (`--json` or `--no-input`), or `ci`
+  (when `$CI` is set).
+
+Set `DO_NOT_TRACK=1` (per [consoledonottrack.com](https://consoledonottrack.com))
+to drop the `X-RC-CLI-*` headers. Requests still go through, just unlabeled.
+
 ## Exit codes
 
 | Code | Meaning |
