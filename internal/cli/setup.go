@@ -122,8 +122,24 @@ the step-by-step commands in the docs.`,
 			return runSetup(cmd)
 		},
 	}
+	cmd.Flags().String("autonomy", autonomyAuto, "how much the agent can do without asking: auto|trusted|full|manual")
+	cmd.Flags().String("skills-scope", "global", "where to install the RevenueCat skills: global|project")
 	cmd.AddCommand(newSetupGoogleCmd(), newSetupAppleCmd())
 	return cmd
+}
+
+// setupAutonomyAndScope resolves the agent autonomy and skills-install scope from
+// flags (sensible defaults, not prompts), validating the values.
+func setupAutonomyAndScope(cmd *cobra.Command) (autonomy, scope string, err error) {
+	autonomy, _ = cmd.Flags().GetString("autonomy")
+	if _, ok := autonomyLabels[autonomy]; !ok {
+		return "", "", fmt.Errorf("--autonomy must be one of: auto, trusted, full, manual")
+	}
+	scope, _ = cmd.Flags().GetString("skills-scope")
+	if _, ok := skillsScopeLabels[scope]; !ok {
+		return "", "", fmt.Errorf("--skills-scope must be one of: global, project")
+	}
+	return autonomy, scope, nil
 }
 
 func runSetup(cmd *cobra.Command) error {
@@ -219,32 +235,13 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	fl.Receipt("Agent", choice.Name)
 
-	fl.Step("Autonomy")
-	autonomy, err := fl.Select("How much can "+choice.Name+" do without stopping to ask?",
-		[]tui.Option{
-			{Label: "Auto — use " + choice.Name + "'s built-in auto-approve mode", Value: autonomyAuto},
-			{Label: "Run freely — no approval prompts", Value: autonomyFull},
-			{Label: "Pre-approve rc, edits, and builds; ask for anything unusual", Value: autonomyTrusted},
-			{Label: "Ask me before each step", Value: autonomyManual},
-		},
-		"You can interrupt anytime.",
-	)
+	// Autonomy and skills scope are sensible defaults, not questions — override
+	// with --autonomy / --skills-scope. Shown as receipts so the choice is visible.
+	autonomy, skillsScope, err := setupAutonomyAndScope(cmd)
 	if err != nil {
 		return err
 	}
 	fl.Receipt("Autonomy", autonomyLabels[autonomy])
-
-	fl.Step("Skills")
-	skillsScope, err := fl.Select("Install the RevenueCat skills here or globally?",
-		[]tui.Option{
-			{Label: "This project only", Value: "project"},
-			{Label: "Globally (all projects on this machine)", Value: "global"},
-		},
-		"Project keeps them with this repo; global shares them across every project on this machine.",
-	)
-	if err != nil {
-		return err
-	}
 	fl.Receipt("Skills", skillsScopeLabels[skillsScope])
 
 	// Apple needs a browser + 2FA; setup always defers it to the agent hand-back.
@@ -749,6 +746,9 @@ func setupSignup(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
 	}
 	led.Done(0, "")
 	led.Stop()
+	if generated && !savePassword {
+		fl.Warn("The generated password wasn't saved — use \"Forgot password?\" at revenuecat.com if you need dashboard access later.")
+	}
 	fl.Say("Check your email to verify the account.")
 	return nil
 }
