@@ -52,6 +52,8 @@ npm install -g @revenuecat/cli
 
 Or download a binary directly from the [releases page](../../releases).
 
+Homebrew and npm install the command as both `rc` and `revenuecat` (same binary); use whichever you prefer. Examples throughout use `rc`.
+
 Every command also runs without installing, via `npx @revenuecat/cli <command>`,
 handy for CI and agent sandboxes.
 
