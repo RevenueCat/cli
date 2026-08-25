@@ -186,7 +186,8 @@ You must accept the RevenueCat Terms of Service and Privacy Policy:
 			if err := validateSignupPassword(password); err != nil {
 				return err
 			}
-			return signupWithOAuth(cmd.Context(), rt, email, name, password, marketingEmails, savePassword, generatePassword, false)
+			_, serr := signupWithOAuth(cmd.Context(), rt, email, name, password, marketingEmails, savePassword, generatePassword, false)
+			return serr
 		},
 	}
 
@@ -699,7 +700,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	return finishLogin(ctx, rt, client)
 }
 
-func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password string, marketingEmails, savePassword, generatedPassword, fromSetup bool) error {
+func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password string, marketingEmails, savePassword, generatedPassword, fromSetup bool) (bool, error) {
 	// When setup drives signup it renders progress on its own rail (a ledger),
 	// so suppress this command's standalone chatter to avoid off-rail lines.
 	say := func(msg string) {
@@ -709,15 +710,15 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	}
 	verifier, challenge, err := api.GeneratePKCE()
 	if err != nil {
-		return fmt.Errorf("generating PKCE: %w", err)
+		return false, fmt.Errorf("generating PKCE: %w", err)
 	}
 	state, err := api.GenerateState()
 	if err != nil {
-		return fmt.Errorf("generating OAuth state: %w", err)
+		return false, fmt.Errorf("generating OAuth state: %w", err)
 	}
 	listener, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
-		return fmt.Errorf("reserving local OAuth callback: %w", err)
+		return false, fmt.Errorf("reserving local OAuth callback: %w", err)
 	}
 	defer listener.Close()
 	port := listener.Addr().(*net.TCPAddr).Port
@@ -731,13 +732,15 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 		Password:              password,
 		MarketingEmailEnabled: marketingEmails,
 	}); err != nil {
-		return fmt.Errorf("creating RevenueCat account: %w", err)
+		return false, fmt.Errorf("creating RevenueCat account: %w", err)
 	}
 	passwordSaved := false
 	if savePassword {
 		say("Saving the website password in macOS Keychain…")
 		if err := saveRevenueCatPasswordToKeychain(email, password); err != nil {
-			rt.Out.Warn(fmt.Sprintf("Account created, but the password could not be saved to Keychain: %v", err))
+			if !fromSetup {
+				rt.Out.Warn(fmt.Sprintf("Account created, but the password could not be saved to Keychain: %v", err))
+			}
 		} else {
 			passwordSaved = true
 		}
@@ -746,17 +749,17 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	say("Starting a temporary secure login…")
 	login, err := svc.Login(ctx, email, password)
 	if err != nil {
-		return signupAuthenticationError(err)
+		return false, signupAuthenticationError(err)
 	}
 	say("Authorizing renewable CLI access…")
 	code, err := svc.AuthorizeWithLoginToken(ctx, login.AuthenticationToken, redirectURI, challenge, state)
 	if err != nil {
-		return signupAuthenticationError(err)
+		return false, signupAuthenticationError(err)
 	}
 	say("Exchanging the temporary session for OAuth tokens…")
 	tokens, err := svc.ExchangeCode(ctx, code, redirectURI, verifier)
 	if err != nil {
-		return signupAuthenticationError(err)
+		return false, signupAuthenticationError(err)
 	}
 	_ = svc.LogoutLoginToken(ctx, login.AuthenticationToken)
 
@@ -773,7 +776,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 
 	say("Saving OAuth credentials in the active CLI profile…")
 	if err := config.Save(rt.Globals.Profile, rt.Config); err != nil {
-		return err
+		return false, err
 	}
 	profile := config.ProfileName(rt.Globals.Profile)
 	if !fromSetup {
@@ -819,9 +822,9 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 		result["dashboard_password_action"] = "store_the_user_provided_password_safely"
 	}
 	if rt.Out.IsJSON() {
-		return rt.Out.Render(result)
+		return passwordSaved, rt.Out.Render(result)
 	}
-	return nil
+	return passwordSaved, nil
 }
 
 // generateSignupPassword returns a strong random account password.

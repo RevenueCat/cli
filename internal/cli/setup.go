@@ -745,7 +745,7 @@ func setupSignup(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
 	}
 
 	fl.Say("Terms: https://www.revenuecat.com/terms · Privacy: https://www.revenuecat.com/privacy")
-	accepted, err := fl.Confirm("Accept the Terms of Service and Privacy Policy?", true)
+	accepted, err := fl.Confirm("Accept the Terms of Service and Privacy Policy?", false)
 	if err != nil {
 		return err
 	}
@@ -757,15 +757,16 @@ func setupSignup(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
 	led := fl.Ledger("Create account & sign in")
 	led.Start()
 	led.Running(0)
-	if err := signupWithOAuth(cmd.Context(), rt, email, name, password, marketing, savePassword, generated, true); err != nil {
+	saved, err := signupWithOAuth(cmd.Context(), rt, email, name, password, marketing, savePassword, generated, true)
+	if err != nil {
 		led.Fail(0, "failed")
 		led.Stop()
 		return err
 	}
 	led.Done(0, "")
 	led.Stop()
-	if generated && !savePassword {
-		fl.Warn("The generated password wasn't saved — use \"Forgot password?\" at revenuecat.com if you need dashboard access later.")
+	if generated && !saved {
+		fl.Warn("The generated password isn't saved. Use \"Forgot password?\" at revenuecat.com if you need dashboard access later.")
 	}
 	fl.Say("Check your email to verify the account.")
 	return nil
