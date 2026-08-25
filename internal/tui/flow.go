@@ -25,6 +25,7 @@ type Flow struct {
 	plain   bool
 	noColor bool
 	quiet   bool
+	in      io.Reader // nil = the real terminal (os.Stdin); set by tests to script prompts
 }
 
 func NewFlow(w io.Writer, plain, noColor, quiet bool) *Flow {
