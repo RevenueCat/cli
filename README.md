@@ -14,6 +14,27 @@ rc customers show cus_abc
 rc charts show mrr
 ```
 
+## Set up in one command
+
+From your app's directory — no install, no dashboard clicking:
+
+```bash
+npx @revenuecat/cli setup
+```
+
+An AI agent walks the whole RevenueCat setup while you approve each step, and
+emits a prompt your own coding agent can run non-interactively. Already have a
+project? Point it straight at a store:
+
+```bash
+rc setup apple <app-store-app-id>      # App Store Connect: create + upload keys, vendor number
+rc setup google <play-store-app-id>    # Google Play: bootstrap the service-account credential
+```
+
+Installed via Homebrew or npm, drop the `npx @revenuecat/cli` and just run
+`rc setup`. Details on the store flows are in
+[Store credential setup](#store-credential-setup-experimental) below.
+
 ## Install
 
 **Homebrew** (macOS/Linux):
@@ -30,21 +51,13 @@ npm install -g @revenuecat/cli
 
 Or download a binary directly from the [releases page](../../releases).
 
-The guided flows don't require installing anything:
-```bash
-npx @revenuecat/cli setup                # set up RevenueCat in your app
-npx @revenuecat/cli paywalls generate    # AI-design a paywall
-```
+Every command also runs without installing, via `npx @revenuecat/cli <command>` —
+handy for CI and agent sandboxes.
 
 ## Quick start
 
-The fastest way in: from your app's directory, let an AI agent set up RevenueCat for you (you approve each step). It also emits a prompt for coding agents to run non-interactively.
-
-```bash
-rc setup
-```
-
-Prefer to do it by hand:
+The fastest way in is [`rc setup`](#set-up-in-one-command) above. Prefer to do it
+by hand:
 
 ```bash
 # 1. Log in (browser OAuth or paste an API key)
