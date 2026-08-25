@@ -779,7 +779,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	if !fromSetup {
 		rt.Out.Success(fmt.Sprintf("Account created and logged in (profile: %s)", profile))
 	}
-	if generatedPassword && !passwordSaved {
+	if generatedPassword && !passwordSaved && !fromSetup {
 		rt.Out.Warn("The generated password was not saved. Use password reset if you need dashboard access later.")
 	}
 	say("Check your email to verify the account.")
