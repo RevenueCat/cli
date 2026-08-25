@@ -273,8 +273,8 @@ Set RC_SKILLS_BRANCH to install an unreleased branch for testing. --branch
 overrides the environment variable.`,
 		Example: `  rc skills install
   rc skills install --project
-  RC_SKILLS_BRANCH=rc-cli-project-setup-workflows rc skills install
-  rc skills install --branch rc-cli-project-setup-workflows
+  RC_SKILLS_BRANCH=my-feature-branch rc skills install
+  rc skills install --branch my-feature-branch
   rc skills install --all
   rc skills install --agent codex --yes --no-input
   rc skills install --skill create-revenuecat-project --yes --no-input`,
