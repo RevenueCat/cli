@@ -4,7 +4,6 @@ package api
 // oneOf union, which oapi-codegen renders as an opaque json.RawMessage wrapper —
 // but the wire format is still a flat object, so we keep the previous flat shape
 // here and exclude App / AppType / AppObject from codegen (oapi-codegen.yaml).
-// See DX-874.
 
 type AppType string
 

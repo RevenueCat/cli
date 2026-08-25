@@ -14,7 +14,7 @@ Rewrites them as:
       allOf:
         - { $ref: '#/components/schemas/SomeSchema' }
 
-It also merges any beta overlay specs (see DX-880) on top of the base spec
+It also merges any beta overlay specs on top of the base spec
 before the fix runs, so endpoints the CLI uses that are absent from the public
 spec (the store_state family) are present for codegen and diffing. The merge is
 additive — the public spec always wins on conflicts — so the overlay only fills

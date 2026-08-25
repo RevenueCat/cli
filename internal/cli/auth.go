@@ -507,7 +507,7 @@ func writeTokenStatus(rt *Runtime) {
 
 // credentialScopes best-effort reports the scopes of the active credential.
 //
-// TODO(DX-940): read authoritative scopes once the API gains a token-introspection endpoint.
+// TODO: read authoritative scopes once the API gains a token-introspection endpoint.
 func credentialScopes(token string) (scopes []string, ok bool) {
 	return jwtScopes(token)
 }

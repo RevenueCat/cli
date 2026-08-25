@@ -156,7 +156,7 @@ func TestSkillsInstallProjectScope(t *testing.T) {
 }
 
 func TestSkillsInstallUsesBranchFromEnvironment(t *testing.T) {
-	t.Setenv("RC_SKILLS_BRANCH", "rc-cli-project-setup-workflows")
+	t.Setenv("RC_SKILLS_BRANCH", "some-feature-branch")
 	installer := &recordingSkillsInstaller{}
 	cmd := newSkillsCmdWithInstaller(installer)
 	var stdout, stderr bytes.Buffer
@@ -170,11 +170,11 @@ func TestSkillsInstallUsesBranchFromEnvironment(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	wantSource := "https://github.com/RevenueCat/ai-toolkit/tree/rc-cli-project-setup-workflows"
+	wantSource := "https://github.com/RevenueCat/ai-toolkit/tree/some-feature-branch"
 	if !slices.Contains(installer.args, wantSource) {
 		t.Fatalf("installer args = %v, want %q", installer.args, wantSource)
 	}
-	for _, want := range []string{`"branch": "rc-cli-project-setup-workflows"`, `"source": "` + wantSource + `"`} {
+	for _, want := range []string{`"branch": "some-feature-branch"`, `"source": "` + wantSource + `"`} {
 		if !bytes.Contains(stdout.Bytes(), []byte(want)) {
 			t.Errorf("install JSON missing %q: %s", want, stdout.String())
 		}
