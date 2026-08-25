@@ -765,8 +765,11 @@ func setupSignup(cmd *cobra.Command, rt *Runtime, fl *tui.Flow) error {
 	}
 	led.Done(0, "")
 	led.Stop()
-	if generated && !saved {
+	switch {
+	case generated && !saved:
 		fl.Warn("The generated password isn't saved. Use \"Forgot password?\" at revenuecat.com if you need dashboard access later.")
+	case savePassword && !saved:
+		fl.Warn("Your password couldn't be saved to the Keychain. Keep your own copy for dashboard access.")
 	}
 	fl.Say("Check your email to verify the account.")
 	return nil
