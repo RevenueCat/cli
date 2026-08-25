@@ -174,7 +174,7 @@ rc products store list                                   # list persisted store 
 rc products store show <plan-id>                         # inspect the exact persisted plan from any process
 rc products store apply <plan-id>                        # apply that same reviewed plan; requires confirmation/--yes
 rc products store discard <plan-id>                      # discard without applying; requires confirmation/--yes
-rc products store screenshot <plan-id>                   # manage store listing screenshots for a plan
+rc products store screenshot <product-id>                # upload an App Review screenshot to App Store Connect for a product
 
 # Paywalls
 rc paywalls                                              # help; under npx a TTY shows a generate/edit picker (npm launcher sets RC_GUIDED — paywalls-only for now)

@@ -27,11 +27,12 @@ emits a prompt your own coding agent can run non-interactively. Already have a
 project? Point it straight at a store:
 
 ```bash
-rc setup apple <app-store-app-id>      # App Store Connect: create + upload keys, vendor number
-rc setup google <play-store-app-id>    # Google Play: bootstrap the service-account credential
+rc setup apple <app-id>      # App Store Connect: create + upload keys, vendor number
+rc setup google <app-id>     # Google Play: bootstrap + upload the service-account credential
 ```
 
-Installed via Homebrew or npm, drop the `npx @revenuecat/cli` and just run
+`<app-id>` is the RevenueCat app ID (like `app_abc`), not a bundle ID or a store
+app ID. Installed via Homebrew or npm, drop the `npx @revenuecat/cli` and just run
 `rc setup`. Details on the store flows are in
 [Store credential setup](#store-credential-setup-experimental) below.
 
@@ -148,8 +149,10 @@ experimental and may not be available on every account yet.
 ### Store credential setup (experimental)
 
 Set up the store-side credentials RevenueCat needs, without manual key downloads
-or console clicking. Both run locally so your store credentials go straight to
-Apple/Google and never through RevenueCat or a model.
+or console clicking. Both run locally: your Apple/Google sign-in stays between
+you and Apple/Google, and the CLI uploads only the resulting API keys (Apple) or
+service-account credential (Google) to RevenueCat so it can talk to the store on
+your behalf.
 
 **Apple (App Store Connect)** creates the missing In-App Purchase and App Store
 Connect API keys, and uploads them to an existing RevenueCat App Store app:
