@@ -128,6 +128,23 @@ the step-by-step commands in the docs.`,
 	return cmd
 }
 
+// setupRoadmap previews the journey at the intro so the user knows what's coming.
+// It reflects the actual path: no "sign in" when already authenticated, and the
+// copy-the-prompt ending when no agent is installed.
+func setupRoadmap(rt *Runtime, agents []agentClient) string {
+	steps := []string{}
+	if rt.Config == nil || rt.Config.BearerToken() == "" {
+		steps = append(steps, "sign in")
+	}
+	steps = append(steps, "pick a project")
+	if len(agents) > 0 {
+		steps = append(steps, "pick an agent", "launch")
+	} else {
+		steps = append(steps, "copy the prompt")
+	}
+	return strings.Join(steps, " → ")
+}
+
 // setupAutonomyAndScope resolves the agent autonomy and skills-install scope from
 // flags (sensible defaults, not prompts), validating the values.
 func setupAutonomyAndScope(cmd *cobra.Command) (autonomy, scope string, err error) {
@@ -158,6 +175,7 @@ func runSetup(cmd *cobra.Command) error {
 	fl := tui.NewFlow(rt.Out.Stderr(), !rt.CanPrompt(), rt.Out.NoColor(), rt.Globals.Quiet)
 	fl.Intro("RevenueCat setup · " + filepath.Base(dir))
 	fl.Say("An AI agent sets up RevenueCat for this app — you approve each step.")
+	fl.Say("Steps: " + setupRoadmap(rt, agents))
 	fl.Receipt("Project", projectLabel)
 	fl.Receipt("Location", collapseHome(dir))
 	if account := setupAccountIdentity(rt); account != "" {
