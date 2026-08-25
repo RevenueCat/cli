@@ -21,9 +21,8 @@ non-obvious conventions.
 [RevenueCat v2 REST API](https://www.revenuecat.com/docs/api-v2) and is
 designed to be driven equally well by humans and by LLM agents.
 
-The rest of RevenueCat's stack is Python / Node. This is the only Go project.
-Don't try to "harmonize" it with the rest of the codebase — its independence is
-the point.
+This is a standalone Go project. Don't try to "harmonize" it with other
+codebases or conventions — its independence is the point.
 
 ## The one rule that matters: two layers, hard separation
 
@@ -75,7 +74,7 @@ Every command must support both:
    **agent-only by default** — hidden from `rc --help` but present in
    `rc commands --schemas` and runnable. Add it to `humanSurface` only if a
    human should see it in the curated top-level list (rare; that list is the
-   two funded flows plus the basics). Mark it `surface: "punted"` if it isn't
+   core guided flows plus the basics). Mark it `surface: "punted"` if it isn't
    DX-tested enough to expose to agents yet. The split is by output channel:
    `--help` is scoped, schema is full, so agent discovery never breaks.
 3. Then follow the mechanical pattern below.

@@ -15,15 +15,12 @@ the code when adding/renaming a command.
 3. **Archive/unarchive collapses** to `archive` + `restore` (or one verb +
    flag) — don't expose REST's symmetry as user-facing symmetry when one verb
    is the common case.
-4. **Cross-resource search is top-level.** `rc find purchase pi_123` rather
-   than `rc purchases search`.
-5. **Tail / live commands are first-class** for the future chat + observability
-   story.
+4. **Cross-resource search is top-level**, not nested under a resource group.
+5. **Tail / live commands are first-class** for the observability story.
 6. **Implicit project context.** `--project-id` is global, defaults to the
    profile's project, so most commands take just a resource ID.
 7. **Composite views are explicit.** `rc customers show` already gets active
-   entitlements for free (embedded in API response); add subscriptions +
-   purchases for the full SE-debug view.
+   entitlements for free (embedded in API response).
 8. **Don't invent verbs the API can't fulfill.** Verified against fixtures.
 9. **Surface tiers scope who sees what, not who can run what.** Every command
    is one of two tiers (set via the `surface` annotation, enforced in
@@ -39,9 +36,9 @@ the code when adding/renaming a command.
 
 - **List envelope**: `{items: [...], next_page: string|null, object: "list", url: string}` — `next_page` is a full URL (Stripe-style), nullable when exhausted.
 - **Error envelope**: `{type, message, doc_url, retryable, object: "error", param?: string}` — `parameter_error` includes a `param` field.
-- **Object discriminator**: every object has an `object` field (`"project"`, `"app"`, `"customer"`, `"offering"`, `"package"`, `"product"`, `"paywall"`, `"customer.alias"`, `"audit_log"`, `"chart_data"`, `"overview_metric"`, `"chart_filter_option"`, `"benchmarks"`, `"error"`, `"list"`).
+- **Object discriminator**: every object has an `object` field (`"project"`, `"app"`, `"customer"`, `"offering"`, `"package"`, `"product"`, `"paywall"`, `"customer.alias"`, `"audit_log"`, `"chart_data"`, `"overview_metric"`, `"chart_filter_option"`, `"error"`, `"list"`).
 - **Timestamps**: **unix milliseconds** for most resources (`created_at`, `first_seen_at`, `expires_at`, etc.). **Unix seconds** on chart data (`start_date`, `end_date`, `cohort`). Audit logs include `*_iso8601` companion fields.
-- **Pagination param**: `?limit=N&starting_after=<id>` (verified by inspecting `next_page` URL).
+- **Pagination param**: `?limit=N&starting_after=<id>` (from the `next_page` URL).
 - **Auth**: `Authorization: Bearer sk_...`.
 
 ## The 16 documented resources (sidebar order)
@@ -50,27 +47,9 @@ App · Audit Log · Charts & Metrics · Collaborator · Customer · Entitlement 
 Offering · Package · Product · Virtual Currency · Purchase · Subscription ·
 Invoice · Paywall · Integration · Project
 
-## Resources NOT in the docs sidebar but found live
-
-- **Discounts** — `GET /projects/{id}/discounts` returns 200 (empty for this project). Listed in audit-log permissions as `project_configuration:discounts:read_write`.
-- **Experiments** — `GET /projects/{id}/experiments` returns 200 (empty). In permissions.
-- **Benchmarks** — `GET /projects/{id}/benchmarks` returns 200 (`{metrics: [], object: "benchmarks"}`). In permissions.
-- **Webhooks** — listed in docs as "Integration"; live path is `/projects/{id}/integrations/webhooks` (the bare `/integrations` 404s — the URL is sub-typed).
-
-## Endpoints assumed-but-missing
-
-| Probed | Result | Decision |
-|---|---|---|
-| `/projects/{id}/events` | 404 | No public events endpoint. Defer `rc events tail` until one exists. |
-| `/projects/{id}/notifications` | 404 | Skip. |
-| `/projects/{id}/api_keys` | 404 | API keys appear to be dashboard-only. Per-app `/apps/{id}/public_api_keys` may still work (untested with real app). |
-| `/projects/{id}/purchases/search?store_purchase_identifier=foo` | 404 | Param name or shape wrong; needs docs confirmation. |
-| `/projects/{id}/subscriptions/search?store_subscription_identifier=foo` | 404 | Same — needs docs confirmation. |
-| `/projects/{id}/charts/{name}` for arbitrary name | 400 `parameter_error` | Chart names are a fixed enum (below). |
-
 ## Charts: fixed 22-name enum
 
-From a `parameter_error` response, valid `chart_name` values are:
+Valid `chart_name` values:
 
 ```
 actives, actives_movement, actives_new, arr, churn, cohort_explorer,
@@ -91,7 +70,6 @@ names; there's no list endpoint.
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
 rc setup google [app-id]                                 # interactive: local Google sign-in, bootstrap the Play service-account credential, grant package-scoped access, upload to RC
 rc setup apple [app-id]                                  # interactive: App Store Connect sign-in + 2FA, create/upload IAP & ASC keys, vendor number (rc apps apple setup is a hidden alias)
-rc capital setup                                         # EXPERIMENTAL (hidden from --help until Capital ships): App Store Connect key flow (wraps setup apple)
 rc                                                       # bare rc -> getting-started help; --all reveals experimental commands
 
 # Auth / meta
@@ -99,11 +77,9 @@ rc auth login                                            # browser OAuth or API 
 rc auth signup                                           # browserless signup; create/generate password; optional macOS Keychain save; returns agent next steps
 rc auth logout                                           # clears credentials from profile
 rc auth status                                           # show auth state plus cached account identity; auth whoami and root rc whoami are aliases
-rc config                                                # show resolved config
 rc commands                                              # agent discovery (tree)
 rc schema <cmd>                                          # agent discovery (flags)
-rc skills install                                        # install four core skills globally for RC-supported agents without a picker; --agent overrides
-                                                         # RC_SKILLS_BRANCH / --branch installs an unreleased toolkit branch
+rc skills install                                        # install the core skills globally for RC-supported agents without a picker; --agent overrides
 rc skills prompts                                        # show copy-ready starter prompts; --json returns prompts for agent UIs
 rc open [section] [id]                                   # open the dashboard deep-linked to the active project (uses existing browser session)
 rc version
@@ -115,8 +91,13 @@ rc projects list
 rc projects show [id]
 rc projects create                                      # create a project; --use saves it as active
 rc projects use <id>                                     # switch profile default (interactive picker if no arg)
-rc projects collaborators                                # list-only in API
 rc browse                                                # interactive project hub TUI (customers, offerings, apps, ...)
+
+# Profiles (workspace switching)
+rc profiles list                                         # list configured profiles (API key + default project + base URL)
+rc profiles show [name]                                  # show the resolved active or named profile
+rc profiles use <name>                                   # switch the active profile
+rc profiles delete <name>                                # remove a profile
 
 # Apps (per-project)
 rc apps list
@@ -130,13 +111,11 @@ rc apps apple check [app-id]                             # validate Apple login,
 rc apps apple setup [app-id]                             # hidden alias of rc setup apple (kept for back-compat)
 
 # Customers — busiest noun
-rc customers show [id]                                    # already embeds active_entitlements; we'll add subs + purchases
-rc customers get [id]                                     # raw single endpoint
+rc customers show [id]                                    # embeds active_entitlements
 rc customers list
-rc customers create
-rc customers delete <id>
 rc customers aliases <id>
-rc customers attributes <id>                              # GET; --set k=v for POST
+rc customers attributes <id>                              # GET all subscriber attributes
+rc customers set-attribute <id> <key> <value>            # set a single subscriber attribute
 rc customers grant <id> <entitlement> [--duration ...]
 rc customers revoke <id> <entitlement>
 rc customers transfer <from> --to <id>
@@ -144,13 +123,7 @@ rc customers override-offering <id> --offering <id>
 rc customers clear-override <id>
 rc customers restore-google <id> --token <t>
 rc customers simulate-purchase                            # Test Store only; --app-id/--product/--app-user-id + confirmation/--yes
-rc customers subscriptions <id>
-rc customers purchases <id>
-rc customers entitlements <id>                            # active
-rc customers invoices <id>
 rc customers wallet <id>                                  # virtual_currencies per-customer
-rc customers wallet-grant <id> <currency> --amount N      # /virtual_currencies/update_balance
-rc customers wallet-tx <id> <currency> --amount N         # /virtual_currencies/transactions
 
 # Entitlements (project catalog)
 rc entitlements list
@@ -197,9 +170,11 @@ rc products prices [product-id]                         # list Test Store / Web 
 rc products prices set [product-id] --price USD=9.99    # idempotently create or update Test Store prices
 rc products store sync [app-id]                          # human flow: input → plan → review → confirm → apply
 rc products store plan [app-id]                          # persist desired state + diff on the backend; accepts --file <path|->
+rc products store list                                   # list persisted store plans
 rc products store show <plan-id>                         # inspect the exact persisted plan from any process
 rc products store apply <plan-id>                        # apply that same reviewed plan; requires confirmation/--yes
 rc products store discard <plan-id>                      # discard without applying; requires confirmation/--yes
+rc products store screenshot <plan-id>                   # manage store listing screenshots for a plan
 
 # Paywalls
 rc paywalls                                              # help; under npx a TTY shows a generate/edit picker (npm launcher sets RC_GUIDED — paywalls-only for now)
@@ -239,32 +214,15 @@ rc purchases refund <id>                                 # Web Billing only
 
 # Invoices
 rc invoices show <id>
+rc invoices for <customer-id>                            # list a customer's invoices
 
 # Media Assets
+rc media-assets list                                    # list images in the project Media Gallery
 rc media-assets upload <file>                            # upload an image (jpg/png/webp/avif/heic/heif, ≤2 MiB) to the project Media Gallery
 
 # Fonts
+rc fonts list                                            # list fonts uploaded to the project
 rc fonts upload <file>                                   # upload a font (ttf/otf, ≤5 MiB) to the project for use in paywalls
-
-# Virtual currencies (project catalog; per-customer lives under `customer wallet`)
-rc currencies list
-rc currencies show <id>
-rc currencies create
-rc currencies update <id>
-rc currencies delete <id>
-rc currencies archive <id>
-rc currencies restore <id>
-
-# Discounts (discovered live; not yet in docs sidebar)
-rc discounts list
-rc discounts show <id>
-rc discounts create                                      # if API supports it (TBD)
-rc discounts delete <id>
-
-# Experiments (discovered live; not yet in docs sidebar)
-rc experiments list
-rc experiments show <id>
-rc experiments results <id>                              # path TBD — /experiment_results 404'd
 
 # Webhooks (under /integrations/webhooks)
 rc webhooks list
@@ -278,31 +236,10 @@ rc metrics                                               # overview (project-wid
 rc charts list                                           # static enum, prints the 22 names
 rc charts show <name> [--filter k=v --segment ...]      # interactive TUI in TTY; --json for raw data
 rc charts options <name>                                # GET /charts/{name}/options
-rc benchmarks                                            # GET /benchmarks
 
 # Cross-resource
-rc find <type> <store-id>                                # purchases/subscriptions search (path TBD)
 rc audit                                                 # /audit_logs with --limit, --since
-
-# Future
-rc events tail [--filter ...]                            # NO public endpoint yet
-rc chat                                                  # internal agent chat
 ```
-
-## Naming decisions worth revisiting
-
-| Decision | Reasoning |
-|---|---|
-| `wallet` for per-customer virtual currencies | "Wallet" is the natural user term. |
-| `currencies` (not `virtual-currencies`) for project catalog | Short, unambiguous in context. |
-| `webhooks` (not `integrations`) | Webhooks is what users say; `integrations` is internal. Implementation hits `/integrations/webhooks`. |
-| `restore` (not `unarchive`) | Matches `gh`, `stripe`. |
-| `archive` + `restore` (separate verbs) | Each is an intent. |
-| `customer show` (composite) vs `customer get` (raw) | Most users want composite; raw is available for scripted workflows. |
-| `projects use` for switching | Matches `kubectl config use-context`. |
-| No global `--account-id` | API key already scopes to account. |
-| `find` as top-level | Search precedes knowing the resource type. |
-| `charts show <name>` not `charts <name>` | Leaves room for `charts list`, `charts options`. |
 
 ## What's intentionally NOT here
 
@@ -311,18 +248,17 @@ rc chat                                                  # internal agent chat
 - **No plugin system.** YAGNI; oclif model is a Node bet, not a Go one.
 - **No `--account` flag.** Account is implicit in the API key.
 - **No bulk-import** until there's a concrete ask.
-- **No public `/events` stream.** Endpoint doesn't exist; `rc events tail` deferred.
 
 ## Build order
 
 1. **`projects`** (list, show, use, create) — create is required for zero-to-project setup.
 2. **`customers`** ✅ — list, composite show, grant, revoke, aliases, attributes (+ set-attribute), transfer, override-offering, clear-override, restore-google, wallet.
 3. **Catalog CRUD** ✅ — entitlements (+ archive/restore/products/attach/detach), offerings (+ archive/restore), products (+ update/archive/restore/push), packages (show/create/update/delete/products/attach/detach). No `crud` helper extracted — readable enough inline.
-4. **Support toolkit**: `subscriptions` ✅ (show/transactions/entitlements/management-url/cancel/extend/refund), `purchases` ✅, `invoices` ✅. `customer wallet` still TODO.
-5. **Long tail**: `webhooks` ✅ (under `/integrations/webhooks`), `paywalls` ✅. `currencies` catalog, `discounts`, `experiments` deferred — fixtures empty so write shapes unverified.
-6. **Cross-resource utilities**: `metrics` ✅, `charts list/show/options` ✅ (with client-side enum validation + shell completion), `benchmarks` ✅, `audit` ✅. `find` still TODO (search query format unconfirmed).
+4. **Support toolkit**: `subscriptions` ✅ (show/transactions/entitlements/management-url/cancel/extend/refund), `purchases` ✅, `invoices` ✅, `customer wallet` ✅.
+5. **Long tail**: `webhooks` ✅ (under `/integrations/webhooks`), `paywalls` ✅.
+6. **Cross-resource utilities**: `metrics` ✅, `charts list/show/options` ✅ (with client-side enum validation + shell completion), `audit` ✅.
 7. **Apps** ✅ — list/show/create/update/delete/keys/storekit-config.
-8. **Product store-state sync POC** — `products store sync` is the one-process
+8. **Product store-state sync** — `products store sync` is the one-process
    human flow: gather desired state in memory (interactive input, a file, or
    stdin), create a server-side plan, review its diffs and warnings, then apply
    only after confirmation. Agents use the explicit `plan` → `show` → `apply`
@@ -330,8 +266,7 @@ rc chat                                                  # internal agent chat
    it reviewed; `discard` abandons it. `--file - --input-format csv|json` avoids
    any filesystem requirement. A future `.revenuecat` workspace may provide
    optional defaults, but is never a prerequisite and desired state is never
-   stored globally. These development-only v2 endpoints require the
-   `PRODUCT_CATALOG_PRODUCT_PRICE_MANAGER` feature flag until they ship.
+   stored globally.
 9. **Apple credential setup** — `apps apple check` validates App Store
    Connect login, trusted-device/SMS 2FA, team selection, and read-only key
    access. `apps apple setup` shows the app's current configuration, asks per
@@ -343,24 +278,10 @@ rc chat                                                  # internal agent chat
    `requires_human` in `rc schema`/`rc commands` because Apple sign-in needs a
    person with 2FA. Small Business Program dates remain out of scope because
    the public RevenueCat v2 app update schema does not expose them.
-10. **Support toolkit**: `subscriptions`, `purchases`, `invoices`, `customer wallet`. The SE-debug surface.
-11. **Long tail**: `webhooks` (via `/integrations/webhooks`), `paywalls`, `currencies` catalog, `discounts`, `experiments`.
-12. **Cross-resource utilities**: `find`, `audit`, `metrics`, `charts`, `benchmarks`.
-13. **Streaming**: `events tail`, then `chat` — both blocked on backend.
-
-## Open questions (need RevenueCat-internal answers)
-
-1. **Webhook integration path** — confirmed `/integrations/webhooks`; are there other integration sub-types (Slack, S3, Segment, etc.) under `/integrations/<type>`?
-2. **`/purchases/search` and `/subscriptions/search`** — what's the actual query format? Both 404'd with the param name the docs implied.
-3. **`/api_keys`** — managed in dashboard only, or is there a public per-project endpoint?
-4. **Apps `/public_api_keys`** subpath — confirm shape with a real app fixture.
-5. **`/experiment_results`** — docs imply it exists but 404'd. Maybe `/experiments/{id}/results`?
-6. **Discounts** — the audit log mentions both `discounts` and `promo_codes` semantics. Same thing or two surfaces?
-7. **Chart timestamps** — confirmed unix seconds (not millis like the rest). Document on the model page.
 
 ## Process
 
 - Update this file before writing code for a new command. If a verb doesn't
   fit cleanly, the design is what needs revisiting first.
-- When the API ships a new endpoint, capture a real fixture into
-  `/tmp/rc-fixtures`, run the scrubber, commit, then update this doc.
+</content>
+</invoke>

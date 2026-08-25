@@ -24,10 +24,10 @@ npm install -g @revenuecat/cli
 
 Or download a binary directly from the [releases page](../../releases).
 
-The two focused flows don't require installing anything:
+The guided flows don't require installing anything:
 ```bash
-npx @revenuecat/cli paywalls generate   # AI-design a paywall
-npx @revenuecat/cli capital setup        # connect App Store Connect for RevenueCat Capital
+npx @revenuecat/cli setup                # set up RevenueCat in your app
+npx @revenuecat/cli paywalls generate    # AI-design a paywall
 ```
 
 ## Quick start
@@ -50,8 +50,8 @@ rc auth signup
 # 2. Set a default project — or choose "Ask me every time" for multi-project workflows
 rc projects use
 
-# Connect App Store Connect (for Capital / App Store products)
-rc capital setup
+# Set up store-side credentials (App Store Connect / Google Play)
+rc setup apple app_abc
 
 # Look up a customer
 rc customers show cus_abc
@@ -145,20 +145,30 @@ price,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium Monthly
 localization,app_store,com.example.pro_monthly,subscription,Pro Monthly,Premium Monthly,P1M,,,,,,,en-US,Premium Monthly,Monthly premium access
 ```
 
-These v2 endpoints are still development-only and require a backend feature
-flag.
+This bulk CSV import is experimental and may not be available on every account
+yet.
 
-### Apple credential setup (experimental)
+### Store credential setup (experimental)
 
-Create the missing In-App Purchase and App Store Connect API keys in your
-Apple account, download each private key once, and upload it directly to an
-existing RevenueCat App Store app:
+Set up the store-side credentials RevenueCat needs, without manual key downloads
+or console clicking. Both run locally so your store credentials go straight to
+Apple/Google and never through RevenueCat or a model.
+
+**Apple (App Store Connect)** — create the missing In-App Purchase and App Store
+Connect API keys, and upload them to an existing RevenueCat App Store app:
 
 ```bash
-rc apps apple setup app_abc
+rc setup apple app_abc
 ```
 
-Test Apple sign-in, two-factor authentication, team selection, and read-only
+**Google (Google Play)** — sign in locally, bootstrap the service-account
+credential, grant package-scoped Play access, and upload it to RevenueCat:
+
+```bash
+rc setup google app_xyz
+```
+
+Preview Apple sign-in, two-factor authentication, team selection, and read-only
 key-management access without creating keys or changing RevenueCat:
 
 ```bash
@@ -181,8 +191,8 @@ Keep separate credentials for staging and production:
 rc auth login --profile staging
 rc auth login --profile prod
 
-rc --profile staging customer list
-rc --profile prod   customer list
+rc --profile staging customers list
+rc --profile prod   customers list
 ```
 
 ## Agentic signup
@@ -278,14 +288,6 @@ new agent session or reload the agent so it discovers the new skill metadata.
 Skills do not run when installed. The agent selects one when the user's request
 matches its description. For predictable project creation, say:
 
-To test skills from an unreleased AI Toolkit branch, set the branch for that
-installation. The explicit flag overrides the environment variable:
-
-```bash
-RC_SKILLS_BRANCH=rc-cli-project-setup-workflows rc skills install
-rc skills install --branch rc-cli-project-setup-workflows
-```
-
 ```text
 Use the create-revenuecat-project skill to make the app in this directory
 RevenueCat Test Store-ready end to end, then report every production-store
@@ -308,7 +310,7 @@ paywall, dependencies, debug test_ key, app code, build, and simulated purchase.
 
 Continue this app's RevenueCat setup with the Apple stage of the
 create-revenuecat-project skill. Run the read-only Apple check first, then give
-me the local interactive rc apps apple setup command for Apple sign-in and 2FA.
+me the local interactive rc setup apple command for Apple sign-in and 2FA.
 
 Use the revenuecat-store-state skill to plan App Store Connect products matching
 the verified Test Store catalog. Wait for approval before applying that same
@@ -384,3 +386,7 @@ Releases are fully automated via GoReleaser. To cut a release:
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for dev setup, testing, and how to send a PR.
 
 For deeper conventions — architecture, agent-friendly patterns, where things live — see [AGENTS.md](./AGENTS.md).
+
+## License
+
+MIT — see [LICENSE](./LICENSE).

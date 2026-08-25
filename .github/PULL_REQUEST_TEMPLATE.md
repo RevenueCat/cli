@@ -1,13 +1,12 @@
-<!-- Thank you for contributing to Purchases! Before pressing the "Create Pull Request" button, please provide the following: -->
+<!-- Thanks for contributing to the RevenueCat CLI! Before opening the PR, please fill in the sections below. -->
 
 ### Checklist
-- [ ] If applicable, unit tests
-- [ ] If applicable, create follow-up issues for native and hybrids
+- [ ] Tests added or updated, if applicable
+- [ ] `go build ./...`, `go test ./...`, and `gofmt` pass
 
 ### Motivation
 <!-- Why is this change required? What problem does it solve? -->
-<!-- Please link to issues following this format: Resolves #999999 -->
+<!-- Link related issues, e.g. Resolves #123 -->
 
 ### Description
-<!-- Describe your changes in detail -->
-<!-- Please describe in detail how you tested your changes -->
+<!-- Describe your changes, and how you tested them. -->
