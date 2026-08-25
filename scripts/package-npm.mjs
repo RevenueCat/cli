@@ -110,7 +110,7 @@ writeJSON(path.join(launcherDir, "package.json"), launcherPkg);
 const publishOrder = [...built.map(b => b.pkgDir), launcherDir];
 for (const dir of publishOrder) {
   const args = publish
-    ? ["publish", "--access", "public"]
+    ? ["publish", "--access", "public", "--provenance"]
     : ["pack", "--pack-destination", path.resolve(outDir)];
   console.log(`npm ${args[0]}: ${dir}`);
   execFileSync("npm", args, { cwd: dir, stdio: "inherit" });
