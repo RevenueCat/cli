@@ -229,11 +229,11 @@ func activeEntitlementIDs(raw json.RawMessage) []string {
 			} `json:"entitlements"`
 		} `json:"subscriber"`
 	}
+	ids := []string{}
 	if err := json.Unmarshal(raw, &resp); err != nil {
-		return nil
+		return ids
 	}
 	now := time.Now()
-	var ids []string
 	for id, e := range resp.Subscriber.Entitlements {
 		if e.ExpiresDate == nil {
 			ids = append(ids, id) // non-expiring / lifetime

@@ -30,10 +30,15 @@ func TestActiveEntitlementIDs(t *testing.T) {
 }
 
 func TestActiveEntitlementIDs_Malformed(t *testing.T) {
-	// Non-object / missing subscriber → empty, never a panic.
+	// Non-object / missing subscriber → empty, never a panic, and must encode
+	// as a JSON array (`[]`) rather than `null` so `--json | jq` stays safe.
 	for _, in := range []string{`"just a string"`, `{}`, `{"subscriber":{}}`, `not json`} {
-		if got := activeEntitlementIDs(json.RawMessage(in)); len(got) != 0 {
+		got := activeEntitlementIDs(json.RawMessage(in))
+		if len(got) != 0 {
 			t.Errorf("activeEntitlementIDs(%q) = %v, want empty", in, got)
+		}
+		if b, _ := json.Marshal(got); string(b) != "[]" {
+			t.Errorf("activeEntitlementIDs(%q) marshals to %s, want []", in, b)
 		}
 	}
 }
