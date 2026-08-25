@@ -283,5 +283,3 @@ rc audit                                                 # /audit_logs with --li
 
 - Update this file before writing code for a new command. If a verb doesn't
   fit cleanly, the design is what needs revisiting first.
-</content>
-</invoke>
