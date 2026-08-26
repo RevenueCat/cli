@@ -131,7 +131,7 @@ func Authenticate(ctx context.Context, clientID, clientSecret string, scopes []s
 		}
 	})
 
-	server := &http.Server{Handler: mux}
+	server := &http.Server{Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		if serveErr := server.Serve(listener); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
 			sendErr(errCh, serveErr)
