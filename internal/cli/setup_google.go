@@ -67,6 +67,9 @@ func newSetupGoogleCmd() *cobra.Command {
 		Annotations: map[string]string{
 			"requires_human":        "true",
 			"requires_human_reason": "Opens a browser for Google sign-in and manages Play Console access; a human must run it in a local interactive terminal.",
+			// Experimental until the Google OAuth consent screen is verified: until
+			// then sign-in shows the "unverified app" warning and a 100-user cap.
+			annotationSurface: surfaceExperimental,
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientID = valueOrEnv(clientID, "RC_GOOGLE_CLIENT_ID")

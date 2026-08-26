@@ -50,6 +50,9 @@ func curateSurface(root *cobra.Command, all bool) {
 		if cmd.Annotations[annotationSurface] == surfaceExperimental {
 			cmd.Hidden = !all
 		}
+		// Recurse so nested experimental subcommands (e.g. `setup google`) are
+		// hidden from their parent's --help too, not just top-level commands.
+		curateSurface(cmd, all)
 	}
 }
 
