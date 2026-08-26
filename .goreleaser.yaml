@@ -4,7 +4,9 @@ project_name: rc
 
 before:
   hooks:
-    - go mod tidy
+    # verify module checksums instead of `go mod tidy`, which would mutate
+    # go.mod/go.sum at release time away from what CI tested.
+    - go mod verify
 
 builds:
   - id: rc-unix-windows
