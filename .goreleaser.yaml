@@ -45,8 +45,8 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
-# Keyless (Sigstore/Fulcio) signature over the checksum file, which in turn
-# covers every released artifact. Requires cosign on PATH and id-token: write.
+# Sign checksums.txt (it hashes every binary, so one signature covers the whole
+# release) so downloads can be verified. Signing uses CI's GitHub identity, no keys.
 signs:
   - cmd: cosign
     artifacts: checksum
