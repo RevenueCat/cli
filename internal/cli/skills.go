@@ -270,7 +270,8 @@ it discovers the latest skills. Then ask naturally for RevenueCat setup or name
 the create-revenuecat-project skill explicitly.
 
 Set RC_SKILLS_BRANCH to install an unreleased branch for testing. --branch
-overrides the environment variable.`,
+overrides the environment variable. Only point it at a branch you trust: skills
+are installed and run by your agent, so an untrusted branch runs untrusted code.`,
 		Example: `  rc skills install
   rc skills install --project
   RC_SKILLS_BRANCH=my-feature-branch rc skills install

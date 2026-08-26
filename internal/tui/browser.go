@@ -92,6 +92,11 @@ func run(initial bframe) error {
 
 // OpenURL opens url in the default system browser.
 func OpenURL(url string) error {
+	// Only ever hand an http(s) URL to the system opener, so a value starting
+	// with "-" can't be parsed as a flag by open/xdg-open.
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		return fmt.Errorf("refusing to open non-http(s) URL: %q", url)
+	}
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
