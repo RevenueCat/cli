@@ -4,8 +4,8 @@ project_name: rc
 
 before:
   hooks:
-    # verify module checksums instead of `go mod tidy`, which would mutate
-    # go.mod/go.sum at release time away from what CI tested.
+    # just check the deps are intact; don't run `go mod tidy`, which could
+    # rewrite go.mod/go.sum during the release and ship different deps than CI tested.
     - go mod verify
 
 builds:
