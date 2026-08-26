@@ -4,7 +4,9 @@ project_name: rc
 
 before:
   hooks:
-    - go mod tidy
+    # just check the deps are intact; don't run `go mod tidy`, which could
+    # rewrite go.mod/go.sum during the release and ship different deps than CI tested.
+    - go mod verify
 
 builds:
   - id: rc-unix-windows
