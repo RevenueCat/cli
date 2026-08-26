@@ -2,6 +2,13 @@ version: 2
 
 project_name: rc
 
+# Baked into the release binary (via the build ldflags below) so `rc setup google`
+# works with no env setup. Sourced from CI secrets; empty for local builds, where
+# the RC_GOOGLE_CLIENT_ID / --client-id runtime override still works.
+env:
+  - GOOGLE_OAUTH_CLIENT_ID={{ if isEnvSet "GOOGLE_OAUTH_CLIENT_ID" }}{{ .Env.GOOGLE_OAUTH_CLIENT_ID }}{{ end }}
+  - GOOGLE_OAUTH_CLIENT_SECRET={{ if isEnvSet "GOOGLE_OAUTH_CLIENT_SECRET" }}{{ .Env.GOOGLE_OAUTH_CLIENT_SECRET }}{{ end }}
+
 before:
   hooks:
     # just check the deps are intact; don't run `go mod tidy`, which could
@@ -22,6 +29,8 @@ builds:
       - arm64
     ldflags:
       - -s -w -X main.version={{.Version}}
+      - -X github.com/revenuecat/cli/internal/google.DefaultClientID={{ .Env.GOOGLE_OAUTH_CLIENT_ID }}
+      - -X github.com/revenuecat/cli/internal/google.DefaultClientSecret={{ .Env.GOOGLE_OAUTH_CLIENT_SECRET }}
   - id: rc-darwin
     main: ./cmd/rc
     binary: rc
@@ -34,6 +43,8 @@ builds:
       - arm64
     ldflags:
       - -s -w -X main.version={{.Version}}
+      - -X github.com/revenuecat/cli/internal/google.DefaultClientID={{ .Env.GOOGLE_OAUTH_CLIENT_ID }}
+      - -X github.com/revenuecat/cli/internal/google.DefaultClientSecret={{ .Env.GOOGLE_OAUTH_CLIENT_SECRET }}
 
 archives:
   - id: default
