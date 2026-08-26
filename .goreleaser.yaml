@@ -45,6 +45,21 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+# Keyless (Sigstore/Fulcio) signature over the checksum file, which in turn
+# covers every released artifact. Requires cosign on PATH and id-token: write.
+signs:
+  - cmd: cosign
+    artifacts: checksum
+    output: true
+    signature: "${artifact}.sig"
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--yes"
+      - "--output-signature=${signature}"
+      - "--output-certificate=${certificate}"
+      - "${artifact}"
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
