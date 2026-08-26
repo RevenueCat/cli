@@ -52,7 +52,7 @@ func findTooNew(r io.Reader, now time.Time, window time.Duration, ignore map[str
 }
 
 func main() {
-	days := 7
+	days := 3
 	if v := os.Getenv("DEP_COOLDOWN_DAYS"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 {
