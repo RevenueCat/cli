@@ -279,7 +279,12 @@ func runSetup(cmd *cobra.Command) error {
 	// runSetup returns via runSetupAgentPrompt otherwise, so it never auto-launches.
 	ok := rt.Globals.AssumeYes && autonomy != autonomyFull
 	if !ok {
-		ok, err = fl.Confirm("Launch "+choice.Name+" now?", true)
+		defaultLaunch := true
+		if autonomy == autonomyFull {
+			fl.Warn("Full autonomy runs " + choice.Name + " with its sandbox and approval prompts disabled: it can run any command without asking.")
+			defaultLaunch = false
+		}
+		ok, err = fl.Confirm("Launch "+choice.Name+" now?", defaultLaunch)
 		if err != nil {
 			return err
 		}
@@ -361,7 +366,7 @@ var autonomyLabels = map[string]string{
 	autonomyAuto:    "the agent's built-in auto-approve mode",
 	autonomyTrusted: "pre-approve rc, edits, builds; ask for the rest",
 	autonomyManual:  "ask before each step",
-	autonomyFull:    "run freely (no approval prompts)",
+	autonomyFull:    "run freely; disables the agent's sandbox and approval prompts",
 }
 
 var skillsScopeLabels = map[string]string{
