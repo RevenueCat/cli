@@ -275,12 +275,10 @@ func runSetup(cmd *cobra.Command) error {
 	}
 	// --yes skips the final launch gate, except for full autonomy: it launches the
 	// agent with approvals/sandbox disabled, so that always gets an explicit
-	// confirmation and is refused outright when we can't prompt.
+	// confirmation even under --yes. We only reach here when we can prompt;
+	// runSetup returns via runSetupAgentPrompt otherwise, so it never auto-launches.
 	ok := rt.Globals.AssumeYes && autonomy != autonomyFull
 	if !ok {
-		if autonomy == autonomyFull && !rt.CanPrompt() {
-			return errors.New("refusing to launch with --autonomy full non-interactively: it disables the agent's approvals and sandbox. Run it in an interactive terminal, or use --autonomy auto/trusted")
-		}
 		ok, err = fl.Confirm("Launch "+choice.Name+" now?", true)
 		if err != nil {
 			return err
