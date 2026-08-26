@@ -15,6 +15,7 @@ func TestFindTooNew(t *testing.T) {
 {"Path":"example.com/old","Version":"v1.0.0","Time":"2026-01-01T00:00:00Z"}
 {"Path":"example.com/fresh","Version":"v2.3.4","Time":"2026-08-24T00:00:00Z"}
 {"Path":"example.com/edge","Version":"v0.1.0","Time":"2026-08-19T13:00:00Z"}
+{"Path":"example.com/exact","Version":"v0.2.0","Time":"2026-08-19T12:00:00Z"}
 {"Path":"example.com/ignored","Version":"v9.9.9","Time":"2026-08-26T00:00:00Z"}
 {"Path":"example.com/notime","Version":"v1.2.3"}
 {"Path":"example.com/wrapper","Version":"v1.0.0","Time":"2026-01-01T00:00:00Z","Replace":{"Path":"example.com/replacement","Version":"v0.0.1","Time":"2026-08-25T00:00:00Z"}}
@@ -25,8 +26,10 @@ func TestFindTooNew(t *testing.T) {
 		t.Fatalf("findTooNew: %v", err)
 	}
 
+	// example.com/exact is exactly window-old and must NOT be flagged (strict <),
+	// so it's absent here; the len check below catches it if that regresses.
 	want := map[string]bool{
-		"example.com/fresh":       true, // 2 days old
+		"example.com/fresh":       true,
 		"example.com/edge":        true, // ~6d23h old, just inside the window
 		"example.com/replacement": true, // replacement time is what counts
 	}

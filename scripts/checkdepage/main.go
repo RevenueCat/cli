@@ -1,5 +1,6 @@
-// Command check-dep-age fails the build when a module in the build list is
-// newer than the cooldown window. Feed it `go list -m -json all` on stdin.
+// Command checkdepage fails the build when a module in the build list was
+// published more recently than the cooldown window. Feed it
+// `go list -m -json all` on stdin.
 package main
 
 import (
@@ -54,8 +55,8 @@ func main() {
 	days := 7
 	if v := os.Getenv("DEP_COOLDOWN_DAYS"); v != "" {
 		n, err := strconv.Atoi(v)
-		if err != nil || n < 0 {
-			fmt.Fprintf(os.Stderr, "invalid DEP_COOLDOWN_DAYS %q\n", v)
+		if err != nil || n < 1 {
+			fmt.Fprintf(os.Stderr, "invalid DEP_COOLDOWN_DAYS %q (must be a positive integer)\n", v)
 			os.Exit(2)
 		}
 		days = n
@@ -77,10 +78,10 @@ func main() {
 		fmt.Printf("dep-age: all dependencies are at least %d days old\n", days)
 		return
 	}
-	fmt.Fprintf(os.Stderr, "::error::%d dependency version(s) younger than the %d-day cooldown:\n", len(found), days)
 	for _, f := range found {
 		fmt.Fprintf(os.Stderr, "  %s %s (published %.1f days ago)\n", f.Path, f.Version, f.Age.Hours()/24)
 	}
 	fmt.Fprintf(os.Stderr, "Wait for them to age out, or override a specific module with DEP_COOLDOWN_IGNORE=<module-path>.\n")
+	fmt.Fprintf(os.Stderr, "::error::%d dependency version(s) younger than the %d-day supply-chain cooldown (see the list above)\n", len(found), days)
 	os.Exit(1)
 }
