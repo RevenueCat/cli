@@ -273,8 +273,14 @@ func runSetup(cmd *cobra.Command) error {
 	if appleDeferred {
 		fl.Say("Apple is deferred — the agent finishes everything that doesn't need it, then hands you the exact commands to connect App Store Connect when you're ready to ship.")
 	}
-	ok := rt.Globals.AssumeYes // --yes skips the final launch gate, as before
+	// --yes skips the final launch gate, except for full autonomy: it launches the
+	// agent with approvals/sandbox disabled, so that always gets an explicit
+	// confirmation and is refused outright when we can't prompt.
+	ok := rt.Globals.AssumeYes && autonomy != autonomyFull
 	if !ok {
+		if autonomy == autonomyFull && !rt.CanPrompt() {
+			return errors.New("refusing to launch with --autonomy full non-interactively: it disables the agent's approvals and sandbox. Run it in an interactive terminal, or use --autonomy auto/trusted")
+		}
 		ok, err = fl.Confirm("Launch "+choice.Name+" now?", true)
 		if err != nil {
 			return err
