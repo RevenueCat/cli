@@ -51,13 +51,11 @@ signs:
   - cmd: cosign
     artifacts: checksum
     output: true
-    signature: "${artifact}.sig"
-    certificate: "${artifact}.pem"
+    signature: "${artifact}.sigstore.json"
     args:
       - sign-blob
       - "--yes"
-      - "--output-signature=${signature}"
-      - "--output-certificate=${certificate}"
+      - "--bundle=${signature}"
       - "${artifact}"
 
 snapshot:
