@@ -50,6 +50,8 @@ jobs:
           version: v2.12.2
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+      - name: dependency cooldown
+        run: go list -m -json all | go run ./scripts/checkdepage
 
   darwin-build:
     runs-on: macos-14
