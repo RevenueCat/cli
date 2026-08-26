@@ -45,6 +45,19 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+# Sign checksums.txt (it hashes every binary, so one signature covers the whole
+# release) so downloads can be verified. Signing uses CI's GitHub identity, no keys.
+signs:
+  - cmd: cosign
+    artifacts: checksum
+    output: true
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - "--yes"
+      - "--bundle=${signature}"
+      - "${artifact}"
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
