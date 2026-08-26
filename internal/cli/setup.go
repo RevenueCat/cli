@@ -273,9 +273,18 @@ func runSetup(cmd *cobra.Command) error {
 	if appleDeferred {
 		fl.Say("Apple is deferred — the agent finishes everything that doesn't need it, then hands you the exact commands to connect App Store Connect when you're ready to ship.")
 	}
-	ok := rt.Globals.AssumeYes // --yes skips the final launch gate, as before
+	// --yes skips the final launch gate, except for full autonomy: it launches the
+	// agent with approvals/sandbox disabled, so that always gets an explicit
+	// confirmation even under --yes. We only reach here when we can prompt;
+	// runSetup returns via runSetupAgentPrompt otherwise, so it never auto-launches.
+	ok := rt.Globals.AssumeYes && autonomy != autonomyFull
 	if !ok {
-		ok, err = fl.Confirm("Launch "+choice.Name+" now?", true)
+		defaultLaunch := true
+		if autonomy == autonomyFull {
+			fl.Warn("Full autonomy runs " + choice.Name + " with its sandbox and approval prompts disabled: it can run any command without asking.")
+			defaultLaunch = false
+		}
+		ok, err = fl.Confirm("Launch "+choice.Name+" now?", defaultLaunch)
 		if err != nil {
 			return err
 		}
@@ -357,7 +366,7 @@ var autonomyLabels = map[string]string{
 	autonomyAuto:    "the agent's built-in auto-approve mode",
 	autonomyTrusted: "pre-approve rc, edits, builds; ask for the rest",
 	autonomyManual:  "ask before each step",
-	autonomyFull:    "run freely (no approval prompts)",
+	autonomyFull:    "run freely; disables the agent's sandbox and approval prompts",
 }
 
 var skillsScopeLabels = map[string]string{
