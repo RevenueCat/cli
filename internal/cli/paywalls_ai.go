@@ -113,7 +113,7 @@ func newPaywallsGenerateCmd() *cobra.Command {
 	opts := paywallAIOptions{
 		prompt:     os.Getenv("RC_PAYWALL_PROMPT"),
 		offeringID: os.Getenv("RC_OFFERING_ID"),
-		baseURL:    envOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
+		baseURL:    devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
 		timeout:    12 * time.Minute,
 	}
 	cmd := &cobra.Command{
@@ -248,7 +248,7 @@ screenshots via --image, audience via --context.`,
 func newPaywallsEditCmd() *cobra.Command {
 	opts := paywallAIOptions{
 		prompt:  os.Getenv("RC_PAYWALL_PROMPT"),
-		baseURL: envOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
+		baseURL: devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
 		timeout: 10 * time.Minute,
 	}
 	cmd := &cobra.Command{
@@ -455,7 +455,7 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 
 func newPaywallsRewindCmd() *cobra.Command {
 	var sessionPath string
-	baseURL := envOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL)
+	baseURL := devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:   "rewind --session <file>",
 		Short: "Rewind the last Paywalls AI Editor action",

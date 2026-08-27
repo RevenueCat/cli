@@ -28,7 +28,7 @@ func newRicoCmd() *cobra.Command {
 	opts := ricoChatOptions{
 		prompt:         os.Getenv("RC_RICO_PROMPT"),
 		conversationID: os.Getenv("RC_RICO_CONVERSATION_ID"),
-		baseURL:        envOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL),
+		baseURL:        devEnvOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL),
 		timeout:        10 * time.Minute,
 	}
 	cmd := &cobra.Command{
@@ -543,7 +543,7 @@ func (s *ricoPlainSink) Approve(interrupt rico.Interrupt, label string) (bool, e
 }
 
 func newRicoConversationsCmd() *cobra.Command {
-	baseURL := envOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL)
+	baseURL := devEnvOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:     "conversations",
 		Aliases: []string{"conversation"},
@@ -652,7 +652,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 
 func newRicoFeedbackCmd() *cobra.Command {
 	var comment string
-	baseURL := envOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL)
+	baseURL := devEnvOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:   "feedback <run-id> <good|bad>",
 		Short: "Rate a Rico reply",
@@ -721,11 +721,4 @@ func ricoFriendlyError(err error) error {
 		}
 	}
 	return err
-}
-
-func envOrDefault(name, fallback string) string {
-	if value := os.Getenv(name); value != "" {
-		return value
-	}
-	return fallback
 }

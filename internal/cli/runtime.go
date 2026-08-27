@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/buildinfo"
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/httpx"
 	"github.com/revenuecat/cli/internal/output"
@@ -103,19 +104,30 @@ func (r *Runtime) API() (*api.Client, error) {
 		return nil, ErrNotAuthenticated
 	}
 	r.warnCredentialConflict(source)
-	if b := r.Config.BaseURL; b != "" {
-		if u, err := url.Parse(b); err != nil || u.Scheme == "" || u.Host == "" {
-			return nil, fmt.Errorf("invalid base URL %q (RC_BASE_URL or profile base_url): expected an absolute URL like https://api.revenuecat.com/v2", b)
+	baseURL := r.effectiveBaseURL()
+	if baseURL != "" {
+		if u, err := url.Parse(baseURL); err != nil || u.Scheme == "" || u.Host == "" {
+			return nil, fmt.Errorf("invalid base URL %q (RC_BASE_URL or profile base_url): expected an absolute URL like https://api.revenuecat.com/v2", baseURL)
 		}
 	}
 	r.client = api.NewClient(api.Options{
 		APIKey:           token, // works for both API keys and OAuth tokens
 		CredentialSource: string(source),
-		BaseURL:          r.Config.BaseURL,
+		BaseURL:          baseURL,
 		UserAgent:        userAgent(r.Globals.Version),
 		ExtraHeaders:     requestHeaders(r.Globals),
 	})
 	return r.client, nil
+}
+
+// effectiveBaseURL is the configured base URL in dev builds and empty in release
+// builds, so a shipped binary always talks to the production endpoints regardless
+// of RC_BASE_URL or profile base_url. Use it anywhere a credential or key is sent.
+func (r *Runtime) effectiveBaseURL() string {
+	if buildinfo.IsDev() {
+		return r.Config.BaseURL
+	}
+	return ""
 }
 
 // warnCredentialConflict warns once per run when more than one credential source is present.
@@ -168,8 +180,12 @@ func (r *Runtime) silentRefresh() {
 }
 
 func oauthBaseURL() string {
-	if v := os.Getenv("RC_OAUTH_BASE_URL"); v != "" {
-		return v
+	// Dev-only override, like the other endpoints: a release binary always
+	// authenticates against the production OAuth host.
+	if buildinfo.IsDev() {
+		if v := os.Getenv("RC_OAUTH_BASE_URL"); v != "" {
+			return v
+		}
 	}
 	return api.DefaultOAuthBaseURL
 }

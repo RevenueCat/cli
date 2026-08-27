@@ -185,7 +185,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			sdk := api.NewSDKService(rt.Config.BaseURL, nil, userAgent(rt.Globals.Version))
+			sdk := api.NewSDKService(rt.effectiveBaseURL(), nil, userAgent(rt.Globals.Version))
 			raw, err := sdk.SimulatePurchase(cmd.Context(), publicAPIKey, api.SimulatedPurchase{
 				FetchToken: fetchToken, AppUserID: appUserID, ProductID: selected.StoreIdentifier,
 				InitiationSource: "purchase", SDKOriginated: true,
