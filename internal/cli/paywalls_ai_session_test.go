@@ -311,6 +311,44 @@ func TestPaywallsEdit_RoundTripsStateDeclarations(t *testing.T) {
 	}
 }
 
+// A session file written by a CLI from before state declarations must adopt
+// the server's declarations on resume — not {}, which would wipe
+// dashboard-authored declarations on save.
+func TestPaywallsEdit_LegacySessionAdoptsServerStateDeclarations(t *testing.T) {
+	fetched := `{"tab":{"type":"string","default":"a"}}`
+	rc := &rcPaywallMock{stateDeclarations: fetched}
+	rcServer := rc.server(t)
+	defer rcServer.Close()
+	editor := &echoEditorServer{}
+	editorServer := editor.server(t)
+	defer editorServer.Close()
+
+	dir := t.TempDir()
+	sessionPath := filepath.Join(dir, "legacy"+paywallSessionSuffix)
+	if err := savePaywallAISession(sessionPath, newTestSession()); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", editorServer.URL)
+	cmd := newPaywallsEditCmd()
+	rt := newSessionTestRuntime(rcServer.URL)
+	cmd.SetContext(WithRuntime(context.Background(), rt))
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"--session", sessionPath, "--prompt", "tweak it"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("edit with --session failed: %v", err)
+	}
+
+	editor.mu.Lock()
+	sent := append([]string(nil), editor.receivedDeclarations...)
+	editor.mu.Unlock()
+	if len(sent) != 1 || sent[0] != fetched {
+		t.Fatalf("editor request state_declarations = %v, want %s", sent, fetched)
+	}
+}
+
 // A draft not written since before state declarations existed serves them as
 // null; the CLI must send the editor an empty-but-present value (so it can
 // wire new state) and must never PATCH an explicit null back (which clears).
