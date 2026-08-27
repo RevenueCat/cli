@@ -24,9 +24,14 @@ func ParseHeaders(s string) http.Header {
 	return h
 }
 
-// Apply sets each header from h on req, overriding existing values.
+// Apply sets each header from h on req, overriding existing values, except
+// Authorization: user-supplied headers (RC_HEADERS) must not be able to swap out
+// the CLI's auth credential.
 func Apply(req *http.Request, h http.Header) {
 	for name, values := range h {
+		if strings.EqualFold(name, "Authorization") {
+			continue
+		}
 		for i, v := range values {
 			if i == 0 {
 				req.Header.Set(name, v)
