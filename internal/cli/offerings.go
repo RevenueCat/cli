@@ -236,7 +236,7 @@ ID in a terminal to pick from a list.`,
 				}
 				publicAPIKey = keys.Items[0].Key
 			}
-			sdk := api.NewSDKService(rt.Config.BaseURL, nil, userAgent(rt.Globals.Version))
+			sdk := api.NewSDKService(rt.effectiveBaseURL(), nil, userAgent(rt.Globals.Version))
 			raw, err := sdk.Offerings(cmd.Context(), publicAPIKey, appUserID)
 			if err != nil {
 				return err

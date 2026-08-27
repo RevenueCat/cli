@@ -104,12 +104,7 @@ func (r *Runtime) API() (*api.Client, error) {
 		return nil, ErrNotAuthenticated
 	}
 	r.warnCredentialConflict(source)
-	// The base URL is overridable only in dev builds; a shipped binary always
-	// talks to the production API regardless of RC_BASE_URL or profile base_url.
-	baseURL := ""
-	if buildinfo.IsDev() {
-		baseURL = r.Config.BaseURL
-	}
+	baseURL := r.effectiveBaseURL()
 	if baseURL != "" {
 		if u, err := url.Parse(baseURL); err != nil || u.Scheme == "" || u.Host == "" {
 			return nil, fmt.Errorf("invalid base URL %q (RC_BASE_URL or profile base_url): expected an absolute URL like https://api.revenuecat.com/v2", baseURL)
@@ -123,6 +118,16 @@ func (r *Runtime) API() (*api.Client, error) {
 		ExtraHeaders:     requestHeaders(r.Globals),
 	})
 	return r.client, nil
+}
+
+// effectiveBaseURL is the configured base URL in dev builds and empty in release
+// builds, so a shipped binary always talks to the production endpoints regardless
+// of RC_BASE_URL or profile base_url. Use it anywhere a credential or key is sent.
+func (r *Runtime) effectiveBaseURL() string {
+	if buildinfo.IsDev() {
+		return r.Config.BaseURL
+	}
+	return ""
 }
 
 // warnCredentialConflict warns once per run when more than one credential source is present.
