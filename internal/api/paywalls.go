@@ -30,6 +30,7 @@ type PaywallComponentsVersion struct {
 	Revision                   *int            `json:"revision"`
 	ComponentsConfig           json.RawMessage `json:"components_config"`
 	ComponentsLocalizations    json.RawMessage `json:"components_localizations"`
+	StateDeclarations          json.RawMessage `json:"state_declarations,omitempty"`
 	DefaultLocale              string          `json:"default_locale"`
 	AutomaticallyScaleFontSize bool            `json:"automatically_scale_font_size"`
 }
@@ -41,8 +42,11 @@ type PaywallDraftUpdate struct {
 	Revision                int             `json:"revision"`
 	ComponentsConfig        json.RawMessage `json:"components_config"`
 	ComponentsLocalizations json.RawMessage `json:"components_localizations"`
-	DefaultLocale           string          `json:"default_locale"`
-	Name                    *string         `json:"name,omitempty"`
+	// Unset must marshal as an omitted field, never as null: the server keeps
+	// stored declarations when the field is absent but clears them on explicit null.
+	StateDeclarations json.RawMessage `json:"state_declarations,omitempty"`
+	DefaultLocale     string          `json:"default_locale"`
+	Name              *string         `json:"name,omitempty"`
 }
 
 func (s *PaywallsService) List(ctx context.Context, projectID string) (*Page[Paywall], error) {

@@ -220,6 +220,7 @@ screenshots via --image, audience via --context.`,
 					OfferingID:              offeringID,
 					ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
 					ComponentsLocalizations: json.RawMessage(`{"en_US": {}}`),
+					StateDeclarations:       json.RawMessage(`{}`),
 				},
 				UIConfig:         json.RawMessage(minimalUIConfig),
 				ProductVariables: map[string]string{},
@@ -426,6 +427,10 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 	if len(localizations) == 0 {
 		localizations = json.RawMessage(`{"` + locale + `": {}}`)
 	}
+	stateDeclarations := presentJSON(version.StateDeclarations)
+	if stateDeclarations == nil {
+		stateDeclarations = json.RawMessage(`{}`)
+	}
 	var offeringID *string
 	if paywall.OfferingID != "" {
 		offeringID = &paywall.OfferingID
@@ -446,6 +451,7 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 			OfferingID:              offeringID,
 			ComponentsConfig:        version.ComponentsConfig,
 			ComponentsLocalizations: localizations,
+			StateDeclarations:       stateDeclarations,
 		},
 		UIConfig:         json.RawMessage(minimalUIConfig),
 		ProductVariables: map[string]string{},
@@ -589,9 +595,15 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 	if event.Paywall != nil {
 		// the editor echoes offering_id as null; keep the CLI's
 		offeringID := session.Paywall.OfferingID
+		stateDeclarations := session.Paywall.StateDeclarations
 		session.Paywall = *event.Paywall
 		if session.Paywall.OfferingID == nil {
 			session.Paywall.OfferingID = offeringID
+		}
+		// an editor that predates state declarations doesn't echo them; absence means unknown, not cleared
+		session.Paywall.StateDeclarations = presentJSON(session.Paywall.StateDeclarations)
+		if session.Paywall.StateDeclarations == nil {
+			session.Paywall.StateDeclarations = stateDeclarations
 		}
 	}
 	if len(event.SessionItems) > 0 {
@@ -600,6 +612,15 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 	if len(event.AppContext) > 0 {
 		session.AppContext = event.AppContext
 	}
+}
+
+// presentJSON normalizes absent-or-null JSON to nil so it marshals as an
+// omitted field: the server clears stored state on an explicit null.
+func presentJSON(raw json.RawMessage) json.RawMessage {
+	if s := strings.TrimSpace(string(raw)); s == "" || s == "null" {
+		return nil
+	}
+	return raw
 }
 
 func paywallRecoveryHint(opts paywallAIOptions, checkpointed bool) string {
@@ -726,6 +747,7 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *paywallAISe
 	update := api.PaywallDraftUpdate{
 		ComponentsConfig:        session.Paywall.ComponentsConfig,
 		ComponentsLocalizations: session.Paywall.ComponentsLocalizations,
+		StateDeclarations:       presentJSON(session.Paywall.StateDeclarations),
 		DefaultLocale:           session.Paywall.DefaultLocale,
 	}
 	// Always the session's own revision — refetching a fresh one here would

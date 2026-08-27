@@ -356,6 +356,10 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	if input["include_result_screenshots"] != true {
 		t.Fatalf("include_result_screenshots = %v", input["include_result_screenshots"])
 	}
+	// a brand-new paywall sends empty-but-present declarations so the editor may wire new state
+	if decls, ok := input["paywall"].(map[string]any)["state_declarations"].(map[string]any); !ok || len(decls) != 0 {
+		t.Fatalf("generate editor request paywall.state_declarations = %v, want {}", input["paywall"])
+	}
 
 	// Session file round-trips the completed paywall + opaque blobs.
 	payload, err := os.ReadFile(sessionPath)
