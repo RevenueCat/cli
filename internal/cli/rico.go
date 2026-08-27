@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
+	"github.com/revenuecat/cli/internal/buildinfo"
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/rico"
@@ -28,7 +29,7 @@ func newRicoCmd() *cobra.Command {
 	opts := ricoChatOptions{
 		prompt:         os.Getenv("RC_RICO_PROMPT"),
 		conversationID: os.Getenv("RC_RICO_CONVERSATION_ID"),
-		baseURL:        envOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL),
+		baseURL:        devEnvOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL),
 		timeout:        10 * time.Minute,
 	}
 	cmd := &cobra.Command{
@@ -543,7 +544,7 @@ func (s *ricoPlainSink) Approve(interrupt rico.Interrupt, label string) (bool, e
 }
 
 func newRicoConversationsCmd() *cobra.Command {
-	baseURL := envOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL)
+	baseURL := devEnvOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:     "conversations",
 		Aliases: []string{"conversation"},
@@ -652,7 +653,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 
 func newRicoFeedbackCmd() *cobra.Command {
 	var comment string
-	baseURL := envOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL)
+	baseURL := devEnvOrDefault("RC_RICO_BASE_URL", rico.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:   "feedback <run-id> <good|bad>",
 		Short: "Rate a Rico reply",
@@ -728,4 +729,13 @@ func envOrDefault(name, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+// devEnvOrDefault honors an endpoint override env var only in dev builds; a
+// shipped binary always uses the production default.
+func devEnvOrDefault(name, fallback string) string {
+	if !buildinfo.IsDev() {
+		return fallback
+	}
+	return envOrDefault(name, fallback)
 }

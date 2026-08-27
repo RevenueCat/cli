@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/buildinfo"
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/httpx"
 	"github.com/revenuecat/cli/internal/output"
@@ -103,15 +104,21 @@ func (r *Runtime) API() (*api.Client, error) {
 		return nil, ErrNotAuthenticated
 	}
 	r.warnCredentialConflict(source)
-	if b := r.Config.BaseURL; b != "" {
-		if u, err := url.Parse(b); err != nil || u.Scheme == "" || u.Host == "" {
-			return nil, fmt.Errorf("invalid base URL %q (RC_BASE_URL or profile base_url): expected an absolute URL like https://api.revenuecat.com/v2", b)
+	// The base URL is overridable only in dev builds; a shipped binary always
+	// talks to the production API regardless of RC_BASE_URL or profile base_url.
+	baseURL := ""
+	if buildinfo.IsDev() {
+		baseURL = r.Config.BaseURL
+	}
+	if baseURL != "" {
+		if u, err := url.Parse(baseURL); err != nil || u.Scheme == "" || u.Host == "" {
+			return nil, fmt.Errorf("invalid base URL %q (RC_BASE_URL or profile base_url): expected an absolute URL like https://api.revenuecat.com/v2", baseURL)
 		}
 	}
 	r.client = api.NewClient(api.Options{
 		APIKey:           token, // works for both API keys and OAuth tokens
 		CredentialSource: string(source),
-		BaseURL:          r.Config.BaseURL,
+		BaseURL:          baseURL,
 		UserAgent:        userAgent(r.Globals.Version),
 		ExtraHeaders:     requestHeaders(r.Globals),
 	})
