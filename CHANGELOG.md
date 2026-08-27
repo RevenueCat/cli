@@ -21,6 +21,6 @@ Initial public release of `rc`, the RevenueCat command line interface. It's buil
 ### Install
 - Homebrew: `brew install RevenueCat/tap/rc`
 - npm: `npm install -g @revenuecat/cli`, or run without installing via `npx @revenuecat/cli`
-- Prebuilt binaries on the [releases page](https://github.com/RevenueCat/revenuecat-cli/releases)
+- Prebuilt binaries on the [releases page](https://github.com/RevenueCat/cli/releases)
 
-[0.1.0]: https://github.com/RevenueCat/revenuecat-cli/releases/tag/v0.1.0
+[0.1.0]: https://github.com/RevenueCat/cli/releases/tag/v0.1.0
