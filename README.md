@@ -306,7 +306,7 @@ route or tag traffic without baking anything into the binary:
 RC_HEADERS=$'X-Some-Header: value' rc offerings list
 ```
 
-One header per line; supplied headers override the CLI's defaults.
+One header per line; supplied headers override the CLI's defaults, except `Authorization`, which is protected so a stray header can't swap your credential.
 
 ## Usage analytics
 

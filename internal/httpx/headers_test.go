@@ -32,7 +32,7 @@ func TestParseHeadersEmptyIsNil(t *testing.T) {
 	}
 }
 
-func TestApplyOverridesAndSendsOnRequest(t *testing.T) {
+func TestApplyAppliesExtraHeadersButProtectsAuthorization(t *testing.T) {
 	var gotHeader, gotAuth string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotHeader = r.Header.Get("X-Example-Header")
@@ -52,8 +52,8 @@ func TestApplyOverridesAndSendsOnRequest(t *testing.T) {
 	if gotHeader != "example-value" {
 		t.Errorf("X-Example-Header = %q, want example-value", gotHeader)
 	}
-	if gotAuth != "Bearer override" {
-		t.Errorf("Authorization = %q, want the applied header to override the default", gotAuth)
+	if gotAuth != "Bearer default" {
+		t.Errorf("Authorization = %q, want the CLI's credential preserved (RC_HEADERS must not override Authorization)", gotAuth)
 	}
 }
 
