@@ -42,11 +42,11 @@ jobs:
           # Baked into the binary via ldflags so `rc setup google` works out of the box
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
+      - name: Upgrade npm (trusted publishing needs npm >= 11.5.1)
+        run: npm install -g npm@latest
       - name: Publish npm packages (@revenuecat/cli + platform binaries)
         run: node scripts/package-npm.mjs --version "${GITHUB_REF_NAME#v}" --dist dist --out npm-dist --publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

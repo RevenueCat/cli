@@ -4,7 +4,7 @@
 // @revenuecat/cli launcher whose optionalDependencies pin the same version.
 //
 //   node scripts/package-npm.mjs --version 0.2.0 --dist dist --out npm-dist
-//     [--publish]        npm publish (requires NODE_AUTH_TOKEN) instead of npm pack
+//     [--publish]        npm publish instead of npm pack (CI auth is OIDC trusted publishing)
 //     [--allow-missing]  tolerate absent platforms (local dry runs on one machine)
 //
 // Run from the repo root after `goreleaser release` (or `goreleaser build`).
