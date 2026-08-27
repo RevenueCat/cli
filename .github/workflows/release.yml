@@ -47,6 +47,6 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
       - name: Upgrade npm (trusted publishing needs npm >= 11.5.1)
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.19.0
       - name: Publish npm packages (@revenuecat/cli + platform binaries)
         run: node scripts/package-npm.mjs --version "${GITHUB_REF_NAME#v}" --dist dist --out npm-dist --publish
