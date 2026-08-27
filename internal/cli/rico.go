@@ -14,7 +14,6 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
-	"github.com/revenuecat/cli/internal/buildinfo"
 	"github.com/revenuecat/cli/internal/config"
 	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/rico"
@@ -722,20 +721,4 @@ func ricoFriendlyError(err error) error {
 		}
 	}
 	return err
-}
-
-func envOrDefault(name, fallback string) string {
-	if value := os.Getenv(name); value != "" {
-		return value
-	}
-	return fallback
-}
-
-// devEnvOrDefault honors an endpoint override env var only in dev builds; a
-// shipped binary always uses the production default.
-func devEnvOrDefault(name, fallback string) string {
-	if !buildinfo.IsDev() {
-		return fallback
-	}
-	return envOrDefault(name, fallback)
 }

@@ -180,8 +180,12 @@ func (r *Runtime) silentRefresh() {
 }
 
 func oauthBaseURL() string {
-	if v := os.Getenv("RC_OAUTH_BASE_URL"); v != "" {
-		return v
+	// Dev-only override, like the other endpoints: a release binary always
+	// authenticates against the production OAuth host.
+	if buildinfo.IsDev() {
+		if v := os.Getenv("RC_OAUTH_BASE_URL"); v != "" {
+			return v
+		}
 	}
 	return api.DefaultOAuthBaseURL
 }
