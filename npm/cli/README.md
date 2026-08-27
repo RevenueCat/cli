@@ -1,6 +1,6 @@
 # @revenuecat/cli
 
-The [RevenueCat CLI](https://github.com/RevenueCat/revenuecat-cli), installable via npm.
+The [RevenueCat CLI](https://github.com/RevenueCat/cli), installable via npm.
 
 ```bash
 npx @revenuecat/cli --help
@@ -14,4 +14,4 @@ dependencies) and executes it directly. The CLI itself is a native Go binary —
 Node is only used to dispatch.
 
 Also available via Homebrew (`brew install RevenueCat/tap/rc`) and
-[GitHub Releases](https://github.com/RevenueCat/revenuecat-cli/releases).
+[GitHub Releases](https://github.com/RevenueCat/cli/releases).

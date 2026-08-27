@@ -25,7 +25,7 @@ function binaryPath() {
       "If your platform is listed, your package manager may have skipped optional dependencies (e.g. --no-optional)."
     );
     console.error(
-      "Other install options: `brew install RevenueCat/tap/rc` or https://github.com/RevenueCat/revenuecat-cli/releases"
+      "Other install options: `brew install RevenueCat/tap/rc` or https://github.com/RevenueCat/cli/releases"
     );
     process.exit(1);
   }
