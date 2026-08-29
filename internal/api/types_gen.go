@@ -5,6 +5,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -3387,6 +3388,66 @@ const (
 func (e RokuAppCreateType) Valid() bool {
 	switch e {
 	case RokuAppCreateTypeRoku:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StateDeclarationBooleanVariantType.
+const (
+	Boolean StateDeclarationBooleanVariantType = "boolean"
+)
+
+// Valid indicates whether the value is a known member of the StateDeclarationBooleanVariantType enum.
+func (e StateDeclarationBooleanVariantType) Valid() bool {
+	switch e {
+	case Boolean:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StateDeclarationDoubleVariantType.
+const (
+	Double StateDeclarationDoubleVariantType = "double"
+)
+
+// Valid indicates whether the value is a known member of the StateDeclarationDoubleVariantType enum.
+func (e StateDeclarationDoubleVariantType) Valid() bool {
+	switch e {
+	case Double:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StateDeclarationIntegerVariantType.
+const (
+	Integer StateDeclarationIntegerVariantType = "integer"
+)
+
+// Valid indicates whether the value is a known member of the StateDeclarationIntegerVariantType enum.
+func (e StateDeclarationIntegerVariantType) Valid() bool {
+	switch e {
+	case Integer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StateDeclarationStringVariantType.
+const (
+	String StateDeclarationStringVariantType = "string"
+)
+
+// Valid indicates whether the value is a known member of the StateDeclarationStringVariantType enum.
+func (e StateDeclarationStringVariantType) Valid() bool {
+	switch e {
+	case String:
 		return true
 	default:
 		return false
@@ -37462,6 +37523,87 @@ type RokuAppCreate struct {
 // Mac App Store is disabled by default. See [Legacy Mac Apps](https://www.revenuecat.com/docs/legacy-mac-apps) for more details.
 type RokuAppCreateType string
 
+// StateDeclaration Declaration of a single paywall state key, giving its value type and a default value matching that type.
+type StateDeclaration struct {
+	union json.RawMessage
+}
+
+// StateDeclarationBooleanVariant Declaration of a boolean-valued paywall state key.
+type StateDeclarationBooleanVariant struct {
+	// Default The initial value for the state key.
+	//
+	// Example: true
+	Default bool `json:"default"`
+
+	// Type The value type of the state key.
+	//
+	// Example: boolean
+	Type                 StateDeclarationBooleanVariantType `json:"type"`
+	AdditionalProperties map[string]interface{}             `json:"-"`
+}
+
+// StateDeclarationBooleanVariantType The value type of the state key.
+//
+// Example: boolean
+type StateDeclarationBooleanVariantType string
+
+// StateDeclarationDoubleVariant Declaration of a double-valued paywall state key.
+type StateDeclarationDoubleVariant struct {
+	// Default The initial value for the state key.
+	//
+	// Example: 0.25
+	Default float32 `json:"default"`
+
+	// Type The value type of the state key.
+	//
+	// Example: double
+	Type                 StateDeclarationDoubleVariantType `json:"type"`
+	AdditionalProperties map[string]interface{}            `json:"-"`
+}
+
+// StateDeclarationDoubleVariantType The value type of the state key.
+//
+// Example: double
+type StateDeclarationDoubleVariantType string
+
+// StateDeclarationIntegerVariant Declaration of a integer-valued paywall state key.
+type StateDeclarationIntegerVariant struct {
+	// Default The initial value for the state key.
+	//
+	// Example: 3
+	Default int `json:"default"`
+
+	// Type The value type of the state key.
+	//
+	// Example: integer
+	Type                 StateDeclarationIntegerVariantType `json:"type"`
+	AdditionalProperties map[string]interface{}             `json:"-"`
+}
+
+// StateDeclarationIntegerVariantType The value type of the state key.
+//
+// Example: integer
+type StateDeclarationIntegerVariantType string
+
+// StateDeclarationStringVariant Declaration of a string-valued paywall state key.
+type StateDeclarationStringVariant struct {
+	// Default The initial value for the state key.
+	//
+	// Example: monthly
+	Default string `json:"default"`
+
+	// Type The value type of the state key.
+	//
+	// Example: string
+	Type                 StateDeclarationStringVariantType `json:"type"`
+	AdditionalProperties map[string]interface{}            `json:"-"`
+}
+
+// StateDeclarationStringVariantType The value type of the state key.
+//
+// Example: string
+type StateDeclarationStringVariantType string
+
 // StoreKitConfigFile Contents of a generated StoreKit config file for an app
 type StoreKitConfigFile struct {
 	// Contents Contents of the StoreKit config file
@@ -48094,6 +48236,322 @@ func (a RokuApp_Roku) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
+// Getter for additional properties for StateDeclarationBooleanVariant. Returns the specified
+// element and whether it was found
+func (a StateDeclarationBooleanVariant) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for StateDeclarationBooleanVariant
+func (a *StateDeclarationBooleanVariant) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for StateDeclarationBooleanVariant to handle AdditionalProperties
+func (a *StateDeclarationBooleanVariant) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["default"]; found {
+		err = json.Unmarshal(raw, &a.Default)
+		if err != nil {
+			return fmt.Errorf("error reading 'default': %w", err)
+		}
+		delete(object, "default")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for StateDeclarationBooleanVariant to handle AdditionalProperties
+func (a StateDeclarationBooleanVariant) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["default"], err = json.Marshal(a.Default)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'default': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for StateDeclarationDoubleVariant. Returns the specified
+// element and whether it was found
+func (a StateDeclarationDoubleVariant) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for StateDeclarationDoubleVariant
+func (a *StateDeclarationDoubleVariant) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for StateDeclarationDoubleVariant to handle AdditionalProperties
+func (a *StateDeclarationDoubleVariant) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["default"]; found {
+		err = json.Unmarshal(raw, &a.Default)
+		if err != nil {
+			return fmt.Errorf("error reading 'default': %w", err)
+		}
+		delete(object, "default")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for StateDeclarationDoubleVariant to handle AdditionalProperties
+func (a StateDeclarationDoubleVariant) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["default"], err = json.Marshal(a.Default)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'default': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for StateDeclarationIntegerVariant. Returns the specified
+// element and whether it was found
+func (a StateDeclarationIntegerVariant) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for StateDeclarationIntegerVariant
+func (a *StateDeclarationIntegerVariant) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for StateDeclarationIntegerVariant to handle AdditionalProperties
+func (a *StateDeclarationIntegerVariant) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["default"]; found {
+		err = json.Unmarshal(raw, &a.Default)
+		if err != nil {
+			return fmt.Errorf("error reading 'default': %w", err)
+		}
+		delete(object, "default")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for StateDeclarationIntegerVariant to handle AdditionalProperties
+func (a StateDeclarationIntegerVariant) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["default"], err = json.Marshal(a.Default)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'default': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for StateDeclarationStringVariant. Returns the specified
+// element and whether it was found
+func (a StateDeclarationStringVariant) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for StateDeclarationStringVariant
+func (a *StateDeclarationStringVariant) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for StateDeclarationStringVariant to handle AdditionalProperties
+func (a *StateDeclarationStringVariant) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["default"]; found {
+		err = json.Unmarshal(raw, &a.Default)
+		if err != nil {
+			return fmt.Errorf("error reading 'default': %w", err)
+		}
+		delete(object, "default")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for StateDeclarationStringVariant to handle AdditionalProperties
+func (a StateDeclarationStringVariant) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["default"], err = json.Marshal(a.Default)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'default': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
 // Getter for additional properties for StripeApp. Returns the specified
 // element and whether it was found
 func (a StripeApp) Get(fieldName string) (value interface{}, found bool) {
@@ -48875,6 +49333,179 @@ func (t Purchase_RevenueInUsd) MarshalJSON() ([]byte, error) {
 }
 
 func (t *Purchase_RevenueInUsd) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsStateDeclarationBooleanVariant returns the union data inside the StateDeclaration as a StateDeclarationBooleanVariant
+func (t StateDeclaration) AsStateDeclarationBooleanVariant() (StateDeclarationBooleanVariant, error) {
+	var body StateDeclarationBooleanVariant
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStateDeclarationBooleanVariant overwrites any union data inside the StateDeclaration as the provided StateDeclarationBooleanVariant
+func (t *StateDeclaration) FromStateDeclarationBooleanVariant(v StateDeclarationBooleanVariant) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"boolean"}`))
+	t.union = b
+	return err
+}
+
+// MergeStateDeclarationBooleanVariant performs a merge with any union data inside the StateDeclaration, using the provided StateDeclarationBooleanVariant
+func (t *StateDeclaration) MergeStateDeclarationBooleanVariant(v StateDeclarationBooleanVariant) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"boolean"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStateDeclarationIntegerVariant returns the union data inside the StateDeclaration as a StateDeclarationIntegerVariant
+func (t StateDeclaration) AsStateDeclarationIntegerVariant() (StateDeclarationIntegerVariant, error) {
+	var body StateDeclarationIntegerVariant
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStateDeclarationIntegerVariant overwrites any union data inside the StateDeclaration as the provided StateDeclarationIntegerVariant
+func (t *StateDeclaration) FromStateDeclarationIntegerVariant(v StateDeclarationIntegerVariant) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"integer"}`))
+	t.union = b
+	return err
+}
+
+// MergeStateDeclarationIntegerVariant performs a merge with any union data inside the StateDeclaration, using the provided StateDeclarationIntegerVariant
+func (t *StateDeclaration) MergeStateDeclarationIntegerVariant(v StateDeclarationIntegerVariant) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"integer"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStateDeclarationDoubleVariant returns the union data inside the StateDeclaration as a StateDeclarationDoubleVariant
+func (t StateDeclaration) AsStateDeclarationDoubleVariant() (StateDeclarationDoubleVariant, error) {
+	var body StateDeclarationDoubleVariant
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStateDeclarationDoubleVariant overwrites any union data inside the StateDeclaration as the provided StateDeclarationDoubleVariant
+func (t *StateDeclaration) FromStateDeclarationDoubleVariant(v StateDeclarationDoubleVariant) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"double"}`))
+	t.union = b
+	return err
+}
+
+// MergeStateDeclarationDoubleVariant performs a merge with any union data inside the StateDeclaration, using the provided StateDeclarationDoubleVariant
+func (t *StateDeclaration) MergeStateDeclarationDoubleVariant(v StateDeclarationDoubleVariant) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"double"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStateDeclarationStringVariant returns the union data inside the StateDeclaration as a StateDeclarationStringVariant
+func (t StateDeclaration) AsStateDeclarationStringVariant() (StateDeclarationStringVariant, error) {
+	var body StateDeclarationStringVariant
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStateDeclarationStringVariant overwrites any union data inside the StateDeclaration as the provided StateDeclarationStringVariant
+func (t *StateDeclaration) FromStateDeclarationStringVariant(v StateDeclarationStringVariant) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"string"}`))
+	t.union = b
+	return err
+}
+
+// MergeStateDeclarationStringVariant performs a merge with any union data inside the StateDeclaration, using the provided StateDeclarationStringVariant
+func (t *StateDeclaration) MergeStateDeclarationStringVariant(v StateDeclarationStringVariant) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"string"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t StateDeclaration) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t StateDeclaration) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "boolean":
+		return t.AsStateDeclarationBooleanVariant()
+	case "double":
+		return t.AsStateDeclarationDoubleVariant()
+	case "integer":
+		return t.AsStateDeclarationIntegerVariant()
+	case "string":
+		return t.AsStateDeclarationStringVariant()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t StateDeclaration) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *StateDeclaration) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

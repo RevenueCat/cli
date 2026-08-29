@@ -13762,6 +13762,7 @@ components:
         - default_locale
         - components_localizations
         - automatically_scale_font_size
+        - state_declarations
       properties:
         revision:
           description: The revision number of this version.
@@ -13806,6 +13807,20 @@ components:
           type: boolean
           default: true
           example: true
+        state_declarations:
+          description: >-
+            State declarations for this version, keyed by state key name. An
+            empty object when the paywall has no state declarations; null for
+            paywalls not written to since before state declarations were
+            introduced.
+          type: object
+          nullable: true
+          additionalProperties:
+            $ref: '#/components/schemas/StateDeclaration'
+          example:
+            selectedPackage:
+              type: string
+              default: monthly
         fonts:
           description: >-
             Font objects used by the published paywall components. Only present
@@ -15014,6 +15029,94 @@ components:
               maxLength: 30
           additionalProperties: false
       additionalProperties: false
+    StateDeclaration:
+      description: >-
+        Declaration of a single paywall state key, giving its value type and a
+        default value matching that type.
+      oneOf:
+        - $ref: '#/components/schemas/StateDeclarationBooleanVariant'
+        - $ref: '#/components/schemas/StateDeclarationIntegerVariant'
+        - $ref: '#/components/schemas/StateDeclarationDoubleVariant'
+        - $ref: '#/components/schemas/StateDeclarationStringVariant'
+      discriminator:
+        propertyName: type
+        mapping:
+          boolean: '#/components/schemas/StateDeclarationBooleanVariant'
+          integer: '#/components/schemas/StateDeclarationIntegerVariant'
+          double: '#/components/schemas/StateDeclarationDoubleVariant'
+          string: '#/components/schemas/StateDeclarationStringVariant'
+    StateDeclarationBooleanVariant:
+      description: Declaration of a boolean-valued paywall state key.
+      type: object
+      required:
+        - type
+        - default
+      properties:
+        type:
+          description: The value type of the state key.
+          type: string
+          enum:
+            - boolean
+          example: boolean
+        default:
+          description: The initial value for the state key.
+          type: boolean
+          example: true
+      additionalProperties: true
+    StateDeclarationDoubleVariant:
+      description: Declaration of a double-valued paywall state key.
+      type: object
+      required:
+        - type
+        - default
+      properties:
+        type:
+          description: The value type of the state key.
+          type: string
+          enum:
+            - double
+          example: double
+        default:
+          description: The initial value for the state key.
+          type: number
+          example: 0.25
+      additionalProperties: true
+    StateDeclarationIntegerVariant:
+      description: Declaration of a integer-valued paywall state key.
+      type: object
+      required:
+        - type
+        - default
+      properties:
+        type:
+          description: The value type of the state key.
+          type: string
+          enum:
+            - integer
+          example: integer
+        default:
+          description: The initial value for the state key.
+          type: integer
+          example: 3
+      additionalProperties: true
+    StateDeclarationStringVariant:
+      description: Declaration of a string-valued paywall state key.
+      type: object
+      required:
+        - type
+        - default
+      properties:
+        type:
+          description: The value type of the state key.
+          type: string
+          enum:
+            - string
+          example: string
+        default:
+          description: The initial value for the state key.
+          type: string
+          example: monthly
+      additionalProperties: true
     StoreKitConfigFile:
       type: object
       description: Contents of a generated StoreKit config file for an app
