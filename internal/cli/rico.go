@@ -692,6 +692,15 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 	if _, err := rt.API(); err != nil {
 		return nil, err
 	}
+	// Rico's backend authenticates logins only — a secret API key is rejected
+	// outright (verified against its auth 2026-08-31), so fail here with the
+	// remedy instead of letting the server return an opaque 401.
+	if token, source := rt.Config.Credential(); strings.HasPrefix(token, "sk_") {
+		if source == config.SourceEnv && rt.Config.IsOAuth() {
+			return nil, fmt.Errorf("your RC_API_KEY is overriding the stored login with an API key, which Rico can't accept — unset RC_API_KEY and retry")
+		}
+		return nil, fmt.Errorf("talking to Rico requires a RevenueCat login; API keys can't authenticate it — run `rc login` (browser)")
+	}
 	return rico.NewClient(rico.Options{
 		BaseURL:      baseURL,
 		Token:        agentAuthToken(rt),
@@ -700,9 +709,12 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 	}), nil
 }
 
-// agentAuthToken returns the credential sent to the Rico/Paywalls AI backends —
-// the CLI's own bearer token; both backends accept CLI OAuth tokens
-// (verified live 2026-07-17).
+// agentAuthToken returns the credential sent to the Rico / Paywall AI editor
+// backends — the CLI's own bearer token. Both accept CLI OAuth tokens
+// (verified live 2026-07-17). Secret keys differ (verified against backend
+// auth 2026-08-31): the Paywall AI editor accepts sk_ keys carrying the
+// project_configuration:offerings:read_write scope; Rico rejects sk_ keys
+// entirely — ricoClient guards that before any request.
 func agentAuthToken(rt *Runtime) string {
 	return rt.Config.BearerToken()
 }

@@ -856,6 +856,9 @@ func loadPaywallAIImages(paths []string) ([]paywallai.InputAttachment, error) {
 
 func paywallAIClient(rt *Runtime, baseURL string) (*paywallai.Client, error) {
 	// rt.API() refreshes the OAuth token if needed and enforces login.
+	// Unlike Rico, this backend also accepts sk_ secret keys, as long as they
+	// carry the project_configuration:offerings:read_write scope (verified
+	// against backend auth 2026-08-31) — so no sk_ guard here.
 	if _, err := rt.API(); err != nil {
 		return nil, err
 	}
