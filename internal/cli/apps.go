@@ -52,53 +52,163 @@ client apps configure with.`,
 }
 
 func newAppsListCmd() *cobra.Command {
-	return &cobra.Command{
+	var bundleID, packageName string
+	var allProjects bool
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List apps",
 		Long: `Lists the apps in the active Project with their platform type and store-credential
-status. App Store apps show whether Apple credentials are configured.`,
+status. App Store apps show whether Apple credentials are configured.
+
+Pass --all-projects to span every project the credential can access and locate
+an app org-wide by store identifier. --bundle-id matches App Store and legacy
+Mac App Store bundle IDs; --package-name matches Play Store and Amazon package
+names.`,
 		Example: `  rc apps list
-  rc apps list --json | jq '.data.items[].id'`,
+  rc apps list --json | jq '.data.items[].id'
+  rc apps list --all-projects --bundle-id com.acme.app   # locate an app org-wide`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			projectID, err := requireProject(rt)
-			if err != nil {
-				return err
-			}
 			client, err := rt.API()
 			if err != nil {
 				return err
 			}
-			page, err := client.Apps.List(cmd.Context(), projectID)
-			if err != nil {
-				return err
+			filtered := bundleID != "" || packageName != ""
+
+			// The single-project path keeps the server's page envelope for
+			// --json consumers; the cross-project sweep has no single server
+			// page, so it renders a synthetic one.
+			var page *api.Page[api.App]
+			if allProjects {
+				projects, err := client.Projects.List(cmd.Context())
+				if err != nil {
+					return err
+				}
+				page = &api.Page[api.App]{Object: "list"}
+				for _, p := range projects.Items {
+					apps, err := client.Apps.List(cmd.Context(), p.ID)
+					if err != nil {
+						return err
+					}
+					for _, a := range apps.Items {
+						if a.ProjectID == "" {
+							a.ProjectID = p.ID
+						}
+						page.Items = append(page.Items, a)
+					}
+				}
+			} else {
+				projectID, err := requireProject(rt)
+				if err != nil {
+					return err
+				}
+				page, err = client.Apps.List(cmd.Context(), projectID)
+				if err != nil {
+					return err
+				}
+				for i := range page.Items {
+					if page.Items[i].ProjectID == "" {
+						page.Items[i].ProjectID = projectID
+					}
+				}
+			}
+			page.Items = filterAppsByStoreIdentifier(page.Items, bundleID, packageName)
+			apps := page.Items
+
+			columns := []string{"ID", "NAME", "TYPE", "CREATED", "CREDENTIALS"}
+			if allProjects {
+				columns = append([]string{"PROJECT"}, columns...)
 			}
 
 			if rt.CanPrompt() {
-				items := make([]tui.BrowserItem, len(page.Items))
-				for i, a := range page.Items {
-					items[i] = appToItem(projectID, a)
+				if len(apps) == 0 && filtered {
+					rt.Out.Info("No apps matched.")
+					return nil
 				}
-				err := tui.RunBrowserTable("Apps", []string{"ID", "NAME", "TYPE", "CREATED", "CREDENTIALS"}, items)
-				appleSetupHintForApps(rt, page.Items)
+				items := make([]tui.BrowserItem, len(apps))
+				for i, a := range apps {
+					item := appToItem(a.ProjectID, a)
+					if allProjects {
+						item.Row = append([]string{a.ProjectID}, item.Row...)
+						item.Fields = append([]tui.BrowserField{{Key: "Project", Value: a.ProjectID}}, item.Fields...)
+					}
+					items[i] = item
+				}
+				err := tui.RunBrowserTable("Apps", columns, items)
+				appleHintForListedApps(rt, apps, allProjects, filtered)
 				return err
 			}
 
-			rows := make([][]string, 0, len(page.Items))
-			for _, a := range page.Items {
-				rows = append(rows, []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt), appCredentialStatus(a)})
+			rows := make([][]string, 0, len(apps))
+			for _, a := range apps {
+				row := []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt), appCredentialStatus(a)}
+				if allProjects {
+					row = append([]string{a.ProjectID}, row...)
+				}
+				rows = append(rows, row)
 			}
 			if err := rt.Out.RenderTable(output.Table{
-				Columns: []string{"ID", "NAME", "TYPE", "CREATED", "CREDENTIALS"},
+				Columns: columns,
 				Rows:    rows,
 				Raw:     page,
 			}); err != nil {
 				return err
 			}
-			appleSetupHintForApps(rt, page.Items)
+			appleHintForListedApps(rt, apps, allProjects, filtered)
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&bundleID, "bundle-id", "", "only apps with this App Store / Mac App Store bundle ID")
+	cmd.Flags().StringVar(&packageName, "package-name", "", "only apps with this Play Store / Amazon package name")
+	cmd.Flags().BoolVar(&allProjects, "all-projects", false, "list apps across every project, not just the active one")
+	cmd.MarkFlagsMutuallyExclusive("bundle-id", "package-name")
+	return cmd
+}
+
+// appleHintForListedApps scopes the Apple-credentials nudge to where it's
+// actionable: in a single project the plain hint works as-is; org-wide the
+// suggested command needs the app's own project, and an unfiltered sweep
+// would repeat it for every half-configured app in the org, so it's dropped.
+func appleHintForListedApps(rt *Runtime, apps []api.App, allProjects, filtered bool) {
+	if !allProjects {
+		appleSetupHintForApps(rt, apps)
+		return
+	}
+	if !filtered {
+		return
+	}
+	for _, a := range apps {
+		if string(a.Type) != "app_store" || a.AppStore == nil {
+			continue
+		}
+		if !a.AppStore.SubscriptionKeyConfigured || !a.AppStore.AppStoreConnectAPIKeyConfigured {
+			rt.Out.Warn(fmt.Sprintf("%s is missing Apple credentials — App Store purchases can't be validated until they're set.", a.ID))
+			rt.Out.Hint(fmt.Sprintf("Fix it:  rc setup apple %s --project-id %s  (interactive Apple sign-in with 2FA)", a.ID, a.ProjectID))
+		}
+	}
+}
+
+// filterAppsByStoreIdentifier keeps apps matching the given store identifier
+// (the flags are mutually exclusive). Bundle IDs compare case-insensitively
+// (Apple treats them that way); package names are case-sensitive.
+func filterAppsByStoreIdentifier(apps []api.App, bundleID, packageName string) []api.App {
+	if bundleID == "" && packageName == "" {
+		return apps
+	}
+	var out []api.App
+	for _, a := range apps {
+		switch {
+		case bundleID != "" && a.AppStore != nil && strings.EqualFold(a.AppStore.BundleID, bundleID):
+			out = append(out, a)
+		case bundleID != "" && a.MacAppStore != nil && strings.EqualFold(a.MacAppStore.BundleID, bundleID):
+			out = append(out, a)
+		case packageName != "" && a.PlayStore != nil && a.PlayStore.PackageName == packageName:
+			out = append(out, a)
+		case packageName != "" && a.Amazon != nil && a.Amazon.PackageName == packageName:
+			out = append(out, a)
+		}
+	}
+	return out
 }
 
 func newAppsShowCmd() *cobra.Command {

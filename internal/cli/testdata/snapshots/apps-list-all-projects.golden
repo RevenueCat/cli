@@ -1,0 +1,6 @@
+$ rc apps list --all-projects --bundle-id com.example.moodly --no-input --api-key sk_snap
+! app_snap1 is missing Apple credentials — App Store purchases can't be validated until they're set.
+  Fix it:  rc setup apple app_snap1 --project-id proj_snap  (interactive Apple sign-in with 2FA)
+PROJECT     ID         NAME                        TYPE       CREATED     CREDENTIALS                    
+proj_snap   app_snap1  Moodly (App Store)          app_store  2026-07-16  partial — run: rc setup apple
+proj_snap2  app_snap3  Moodly Staging (App Store)  app_store  2026-07-16  ready                          

@@ -100,7 +100,7 @@ rc profiles use <name>                                   # switch the active pro
 rc profiles delete <name>                                # remove a profile
 
 # Apps (per-project)
-rc apps list
+rc apps list [--bundle-id <id>] [--package-name <name>] [--all-projects]   # --all-projects + a filter: locate an app org-wide by store identifier
 rc apps show <id>
 rc apps create
 rc apps update <id>

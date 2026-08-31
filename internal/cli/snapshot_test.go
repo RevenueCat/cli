@@ -32,6 +32,10 @@ func snapshotServer(t *testing.T) *httptest.Server {
 			io.WriteString(w, `{"object":"offering","id":"ofrng_snap","lookup_key":"default","display_name":"Default","is_current":true,"created_at":1784297950368,"project_id":"proj_snap"}`)
 		case strings.HasSuffix(r.URL.Path, "/apps/app_snap1"):
 			io.WriteString(w, `{"object":"app","id":"app_snap1","name":"Moodly (App Store)","type":"app_store","created_at":1784241909459,"project_id":"proj_snap","app_store":{"bundle_id":"com.example.moodly","subscription_key_configured":true,"app_store_connect_api_key_configured":false}}`)
+		case strings.HasSuffix(r.URL.Path, "/projects"):
+			io.WriteString(w, `{"object":"list","items":[{"id":"proj_snap","name":"Moodly"},{"id":"proj_snap2","name":"Moodly Staging"}],"next_page":null}`)
+		case strings.HasSuffix(r.URL.Path, "/proj_snap2/apps"):
+			io.WriteString(w, `{"object":"list","items":[{"object":"app","id":"app_snap3","name":"Moodly Staging (App Store)","type":"app_store","created_at":1784241909459,"project_id":"proj_snap2","app_store":{"bundle_id":"com.example.moodly","subscription_key_configured":true,"app_store_connect_api_key_configured":true}}],"next_page":null,"url":"/apps"}`)
 		case strings.HasSuffix(r.URL.Path, "/apps"):
 			io.WriteString(w, `{"object":"list","items":[{"object":"app","id":"app_snap1","name":"Moodly (App Store)","type":"app_store","created_at":1784241909459,"project_id":"proj_snap","app_store":{"bundle_id":"com.example.moodly","subscription_key_configured":true,"app_store_connect_api_key_configured":false}},{"object":"app","id":"app_snap2","name":"Test Store","type":"test_store","created_at":1784241905823,"project_id":"proj_snap"}],"next_page":null,"url":"/apps"}`)
 		default:
@@ -55,6 +59,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"auth-status-logged-out", []string{"auth", "status", "--no-input"}},
 		{"offerings-show", []string{"offerings", "show", "ofrng_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list", []string{"apps", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
 		{"error-not-found", []string{"offerings", "show", "ofrng_missing", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-apple-setup", []string{"apps", "apple", "setup", "app_snap1", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 	}
