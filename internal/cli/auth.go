@@ -339,7 +339,7 @@ func newAuthStatusCmd() *cobra.Command {
 		Short:   "Show the current authentication state",
 		Long: `Displays the active profile, cached account identity when known, auth method, and project context. If a project is configured, validates that it is still accessible.
 
-Shows which credential is in control (the OAuth login, an RC_API_KEY env var, the --api-key flag, or a stored key) and warns when more than one is present. Pass --scopes to surface the active credential's scopes before attempting writes.`,
+Shows which credential is in control — precedence is the --api-key flag, then the RC_API_KEY env var, then the OAuth login, then a stored key — and warns when more than one is present. Pass --scopes to surface the active credential's scopes before attempting writes.`,
 		Example: `  rc auth status
   rc auth status --json
   rc auth status --scopes --json`,

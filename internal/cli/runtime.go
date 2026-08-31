@@ -95,7 +95,9 @@ func (r *Runtime) API() (*api.Client, error) {
 		return r.client, nil
 	}
 
-	if r.Config.NeedsRefresh() {
+	// Refresh only when the OAuth token is the credential this run will use —
+	// a flag or RC_API_KEY override shouldn't touch (or re-save) the profile.
+	if _, source := r.Config.Credential(); source == config.SourceOAuth && r.Config.NeedsRefresh() {
 		r.silentRefresh()
 	}
 

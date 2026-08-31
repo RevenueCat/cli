@@ -253,29 +253,29 @@ func saveOAuthProfile(t *testing.T, name string) {
 	}
 }
 
-func TestCredential_OAuthBeatsEnvAPIKey(t *testing.T) {
+func TestCredential_EnvAPIKeyBeatsOAuth(t *testing.T) {
 	dir := t.TempDir()
 	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
 	saveOAuthProfile(t, "default")
 
-	t.Setenv("RC_API_KEY", "sk_under_scoped_env")
+	t.Setenv("RC_API_KEY", "sk_env_override")
 	cfg, err := config.Load("default")
 	if err != nil {
 		t.Fatal(err)
 	}
 	tok, src := cfg.Credential()
-	if src != config.SourceOAuth {
-		t.Errorf("want source oauth, got %q", src)
+	if src != config.SourceEnv {
+		t.Errorf("want source env, got %q", src)
 	}
-	if tok != "oauth_access_token" {
-		t.Errorf("want the OAuth token, got %q", tok)
+	if tok != "sk_env_override" {
+		t.Errorf("want the env key, got %q", tok)
 	}
-	if cfg.BearerToken() != "oauth_access_token" {
-		t.Errorf("BearerToken should be the OAuth token, got %q", cfg.BearerToken())
+	if cfg.BearerToken() != "sk_env_override" {
+		t.Errorf("BearerToken should be the env key, got %q", cfg.BearerToken())
 	}
 	present := cfg.PresentCredentialSources()
-	if len(present) != 2 || present[0] != config.SourceOAuth || present[1] != config.SourceEnv {
-		t.Errorf("want [oauth env] present, got %v", present)
+	if len(present) != 2 || present[0] != config.SourceEnv || present[1] != config.SourceOAuth {
+		t.Errorf("want [env oauth] present, got %v", present)
 	}
 }
 

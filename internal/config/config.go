@@ -116,15 +116,20 @@ func (c *Config) BearerToken() string {
 	return tok
 }
 
+// Credential resolves the active credential. Precedence (highest first):
+// --api-key flag > RC_API_KEY env > OAuth login > stored key. Per-invocation
+// overrides outrank what's saved in the profile, so a CI job or a one-off
+// `RC_API_KEY=... rc ...` always acts on the account it names, even on a
+// machine with a logged-in profile.
 func (c *Config) Credential() (token string, source CredentialSource) {
 	if c.flagAPIKey != "" {
 		return c.flagAPIKey, SourceFlag
 	}
-	if c.TokenType == "oauth" && c.AccessToken != "" {
-		return c.AccessToken, SourceOAuth
-	}
 	if c.envAPIKey.set && c.envAPIKey.env != "" {
 		return c.envAPIKey.env, SourceEnv
+	}
+	if c.TokenType == "oauth" && c.AccessToken != "" {
+		return c.AccessToken, SourceOAuth
 	}
 	if k := c.storedAPIKey(); k != "" {
 		return k, SourceProfile
@@ -196,11 +201,11 @@ func (c *Config) PresentCredentialSources() []CredentialSource {
 	if c.flagAPIKey != "" {
 		s = append(s, SourceFlag)
 	}
-	if c.TokenType == "oauth" && c.AccessToken != "" {
-		s = append(s, SourceOAuth)
-	}
 	if c.envAPIKey.set && c.envAPIKey.env != "" {
 		s = append(s, SourceEnv)
+	}
+	if c.TokenType == "oauth" && c.AccessToken != "" {
+		s = append(s, SourceOAuth)
 	}
 	if c.storedAPIKey() != "" {
 		s = append(s, SourceProfile)

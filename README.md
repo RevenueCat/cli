@@ -290,7 +290,7 @@ toolkit discovers every command with `rc commands --json` and
 | `--json` | Machine-readable output |
 | `--no-input` | Fail rather than prompt (for scripts/CI) |
 | `--profile <name>` | Config profile (precedence: flag → `$RC_PROFILE` → `rc profiles use` → `"default"`) |
-| `--api-key <key>` | Override profile key (`$RC_API_KEY`) |
+| `--api-key <key>` | Override the profile's credential (precedence: flag → `$RC_API_KEY` → OAuth login → stored key) |
 | `--yes, -y` | Skip confirmation prompts |
 | `--all` | Also show experimental (unreleased) commands in help |
 | `--no-color` | Disable ANSI color (also respects `$NO_COLOR`) |
