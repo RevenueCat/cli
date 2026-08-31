@@ -117,10 +117,9 @@ func (c *Config) BearerToken() string {
 }
 
 // Credential resolves the active credential. Precedence (highest first):
-// --api-key flag > RC_API_KEY env > OAuth login > stored key. Per-invocation
-// overrides outrank what's saved in the profile, so a CI job or a one-off
-// `RC_API_KEY=... rc ...` always acts on the account it names, even on a
-// machine with a logged-in profile.
+// --api-key flag > RC_API_KEY env > OAuth login > stored key — so a CI job or
+// a one-off `RC_API_KEY=... rc ...` always acts on the account it names, even
+// on a machine with a logged-in profile.
 func (c *Config) Credential() (token string, source CredentialSource) {
 	if c.flagAPIKey != "" {
 		return c.flagAPIKey, SourceFlag

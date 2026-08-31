@@ -170,6 +170,25 @@ func TestAuthStatus_ConflictNamesMCPImportedIgnored(t *testing.T) {
 	}
 }
 
+// Under an env override the profile's cached identity is not the active
+// account, so status must not claim it in the header or the JSON fields.
+func TestAuthStatus_EnvOverrideHidesProfileIdentity(t *testing.T) {
+	dir := t.TempDir()
+	seedProfile(t, dir, &config.Config{
+		TokenType:    "oauth",
+		AccessToken:  "atk_live",
+		AccountEmail: "jane@example.com",
+		AccountName:  "Jane",
+		AuthSource:   config.AuthOriginOAuthLogin,
+	})
+	t.Setenv("RC_API_KEY", "sk_env")
+
+	data := statusData(t, dir)
+	wantField(t, data, "credential_source", "env")
+	wantField(t, data, "account_email", "")
+	wantField(t, data, "account_name", "")
+}
+
 // RC_API_KEY outranks an OAuth login, and the shadowed login must be named.
 func TestAuthStatus_ConflictNamesActiveAndIgnored(t *testing.T) {
 	dir := t.TempDir()

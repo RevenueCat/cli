@@ -95,7 +95,7 @@ func (e *APIError) Hint() string {
 func (e *APIError) credentialSourceNote() string {
 	switch e.CredentialSource {
 	case "env":
-		return " The active credential came from the RC_API_KEY environment variable — check your shell env (e.g. ~/.zshrc), or run `rc login`."
+		return " The active credential came from the RC_API_KEY environment variable, which overrides any stored login — unset it (check your shell env, e.g. ~/.zshrc) or point it at a key with the required scope."
 	case "flag":
 		return " The active credential came from the --api-key flag; pass a key with the required scope, or run `rc login`."
 	case "oauth":

@@ -88,15 +88,14 @@ func RuntimeFrom(ctx context.Context) *Runtime {
 }
 
 // API returns a lazily-initialized API client built from the active config.
-// If the profile holds an OAuth token that is near expiry, a silent refresh
-// is attempted before building the client.
+// If the active credential is a near-expiry OAuth token, a silent refresh is
+// attempted first; when a flag or RC_API_KEY override is in charge the profile
+// isn't touched (or re-saved).
 func (r *Runtime) API() (*api.Client, error) {
 	if r.client != nil {
 		return r.client, nil
 	}
 
-	// Refresh only when the OAuth token is the credential this run will use —
-	// a flag or RC_API_KEY override shouldn't touch (or re-save) the profile.
 	if _, source := r.Config.Credential(); source == config.SourceOAuth && r.Config.NeedsRefresh() {
 		r.silentRefresh()
 	}
@@ -143,6 +142,9 @@ func (r *Runtime) warnCredentialConflict(active config.CredentialSource) {
 	}
 	r.warnedCredConflict = true
 	r.Out.AlwaysWarn(credentialConflictMessage(r.Config, active, present))
+	if active == config.SourceEnv && r.Config.IsOAuth() {
+		r.Out.Hint("Unset RC_API_KEY to use the login stored in this profile.")
+	}
 }
 
 func credentialConflictMessage(cfg *config.Config, active config.CredentialSource, present []config.CredentialSource) string {

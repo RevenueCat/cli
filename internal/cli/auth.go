@@ -220,7 +220,7 @@ Two login methods are available:
                  as-is and never refreshed.
 
 The API key can also be supplied via RC_API_KEY for CI use without storing
-anything on disk.`,
+anything on disk; while set, it overrides the stored login.`,
 		Example: `  # Interactive — prompts for method
   rc auth login
 
@@ -399,11 +399,19 @@ Shows which credential is in control — precedence is the --api-key flag, then 
 				scopes, scopesKnown = credentialScopes(token)
 			}
 
-			identity := rt.Config.AccountEmail
-			if rt.Config.AccountName != "" && identity != "" {
-				identity = fmt.Sprintf("%s <%s>", rt.Config.AccountName, identity)
-			} else if rt.Config.AccountName != "" {
-				identity = rt.Config.AccountName
+			// The cached identity belongs to the profile's stored credential;
+			// under a flag/env override the active key may be a different
+			// account entirely, so only claim an identity when the stored
+			// credential is the one in charge (same gate as auth_origin).
+			profileCredActive := credSource == config.SourceOAuth || credSource == config.SourceProfile
+			var identity string
+			if profileCredActive {
+				identity = rt.Config.AccountEmail
+				if rt.Config.AccountName != "" && identity != "" {
+					identity = fmt.Sprintf("%s <%s>", rt.Config.AccountName, identity)
+				} else if rt.Config.AccountName != "" {
+					identity = rt.Config.AccountName
+				}
 			}
 
 			if !authenticated {
@@ -440,11 +448,15 @@ Shows which credential is in control — precedence is the --api-key flag, then 
 			if !rt.Out.IsJSON() {
 				return nil
 			}
+			accountEmail, accountName := "", ""
+			if profileCredActive {
+				accountEmail, accountName = rt.Config.AccountEmail, rt.Config.AccountName
+			}
 			out := map[string]any{
 				"profile":                profileName,
 				"authenticated":          authenticated,
-				"account_email":          rt.Config.AccountEmail,
-				"account_name":           rt.Config.AccountName,
+				"account_email":          accountEmail,
+				"account_name":           accountName,
 				"method":                 method,
 				"credential_source":      string(credSource),
 				"credential_description": rt.Config.CredentialDescription(),
@@ -454,8 +466,7 @@ Shows which credential is in control — precedence is the --api-key flag, then 
 			}
 			// Only report auth_origin when the stored credential is the active
 			// one; under a flag/env override it's the wrong credential's origin.
-			if authenticated && rt.Config.AuthSource != "" &&
-				(credSource == config.SourceOAuth || credSource == config.SourceProfile) {
+			if authenticated && rt.Config.AuthSource != "" && profileCredActive {
 				out["auth_origin"] = rt.Config.AuthSource
 			}
 			if credSource == config.SourceOAuth {
@@ -572,6 +583,7 @@ func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 }
 
 func loginWithAPIKeyOrigin(ctx context.Context, rt *Runtime, key, origin string) error {
+	rt.client = nil
 	rt.Config.SetAPIKey(key)
 	rt.Config.AuthSource = origin
 	rt.Config.TokenType = ""
