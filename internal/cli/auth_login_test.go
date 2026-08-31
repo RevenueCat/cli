@@ -27,7 +27,9 @@ func runStatus(t *testing.T, configDir string, args ...string) (string, string) 
 	return out.String(), errb.String()
 }
 
-func TestAuthStatus_OAuthNotShadowedByEnvAPIKey(t *testing.T) {
+// RC_API_KEY is a per-invocation override: it outranks the stored OAuth
+// login, and the shadowing is reported via credential_conflict.
+func TestAuthStatus_EnvAPIKeyShadowsOAuth(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("RC_CONFIG_DIR", dir)
 	t.Setenv("RC_PROFILE", "")
@@ -50,17 +52,17 @@ func TestAuthStatus_OAuthNotShadowedByEnvAPIKey(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &st); err != nil {
 		t.Fatalf("status not JSON: %v\n%s", err, stdout)
 	}
-	if st.Data.Method != "oauth" {
-		t.Errorf("method should be oauth, got %q", st.Data.Method)
+	if st.Data.Method != "api_key" {
+		t.Errorf("method should be api_key, got %q", st.Data.Method)
 	}
-	if st.Data.CredentialSource != "oauth" {
-		t.Errorf("credential_source should be oauth, got %q", st.Data.CredentialSource)
+	if st.Data.CredentialSource != "env" {
+		t.Errorf("credential_source should be env, got %q", st.Data.CredentialSource)
 	}
 	if st.Data.Conflict == nil {
 		t.Fatal("expected a credential_conflict field when OAuth + RC_API_KEY coexist")
 	}
-	if got, _ := st.Data.Conflict["active_source"].(string); got != "oauth" {
-		t.Errorf("conflict active_source should be oauth, got %q", got)
+	if got, _ := st.Data.Conflict["active_source"].(string); got != "env" {
+		t.Errorf("conflict active_source should be env, got %q", got)
 	}
 }
 

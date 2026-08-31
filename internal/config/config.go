@@ -116,15 +116,19 @@ func (c *Config) BearerToken() string {
 	return tok
 }
 
+// Credential resolves the active credential. Precedence (highest first):
+// --api-key flag > RC_API_KEY env > OAuth login > stored key — so a CI job or
+// a one-off `RC_API_KEY=... rc ...` always acts on the account it names, even
+// on a machine with a logged-in profile.
 func (c *Config) Credential() (token string, source CredentialSource) {
 	if c.flagAPIKey != "" {
 		return c.flagAPIKey, SourceFlag
 	}
-	if c.TokenType == "oauth" && c.AccessToken != "" {
-		return c.AccessToken, SourceOAuth
-	}
 	if c.envAPIKey.set && c.envAPIKey.env != "" {
 		return c.envAPIKey.env, SourceEnv
+	}
+	if c.TokenType == "oauth" && c.AccessToken != "" {
+		return c.AccessToken, SourceOAuth
 	}
 	if k := c.storedAPIKey(); k != "" {
 		return k, SourceProfile
@@ -196,11 +200,11 @@ func (c *Config) PresentCredentialSources() []CredentialSource {
 	if c.flagAPIKey != "" {
 		s = append(s, SourceFlag)
 	}
-	if c.TokenType == "oauth" && c.AccessToken != "" {
-		s = append(s, SourceOAuth)
-	}
 	if c.envAPIKey.set && c.envAPIKey.env != "" {
 		s = append(s, SourceEnv)
+	}
+	if c.TokenType == "oauth" && c.AccessToken != "" {
+		s = append(s, SourceOAuth)
 	}
 	if c.storedAPIKey() != "" {
 		s = append(s, SourceProfile)
@@ -213,6 +217,20 @@ func (c *Config) SetFlagAPIKey(key string) { c.flagAPIKey = key }
 // SetAPIKey sets an explicit stored API key, clearing any flag or env override.
 func (c *Config) SetAPIKey(key string) {
 	c.APIKey = key
+	c.flagAPIKey = ""
+	c.envAPIKey = envOverride{}
+}
+
+// SetOAuthTokens stores OAuth credentials, clearing any flag or env override —
+// like SetAPIKey, an explicit login supersedes ambient credentials for the rest
+// of the invocation, so the token just obtained (not RC_API_KEY) is what gets
+// validated, reported, and saved.
+func (c *Config) SetOAuthTokens(accessToken, refreshToken string, expiresAt time.Time) {
+	c.TokenType = "oauth"
+	c.AccessToken = accessToken
+	c.RefreshToken = refreshToken
+	c.TokenExpiresAt = expiresAt
+	c.APIKey = ""
 	c.flagAPIKey = ""
 	c.envAPIKey = envOverride{}
 }

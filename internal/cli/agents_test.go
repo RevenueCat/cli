@@ -56,7 +56,7 @@ func TestRicoChat_JSONApprovesDestructiveToolWithYes(t *testing.T) {
 		"rico", "delete the test offering",
 		"--conversation", "conv1",
 		"--approve-tools", "--yes", "--no-input", "--json",
-		"--api-key", "sk_test",
+		"--api-key", "atk_test",
 	)
 	if err != nil {
 		t.Fatalf("err = %v, stderr %s", err, stderr)
@@ -104,7 +104,7 @@ func TestRicoChat_JSONRejectsDestructiveToolWithoutYes(t *testing.T) {
 		"rico", "delete the test offering",
 		"--conversation", "conv1",
 		"--approve-tools", "--no-input", "--json",
-		"--api-key", "sk_test",
+		"--api-key", "atk_test",
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -136,7 +136,7 @@ func TestRicoChat_RemembersLastConversationForResume(t *testing.T) {
 	_, _, err := runCmdInConfigDir(t, configDir,
 		"rico", "delete the test offering",
 		"--conversation", "conv1",
-		"--approve-tools", "--yes", "--no-input", "--json", "--api-key", "sk_test",
+		"--approve-tools", "--yes", "--no-input", "--json", "--api-key", "atk_test",
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -157,14 +157,14 @@ func TestRicoChat_RemembersLastConversationForResume(t *testing.T) {
 }
 
 func TestRicoChat_ResumeRequiresInteractivePicker(t *testing.T) {
-	_, _, err := runCmd(t, "rico", "hi", "--resume", "--no-input", "--api-key", "sk_test")
+	_, _, err := runCmd(t, "rico", "hi", "--resume", "--no-input", "--api-key", "atk_test")
 	if err == nil || !strings.Contains(err.Error(), "conversation ID is required") {
 		t.Fatalf("err = %v", err)
 	}
 }
 
 func TestRicoChat_RequiresPromptNonInteractive(t *testing.T) {
-	_, _, err := runCmd(t, "rico", "--no-input", "--api-key", "sk_test")
+	_, _, err := runCmd(t, "rico", "--no-input", "--api-key", "atk_test")
 	if err == nil || !strings.Contains(err.Error(), "message is required") {
 		t.Fatalf("err = %v", err)
 	}
@@ -172,7 +172,7 @@ func TestRicoChat_RequiresPromptNonInteractive(t *testing.T) {
 
 // --json is non-interactive: no message must error, not open the chat UI.
 func TestRico_JSONWithoutMessageRequiresMessage(t *testing.T) {
-	_, _, err := runCmd(t, "rico", "--json", "--api-key", "sk_test")
+	_, _, err := runCmd(t, "rico", "--json", "--api-key", "atk_test")
 	if err == nil || !strings.Contains(err.Error(), "message is required") {
 		t.Fatalf("err = %v", err)
 	}
@@ -188,7 +188,7 @@ func TestRicoConversations_ListJSON(t *testing.T) {
 	defer server.Close()
 	t.Setenv("RC_RICO_BASE_URL", server.URL)
 
-	stdout, _, err := runCmd(t, "rico", "conversations", "list", "--json", "--no-input", "--api-key", "sk_test")
+	stdout, _, err := runCmd(t, "rico", "conversations", "list", "--json", "--no-input", "--api-key", "atk_test")
 	if err != nil {
 		t.Fatal(err)
 	}

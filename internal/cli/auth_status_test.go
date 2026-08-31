@@ -146,9 +146,10 @@ func TestAuthStatus_NamesMCPImportedAPIKey(t *testing.T) {
 	wantField(t, data, "auth_origin", "mcp_import")
 }
 
-// The conflict message must name the active credential with the same
-// provenance-aware phrasing as the Credential line, not a bare source name.
-func TestAuthStatus_ConflictNamesMCPImportedActive(t *testing.T) {
+// The conflict message must name credentials with the same provenance-aware
+// phrasing as the Credential line, not a bare source name — including the
+// shadowed MCP-imported token when RC_API_KEY outranks it.
+func TestAuthStatus_ConflictNamesMCPImportedIgnored(t *testing.T) {
 	dir := t.TempDir()
 	seedProfile(t, dir, &config.Config{
 		TokenType:   "oauth",
@@ -158,7 +159,7 @@ func TestAuthStatus_ConflictNamesMCPImportedActive(t *testing.T) {
 	t.Setenv("RC_API_KEY", "sk_env")
 
 	data := statusData(t, dir)
-	wantField(t, data, "credential_source", "oauth")
+	wantField(t, data, "credential_source", "env")
 	conflict, ok := data["credential_conflict"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected credential_conflict, got %v", data["credential_conflict"])
@@ -169,7 +170,26 @@ func TestAuthStatus_ConflictNamesMCPImportedActive(t *testing.T) {
 	}
 }
 
-// An RC_API_KEY set alongside an OAuth login must not silently take over.
+// Under an env override the profile's cached identity is not the active
+// account, so status must not claim it in the header or the JSON fields.
+func TestAuthStatus_EnvOverrideHidesProfileIdentity(t *testing.T) {
+	dir := t.TempDir()
+	seedProfile(t, dir, &config.Config{
+		TokenType:    "oauth",
+		AccessToken:  "atk_live",
+		AccountEmail: "jane@example.com",
+		AccountName:  "Jane",
+		AuthSource:   config.AuthOriginOAuthLogin,
+	})
+	t.Setenv("RC_API_KEY", "sk_env")
+
+	data := statusData(t, dir)
+	wantField(t, data, "credential_source", "env")
+	wantField(t, data, "account_email", "")
+	wantField(t, data, "account_name", "")
+}
+
+// RC_API_KEY outranks an OAuth login, and the shadowed login must be named.
 func TestAuthStatus_ConflictNamesActiveAndIgnored(t *testing.T) {
 	dir := t.TempDir()
 	seedProfile(t, dir, &config.Config{
@@ -182,20 +202,20 @@ func TestAuthStatus_ConflictNamesActiveAndIgnored(t *testing.T) {
 	t.Setenv("RC_API_KEY", "sk_env")
 
 	data := statusData(t, dir)
-	wantField(t, data, "credential_source", "oauth")
+	wantField(t, data, "credential_source", "env")
 	conflict, ok := data["credential_conflict"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected credential_conflict, got %v", data["credential_conflict"])
 	}
-	wantField(t, conflict, "active_source", "oauth")
+	wantField(t, conflict, "active_source", "env")
 	ignored, _ := conflict["ignored_sources"].([]any)
 	found := false
 	for _, s := range ignored {
-		if s == "env" {
+		if s == "oauth" {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("ignored_sources should name the env key, got %v", ignored)
+		t.Errorf("ignored_sources should name the OAuth login, got %v", ignored)
 	}
 }

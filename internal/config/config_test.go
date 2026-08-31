@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/revenuecat/cli/internal/config"
 )
@@ -253,29 +254,29 @@ func saveOAuthProfile(t *testing.T, name string) {
 	}
 }
 
-func TestCredential_OAuthBeatsEnvAPIKey(t *testing.T) {
+func TestCredential_EnvAPIKeyBeatsOAuth(t *testing.T) {
 	dir := t.TempDir()
 	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
 	saveOAuthProfile(t, "default")
 
-	t.Setenv("RC_API_KEY", "sk_under_scoped_env")
+	t.Setenv("RC_API_KEY", "sk_env_override")
 	cfg, err := config.Load("default")
 	if err != nil {
 		t.Fatal(err)
 	}
 	tok, src := cfg.Credential()
-	if src != config.SourceOAuth {
-		t.Errorf("want source oauth, got %q", src)
+	if src != config.SourceEnv {
+		t.Errorf("want source env, got %q", src)
 	}
-	if tok != "oauth_access_token" {
-		t.Errorf("want the OAuth token, got %q", tok)
+	if tok != "sk_env_override" {
+		t.Errorf("want the env key, got %q", tok)
 	}
-	if cfg.BearerToken() != "oauth_access_token" {
-		t.Errorf("BearerToken should be the OAuth token, got %q", cfg.BearerToken())
+	if cfg.BearerToken() != "sk_env_override" {
+		t.Errorf("BearerToken should be the env key, got %q", cfg.BearerToken())
 	}
 	present := cfg.PresentCredentialSources()
-	if len(present) != 2 || present[0] != config.SourceOAuth || present[1] != config.SourceEnv {
-		t.Errorf("want [oauth env] present, got %v", present)
+	if len(present) != 2 || present[0] != config.SourceEnv || present[1] != config.SourceOAuth {
+		t.Errorf("want [env oauth] present, got %v", present)
 	}
 }
 
@@ -356,6 +357,38 @@ func TestSetAPIKey_SupersedesEnvOverride(t *testing.T) {
 	}
 	if got.APIKey != "sk_typed" {
 		t.Errorf("SetAPIKey value should persist to disk, got %q", got.APIKey)
+	}
+}
+
+// A fresh login must validate and save the token it just obtained, not a
+// lingering RC_API_KEY — SetOAuthTokens supersedes the env override the same
+// way SetAPIKey does.
+func TestSetOAuthTokens_SupersedesEnvOverride(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+
+	t.Setenv("RC_API_KEY", "sk_env")
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.SetOAuthTokens("atk_fresh", "rt_fresh", time.Now().Add(time.Hour))
+	if tok, src := cfg.Credential(); src != config.SourceOAuth || tok != "atk_fresh" {
+		t.Errorf("want oauth/atk_fresh after SetOAuthTokens, got %q/%q", src, tok)
+	}
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("RC_API_KEY", "")
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.AccessToken != "atk_fresh" || got.RefreshToken != "rt_fresh" {
+		t.Errorf("tokens should persist to disk, got %+v", got)
+	}
+	if got.APIKey != "" {
+		t.Errorf("env API key leaked to disk: %q", got.APIKey)
 	}
 }
 

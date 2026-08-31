@@ -220,7 +220,7 @@ Two login methods are available:
                  as-is and never refreshed.
 
 The API key can also be supplied via RC_API_KEY for CI use without storing
-anything on disk.`,
+anything on disk; while set, it overrides the stored login.`,
 		Example: `  # Interactive — prompts for method
   rc auth login
 
@@ -339,7 +339,7 @@ func newAuthStatusCmd() *cobra.Command {
 		Short:   "Show the current authentication state",
 		Long: `Displays the active profile, cached account identity when known, auth method, and project context. If a project is configured, validates that it is still accessible.
 
-Shows which credential is in control (the OAuth login, an RC_API_KEY env var, the --api-key flag, or a stored key) and warns when more than one is present. Pass --scopes to surface the active credential's scopes before attempting writes.`,
+Shows which credential is in control — precedence is the --api-key flag, then the RC_API_KEY env var, then the OAuth login, then a stored key — and warns when more than one is present. Pass --scopes to surface the active credential's scopes before attempting writes.`,
 		Example: `  rc auth status
   rc auth status --json
   rc auth status --scopes --json`,
@@ -399,11 +399,19 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 				scopes, scopesKnown = credentialScopes(token)
 			}
 
-			identity := rt.Config.AccountEmail
-			if rt.Config.AccountName != "" && identity != "" {
-				identity = fmt.Sprintf("%s <%s>", rt.Config.AccountName, identity)
-			} else if rt.Config.AccountName != "" {
-				identity = rt.Config.AccountName
+			// The cached identity belongs to the profile's stored credential;
+			// under a flag/env override the active key may be a different
+			// account entirely, so only claim an identity when the stored
+			// credential is the one in charge (same gate as auth_origin).
+			profileCredActive := credSource == config.SourceOAuth || credSource == config.SourceProfile
+			var identity string
+			if profileCredActive {
+				identity = rt.Config.AccountEmail
+				if rt.Config.AccountName != "" && identity != "" {
+					identity = fmt.Sprintf("%s <%s>", rt.Config.AccountName, identity)
+				} else if rt.Config.AccountName != "" {
+					identity = rt.Config.AccountName
+				}
 			}
 
 			if !authenticated {
@@ -440,11 +448,15 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 			if !rt.Out.IsJSON() {
 				return nil
 			}
+			accountEmail, accountName := "", ""
+			if profileCredActive {
+				accountEmail, accountName = rt.Config.AccountEmail, rt.Config.AccountName
+			}
 			out := map[string]any{
 				"profile":                profileName,
 				"authenticated":          authenticated,
-				"account_email":          rt.Config.AccountEmail,
-				"account_name":           rt.Config.AccountName,
+				"account_email":          accountEmail,
+				"account_name":           accountName,
 				"method":                 method,
 				"credential_source":      string(credSource),
 				"credential_description": rt.Config.CredentialDescription(),
@@ -454,8 +466,7 @@ Shows which credential is in control (the OAuth login, an RC_API_KEY env var, th
 			}
 			// Only report auth_origin when the stored credential is the active
 			// one; under a flag/env override it's the wrong credential's origin.
-			if authenticated && rt.Config.AuthSource != "" &&
-				(credSource == config.SourceOAuth || credSource == config.SourceProfile) {
+			if authenticated && rt.Config.AuthSource != "" && profileCredActive {
 				out["auth_origin"] = rt.Config.AuthSource
 			}
 			if credSource == config.SourceOAuth {
@@ -572,6 +583,7 @@ func loginWithAPIKey(ctx context.Context, rt *Runtime, key string) error {
 }
 
 func loginWithAPIKeyOrigin(ctx context.Context, rt *Runtime, key, origin string) error {
+	rt.client = nil
 	rt.Config.SetAPIKey(key)
 	rt.Config.AuthSource = origin
 	rt.Config.TokenType = ""
@@ -684,11 +696,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 		return fmt.Errorf("token exchange: %w", err)
 	}
 
-	rt.Config.TokenType = "oauth"
-	rt.Config.AccessToken = tr.AccessToken
-	rt.Config.RefreshToken = tr.RefreshToken
-	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
-	rt.Config.APIKey = ""
+	rt.Config.SetOAuthTokens(tr.AccessToken, tr.RefreshToken, time.Now().Add(time.Duration(tr.ExpiresIn)*time.Second))
 	rt.Config.AuthSource = config.AuthOriginOAuthLogin
 	clearProjectBinding(rt)
 
@@ -763,11 +771,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	}
 	_ = svc.LogoutLoginToken(ctx, login.AuthenticationToken)
 
-	rt.Config.TokenType = "oauth"
-	rt.Config.AccessToken = tokens.AccessToken
-	rt.Config.RefreshToken = tokens.RefreshToken
-	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
-	rt.Config.APIKey = ""
+	rt.Config.SetOAuthTokens(tokens.AccessToken, tokens.RefreshToken, time.Now().Add(time.Duration(tokens.ExpiresIn)*time.Second))
 	rt.Config.AccountEmail = email
 	rt.Config.AccountName = name
 	rt.Config.AuthSource = config.AuthOriginOAuthLogin
