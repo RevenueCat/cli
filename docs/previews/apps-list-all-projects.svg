@@ -12,7 +12,7 @@
 <g font-family="JetBrains Mono" font-size="14.00px" fill="#f8f8f2" clip-path="url(#terminalMask)">
 <text x="12.00px" y="43.80px" xml:space="preserve">$ rc apps list --all-projects --bundle-id com.example.moodly --no-input --api-key sk_snap
 </text><text x="12.00px" y="60.60px" xml:space="preserve">! app_snap1 is missing Apple credentials — App Store purchases can&apos;t be validated until they&apos;re set.
-</text><text x="12.00px" y="77.40px" xml:space="preserve">  Fix it:  rc setup apple app_snap1  (interactive Apple sign-in with 2FA)
+</text><text x="12.00px" y="77.40px" xml:space="preserve">  Fix it:  rc setup apple app_snap1 --project-id proj_snap  (interactive Apple sign-in with 2FA)
 </text><text x="12.00px" y="94.20px" xml:space="preserve">PROJECT     ID         NAME                        TYPE       CREATED     CREDENTIALS                    
 </text><text x="12.00px" y="111.00px" xml:space="preserve">proj_snap   app_snap1  Moodly (App Store)          app_store  2026-07-16  partial — run: rc setup apple
 </text><text x="12.00px" y="127.80px" xml:space="preserve">proj_snap2  app_snap3  Moodly Staging (App Store)  app_store  2026-07-16  ready                          

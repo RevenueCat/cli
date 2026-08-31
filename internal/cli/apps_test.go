@@ -64,23 +64,25 @@ func TestAppsCreate_NoInputWithoutTypeErrorsBeforeCreating(t *testing.T) {
 	}
 }
 
-// Locating an app by store identifier must work org-wide without an active
-// project: --all-projects walks every project, --bundle-id narrows to the app.
 func TestAppsList_AllProjectsFindsBundleIDAcrossProjects(t *testing.T) {
 	configDir := t.TempDir()
 	t.Setenv("RC_CONFIG_DIR", configDir)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		switch r.URL.Path {
-		case "/projects":
+		switch r.URL.Path + "|" + r.URL.Query().Get("starting_after") {
+		case "/projects|":
 			_, _ = io.WriteString(w, `{"object":"list","items":[{"id":"proj_a","name":"Alpha"},{"id":"proj_b","name":"Beta"}],"next_page":null}`)
-		case "/projects/proj_a/apps":
+		case "/projects/proj_a/apps|":
 			_, _ = io.WriteString(w, `{"object":"list","items":[{"object":"app","id":"app_a1","name":"Alpha iOS","type":"app_store","project_id":"proj_a","app_store":{"bundle_id":"com.alpha.app"}}],"next_page":null}`)
-		case "/projects/proj_b/apps":
+		// proj_b's apps span two pages: the match only appears when the CLI
+		// follows next_page, so a single-page fetch fails this test.
+		case "/projects/proj_b/apps|":
+			_, _ = io.WriteString(w, `{"object":"list","items":[{"object":"app","id":"app_b0","name":"Beta Legacy","type":"app_store","project_id":"proj_b","app_store":{"bundle_id":"com.beta.legacy"}}],"next_page":"/projects/proj_b/apps?starting_after=app_b0"}`)
+		case "/projects/proj_b/apps|app_b0":
 			_, _ = io.WriteString(w, `{"object":"list","items":[{"object":"app","id":"app_b1","name":"Beta iOS","type":"app_store","project_id":"proj_b","app_store":{"bundle_id":"com.beta.app"}},{"object":"app","id":"app_b2","name":"Beta Android","type":"play_store","project_id":"proj_b","play_store":{"package_name":"com.beta.app"}}],"next_page":null}`)
 		default:
-			http.Error(w, "unexpected "+r.Method+" "+r.URL.Path, http.StatusNotFound)
+			http.Error(w, "unexpected "+r.Method+" "+r.URL.String(), http.StatusNotFound)
 		}
 	}))
 	t.Cleanup(server.Close)
@@ -112,7 +114,6 @@ func TestAppsList_AllProjectsFindsBundleIDAcrossProjects(t *testing.T) {
 		t.Errorf("want app_b1 in proj_b, got %+v", env.Data.Items[0])
 	}
 
-	// --package-name matches the Play Store app, not the same-named bundle ID.
 	out, _, err = runCmdInConfigDir(t, configDir,
 		"apps", "list", "--all-projects", "--package-name", "com.beta.app", "--json", "--no-input")
 	if err != nil {
@@ -124,9 +125,14 @@ func TestAppsList_AllProjectsFindsBundleIDAcrossProjects(t *testing.T) {
 	if len(env.Data.Items) != 1 || env.Data.Items[0].ID != "app_b2" {
 		t.Errorf("want app_b2 for the package-name match, got %+v", env.Data.Items)
 	}
+
+	_, _, err = runCmdInConfigDir(t, configDir,
+		"apps", "list", "--all-projects", "--bundle-id", "com.beta.app", "--package-name", "com.beta.app", "--json", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "bundle-id") {
+		t.Errorf("combining both filters should be rejected as mutually exclusive, got: %v", err)
+	}
 }
 
-// Without --all-projects the filters still apply, scoped to the active project.
 func TestAppsList_BundleIDFilterWithinProject(t *testing.T) {
 	configDir := t.TempDir()
 	t.Setenv("RC_CONFIG_DIR", configDir)
@@ -144,7 +150,6 @@ func TestAppsList_BundleIDFilterWithinProject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Bundle IDs compare case-insensitively.
 	out, _, err := runCmdInConfigDir(t, configDir,
 		"apps", "list", "--bundle-id", "COM.ACME.APP", "--json", "--no-input")
 	if err != nil {
