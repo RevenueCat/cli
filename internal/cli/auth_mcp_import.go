@@ -142,16 +142,12 @@ func loginWithMCPCredential(ctx context.Context, rt *Runtime, cred mcpCredential
 	if cred.durable {
 		return loginWithAPIKeyOrigin(ctx, rt, cred.Token, config.AuthOriginMCPImport)
 	}
-	rt.Config.APIKey = ""
-	rt.Config.TokenType = "oauth"
-	rt.Config.AccessToken = cred.Token
-	rt.Config.AuthSource = config.AuthOriginMCPImport
 	// No refresh token and no expiry on purpose: this is a borrowed access
 	// token. Empty RefreshToken makes Config.NeedsRefresh() return false, so
 	// rc never tries (and never could) to refresh it — which also means it
 	// can't rotation-revoke the MCP's own session.
-	rt.Config.RefreshToken = ""
-	rt.Config.TokenExpiresAt = time.Time{}
+	rt.Config.SetOAuthTokens(cred.Token, "", time.Time{})
+	rt.Config.AuthSource = config.AuthOriginMCPImport
 	rt.Config.AccountEmail = ""
 	rt.Config.AccountName = ""
 	rt.client = nil

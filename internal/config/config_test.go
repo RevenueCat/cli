@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/revenuecat/cli/internal/config"
 )
@@ -356,6 +357,38 @@ func TestSetAPIKey_SupersedesEnvOverride(t *testing.T) {
 	}
 	if got.APIKey != "sk_typed" {
 		t.Errorf("SetAPIKey value should persist to disk, got %q", got.APIKey)
+	}
+}
+
+// A fresh login must validate and save the token it just obtained, not a
+// lingering RC_API_KEY — SetOAuthTokens supersedes the env override the same
+// way SetAPIKey does.
+func TestSetOAuthTokens_SupersedesEnvOverride(t *testing.T) {
+	dir := t.TempDir()
+	setEnv(t, map[string]string{"RC_CONFIG_DIR": dir, "RC_API_KEY": "", "RC_PROJECT_ID": "", "RC_BASE_URL": "", "RC_PROFILE": ""})
+
+	t.Setenv("RC_API_KEY", "sk_env")
+	cfg, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.SetOAuthTokens("atk_fresh", "rt_fresh", time.Now().Add(time.Hour))
+	if tok, src := cfg.Credential(); src != config.SourceOAuth || tok != "atk_fresh" {
+		t.Errorf("want oauth/atk_fresh after SetOAuthTokens, got %q/%q", src, tok)
+	}
+	if err := config.Save("default", cfg); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("RC_API_KEY", "")
+	got, err := config.Load("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.AccessToken != "atk_fresh" || got.RefreshToken != "rt_fresh" {
+		t.Errorf("tokens should persist to disk, got %+v", got)
+	}
+	if got.APIKey != "" {
+		t.Errorf("env API key leaked to disk: %q", got.APIKey)
 	}
 }
 

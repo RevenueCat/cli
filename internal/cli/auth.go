@@ -684,11 +684,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 		return fmt.Errorf("token exchange: %w", err)
 	}
 
-	rt.Config.TokenType = "oauth"
-	rt.Config.AccessToken = tr.AccessToken
-	rt.Config.RefreshToken = tr.RefreshToken
-	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
-	rt.Config.APIKey = ""
+	rt.Config.SetOAuthTokens(tr.AccessToken, tr.RefreshToken, time.Now().Add(time.Duration(tr.ExpiresIn)*time.Second))
 	rt.Config.AuthSource = config.AuthOriginOAuthLogin
 	clearProjectBinding(rt)
 
@@ -763,11 +759,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	}
 	_ = svc.LogoutLoginToken(ctx, login.AuthenticationToken)
 
-	rt.Config.TokenType = "oauth"
-	rt.Config.AccessToken = tokens.AccessToken
-	rt.Config.RefreshToken = tokens.RefreshToken
-	rt.Config.TokenExpiresAt = time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
-	rt.Config.APIKey = ""
+	rt.Config.SetOAuthTokens(tokens.AccessToken, tokens.RefreshToken, time.Now().Add(time.Duration(tokens.ExpiresIn)*time.Second))
 	rt.Config.AccountEmail = email
 	rt.Config.AccountName = name
 	rt.Config.AuthSource = config.AuthOriginOAuthLogin

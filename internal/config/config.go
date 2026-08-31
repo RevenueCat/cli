@@ -222,6 +222,20 @@ func (c *Config) SetAPIKey(key string) {
 	c.envAPIKey = envOverride{}
 }
 
+// SetOAuthTokens stores OAuth credentials, clearing any flag or env override —
+// like SetAPIKey, an explicit login supersedes ambient credentials for the rest
+// of the invocation, so the token just obtained (not RC_API_KEY) is what gets
+// validated, reported, and saved.
+func (c *Config) SetOAuthTokens(accessToken, refreshToken string, expiresAt time.Time) {
+	c.TokenType = "oauth"
+	c.AccessToken = accessToken
+	c.RefreshToken = refreshToken
+	c.TokenExpiresAt = expiresAt
+	c.APIKey = ""
+	c.flagAPIKey = ""
+	c.envAPIKey = envOverride{}
+}
+
 // IsOAuth reports whether this profile holds OAuth credentials.
 func (c *Config) IsOAuth() bool {
 	return c.TokenType == "oauth"
