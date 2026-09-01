@@ -116,9 +116,7 @@ func readStoreStateCSVReader(input io.Reader, appID string) ([]api.StoreStatePla
 		if p.productType == "" || p.displayName == "" || p.title == "" {
 			return nil, fmt.Errorf("store-state CSV product %q: product_type, display_name, and title are required", p.storeIdentifier)
 		}
-		if p.title != "" {
-			p.common["title"] = p.title
-		}
+		p.common["title"] = p.title
 		if p.duration != "" {
 			p.common["duration"] = p.duration
 		}
@@ -153,8 +151,12 @@ func mergeStoreCSVRow(p *storeCSVProduct, value func(string) string, line int) e
 		// (App Store, Play), empty → currency_prices (Web Billing, Test
 		// Store). Which shape a store accepts is the server's rule.
 		if territory == "" {
+			price := map[string]any{"amount_micros": micros}
+			if startDate := value("start_date"); startDate != "" {
+				price["start_date"] = startDate
+			}
 			prices := childMap(childMap(p.common, "pricing"), "currency_prices")
-			if err := mergeCSVMapValue(prices, currency, map[string]any{"amount_micros": micros}, "price", line); err != nil {
+			if err := mergeCSVMapValue(prices, currency, price, "price", line); err != nil {
 				return err
 			}
 		} else {
