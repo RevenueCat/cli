@@ -121,31 +121,23 @@ func TestProductTypeStoreSetsCoverEnum(t *testing.T) {
 	}
 }
 
-func TestProductsCreate_DurationRejectedOnAppStore(t *testing.T) {
-	requests, _, err := runProductsCreate(t, "app_store",
-		"--store-id", "sid", "--type", "subscription", "--app-id", "app", "--title", "T", "--duration", "P1M")
-	if err == nil {
-		t.Fatal("expected client-side rejection for --duration on an App Store app")
-	}
-	if !strings.Contains(err.Error(), "Test Store") {
-		t.Fatalf("error should explain Test Store restriction, got: %v", err)
-	}
-	if postedProducts(requests) {
-		t.Fatalf("--duration reached the server on an App Store app: %v", requests)
-	}
-}
-
-func TestProductsCreate_DurationRejectedOnTestStoreNonSubscription(t *testing.T) {
-	requests, _, err := runProductsCreate(t, "test_store",
-		"--store-id", "sid", "--type", "consumable", "--app-id", "app", "--title", "T", "--duration", "P1M")
-	if err == nil {
-		t.Fatal("expected client-side rejection for --duration on a Test Store consumable")
-	}
-	if !strings.Contains(err.Error(), "--duration") {
-		t.Fatalf("error should mention --duration, got: %v", err)
-	}
-	if postedProducts(requests) {
-		t.Fatalf("--duration reached the server on a Test Store consumable: %v", requests)
+func TestProductsCreate_DurationOutsideTestStoreSubscriptionReachesServer(t *testing.T) {
+	for _, tc := range []struct{ appType, productType string }{
+		{"app_store", "subscription"},
+		{"test_store", "consumable"},
+	} {
+		requests, body, err := runProductsCreate(t, tc.appType,
+			"--store-id", "sid", "--type", tc.productType, "--app-id", "app", "--title", "T", "--duration", "P1M")
+		if err != nil {
+			t.Fatalf("%s %s: create should defer to the server, got: %v", tc.appType, tc.productType, err)
+		}
+		if !postedProducts(requests) {
+			t.Fatalf("%s %s: create did not reach the server: %v", tc.appType, tc.productType, requests)
+		}
+		sub, ok := body["subscription"].(map[string]any)
+		if !ok || sub["duration"] != "P1M" {
+			t.Fatalf("%s %s: outgoing subscription duration missing, body: %v", tc.appType, tc.productType, body)
+		}
 	}
 }
 

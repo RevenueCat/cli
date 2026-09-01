@@ -295,12 +295,6 @@ products.`,
 			if isTestStoreApp(app) && productType == "subscription" && duration == "" {
 				return fmt.Errorf("--duration is required for Test Store subscription products (e.g. P1M, P1Y)")
 			}
-			if duration != "" && !isTestStoreApp(app) {
-				return fmt.Errorf("--duration and other subscription parameters are only supported for Test Store products, but app %s is a %s app", appID, app.Type)
-			}
-			if duration != "" && isTestStoreApp(app) && productType != "subscription" {
-				return fmt.Errorf("--duration is only valid for a Test Store subscription product, not a %s product", productType)
-			}
 			body := api.ProductCreate{
 				StoreIdentifier: storeID,
 				// Sent verbatim: Test Store takes consumable/non_consumable but reads back
@@ -310,7 +304,9 @@ products.`,
 				DisplayName: displayName,
 				Title:       title,
 			}
-			if productType == "subscription" && duration != "" {
+			// Sent whenever provided — never silently dropped; whether the
+			// store/type combination takes it is the server's call.
+			if duration != "" {
 				body.Subscription = &api.ProductSubscriptionInput{Duration: api.Duration(duration)}
 			}
 			p, err := client.Products.Create(cmd.Context(), projectID, body)
