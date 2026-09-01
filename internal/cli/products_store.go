@@ -337,9 +337,6 @@ func resolveStoreStateApp(cmd *cobra.Command, args []string) (string, *api.App, 
 	if err != nil {
 		return "", nil, nil, err
 	}
-	if app.Type != "app_store" && app.Type != "play_store" {
-		return "", nil, nil, fmt.Errorf("app %s does not use the App Store or Play Store", appID)
-	}
 	return projectID, app, client, nil
 }
 

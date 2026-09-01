@@ -272,9 +272,9 @@ products.`,
 			if err != nil {
 				return err
 			}
-			if string(app.Type) == string(api.RCBillingAppTypeRcBilling) {
-				return fmt.Errorf("can't create Web Billing products via the API; configure them in the RevenueCat dashboard")
-			}
+			// Which stores/types the API accepts is the server's call — the
+			// per-store lists below only feed the interactive picker, never
+			// validation, so newly ungated stores work without a CLI release.
 			allowed := productTypesForStore(app.Type)
 			if productType == "" {
 				if !rt.CanPrompt() {
@@ -288,9 +288,6 @@ products.`,
 				if err := tui.Form(false).Field(sel).Run(); err != nil {
 					return err
 				}
-			}
-			if !containsProductType(allowed, productType) {
-				return fmt.Errorf("--type must be one of %s for a %s app, got %q", strings.Join(productTypeValues(allowed), ", "), app.Type, productType)
 			}
 			if isTestStoreApp(app) && title == "" {
 				return fmt.Errorf("--title is required for Test Store products")
@@ -333,9 +330,9 @@ products.`,
 	return cmd
 }
 
-// productTypesForStore returns the product types each store's API accepts. These
-// aren't in the flat ProductType enum, so they're encoded here; the sets' union
-// must stay covering the enum (TestProductTypeStoreSetsCoverEnum).
+// productTypesForStore returns the product types each store typically offers,
+// for the interactive picker only — the server owns the real rules. The sets'
+// union must stay covering the enum (TestProductTypeStoreSetsCoverEnum).
 func productTypesForStore(appType api.AppType) []api.ProductType {
 	switch string(appType) {
 	case string(api.TestStoreAppTypeTestStore):
@@ -373,15 +370,6 @@ func productTypeValues(types []api.ProductType) []string {
 		out[i] = string(t)
 	}
 	return out
-}
-
-func containsProductType(types []api.ProductType, value string) bool {
-	for _, t := range types {
-		if string(t) == value {
-			return true
-		}
-	}
-	return false
 }
 
 func productTypeLabel(t api.ProductType) string {

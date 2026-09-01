@@ -53,65 +53,37 @@ func postedProducts(requests []string) bool {
 	return false
 }
 
-func TestProductsCreate_TypeAcceptanceByStore(t *testing.T) {
+// The server owns which store/type combinations are valid — every create
+// reaches it, including combinations the picker wouldn't offer.
+func TestProductsCreate_AnyTypeReachesServer(t *testing.T) {
 	cases := []struct {
-		name        string
 		appType     string
 		productType string
-		accepted    bool
 	}{
-		{"test_store subscription", "test_store", "subscription", true},
-		{"test_store consumable", "test_store", "consumable", true},
-		{"test_store non_consumable", "test_store", "non_consumable", true},
-		{"test_store one_time", "test_store", "one_time", false},
-		{"test_store non_renewing_subscription", "test_store", "non_renewing_subscription", false},
-
-		{"app_store subscription", "app_store", "subscription", true},
-		{"app_store one_time", "app_store", "one_time", true},
-		{"app_store non_renewing_subscription", "app_store", "non_renewing_subscription", true},
-		{"app_store consumable", "app_store", "consumable", true},
-		{"app_store non_consumable", "app_store", "non_consumable", true},
-
-		{"play_store subscription", "play_store", "subscription", true},
-		{"play_store one_time", "play_store", "one_time", true},
-		{"play_store non_renewing_subscription", "play_store", "non_renewing_subscription", false},
-		{"play_store consumable", "play_store", "consumable", true},
-		{"play_store non_consumable", "play_store", "non_consumable", true},
-
-		{"amazon one_time", "amazon", "one_time", true},
-		{"amazon non_renewing_subscription", "amazon", "non_renewing_subscription", false},
-		{"amazon consumable", "amazon", "consumable", false},
-		{"stripe subscription", "stripe", "subscription", true},
-		{"stripe non_renewing_subscription", "stripe", "non_renewing_subscription", false},
-		{"roku non_renewing_subscription", "roku", "non_renewing_subscription", false},
-		{"roku subscription", "roku", "subscription", true},
-		{"roku one_time", "roku", "one_time", true},
-		{"roku consumable", "roku", "consumable", false},
+		{"test_store", "subscription"},
+		{"test_store", "one_time"},
+		{"app_store", "non_renewing_subscription"},
+		{"play_store", "non_renewing_subscription"},
+		{"amazon", "consumable"},
+		{"stripe", "subscription"},
+		{"roku", "one_time"},
+		{"rc_billing", "subscription"},
 	}
 	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.appType+" "+tc.productType, func(t *testing.T) {
 			args := []string{"--store-id", "sid", "--type", tc.productType, "--app-id", "app", "--title", "T"}
 			if tc.appType == "test_store" && tc.productType == "subscription" {
 				args = append(args, "--duration", "P1M")
 			}
 			requests, body, err := runProductsCreate(t, tc.appType, args...)
-			if tc.accepted {
-				if err != nil {
-					t.Fatalf("expected accept, got error: %v", err)
-				}
-				if !postedProducts(requests) {
-					t.Fatalf("accepted type did not reach the create endpoint: %v", requests)
-				}
-				if got, _ := body["type"].(string); got != tc.productType {
-					t.Fatalf("outgoing type = %q, want %q", got, tc.productType)
-				}
-				return
+			if err != nil {
+				t.Fatalf("create should defer to the server, got error: %v", err)
 			}
-			if err == nil {
-				t.Fatal("expected client-side rejection, got nil error")
+			if !postedProducts(requests) {
+				t.Fatalf("create did not reach the create endpoint: %v", requests)
 			}
-			if postedProducts(requests) {
-				t.Fatalf("rejected type still reached the create endpoint: %v", requests)
+			if got, _ := body["type"].(string); got != tc.productType {
+				t.Fatalf("outgoing type = %q, want %q", got, tc.productType)
 			}
 		})
 	}
@@ -174,20 +146,6 @@ func TestProductsCreate_DurationRejectedOnTestStoreNonSubscription(t *testing.T)
 	}
 	if postedProducts(requests) {
 		t.Fatalf("--duration reached the server on a Test Store consumable: %v", requests)
-	}
-}
-
-func TestProductsCreate_RejectsWebBilling(t *testing.T) {
-	requests, _, err := runProductsCreate(t, "rc_billing",
-		"--store-id", "sid", "--type", "subscription", "--app-id", "app", "--title", "T")
-	if err == nil {
-		t.Fatal("expected client-side rejection creating a Web Billing product")
-	}
-	if !strings.Contains(err.Error(), "Web Billing") {
-		t.Fatalf("error should explain Web Billing can't be created, got: %v", err)
-	}
-	if postedProducts(requests) {
-		t.Fatalf("Web Billing create reached the server: %v", requests)
 	}
 }
 
