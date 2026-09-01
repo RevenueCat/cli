@@ -78,8 +78,7 @@ func readStoreStateCSVReader(input io.Reader, appID string) ([]api.StoreStatePla
 			continue
 		}
 		store, identifier := value("store"), value("store_identifier")
-		// Which stores plans support is the server's call (rc_billing and
-		// test_store joined app_store/play_store); only require the field.
+		// The server owns the supported store set; only require the field.
 		if store == "" {
 			return nil, fmt.Errorf("store-state CSV line %d: store is required", line)
 		}
@@ -143,21 +142,38 @@ func mergeStoreCSVRow(p *storeCSVProduct, value func(string) string, line int) e
 	territory := strings.ToUpper(value("territory"))
 	amount, currency := value("amount"), strings.ToUpper(value("currency"))
 	if amount != "" || currency != "" {
-		if territory == "" || amount == "" || currency == "" {
-			return fmt.Errorf("store-state CSV line %d: territory, amount, and currency must be provided together", line)
-		}
-		micros, err := decimalToMicros(amount)
-		if err != nil {
-			return fmt.Errorf("store-state CSV line %d: invalid amount: %w", line, err)
-		}
-		price := map[string]any{"amount_micros": micros, "currency": currency}
-		if startDate := value("start_date"); startDate != "" {
-			price["start_date"] = startDate
-		}
-		pricing := childMap(p.common, "pricing")
-		prices := childMap(pricing, "territory_prices")
-		if err := mergeCSVMapValue(prices, territory, price, "price", line); err != nil {
-			return err
+		if currencyPricedStore(p.store) {
+			if territory != "" {
+				return fmt.Errorf("store-state CSV line %d: territory does not apply to %s prices; leave it empty", line, p.store)
+			}
+			if amount == "" || currency == "" {
+				return fmt.Errorf("store-state CSV line %d: amount and currency must be provided together", line)
+			}
+			micros, err := decimalToMicros(amount)
+			if err != nil {
+				return fmt.Errorf("store-state CSV line %d: invalid amount: %w", line, err)
+			}
+			prices := childMap(childMap(p.common, "pricing"), "currency_prices")
+			if err := mergeCSVMapValue(prices, currency, map[string]any{"amount_micros": micros}, "price", line); err != nil {
+				return err
+			}
+		} else {
+			if territory == "" || amount == "" || currency == "" {
+				return fmt.Errorf("store-state CSV line %d: territory, amount, and currency must be provided together", line)
+			}
+			micros, err := decimalToMicros(amount)
+			if err != nil {
+				return fmt.Errorf("store-state CSV line %d: invalid amount: %w", line, err)
+			}
+			price := map[string]any{"amount_micros": micros, "currency": currency}
+			if startDate := value("start_date"); startDate != "" {
+				price["start_date"] = startDate
+			}
+			pricing := childMap(p.common, "pricing")
+			prices := childMap(pricing, "territory_prices")
+			if err := mergeCSVMapValue(prices, territory, price, "price", line); err != nil {
+				return err
+			}
 		}
 	}
 	if available := value("available"); available != "" {
@@ -198,10 +214,20 @@ func mergeStoreCSVRow(p *storeCSVProduct, value func(string) string, line int) e
 		}
 	}
 
-	if p.store == "app_store" {
+	switch p.store {
+	case "app_store":
 		return mergeAppStoreCSVRow(p, value, locale, line)
+	case "play_store":
+		return mergePlayStoreCSVRow(p, value, line)
+	default:
+		return nil
 	}
-	return mergePlayStoreCSVRow(p, value, line)
+}
+
+// currencyPricedStore reports stores priced per currency (currency_prices)
+// rather than per territory (territory_prices).
+func currencyPricedStore(store string) bool {
+	return store == "rc_billing" || store == "test_store"
 }
 
 func mergeAppStoreCSVRow(p *storeCSVProduct, value func(string) string, locale string, line int) error {

@@ -26,7 +26,7 @@ func (o *storeStateInputOptions) addFlags(cmd *cobra.Command) {
 	flags := cmd.Flags()
 	flags.StringVarP(&o.file, "file", "f", "", "desired state file, or - for stdin (env: RC_STORE_STATE_FILE)")
 	flags.StringVar(&o.inputFormat, "input-format", "", "input format for stdin or extensionless files: csv or json")
-	flags.StringVar(&o.equalizeBaseTerritory, "equalize-base-territory", "", "equalize missing subscription prices from this base territory (e.g. US)")
+	flags.StringVar(&o.equalizeBaseTerritory, "equalize-base-territory", "", "equalize missing subscription prices from this base territory (e.g. US); App Store only")
 }
 
 func (o *storeStateInputOptions) desiredStates(rt *Runtime, app *api.App, stdin io.Reader) ([]api.StoreStatePlanDesiredState, error) {
@@ -35,8 +35,15 @@ func (o *storeStateInputOptions) desiredStates(rt *Runtime, app *api.App, stdin 
 		return nil, err
 	}
 	if base := strings.ToUpper(strings.TrimSpace(o.equalizeBaseTerritory)); base != "" {
+		injected := false
 		for i := range states {
-			injectEqualizeBaseTerritory(&states[i], base)
+			if states[i].Store == "app_store" {
+				injectEqualizeBaseTerritory(&states[i], base)
+				injected = true
+			}
+		}
+		if !injected {
+			return nil, errors.New("--equalize-base-territory applies to App Store desired states, and this input has none")
 		}
 	}
 	return states, nil
@@ -116,6 +123,7 @@ func readStoreStateJSON(input io.Reader, appID string) ([]api.StoreStatePlanDesi
 	}
 	for i := range envelope.DesiredStates {
 		state := &envelope.DesiredStates[i]
+		state.Store = strings.TrimSpace(state.Store)
 		if state.Store == "" {
 			return nil, fmt.Errorf("desired_states[%d].store is required", i)
 		}
@@ -136,16 +144,25 @@ func readStoreStateJSON(input io.Reader, appID string) ([]api.StoreStatePlanDesi
 
 func promptStoreState(app *api.App) ([]api.StoreStatePlanDesiredState, error) {
 	states := make([]api.StoreStatePlanDesiredState, 0, 1)
+	// The desired state's store mirrors the app's store type; never coerce
+	// unknown app types to app_store. Currency-priced stores take
+	// currency_prices, not territory-keyed prices, so their form skips the
+	// territory question.
+	store := string(app.Type)
+	currencyPriced := currencyPricedStore(store)
 	for {
 		var identifier, productType, displayName, title, duration string
 		var territory, amount, currency, locale, localizedName, localizedDescription string
-		if err := tui.Form(false).
+		form := tui.Form(false).
 			Field(huh.NewInput().Title("Store product identifier").Value(&identifier).Validate(tui.Required("store product identifier"))).
 			Field(huh.NewInput().Title("RevenueCat product type").Description("subscription, consumable, non_consumable, non_renewing_subscription, or one_time").Value(&productType).Validate(tui.Required("product type"))).
 			Field(huh.NewInput().Title("Display name").Value(&displayName).Validate(tui.Required("display name"))).
 			Field(huh.NewInput().Title("Store title").Value(&title).Validate(tui.Required("title"))).
-			Field(huh.NewInput().Title("Duration (subscriptions, e.g. P1M)").Value(&duration)).
-			Field(huh.NewInput().Title("Initial territory (e.g. US)").Value(&territory)).
+			Field(huh.NewInput().Title("Duration (subscriptions, e.g. P1M)").Value(&duration))
+		if !currencyPriced {
+			form = form.Field(huh.NewInput().Title("Initial territory (e.g. US)").Value(&territory))
+		}
+		if err := form.
 			Field(huh.NewInput().Title("Price amount (e.g. 9.99)").Value(&amount)).
 			Field(huh.NewInput().Title("Currency (e.g. USD)").Value(&currency)).
 			Field(huh.NewInput().Title("Localization locale (e.g. en-US)").Value(&locale)).
@@ -159,16 +176,26 @@ func promptStoreState(app *api.App) ([]api.StoreStatePlanDesiredState, error) {
 			common["duration"] = duration
 		}
 		if territory != "" || amount != "" || currency != "" {
-			if territory == "" || amount == "" || currency == "" {
+			if currencyPriced {
+				if amount == "" || currency == "" {
+					return nil, errors.New("price amount and currency must be provided together")
+				}
+			} else if territory == "" || amount == "" || currency == "" {
 				return nil, errors.New("territory, price amount, and currency must be provided together")
 			}
 			micros, err := decimalToMicros(amount)
 			if err != nil {
 				return nil, fmt.Errorf("invalid price amount: %w", err)
 			}
-			common["pricing"] = map[string]any{"territory_prices": map[string]any{
-				strings.ToUpper(territory): map[string]any{"amount_micros": micros, "currency": strings.ToUpper(currency)},
-			}}
+			if currencyPriced {
+				common["pricing"] = map[string]any{"currency_prices": map[string]any{
+					strings.ToUpper(currency): map[string]any{"amount_micros": micros},
+				}}
+			} else {
+				common["pricing"] = map[string]any{"territory_prices": map[string]any{
+					strings.ToUpper(territory): map[string]any{"amount_micros": micros, "currency": strings.ToUpper(currency)},
+				}}
+			}
 		}
 		if locale != "" || localizedName != "" || localizedDescription != "" {
 			if locale == "" || localizedName == "" {
@@ -178,10 +205,6 @@ func promptStoreState(app *api.App) ([]api.StoreStatePlanDesiredState, error) {
 				"name": localizedName, "description": localizedDescription,
 			}}
 		}
-		// The desired state's store mirrors the app's store type — plans
-		// support more than Apple/Play (rc_billing, test_store), so never
-		// coerce unknown app types to app_store.
-		store := string(app.Type)
 		var storeState map[string]any
 		if app.Type == "play_store" {
 			parts := strings.SplitN(identifier, ":", 2)

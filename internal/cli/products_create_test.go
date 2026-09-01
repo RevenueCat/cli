@@ -53,8 +53,6 @@ func postedProducts(requests []string) bool {
 	return false
 }
 
-// The server owns which store/type combinations are valid — every create
-// reaches it, including combinations the picker wouldn't offer.
 func TestProductsCreate_AnyTypeReachesServer(t *testing.T) {
 	cases := []struct {
 		appType     string

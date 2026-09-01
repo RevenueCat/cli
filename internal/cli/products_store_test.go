@@ -112,10 +112,35 @@ func TestReadStoreStateJSON_AcceptsAllPlanStores(t *testing.T) {
 		in := strings.NewReader(`{"desired_states":[{"store":"` + store + `","create_revenuecat_product":{"app_id":"app_x","store_identifier":"sid","type":"subscription","display_name":"D","title":"T"}}]}`)
 		states, err := readStoreStateJSON(in, "app_x")
 		if err != nil {
-			t.Fatalf("store %s should parse (the server owns the supported set): %v", store, err)
+			t.Fatalf("store %s should parse: %v", store, err)
 		}
 		if len(states) != 1 || states[0].Store != store {
 			t.Fatalf("store %s: unexpected states %+v", store, states)
 		}
+	}
+}
+
+func TestReadStoreStateCSV_CurrencyPricedStores(t *testing.T) {
+	csvInput := "store,store_identifier,product_type,display_name,title,amount,currency\n" +
+		"rc_billing,premium_web,subscription,Premium,Premium,9.99,usd\n"
+	states, err := readStoreStateCSVReader(strings.NewReader(csvInput), "app_x")
+	if err != nil {
+		t.Fatalf("rc_billing CSV row should parse: %v", err)
+	}
+	pricing, _ := states[0].Common["pricing"].(map[string]any)
+	prices, _ := pricing["currency_prices"].(map[string]any)
+	price, _ := prices["USD"].(map[string]any)
+	if price["amount_micros"] != int64(9990000) {
+		t.Fatalf("want USD currency price 9990000 micros, got common: %v", states[0].Common)
+	}
+	if states[0].StoreState != nil {
+		t.Fatalf("no store-specific shaping expected for rc_billing, got: %v", states[0].StoreState)
+	}
+
+	// Territory pricing is Apple/Play-shaped; reject it for currency stores.
+	badCSV := "store,store_identifier,product_type,display_name,title,territory,amount,currency\n" +
+		"test_store,premium_test,subscription,Premium,Premium,US,9.99,USD\n"
+	if _, err := readStoreStateCSVReader(strings.NewReader(badCSV), "app_x"); err == nil || !strings.Contains(err.Error(), "territory") {
+		t.Fatalf("want a territory-does-not-apply error, got: %v", err)
 	}
 }

@@ -623,8 +623,11 @@ paths:
         the app, store identifier, and product metadata; if a RevenueCat product already
         exists for that app and store identifier, the plan will target the existing
         product, otherwise the plan keeps it as a new RevenueCat product to create
-        when applied. Set `store` to `app_store` or `play_store` and populate the
-        matching `store_state` payload. For App Store subscriptions, include `common.pricing.equalize_missing_subscription_prices`
+        when applied. Set `store` to `app_store`, `play_store`, `rc_billing`, or
+        `test_store` and populate the matching `store_state` payload; rc_billing
+        and test_store price per currency via `common.pricing.currency_prices`
+        (keyed by ISO currency code, each with `amount_micros`) instead of
+        `territory_prices`. For App Store subscriptions, include `common.pricing.equalize_missing_subscription_prices`
         with a `base_territory` such as `US` when missing subscription territory prices
         should be filled using Apple''s equalized price points. For App Store subscription
         creation, provide `common.duration` using canonical ISO-like values such as
