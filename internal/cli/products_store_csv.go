@@ -147,9 +147,9 @@ func mergeStoreCSVRow(p *storeCSVProduct, value func(string) string, line int) e
 		if err != nil {
 			return fmt.Errorf("store-state CSV line %d: invalid amount: %w", line, err)
 		}
-		// The territory column picks the price shape: set → territory_prices
-		// (App Store, Play), empty → currency_prices (Web Billing, Test
-		// Store). Which shape a store accepts is the server's rule.
+		// A price with a territory goes in territory_prices; one without goes
+		// in currency_prices. The CLI only places the value in the payload —
+		// whether the store accepts that shape is the server's call.
 		if territory == "" {
 			price := map[string]any{"amount_micros": micros}
 			if startDate := value("start_date"); startDate != "" {
