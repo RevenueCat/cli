@@ -145,9 +145,9 @@ func readStoreStateJSON(input io.Reader, appID string) ([]api.StoreStatePlanDesi
 func promptStoreState(app *api.App) ([]api.StoreStatePlanDesiredState, error) {
 	states := make([]api.StoreStatePlanDesiredState, 0, 1)
 	// The desired state's store mirrors the app's store type; never coerce
-	// unknown app types to app_store. Currency-priced stores take
-	// currency_prices, not territory-keyed prices, so their form skips the
-	// territory question.
+	// unknown app types to app_store. Stores known to price per currency skip
+	// the territory question, but the price shape follows the answer either
+	// way — the server owns which shape a store accepts.
 	store := string(app.Type)
 	currencyPriced := currencyPricedStore(store)
 	for {
@@ -176,18 +176,14 @@ func promptStoreState(app *api.App) ([]api.StoreStatePlanDesiredState, error) {
 			common["duration"] = duration
 		}
 		if territory != "" || amount != "" || currency != "" {
-			if currencyPriced {
-				if amount == "" || currency == "" {
-					return nil, errors.New("price amount and currency must be provided together")
-				}
-			} else if territory == "" || amount == "" || currency == "" {
-				return nil, errors.New("territory, price amount, and currency must be provided together")
+			if amount == "" || currency == "" {
+				return nil, errors.New("price amount and currency must be provided together")
 			}
 			micros, err := decimalToMicros(amount)
 			if err != nil {
 				return nil, fmt.Errorf("invalid price amount: %w", err)
 			}
-			if currencyPriced {
+			if territory == "" {
 				common["pricing"] = map[string]any{"currency_prices": map[string]any{
 					strings.ToUpper(currency): map[string]any{"amount_micros": micros},
 				}}

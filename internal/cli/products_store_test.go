@@ -137,10 +137,17 @@ func TestReadStoreStateCSV_CurrencyPricedStores(t *testing.T) {
 		t.Fatalf("no store-specific shaping expected for rc_billing, got: %v", states[0].StoreState)
 	}
 
-	// Territory pricing is Apple/Play-shaped; reject it for currency stores.
-	badCSV := "store,store_identifier,product_type,display_name,title,territory,amount,currency\n" +
+	// The territory column picks the price shape; the CLI forwards it even on
+	// currency-priced stores and lets the server rule on whether it applies.
+	territoryCSV := "store,store_identifier,product_type,display_name,title,territory,amount,currency\n" +
 		"test_store,premium_test,subscription,Premium,Premium,US,9.99,USD\n"
-	if _, err := readStoreStateCSVReader(strings.NewReader(badCSV), "app_x"); err == nil || !strings.Contains(err.Error(), "territory") {
-		t.Fatalf("want a territory-does-not-apply error, got: %v", err)
+	states, err = readStoreStateCSVReader(strings.NewReader(territoryCSV), "app_x")
+	if err != nil {
+		t.Fatalf("territory-priced test_store row should parse: %v", err)
+	}
+	pricing, _ = states[0].Common["pricing"].(map[string]any)
+	territoryPrices, _ := pricing["territory_prices"].(map[string]any)
+	if _, ok := territoryPrices["US"]; !ok {
+		t.Fatalf("want US territory price forwarded as given, got common: %v", states[0].Common)
 	}
 }

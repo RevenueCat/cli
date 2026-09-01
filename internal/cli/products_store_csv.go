@@ -142,35 +142,27 @@ func mergeStoreCSVRow(p *storeCSVProduct, value func(string) string, line int) e
 	territory := strings.ToUpper(value("territory"))
 	amount, currency := value("amount"), strings.ToUpper(value("currency"))
 	if amount != "" || currency != "" {
-		if currencyPricedStore(p.store) {
-			if territory != "" {
-				return fmt.Errorf("store-state CSV line %d: territory does not apply to %s prices; leave it empty", line, p.store)
-			}
-			if amount == "" || currency == "" {
-				return fmt.Errorf("store-state CSV line %d: amount and currency must be provided together", line)
-			}
-			micros, err := decimalToMicros(amount)
-			if err != nil {
-				return fmt.Errorf("store-state CSV line %d: invalid amount: %w", line, err)
-			}
+		if amount == "" || currency == "" {
+			return fmt.Errorf("store-state CSV line %d: amount and currency must be provided together", line)
+		}
+		micros, err := decimalToMicros(amount)
+		if err != nil {
+			return fmt.Errorf("store-state CSV line %d: invalid amount: %w", line, err)
+		}
+		// The territory column picks the price shape: set → territory_prices
+		// (App Store, Play), empty → currency_prices (Web Billing, Test
+		// Store). Which shape a store accepts is the server's rule.
+		if territory == "" {
 			prices := childMap(childMap(p.common, "pricing"), "currency_prices")
 			if err := mergeCSVMapValue(prices, currency, map[string]any{"amount_micros": micros}, "price", line); err != nil {
 				return err
 			}
 		} else {
-			if territory == "" || amount == "" || currency == "" {
-				return fmt.Errorf("store-state CSV line %d: territory, amount, and currency must be provided together", line)
-			}
-			micros, err := decimalToMicros(amount)
-			if err != nil {
-				return fmt.Errorf("store-state CSV line %d: invalid amount: %w", line, err)
-			}
 			price := map[string]any{"amount_micros": micros, "currency": currency}
 			if startDate := value("start_date"); startDate != "" {
 				price["start_date"] = startDate
 			}
-			pricing := childMap(p.common, "pricing")
-			prices := childMap(pricing, "territory_prices")
+			prices := childMap(childMap(p.common, "pricing"), "territory_prices")
 			if err := mergeCSVMapValue(prices, territory, price, "price", line); err != nil {
 				return err
 			}
@@ -224,8 +216,9 @@ func mergeStoreCSVRow(p *storeCSVProduct, value func(string) string, line int) e
 	}
 }
 
-// currencyPricedStore reports stores priced per currency (currency_prices)
-// rather than per territory (territory_prices).
+// currencyPricedStore reports stores known to price per currency rather than
+// per territory. Interactive-prompt hint only (skips the territory question);
+// the payload shape always follows whether the user provided a territory.
 func currencyPricedStore(store string) bool {
 	return store == "rc_billing" || store == "test_store"
 }
