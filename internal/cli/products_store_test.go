@@ -106,3 +106,16 @@ func runStoreSync(t *testing.T, planOnly bool) (requests []string, stdout, stder
 	err = root.ExecuteContext(context.Background())
 	return requests, out.String(), errOut.String(), err
 }
+
+func TestReadStoreStateJSON_AcceptsAllPlanStores(t *testing.T) {
+	for _, store := range []string{"app_store", "play_store", "rc_billing", "test_store"} {
+		in := strings.NewReader(`{"desired_states":[{"store":"` + store + `","create_revenuecat_product":{"app_id":"app_x","store_identifier":"sid","type":"subscription","display_name":"D","title":"T"}}]}`)
+		states, err := readStoreStateJSON(in, "app_x")
+		if err != nil {
+			t.Fatalf("store %s should parse (the server owns the supported set): %v", store, err)
+		}
+		if len(states) != 1 || states[0].Store != store {
+			t.Fatalf("store %s: unexpected states %+v", store, states)
+		}
+	}
+}

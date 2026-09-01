@@ -116,8 +116,8 @@ func readStoreStateJSON(input io.Reader, appID string) ([]api.StoreStatePlanDesi
 	}
 	for i := range envelope.DesiredStates {
 		state := &envelope.DesiredStates[i]
-		if state.Store != "app_store" && state.Store != "play_store" {
-			return nil, fmt.Errorf("desired_states[%d].store must be app_store or play_store", i)
+		if state.Store == "" {
+			return nil, fmt.Errorf("desired_states[%d].store is required", i)
 		}
 		if state.ProductID == "" && state.CreateRevenueCatProduct == nil {
 			return nil, fmt.Errorf("desired_states[%d] requires product_id or create_revenuecat_product", i)
@@ -178,10 +178,12 @@ func promptStoreState(app *api.App) ([]api.StoreStatePlanDesiredState, error) {
 				"name": localizedName, "description": localizedDescription,
 			}}
 		}
-		store := "app_store"
+		// The desired state's store mirrors the app's store type — plans
+		// support more than Apple/Play (rc_billing, test_store), so never
+		// coerce unknown app types to app_store.
+		store := string(app.Type)
 		var storeState map[string]any
 		if app.Type == "play_store" {
-			store = "play_store"
 			parts := strings.SplitN(identifier, ":", 2)
 			if productType == "subscription" {
 				if len(parts) != 2 || duration == "" {

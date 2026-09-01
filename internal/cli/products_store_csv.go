@@ -78,8 +78,10 @@ func readStoreStateCSVReader(input io.Reader, appID string) ([]api.StoreStatePla
 			continue
 		}
 		store, identifier := value("store"), value("store_identifier")
-		if store != "app_store" && store != "play_store" {
-			return nil, fmt.Errorf("store-state CSV line %d: store must be app_store or play_store", line)
+		// Which stores plans support is the server's call (rc_billing and
+		// test_store joined app_store/play_store); only require the field.
+		if store == "" {
+			return nil, fmt.Errorf("store-state CSV line %d: store is required", line)
 		}
 		if identifier == "" {
 			return nil, fmt.Errorf("store-state CSV line %d: store_identifier is required", line)
