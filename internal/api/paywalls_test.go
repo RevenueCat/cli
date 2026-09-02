@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,33 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 )
+
+// An explicit "state_declarations": null clears the stored declarations
+// server-side, so an unset field must be omitted from the PATCH entirely.
+func TestPaywallDraftUpdateOmitsUnsetStateDeclarations(t *testing.T) {
+	update := api.PaywallDraftUpdate{
+		Revision:                1,
+		ComponentsConfig:        json.RawMessage(`{}`),
+		ComponentsLocalizations: json.RawMessage(`{}`),
+		DefaultLocale:           "en_US",
+	}
+	unset, err := json.Marshal(update)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(unset), "state_declarations") {
+		t.Fatalf("unset state_declarations must be omitted, not sent as null: %s", unset)
+	}
+
+	update.StateDeclarations = json.RawMessage(`{}`)
+	set, err := json.Marshal(update)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(set), `"state_declarations":{}`) {
+		t.Fatalf("set state_declarations missing from PATCH body: %s", set)
+	}
+}
 
 func TestPaywallsPublishPreservesPublishedState(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

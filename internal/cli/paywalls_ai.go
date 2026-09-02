@@ -220,6 +220,7 @@ screenshots via --image, audience via --context.`,
 					OfferingID:              offeringID,
 					ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
 					ComponentsLocalizations: json.RawMessage(`{"en_US": {}}`),
+					StateDeclarations:       json.RawMessage(`{}`),
 				},
 				UIConfig:         json.RawMessage(minimalUIConfig),
 				ProductVariables: map[string]string{},
@@ -360,14 +361,15 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *paywall
 	if err != nil {
 		return nil, err
 	}
-	revision, err := currentDraftRevision(ctx, client, session.ProjectID, session.PaywallID)
+	version, err := currentDraftVersion(ctx, client, session.ProjectID, session.PaywallID)
 	if err != nil {
 		return nil, err
 	}
-	if revision == *session.Revision {
+	if *version.Revision == *session.Revision {
+		hydrateStateDeclarations(session, version)
 		return session, nil
 	}
-	rt.Out.Warn(fmt.Sprintf("The draft for %s changed outside this session — the dashboard, its AI editor, or the API wrote revision %d, the session has %d.", session.PaywallID, revision, *session.Revision))
+	rt.Out.Warn(fmt.Sprintf("The draft for %s changed outside this session — the dashboard, its AI editor, or the API wrote revision %d, the session has %d.", session.PaywallID, *version.Revision, *session.Revision))
 	rt.Out.Info("A session can't continue against diverged state. Continuing starts fresh from the server's current draft; the conversation context in this session file is lost.")
 	if err := confirmOrAbort(rt, "Start fresh from the server's current draft?",
 		"run rc paywalls edit "+session.PaywallID+" to start fresh deliberately"); err != nil {
@@ -387,11 +389,12 @@ func resumeOrSeedSession(ctx context.Context, rt *Runtime, projectID, paywallID,
 	if err != nil {
 		return nil, err
 	}
-	revision, err := currentDraftRevision(ctx, client, projectID, paywallID)
+	version, err := currentDraftVersion(ctx, client, projectID, paywallID)
 	if err != nil {
 		return nil, err
 	}
-	if stored.Revision != nil && revision == *stored.Revision {
+	if stored.Revision != nil && *version.Revision == *stored.Revision {
+		hydrateStateDeclarations(stored, version)
 		return stored, nil
 	}
 	return seedSessionFromServer(ctx, rt, projectID, paywallID)
@@ -446,6 +449,7 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 			OfferingID:              offeringID,
 			ComponentsConfig:        version.ComponentsConfig,
 			ComponentsLocalizations: localizations,
+			StateDeclarations:       serverStateDeclarations(version),
 		},
 		UIConfig:         json.RawMessage(minimalUIConfig),
 		ProductVariables: map[string]string{},
@@ -589,9 +593,15 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 	if event.Paywall != nil {
 		// the editor echoes offering_id as null; keep the CLI's
 		offeringID := session.Paywall.OfferingID
+		stateDeclarations := session.Paywall.StateDeclarations
 		session.Paywall = *event.Paywall
 		if session.Paywall.OfferingID == nil {
 			session.Paywall.OfferingID = offeringID
+		}
+		// an editor that predates state declarations doesn't echo them; absence means unknown, not cleared
+		session.Paywall.StateDeclarations = presentJSON(session.Paywall.StateDeclarations)
+		if session.Paywall.StateDeclarations == nil {
+			session.Paywall.StateDeclarations = stateDeclarations
 		}
 	}
 	if len(event.SessionItems) > 0 {
@@ -600,6 +610,32 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 	if len(event.AppContext) > 0 {
 		session.AppContext = event.AppContext
 	}
+}
+
+// hydrateStateDeclarations backfills declarations onto a session written by a
+// CLI from before they existed, so the editor can round-trip them again. The
+// server's value, not {}: the stored draft may hold dashboard-authored
+// declarations that an empty replacement would wipe.
+func hydrateStateDeclarations(session *paywallAISession, version *api.PaywallComponentsVersion) {
+	if presentJSON(session.Paywall.StateDeclarations) == nil {
+		session.Paywall.StateDeclarations = serverStateDeclarations(version)
+	}
+}
+
+func serverStateDeclarations(version *api.PaywallComponentsVersion) json.RawMessage {
+	if declarations := presentJSON(version.StateDeclarations); declarations != nil {
+		return declarations
+	}
+	return json.RawMessage(`{}`)
+}
+
+// presentJSON normalizes absent-or-null JSON to nil so it marshals as an
+// omitted field: the server clears stored state on an explicit null.
+func presentJSON(raw json.RawMessage) json.RawMessage {
+	if s := strings.TrimSpace(string(raw)); s == "" || s == "null" {
+		return nil
+	}
+	return raw
 }
 
 func paywallRecoveryHint(opts paywallAIOptions, checkpointed bool) string {
@@ -726,6 +762,7 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *paywallAISe
 	update := api.PaywallDraftUpdate{
 		ComponentsConfig:        session.Paywall.ComponentsConfig,
 		ComponentsLocalizations: session.Paywall.ComponentsLocalizations,
+		StateDeclarations:       presentJSON(session.Paywall.StateDeclarations),
 		DefaultLocale:           session.Paywall.DefaultLocale,
 	}
 	// Always the session's own revision — refetching a fresh one here would
@@ -750,20 +787,30 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *paywallAISe
 }
 
 func currentDraftRevision(ctx context.Context, client *api.Client, projectID, paywallID string) (int, error) {
-	paywall, err := client.Paywalls.GetWithComponents(ctx, projectID, paywallID)
+	version, err := currentDraftVersion(ctx, client, projectID, paywallID)
 	if err != nil {
 		return 0, err
 	}
+	return *version.Revision, nil
+}
+
+// currentDraftVersion returns the paywall's draft version (falling back to
+// published), guaranteed to carry a revision.
+func currentDraftVersion(ctx context.Context, client *api.Client, projectID, paywallID string) (*api.PaywallComponentsVersion, error) {
+	paywall, err := client.Paywalls.GetWithComponents(ctx, projectID, paywallID)
+	if err != nil {
+		return nil, err
+	}
 	if paywall.Components != nil {
 		if d := paywall.Components.Draft; d != nil && d.Revision != nil {
-			return *d.Revision, nil
+			return d, nil
 		}
 		if p := paywall.Components.Published; p != nil && p.Revision != nil {
-			return *p.Revision, nil
+			return p, nil
 		}
 	}
 	// revision is the update PATCH's stale-write token, so error rather than send a bogus 0.
-	return 0, fmt.Errorf("paywall %s has no draft or published revision to update against", paywallID)
+	return nil, fmt.Errorf("paywall %s has no draft or published revision to update against", paywallID)
 }
 
 // reportPaywallAIActivity prints activity items not yet shown; snapshots carry

@@ -34,6 +34,9 @@ type PaywallData struct {
 	OfferingID              *string         `json:"offering_id"`
 	ComponentsConfig        json.RawMessage `json:"components_config"`
 	ComponentsLocalizations json.RawMessage `json:"components_localizations"`
+	// Sending StateDeclarations (even empty) tells the editor the client can
+	// round-trip declarations, which lets it wire up new paywall state.
+	StateDeclarations json.RawMessage `json:"state_declarations,omitempty"`
 }
 
 type InputAttachment struct {

@@ -32,6 +32,29 @@ func TestApplySessionEvent_PreservesOffering(t *testing.T) {
 	}
 }
 
+func TestApplySessionEvent_PreservesStateDeclarations(t *testing.T) {
+	session := &paywallAISession{}
+	session.Paywall.StateDeclarations = json.RawMessage(`{"tab":{"type":"string","default":"a"}}`)
+
+	// an editor that predates state declarations omits them; that must not drop the session's
+	applySessionEvent(session, &paywallai.Event{
+		Paywall: &paywallai.PaywallData{DefaultLocale: "en_US"},
+	})
+	if string(session.Paywall.StateDeclarations) != `{"tab":{"type":"string","default":"a"}}` {
+		t.Fatalf("declarations not preserved: %s", session.Paywall.StateDeclarations)
+	}
+
+	applySessionEvent(session, &paywallai.Event{
+		Paywall: &paywallai.PaywallData{
+			DefaultLocale:     "en_US",
+			StateDeclarations: json.RawMessage(`{"tab":{"type":"string","default":"b"}}`),
+		},
+	})
+	if string(session.Paywall.StateDeclarations) != `{"tab":{"type":"string","default":"b"}}` {
+		t.Fatalf("echoed declarations not applied: %s", session.Paywall.StateDeclarations)
+	}
+}
+
 func TestStreamDropError(t *testing.T) {
 	underlying := errors.New("stream ID 1; INTERNAL_ERROR; received from peer")
 
