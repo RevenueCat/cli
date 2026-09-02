@@ -191,6 +191,115 @@ func TestReadStoreStateJSON_RejectsAnotherApp(t *testing.T) {
 	}
 }
 
+func TestProductsStoreSubmit_ReportsPerProductOutcomes(t *testing.T) {
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path != "/projects/proj/products/actions/submit_to_store" {
+			http.Error(w, "unexpected request", http.StatusNotFound)
+			return
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		_, _ = io.WriteString(w, `{"object":"submit_products_to_store_response","submitted_count":1,"results":[`+
+			`{"object":"submit_product_to_store_result","product_id":"prod_abc","status":"submitted","submission_id":"sub_123","message":null},`+
+			`{"object":"submit_product_to_store_result","product_id":"prod_def","status":"skipped","submission_id":null,"message":"not ready to submit"}]}`)
+	}))
+	t.Cleanup(server.Close)
+
+	out, _, err := runStoreLifecycleCommand(t, server.URL, "",
+		"products", "store", "submit", "prod_abc", "prod_def", "--yes", "--json", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body["store"] != "app_store" {
+		t.Fatalf("store = %v, want app_store", body["store"])
+	}
+	ids, _ := body["product_ids"].([]any)
+	if len(ids) != 2 || ids[0] != "prod_abc" || ids[1] != "prod_def" {
+		t.Fatalf("product_ids = %v, want [prod_abc prod_def]", body["product_ids"])
+	}
+	if !strings.Contains(out, `"submitted_count": 1`) {
+		t.Fatalf("output missing submitted_count: %s", out)
+	}
+	if !strings.Contains(out, `"status": "skipped"`) || !strings.Contains(out, "not ready to submit") {
+		t.Fatalf("output missing skipped outcome: %s", out)
+	}
+}
+
+func TestProductsStoreSubmit_RejectsNonAppStore(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "must not reach the API for a rejected store", http.StatusInternalServerError)
+	}))
+	t.Cleanup(server.Close)
+
+	_, _, err := runStoreLifecycleCommand(t, server.URL, "",
+		"products", "store", "submit", "prod_abc", "--store", "play_store", "--yes", "--json", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "only App Store products") {
+		t.Fatalf("error = %v, want App Store only rejection", err)
+	}
+}
+
+func TestProductsStoreSubmit_SurfacesSubmissionFailure(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = io.WriteString(w, `{"type":"parameter_error","message":"all products must belong to the same app"}`)
+	}))
+	t.Cleanup(server.Close)
+
+	_, _, err := runStoreLifecycleCommand(t, server.URL, "",
+		"products", "store", "submit", "prod_abc", "prod_def", "--yes", "--json", "--no-input")
+	if err == nil {
+		t.Fatal("expected error for failed submission")
+	}
+	if code := ExitCodeFor(err); code == 0 {
+		t.Fatalf("exit code = %d, want non-zero", code)
+	}
+	if !strings.Contains(err.Error(), "same app") {
+		t.Fatalf("error = %v, want the API message surfaced", err)
+	}
+}
+
+func TestCleanSubmitProductIDs(t *testing.T) {
+	if got, err := cleanSubmitProductIDs([]string{" prod_abc ", "prod_def"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else if len(got) != 2 || got[0] != "prod_abc" || got[1] != "prod_def" {
+		t.Fatalf("trim = %v, want [prod_abc prod_def]", got)
+	}
+
+	if _, err := cleanSubmitProductIDs([]string{"prod_abc", "   "}); err == nil {
+		t.Fatal("expected error for a whitespace-only product ID")
+	}
+
+	tooMany := make([]string, 201)
+	for i := range tooMany {
+		tooMany[i] = "prod"
+	}
+	if _, err := cleanSubmitProductIDs(tooMany); err == nil {
+		t.Fatal("expected error for more than 200 product IDs")
+	}
+}
+
+func TestProductsStoreSubmit_AllSkippedExitsZero(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"submit_products_to_store_response","submitted_count":0,"results":[`+
+			`{"object":"submit_product_to_store_result","product_id":"prod_abc","status":"skipped","submission_id":null,"message":"not ready to submit"}]}`)
+	}))
+	t.Cleanup(server.Close)
+
+	out, _, err := runStoreLifecycleCommand(t, server.URL, "",
+		"products", "store", "submit", "prod_abc", "--yes", "--json", "--no-input")
+	if err != nil {
+		t.Fatalf("a fully-skipped response must exit 0, got %v", err)
+	}
+	if !strings.Contains(out, `"submitted_count": 0`) {
+		t.Fatalf("output missing submitted_count 0: %s", out)
+	}
+}
+
 type staticStoreStatePlanService struct{ plan *api.StoreStatePlan }
 
 func (s staticStoreStatePlanService) Get(context.Context, string, string) (*api.StoreStatePlan, error) {
