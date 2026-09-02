@@ -669,11 +669,16 @@ to pick from a list.
 Reversibility: irreversible. Prefer ` + "`rc products archive`" + ` for
 reversible removal.
 
-Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc products delete prod_x --yes`,
+Interactive-only: run it yourself in a terminal. It is unavailable under
+--json or --no-input so automation can't delete products. --yes skips the
+confirmation prompt once you're in a terminal.`,
+		Example: `  rc products delete prod_x`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if err := requireInteractive(rt, cmd.CommandPath()); err != nil {
+				return err
+			}
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
