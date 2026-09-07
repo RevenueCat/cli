@@ -70,6 +70,7 @@ names; there's no list endpoint.
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
 rc setup google [app-id]                                 # experimental (hidden from --help until the Google OAuth consent screen is verified): local Google sign-in, bootstrap the Play service-account credential, grant package-scoped access, upload to RC
 rc setup apple [app-id]                                  # interactive: App Store Connect sign-in + 2FA, create/upload IAP & ASC keys, vendor number (rc apps apple setup is a hidden alias)
+rc capital setup [app-id]                                # experimental: RevenueCat Capital onboarding — the same guided Apple credential flow under the product's name
 rc                                                       # bare rc -> getting-started help; --all reveals experimental commands
 
 # Auth / meta
@@ -79,6 +80,7 @@ rc auth logout                                           # clears credentials fr
 rc auth status                                           # show auth state plus cached account identity; auth whoami and root rc whoami are aliases
 rc commands                                              # agent discovery (tree)
 rc schema <cmd>                                          # agent discovery (flags)
+rc api <method> <path>                                   # raw v2 request escape hatch for endpoints the surface doesn't cover; --body for payloads
 rc skills install                                        # install the core skills globally for RC-supported agents without a picker; --agent overrides
 rc skills prompts                                        # show copy-ready starter prompts; --json returns prompts for agent UIs
 rc open [section] [id]                                   # open the dashboard deep-linked to the active project (uses existing browser session)
@@ -149,6 +151,7 @@ rc offerings delete <id>
 rc offerings archive <id>
 rc offerings restore <id>
 rc offerings packages <offering-id>                      # nested resource
+rc packages list                                         # all packages across all offerings
 rc packages show <package-id>
 rc packages create <offering-id>
 rc packages update <package-id>
