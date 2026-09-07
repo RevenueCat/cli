@@ -22,7 +22,7 @@ func newProductsCmd() *cobra.Command {
 		Aliases: []string{"product"},
 		Short:   "Manage Products in the project catalog",
 		Long: `A Product is a store SKU a Customer buys — its identifier must match the
-store (App Store, Play, Stripe, Test Store). Attach Products to Packages and
+store (App Store, Play, Stripe, Web Billing, Test Store). Attach Products to Packages and
 Entitlements so a purchase grants access. These commands inspect, create,
 price, and push Products.`,
 		Example: `  rc products list
@@ -226,18 +226,20 @@ func newProductsCreateCmd() *cobra.Command {
 
 --store-id is the Product identifier on the platform store; it must match the
 store exactly (required).
---app-id is the RevenueCat app ID (required; picker shown in a terminal). The
-app's store decides which --type values are valid.
---type is the Product type; valid values depend on the app's store. Test Store
-accepts subscription, consumable, non_consumable; App Store accepts subscription,
-one_time, consumable, non_consumable, non_renewing_subscription; Play Store
-accepts subscription, one_time, consumable, non_consumable; Amazon, Stripe, and
-other stores accept subscription and one_time (required; picker shown in a
-terminal).
+--app-id is the RevenueCat app ID (required; picker shown in a terminal).
+--type is the Product type (required; picker shown in a terminal). Typical
+values per store: Test Store — subscription, consumable, non_consumable;
+App Store — subscription, one_time, consumable, non_consumable,
+non_renewing_subscription; Play Store — subscription, one_time, consumable,
+non_consumable; other stores — subscription, one_time. The server validates
+the combination; the CLI sends whatever you pass.
 --title is the Customer-facing Product title (required for Test Store Products).
---duration is an ISO 8601 duration, e.g. P1M, P1Y. It is required for Test Store
-subscription Products; subscription parameters are only supported for Test Store
-products.`,
+--duration is an ISO 8601 duration, e.g. P1M, P1Y. It is required for Test
+Store subscription Products; for other stores it is passed through and the
+server decides whether it applies.
+
+Web Billing products are created through store-state plans (rc products store
+sync/plan), not this command.`,
 		Example: `  rc products create --store-id premium_monthly --type subscription --app-id test_app --title "Premium Monthly" --duration P1M
   rc products create --store-id coins_100 --type consumable --app-id test_app --title "100 Coins"
   rc products create --store-id com.example.once --type one_time --app-id app_x --display-name "Unlock Everything"`,
@@ -272,9 +274,6 @@ products.`,
 			if err != nil {
 				return err
 			}
-			if string(app.Type) == string(api.RCBillingAppTypeRcBilling) {
-				return fmt.Errorf("can't create Web Billing products via the API; configure them in the RevenueCat dashboard")
-			}
 			allowed := productTypesForStore(app.Type)
 			if productType == "" {
 				if !rt.CanPrompt() {
@@ -289,20 +288,11 @@ products.`,
 					return err
 				}
 			}
-			if !containsProductType(allowed, productType) {
-				return fmt.Errorf("--type must be one of %s for a %s app, got %q", strings.Join(productTypeValues(allowed), ", "), app.Type, productType)
-			}
 			if isTestStoreApp(app) && title == "" {
 				return fmt.Errorf("--title is required for Test Store products")
 			}
 			if isTestStoreApp(app) && productType == "subscription" && duration == "" {
 				return fmt.Errorf("--duration is required for Test Store subscription products (e.g. P1M, P1Y)")
-			}
-			if duration != "" && !isTestStoreApp(app) {
-				return fmt.Errorf("--duration and other subscription parameters are only supported for Test Store products, but app %s is a %s app", appID, app.Type)
-			}
-			if duration != "" && isTestStoreApp(app) && productType != "subscription" {
-				return fmt.Errorf("--duration is only valid for a Test Store subscription product, not a %s product", productType)
 			}
 			body := api.ProductCreate{
 				StoreIdentifier: storeID,
@@ -313,29 +303,35 @@ products.`,
 				DisplayName: displayName,
 				Title:       title,
 			}
-			if productType == "subscription" && duration != "" {
+			if duration != "" {
 				body.Subscription = &api.ProductSubscriptionInput{Duration: api.Duration(duration)}
 			}
 			p, err := client.Products.Create(cmd.Context(), projectID, body)
 			if err != nil {
+				if string(app.Type) == string(api.RCBillingAppTypeRcBilling) {
+					rt.Out.Hint("Web Billing products are created through store-state plans:  rc products store sync " + appID)
+				}
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Created product %s", p.ID))
+			if duration != "" && (p.Subscription == nil || p.Subscription.Duration == nil) {
+				rt.Out.AlwaysWarn("The server ignored --duration for this product.")
+			}
 			return rt.Out.Render(p)
 		},
 	}
 	cmd.Flags().StringVar(&storeID, "store-id", "", "store product identifier (required)")
-	cmd.Flags().StringVar(&productType, "type", "", "product type (valid values depend on the app's store; picker shown in TTY if omitted)")
+	cmd.Flags().StringVar(&productType, "type", "", "product type (picker shown in TTY if omitted; the server validates the store/type combination)")
 	cmd.Flags().StringVar(&appID, "app-id", "", "app ID to associate with (picker shown in TTY if omitted)")
 	cmd.Flags().StringVar(&displayName, "display-name", "", "human-readable display name")
 	cmd.Flags().StringVar(&title, "title", "", "user-facing product title (required for Test Store products)")
-	cmd.Flags().StringVar(&duration, "duration", "", "subscription duration as ISO 8601 (e.g. P1M, P1Y); Test Store products only")
+	cmd.Flags().StringVar(&duration, "duration", "", "subscription duration as ISO 8601 (e.g. P1M, P1Y); required for Test Store subscriptions, passed through elsewhere")
 	return cmd
 }
 
-// productTypesForStore returns the product types each store's API accepts. These
-// aren't in the flat ProductType enum, so they're encoded here; the sets' union
-// must stay covering the enum (TestProductTypeStoreSetsCoverEnum).
+// productTypesForStore returns the product types each store typically offers,
+// for the interactive picker only — the server owns the real rules. The sets'
+// union must stay covering the enum (TestProductTypeStoreSetsCoverEnum).
 func productTypesForStore(appType api.AppType) []api.ProductType {
 	switch string(appType) {
 	case string(api.TestStoreAppTypeTestStore):
@@ -373,15 +369,6 @@ func productTypeValues(types []api.ProductType) []string {
 		out[i] = string(t)
 	}
 	return out
-}
-
-func containsProductType(types []api.ProductType, value string) bool {
-	for _, t := range types {
-		if string(t) == value {
-			return true
-		}
-	}
-	return false
 }
 
 func productTypeLabel(t api.ProductType) string {

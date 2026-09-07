@@ -16,7 +16,7 @@ import (
 func newProductsStoreCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "store",
-		Short: "Plan and sync Product state with the App Store or Google Play",
+		Short: "Plan and sync Product store state (App Store, Google Play, Web Billing, Test Store)",
 		Long: `Product store-state plans are persisted by RevenueCat, not by the rc
 process. Humans can use sync for an in-memory plan/review/apply flow. Agents can
 create a plan, inspect its plan ID in a later process, then apply or discard
@@ -87,8 +87,8 @@ func newProductsStoreSyncCmd() *cobra.Command {
 		Short: "Gather desired state, review its plan, and optionally apply it",
 		Long: `Runs the complete human workflow in one rc process: gather desired state
 interactively or from CSV/JSON, persist it as a RevenueCat plan, wait for its
-diff, display warnings, and ask before applying the exact plan to the App Store
-or Google Play.
+diff, display warnings, and ask before applying the exact plan to the store
+(App Store, Google Play, Web Billing, or Test Store).
 
 No local file is required. Without --file, interactive terminals prompt for
 product fields and keep the answers only in process memory. For automation,
@@ -227,7 +227,7 @@ func newProductsStoreApplyCmd() *cobra.Command {
 		Use:   "apply <plan-id>",
 		Short: "Apply an already-reviewed Product store-state plan",
 		Long: `Fetches the persisted plan, displays its exact diff and warnings, and
-applies it to the App Store or Google Play after confirmation. Automation must
+applies it to the store after confirmation. Automation must
 pass --yes. This command never reconstructs desired state from a local file; it
 applies the plan ID supplied.
 
@@ -279,7 +279,7 @@ func newProductsStoreDiscardCmd() *cobra.Command {
 		Use:   "discard <plan-id>",
 		Short: "Discard a Product store-state plan without applying it",
 		Long: `Discards a persisted plan so it can no longer be applied. Nothing is
-written to the App Store or Google Play.
+written to the store.
 
 Reversibility: irreversible — re-plan to review the changes again.
 
@@ -336,9 +336,6 @@ func resolveStoreStateApp(cmd *cobra.Command, args []string) (string, *api.App, 
 	app, err := client.Apps.Get(cmd.Context(), projectID, appID)
 	if err != nil {
 		return "", nil, nil, err
-	}
-	if app.Type != "app_store" && app.Type != "play_store" {
-		return "", nil, nil, fmt.Errorf("app %s does not use the App Store or Play Store", appID)
 	}
 	return projectID, app, client, nil
 }
