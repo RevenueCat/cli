@@ -398,11 +398,16 @@ Reversibility: irreversible. If you only need to hide it from current
 Offerings, prefer ` + "`rc entitlements archive`" + ` which can be undone with
 ` + "`rc entitlements restore`" + `.
 
-Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
-		Example: `  rc entitlements delete entl_pro --yes`,
+Interactive-only: run it yourself in a terminal. It is unavailable under
+--json or --no-input so automation can't delete entitlements. --yes skips the
+confirmation prompt once you're in a terminal.`,
+		Example: `  rc entitlements delete entl_pro`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if err := requireInteractive(rt, cmd.CommandPath()); err != nil {
+				return err
+			}
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
