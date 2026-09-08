@@ -123,7 +123,7 @@ rc customers override-offering <id> --offering <id>
 rc customers clear-override <id>
 rc customers restore-google <id> --token <t>
 rc customers simulate-purchase                            # Test Store only; --app-id/--product/--app-user-id + confirmation/--yes
-rc customers wallet <id>                                  # virtual_currencies per-customer
+rc customers balances <id>                                # per-customer In-App Currency balances (virtual_currencies endpoint); wallet is a hidden alias
 
 # Entitlements (project catalog)
 rc entitlements list
@@ -252,9 +252,9 @@ rc audit                                                 # /audit_logs with --li
 ## Build order
 
 1. **`projects`** (list, show, use, create) — create is required for zero-to-project setup.
-2. **`customers`** ✅ — list, composite show, grant, revoke, aliases, attributes (+ set-attribute), transfer, override-offering, clear-override, restore-google, wallet.
+2. **`customers`** ✅ — list, composite show, grant, revoke, aliases, attributes (+ set-attribute), transfer, override-offering, clear-override, restore-google, balances.
 3. **Catalog CRUD** ✅ — entitlements (+ archive/restore/products/attach/detach), offerings (+ archive/restore), products (+ update/archive/restore/push), packages (show/create/update/delete/products/attach/detach). No `crud` helper extracted — readable enough inline.
-4. **Support toolkit**: `subscriptions` ✅ (show/transactions/entitlements/management-url/cancel/extend/refund), `purchases` ✅, `invoices` ✅, `customer wallet` ✅.
+4. **Support toolkit**: `subscriptions` ✅ (show/transactions/entitlements/management-url/cancel/extend/refund), `purchases` ✅, `invoices` ✅, `customers balances` ✅.
 5. **Long tail**: `webhooks` ✅ (under `/integrations/webhooks`), `paywalls` ✅.
 6. **Cross-resource utilities**: `metrics` ✅, `charts list/show/options` ✅ (with client-side enum validation + shell completion), `audit` ✅.
 7. **Apps** ✅ — list/show/create/update/delete/keys/storekit-config.
