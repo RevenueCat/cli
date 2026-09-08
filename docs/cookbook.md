@@ -30,11 +30,11 @@ rc customers show cus_abc --json | jq '.data.subscriptions.items'
 Grant a one-month promotional entitlement:
 
 ```bash
-rc customers grant --customer-id cus_abc --entitlement-id pro --duration monthly --yes
+rc customers grant cus_abc entl_pro --duration monthly --yes
 ```
 
-Refund a Web Billing subscription (this is `--yes` by intent — confirmation
-matters):
+Refund a Web Billing subscription (no `--yes` on purpose — this one should
+prompt):
 
 ```bash
 rc subscriptions refund sub_abc
@@ -63,7 +63,7 @@ rc entitlements list --json | jq -r '.data.items[].lookup_key'
 Create an entitlement and immediately attach products:
 
 ```bash
-rc entitlements create --lookup-key plus --display-name "Plus" --yes --json
+rc entitlements create --lookup-key plus --display-name "Plus" --json
 rc entitlements attach plus prod_monthly prod_yearly
 ```
 
@@ -127,7 +127,7 @@ Separate staging and prod credentials cleanly:
 rc login --profile staging --api-key sk_staging_...
 rc login --profile prod    --api-key sk_prod_...
 
-rc --profile staging customer list --limit 5
+rc --profile staging customers list --limit 5
 rc --profile prod metrics --json
 ```
 
