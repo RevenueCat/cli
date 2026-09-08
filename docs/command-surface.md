@@ -44,7 +44,7 @@ the code when adding/renaming a command.
 ## The 16 documented resources (sidebar order)
 
 App · Audit Log · Charts & Metrics · Collaborator · Customer · Entitlement ·
-Offering · Package · Product · Virtual Currency · Purchase · Subscription ·
+Offering · Package · Product · Virtual Currency (product name: In-App Currency) · Purchase · Subscription ·
 Invoice · Paywall · Integration · Project
 
 ## Charts: fixed 22-name enum
