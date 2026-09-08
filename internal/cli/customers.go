@@ -523,7 +523,9 @@ func newCustomerBalancesCmd() *cobra.Command {
 		// "wallet" was the original name; kept for muscle memory and old scripts.
 		Aliases: []string{"wallet"},
 		Short:   "Show a Customer's In-App Currency balances",
-		Long:    `Shows the Customer's per-currency In-App Currency balances for the project.`,
+		Long: `Shows the Customer's per-currency In-App Currency balances for the project.
+In-App Currency was formerly called Virtual Currency; the v2 API endpoint and
+payload still say virtual_currencies.`,
 		Example: `  rc customers balances cus_abc
   rc customers balances cus_abc --json | jq '.data.items[]'`,
 		Args: cobra.ExactArgs(1),

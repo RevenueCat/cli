@@ -123,7 +123,7 @@ rc customers override-offering <id> --offering <id>
 rc customers clear-override <id>
 rc customers restore-google <id> --token <t>
 rc customers simulate-purchase                            # Test Store only; --app-id/--product/--app-user-id + confirmation/--yes
-rc customers balances <id>                                # per-customer In-App Currency balances (virtual_currencies endpoint); wallet is a hidden alias
+rc customers balances <id>                                # per-customer In-App Currency balances (virtual_currencies endpoint); wallet is kept as an alias
 
 # Entitlements (project catalog)
 rc entitlements list
