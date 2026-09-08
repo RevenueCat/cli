@@ -83,7 +83,7 @@ one Customer are aliases.`,
 		newCustomerClearOverrideCmd(),
 		newCustomerRestoreGoogleCmd(),
 		newCustomerSimulatePurchaseCmd(),
-		newCustomerWalletCmd(),
+		newCustomerBalancesCmd(),
 	)
 	return cmd
 }
@@ -517,14 +517,17 @@ Confirmation: no prompt — idempotent (re-running with the same token is safe).
 	return cmd
 }
 
-func newCustomerWalletCmd() *cobra.Command {
+func newCustomerBalancesCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "wallet <customer-id>",
-		Short: "Show a Customer's Virtual Currency balances",
-		Long: `Shows the Customer's wallet: per-currency virtual currency balances for
-the project.`,
-		Example: `  rc customers wallet cus_abc
-  rc customers wallet cus_abc --json | jq '.data.items[]'`,
+		Use: "balances <customer-id>",
+		// "wallet" was the original name; kept for muscle memory and old scripts.
+		Aliases: []string{"wallet"},
+		Short:   "Show a Customer's In-App Currency balances",
+		Long: `Shows the Customer's per-currency In-App Currency balances for the project.
+In-App Currency was formerly called Virtual Currency; the v2 API endpoint and
+payload still say virtual_currencies.`,
+		Example: `  rc customers balances cus_abc
+  rc customers balances cus_abc --json | jq '.data.items[]'`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -536,7 +539,7 @@ the project.`,
 			if err != nil {
 				return err
 			}
-			page, err := client.Customers.Wallet(cmd.Context(), projectID, args[0])
+			page, err := client.Customers.VirtualCurrencies(cmd.Context(), projectID, args[0])
 			if err != nil {
 				return err
 			}
