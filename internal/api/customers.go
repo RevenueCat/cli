@@ -163,20 +163,20 @@ func (s *CustomersService) RestoreGooglePlay(ctx context.Context, projectID, cus
 }
 
 // GET /projects/{project_id}/customers/{customer_id}/virtual_currencies
-func (s *CustomersService) Wallet(ctx context.Context, projectID, customerID string) (*Page[map[string]any], error) {
+func (s *CustomersService) VirtualCurrencies(ctx context.Context, projectID, customerID string) (*Page[map[string]any], error) {
 	var out Page[map[string]any]
 	err := s.c.do(ctx, http.MethodGet, pathCustomerVirtualCurrencies(projectID, customerID), nil, &out)
 	return &out, err
 }
 
 // POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/update_balance
-func (s *CustomersService) WalletAdjustBalance(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
+func (s *CustomersService) VirtualCurrenciesUpdateBalance(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
 	body := map[string]any{"currency_code": currencyCode, "amount": amount}
 	return s.c.do(ctx, http.MethodPost, pathCustomerVirtualCurrenciesUpdateBalance(projectID, customerID), body, nil)
 }
 
 // POST /projects/{project_id}/customers/{customer_id}/virtual_currencies/transactions
-func (s *CustomersService) WalletTransaction(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
+func (s *CustomersService) VirtualCurrenciesTransaction(ctx context.Context, projectID, customerID, currencyCode string, amount int64) error {
 	body := map[string]any{"currency_code": currencyCode, "amount": amount}
 	return s.c.do(ctx, http.MethodPost, pathCustomerVirtualCurrenciesTransactions(projectID, customerID), body, nil)
 }

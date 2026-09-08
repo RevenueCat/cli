@@ -48,12 +48,12 @@ func TestCustomerAndSubscriptionLivePaths(t *testing.T) {
 			},
 		},
 		{
-			name:     "customer wallet update balance",
+			name:     "customer virtual currencies update balance",
 			method:   http.MethodPost,
 			path:     "/projects/proj/customers/cust/virtual_currencies/update_balance",
 			response: `{}`,
 			call: func(c *api.Client) error {
-				return c.Customers.WalletAdjustBalance(context.Background(), "proj", "cust", "GLD", 10)
+				return c.Customers.VirtualCurrenciesUpdateBalance(context.Background(), "proj", "cust", "GLD", 10)
 			},
 		},
 		{
