@@ -30,7 +30,7 @@ rc customers show cus_abc --json | jq '.data.subscriptions.items'
 Grant a one-month promotional entitlement:
 
 ```bash
-rc customers grant cus_abc pro --duration monthly --yes
+rc customers grant cus_abc entl_pro --duration monthly --yes
 ```
 
 Refund a Web Billing subscription (no `--yes` on purpose — this one should
