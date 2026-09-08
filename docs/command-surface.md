@@ -59,7 +59,7 @@ refund_rate, revenue, subscription_retention, subscription_status,
 trial_conversion_rate, trials, trials_movement, trials_new
 ```
 
-CLI surface: `rc charts <name>` should validate against this enum and offer
+CLI surface: `rc charts show <name>` should validate against this enum and offer
 shell completion. `rc charts list` is a static command that prints these
 names; there's no list endpoint.
 
@@ -113,11 +113,11 @@ rc apps apple check [app-id]                             # validate Apple login,
 rc apps apple setup [app-id]                             # hidden alias of rc setup apple (kept for back-compat)
 
 # Customers — busiest noun
-rc customers show [id]                                    # embeds active_entitlements
+rc customers show <id>                                    # embeds active_entitlements
 rc customers list
 rc customers aliases <id>
 rc customers attributes <id>                              # GET all subscriber attributes
-rc customers set-attribute <id> <key> <value>            # set a single subscriber attribute
+rc customers set-attribute <id> --set <key>=<value>      # set subscriber attributes (--set is repeatable)
 rc customers grant <id> <entitlement> [--duration ...]
 rc customers revoke <id> <entitlement>
 rc customers transfer <from> --to <id>
@@ -151,7 +151,7 @@ rc offerings delete <id>
 rc offerings archive <id>
 rc offerings restore <id>
 rc offerings packages <offering-id>                      # nested resource
-rc packages list                                         # all packages across all offerings
+rc packages list                                         # packages across offerings (first page per offering; large catalogs page via the API)
 rc packages show <package-id>
 rc packages create <offering-id>
 rc packages update <package-id>
@@ -250,7 +250,8 @@ rc audit                                                 # /audit_logs with --li
   deferred because its component schema needs a purpose-built editing UX.
 - **No plugin system.** YAGNI; oclif model is a Node bet, not a Go one.
 - **No `--account` flag.** Account is implicit in the API key.
-- **No bulk-import** until there's a concrete ask.
+- **No generic bulk-import** (customers, catalog CRUD) until there's a concrete
+  ask — store-state plans' CSV/JSON input is the one deliberate exception.
 
 ## Build order
 
