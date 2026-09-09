@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -29,9 +30,22 @@ Use this from an agent rather than scraping the human --help output.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			target, _, err := root.Find(args)
+			// `rc commands` emits colon-form capability IDs (apps:create), so
+			// accept them here as if space-separated.
+			tokens := make([]string, 0, len(args))
+			for _, a := range args {
+				tokens = append(tokens, strings.Split(a, ":")...)
+			}
+			target, rest, err := root.Find(tokens)
 			if err != nil {
 				return err
+			}
+			// Find never fails on unknown names; it stops at the deepest match
+			// and returns the leftovers, which for a pure command path means
+			// the name didn't resolve. Without this check an unknown name
+			// silently yields the root schema.
+			if len(rest) > 0 {
+				return fmt.Errorf("unknown command %q — run `rc commands` to list valid names", strings.Join(args, " "))
 			}
 			return rt.Out.RenderJSON(commandSchema(target))
 		},
