@@ -26,6 +26,7 @@ INITIALISMS = {"id": "ID", "url": "URL", "api": "API", "urls": "URLs"}
 NON_SPEC_PATHS = {
     "/projects/{project_id}/invoices/{invoice_id}",  # rc invoices get — not in public v2 spec
     "/projects/{project_id}/fonts",  # rc fonts — live in the backend, not yet in published spec
+    "/projects/{project_id}/paywalls/{paywall_id}/graph",  # khepri PR adding this route hasn't merged yet
 }
 
 

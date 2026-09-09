@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 )
 
 type PaywallsService struct{ c *Client }
@@ -117,4 +118,106 @@ func (s *PaywallsService) Unpublish(ctx context.Context, projectID, id string) (
 
 func (s *PaywallsService) Delete(ctx context.Context, projectID, id string) error {
 	return s.c.do(ctx, http.MethodDelete, pathPaywall(projectID, id), nil, nil)
+}
+
+// PaywallGraph is the envelope from GET .../paywalls/{id}/graph. Graph is nil
+// only for a genuinely standalone V2 paywall with no screen graph.
+//
+// Hand-written, not generated: this route isn't in the vendored OpenAPI spec
+// yet, so it's listed in scripts/gen-paths.py's NON_SPEC_PATHS instead of
+// getting a generated type.
+type PaywallGraph struct {
+	Object  string `json:"object"`
+	ID      string `json:"id"`
+	Version string `json:"version"`
+	Graph   *Graph `json:"graph"`
+}
+
+// Graph describes a paywall's screens and how they connect. PaywallStepID is
+// the authoritative purchase screen; a step's IsTerminal means "no outgoing
+// edges", not "is the purchase screen" — do not conflate the two.
+type Graph struct {
+	Revision      *int        `json:"revision"`
+	InitialStepID *string     `json:"initial_step_id"`
+	PaywallStepID string      `json:"paywall_step_id"`
+	TotalSteps    int         `json:"total_steps"`
+	Steps         []GraphStep `json:"steps"`
+}
+
+// GraphStep is one node in the graph. Paywall carries the step's editable
+// content and is present only when the graph is fetched with
+// expand=graph.steps.paywall.
+type GraphStep struct {
+	ID              string           `json:"id"`
+	Name            *string          `json:"name"`
+	Type            string           `json:"type"`
+	ScreenTypes     []string         `json:"screen_types"`
+	IsTerminal      bool             `json:"is_terminal"`
+	PaywallID       *string          `json:"paywall_id"`
+	Edges           []GraphEdge      `json:"edges"`
+	UnwiredTriggers []UnwiredTrigger `json:"unwired_triggers"`
+	Paywall         *ScreenContent   `json:"paywall,omitempty"`
+}
+
+type GraphEdge struct {
+	To                 string          `json:"to"`
+	TriggerID          string          `json:"trigger_id"`
+	Condition          json.RawMessage `json:"condition"`
+	IsDefault          bool            `json:"is_default"`
+	TriggerComponentID *string         `json:"trigger_component_id"`
+	TriggerName        *string         `json:"trigger_name"`
+	TriggerType        *string         `json:"trigger_type"`
+}
+
+type UnwiredTrigger struct {
+	ActionID    string  `json:"action_id"`
+	ComponentID *string `json:"component_id"`
+	Name        *string `json:"name"`
+	Type        *string `json:"type"`
+	Reason      string  `json:"reason"`
+}
+
+// ScreenContent is a graph step's editable content — the same fields the
+// dashboard's paywall editor reads and writes, scoped to one screen.
+type ScreenContent struct {
+	ID                      string          `json:"id"`
+	Revision                int             `json:"revision"`
+	ComponentsConfig        json.RawMessage `json:"components_config"`
+	ComponentsLocalizations json.RawMessage `json:"components_localizations"`
+	DefaultLocale           string          `json:"default_locale"`
+	StateDeclarations       json.RawMessage `json:"state_declarations"`
+}
+
+// GetGraph fetches a paywall's screen topology (no screen content). version
+// is "draft" or "published".
+func (s *PaywallsService) GetGraph(ctx context.Context, projectID, id, version string) (*PaywallGraph, error) {
+	path := encodePath("projects", projectID, "paywalls", id, "graph") + "?version=" + url.QueryEscape(version)
+	var out PaywallGraph
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
+	return &out, err
+}
+
+// GetGraphWithScreenContent fetches the graph with each step's editable
+// content included — the only way to read a sibling screen's content; the
+// plain paywall GET can only ever return the fallback screen's own version.
+func (s *PaywallsService) GetGraphWithScreenContent(ctx context.Context, projectID, id, version string) (*PaywallGraph, error) {
+	path := encodePath("projects", projectID, "paywalls", id, "graph") +
+		"?version=" + url.QueryEscape(version) + "&expand=graph.steps.paywall"
+	var out PaywallGraph
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
+	return &out, err
+}
+
+// UpdateDraftStep saves component state onto one screen selected from the
+// paywall's graph instead of onto its fallback draft. parentID stays in the
+// path; the target screen is addressed only by the step_id query param, and
+// the response's id is that screen's own canonical id, which can differ from
+// parentID. khepri rejects name and automatically_scale_font_size for a
+// sibling screen, so this clears Name regardless of what the caller set.
+func (s *PaywallsService) UpdateDraftStep(ctx context.Context, projectID, parentID, stepID string, body PaywallDraftUpdate) (*Paywall, error) {
+	body.Name = nil
+	path := pathPaywall(projectID, parentID) + "?step_id=" + url.QueryEscape(stepID)
+	var out Paywall
+	err := s.c.do(ctx, http.MethodPatch, path, body, &out)
+	return &out, err
 }
