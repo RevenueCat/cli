@@ -212,8 +212,8 @@ func (s *PaywallsService) GetGraphWithScreenContent(ctx context.Context, project
 // paywall's graph instead of onto its fallback draft. parentID stays in the
 // path; the target screen is addressed only by the step_id query param, and
 // the response's id is that screen's own canonical id, which can differ from
-// parentID. khepri rejects name and automatically_scale_font_size for a
-// sibling screen, so this clears Name regardless of what the caller set.
+// parentID. The API rejects name for a sibling screen, so this clears Name
+// regardless of what the caller set.
 func (s *PaywallsService) UpdateDraftStep(ctx context.Context, projectID, parentID, stepID string, body PaywallDraftUpdate) (*Paywall, error) {
 	body.Name = nil
 	path := pathPaywall(projectID, parentID) + "?step_id=" + url.QueryEscape(stepID)

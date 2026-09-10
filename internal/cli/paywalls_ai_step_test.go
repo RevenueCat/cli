@@ -18,9 +18,9 @@ import (
 
 // rcGraphMock serves a two-screen graph (a terminal, non-fallback step_1 and
 // a fallback step_2) plus a PATCH endpoint that records the query string and
-// body it received. It fails the test if the plain (non-graph) paywall GET
-// route is ever hit — the whole point of --step-id is that a sibling's
-// content can no longer be reached that way.
+// body it received. The plain paywall GET serves only the parent's offering;
+// it fails the test if asked to expand components, since a sibling's content
+// is reachable only through the graph.
 type rcGraphMock struct {
 	mu           sync.Mutex
 	patchedQuery []string
@@ -43,6 +43,13 @@ func (m *rcGraphMock) server(t *testing.T) *httptest.Server {
 					{"id":"step_2","name":"Intro","type":"screen","screen_types":["generic"],"is_terminal":false,"paywall_id":"pw_sibling","edges":[],"unwired_triggers":[],
 					 "paywall":{"id":"pw_sibling","revision":5,"components_config":{"base":{}},"components_localizations":{"en_US":{}},"default_locale":"en_US","state_declarations":{}}}
 				]}}`)
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/paywalls/pw_parent"):
+			if r.URL.Query().Has("expand") {
+				t.Errorf("parent GET must not expand components: %s", r.URL.RawQuery)
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			io.WriteString(w, `{"id":"pw_parent","offering_id":"ofrng_parent","created_at":1}`)
 		case r.Method == http.MethodPatch:
 			m.mu.Lock()
 			m.patchedQuery = append(m.patchedQuery, r.URL.RawQuery)
@@ -72,6 +79,7 @@ type stepEchoEditorServer struct {
 	mu               sync.Mutex
 	stepIDs          []string
 	componentsConfig []string
+	offeringIDs      []string
 }
 
 func (s *stepEchoEditorServer) server(t *testing.T) *httptest.Server {
@@ -81,6 +89,7 @@ func (s *stepEchoEditorServer) server(t *testing.T) *httptest.Server {
 			StepID  *string `json:"step_id"`
 			Paywall struct {
 				ComponentsConfig json.RawMessage `json:"components_config"`
+				OfferingID       *string         `json:"offering_id"`
 			} `json:"paywall"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&body)
@@ -89,6 +98,11 @@ func (s *stepEchoEditorServer) server(t *testing.T) *httptest.Server {
 			s.stepIDs = append(s.stepIDs, *body.StepID)
 		} else {
 			s.stepIDs = append(s.stepIDs, "")
+		}
+		if body.Paywall.OfferingID != nil {
+			s.offeringIDs = append(s.offeringIDs, *body.Paywall.OfferingID)
+		} else {
+			s.offeringIDs = append(s.offeringIDs, "")
 		}
 		s.componentsConfig = append(s.componentsConfig, string(body.Paywall.ComponentsConfig))
 		s.mu.Unlock()
@@ -139,6 +153,13 @@ func TestPaywallsEdit_StepIDFetchesFromGraphAndSavesToSelectedStep(t *testing.T)
 	editor.mu.Unlock()
 	if len(sentConfig) != 1 || sentConfig[0] != `{"base":{}}` {
 		t.Fatalf("editor received components_config = %v, want the sibling step_2's own content", sentConfig)
+	}
+
+	editor.mu.Lock()
+	sentOfferings := append([]string(nil), editor.offeringIDs...)
+	editor.mu.Unlock()
+	if len(sentOfferings) != 1 || sentOfferings[0] != "ofrng_parent" {
+		t.Fatalf("editor received offering_id = %v, want the parent's ofrng_parent so products resolve", sentOfferings)
 	}
 
 	rc.mu.Lock()

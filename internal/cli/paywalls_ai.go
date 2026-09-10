@@ -524,6 +524,16 @@ func seedSessionFromServerForStep(ctx context.Context, rt *Runtime, projectID, p
 		localizations = json.RawMessage(`{"` + locale + `": {}}`)
 	}
 	revision := content.Revision
+	// The offering lives on the parent and drives the editor's product context;
+	// every screen in the graph designs against the same one.
+	parent, err := client.Paywalls.Get(ctx, projectID, paywallID)
+	if err != nil {
+		return nil, err
+	}
+	var offeringID *string
+	if parent.OfferingID != "" {
+		offeringID = &parent.OfferingID
+	}
 	return &paywallAISession{
 		Version:   1,
 		ProjectID: projectID,
@@ -533,6 +543,7 @@ func seedSessionFromServerForStep(ctx context.Context, rt *Runtime, projectID, p
 		Revision:  &revision,
 		Paywall: paywallai.PaywallData{
 			DefaultLocale:           locale,
+			OfferingID:              offeringID,
 			ComponentsConfig:        content.ComponentsConfig,
 			ComponentsLocalizations: localizations,
 			StateDeclarations:       serverStateDeclarations(content.StateDeclarations),
