@@ -6,8 +6,8 @@ import "golang.org/x/sys/windows"
 
 // openURLPlatform opens url with ShellExecuteW, which receives it as a lone
 // lpFile parameter. Don't switch this back to `cmd /c start`: cmd.exe
-// re-tokenizes its whole command line regardless of how Go quotes arguments,
-// so characters it treats specially don't survive the trip intact.
+// re-parses its whole command line and mangles URLs containing characters it
+// treats specially.
 func openURLPlatform(url string) error {
 	u, err := windows.UTF16PtrFromString(url)
 	if err != nil {

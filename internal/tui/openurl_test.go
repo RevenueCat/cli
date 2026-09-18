@@ -6,9 +6,9 @@ import "testing"
 // platform opener.
 func TestOpenURL_RefusesNonHTTP(t *testing.T) {
 	for _, u := range []string{
-		"file:///etc/passwd",
+		"file:///tmp/notes.txt",
 		"-leading-dash",
-		"javascript:alert(1)",
+		"ftp://example.com/file",
 		"not a url",
 		"",
 	} {

@@ -629,7 +629,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	rt.Out.Info("Opening browser for authorization…")
 	rt.Out.Info(fmt.Sprintf("If the browser doesn't open, visit:\n  %s", authURL))
 
-	_ = openBrowser(authURL)
+	_ = tui.OpenURL(authURL)
 
 	codeCh := make(chan string, 1)
 	errCh := make(chan error, 1)
@@ -880,10 +880,4 @@ func finishLogin(ctx context.Context, rt *Runtime, _ *api.Client) error {
 	return rt.Out.Render(map[string]any{
 		"profile": config.ProfileName(rt.Globals.Profile),
 	})
-}
-
-func openBrowser(url string) error {
-	// Route every browser open through tui.OpenURL (scheme check +
-	// platform-native opener) instead of spawning a shell here.
-	return tui.OpenURL(url)
 }
