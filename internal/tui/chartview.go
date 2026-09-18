@@ -122,7 +122,7 @@ func (m *chartApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err == nil && msg.data != nil {
 			m.bars, m.maxVal, m.unit = processBars(msg.data, m.completeStyle, m.incompleteStyle)
 			if m.title == "" {
-				m.title = msg.data.DisplayName
+				m.title = output.SanitizeLine(msg.data.DisplayName)
 			}
 		}
 		// Reset scroll to end (overshoots intentionally; clampBarOffset pins to max).
@@ -477,7 +477,7 @@ func processBars(data *api.ChartData, completeStyle, incompleteStyle lipgloss.St
 	if maxVal == 0 {
 		maxVal = 1
 	}
-	unit := data.YAxis
+	unit := output.SanitizeLine(data.YAxis)
 	return bars, maxVal, unit
 }
 

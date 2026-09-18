@@ -383,7 +383,7 @@ func (m *chatModel) renderTranscript() string {
 		// stretches of the stream never look frozen.
 		label := "thinking…"
 		if m.activity != "" {
-			label = "running " + m.activity + "…"
+			label = "running " + output.SanitizeLine(m.activity) + "…"
 		}
 		b.WriteString("\n  " + m.spin.View() + " " + chatDimStyle.Render(label) + "\n")
 	}
@@ -391,13 +391,16 @@ func (m *chatModel) renderTranscript() string {
 }
 
 func (m *chatModel) renderEntry(entry ChatEntry) string {
+	// Transcript text is untrusted (assistant/server-composed, and it quotes
+	// API data); the markdown renderer passes control characters through.
+	entry.Text = output.Sanitize(entry.Text)
 	switch entry.Role {
 	case ChatUser:
 		return "\n" + chatUserStyle.Render("❯ ") + entry.Text + "\n"
 	case ChatTool:
-		return chatToolStyle.Render("  ⚙ "+entry.Text) + "\n"
+		return chatToolStyle.Render("  ⚙ "+output.SanitizeLine(entry.Text)) + "\n"
 	case ChatNotice:
-		return chatNoticeStyle.Render("  "+entry.Text) + "\n"
+		return chatNoticeStyle.Render("  "+output.SanitizeLine(entry.Text)) + "\n"
 	default: // assistant
 		text := entry.Text
 		if m.cfg.RelativeLinkBase != "" {
@@ -424,7 +427,7 @@ func (m *chatModel) View() string {
 	footer := chatDimStyle.Render("enter send · ctrl+j newline · pgup/pgdn scroll · esc quit")
 	switch {
 	case m.approval != nil:
-		label := "Allow: " + m.approval.prompt + "  "
+		label := "Allow: " + output.SanitizeLine(m.approval.prompt) + "  "
 		hint := chatApproveStyle.Render("[y] approve") + "  " + chatDestructStyle.Render("[n] reject")
 		if m.approval.destructive {
 			label = chatDestructStyle.Render("⚠ destructive · ") + label

@@ -16,6 +16,7 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/config"
+	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/paywallai"
 	"github.com/revenuecat/cli/internal/tui"
 )
@@ -819,11 +820,11 @@ func reportPaywallAIActivity(rt *Runtime, activity []paywallai.ToolActivity, alr
 	for _, item := range activity[min(alreadyReported, len(activity)):] {
 		switch item.Type {
 		case "assistant_message":
-			rt.Out.Info("Paywalls AI: " + item.Content)
+			rt.Out.Info("Paywalls AI: " + output.Sanitize(item.Content))
 		default:
-			text := item.Display.Text
+			text := output.SanitizeLine(item.Display.Text)
 			if text == "" {
-				text = item.ToolName
+				text = output.SanitizeLine(item.ToolName)
 			}
 			if item.Status == "error" {
 				rt.Out.Warn("⚙ " + text + "  (errored — the Paywalls AI Editor retries these itself)")

@@ -182,6 +182,11 @@ func encodeJSON(w io.Writer, v any) error {
 	return err
 }
 
+// EscapeC1JSON exposes escapeC1 for callers that stream raw JSON bodies to
+// stdout (rc api): JSON guarantees C0 is escaped on the wire, but C1 arrives
+// as raw UTF-8 bytes.
+func EscapeC1JSON(b []byte) []byte { return escapeC1(b) }
+
 // escapeC1 rewrites UTF-8-encoded C1 codepoints (0xC2 0x80–0x9F; in valid
 // UTF-8, 0xC2 only ever appears as that lead byte) as JSON \u escapes.
 func escapeC1(b []byte) []byte {
@@ -320,7 +325,9 @@ func (r *Renderer) renderJSONFiltered(env any) error {
 		}
 		switch t := v.(type) {
 		case string:
-			fmt.Fprintln(r.stdout, t)
+			// Unmarshal decoded the API's \u escapes back into real control
+			// bytes; keep --format output to visible text like every other path.
+			fmt.Fprintln(r.stdout, Sanitize(t))
 		case nil:
 			// jq emits nil for `.missing`; skip rather than print "null".
 		default:
@@ -587,5 +594,5 @@ func (r *Renderer) Error(msg string) {
 	if r.json {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+Sanitize(msg))
 }

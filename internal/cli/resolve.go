@@ -40,7 +40,7 @@ func requireID(rt *Runtime, arg, noun string, fetch func() ([]PickerItem, error)
 		return "", fmt.Errorf("no %ss found — pass an ID explicitly", noun)
 	}
 	if len(items) == 1 {
-		rt.Out.Info(fmt.Sprintf("Only one %s available: %s", noun, items[0].Label))
+		rt.Out.Info(fmt.Sprintf("Only one %s available: %s", noun, output.SanitizeLine(items[0].Label)))
 		return items[0].ID, nil
 	}
 	return selectID(rt, noun, items, "")
