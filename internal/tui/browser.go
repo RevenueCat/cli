@@ -130,19 +130,73 @@ type bframe struct {
 }
 
 func newListFrame(title string, items []BrowserItem) bframe {
-	return bframe{kind: kindList, title: title, all: items}
+	return bframe{kind: kindList, title: output.Sanitize(title), all: sanitizeItems(items)}
 }
 
 func newTableFrame(title string, cols []string, items []BrowserItem) bframe {
-	return bframe{kind: kindTable, title: title, all: items, tableCols: cols}
+	return bframe{kind: kindTable, title: output.Sanitize(title), all: sanitizeItems(items), tableCols: cols}
 }
 
 func newDetailFrame(item BrowserItem) bframe {
 	return bframe{
 		kind:        kindDetail,
-		item:        item,
+		item:        sanitizeItem(item),
 		autoLoading: item.AutoLoad != nil,
 	}
+}
+
+// Frames are the only way data enters the browser, so sanitizing here covers
+// every view: remote text (customer IDs, product names) would otherwise reach
+// the terminal as escape sequences it acts on rather than characters it draws.
+// Lazily-loaded children come back through these same constructors.
+func sanitizeItems(items []BrowserItem) []BrowserItem {
+	out := make([]BrowserItem, len(items))
+	for i, it := range items {
+		out[i] = sanitizeItem(it)
+	}
+	return out
+}
+
+func sanitizeItem(it BrowserItem) BrowserItem {
+	it.ID = output.Sanitize(it.ID)
+	it.Label = output.Sanitize(it.Label)
+	it.Meta = output.Sanitize(it.Meta)
+	it.Row = sanitizeCells(it.Row)
+	fields := make([]BrowserField, len(it.Fields))
+	for i, f := range it.Fields {
+		fields[i] = BrowserField{Key: output.Sanitize(f.Key), Value: output.Sanitize(f.Value)}
+	}
+	it.Fields = fields
+	links := make([]BrowserLink, len(it.Links))
+	for i, l := range it.Links {
+		l.Label = output.Sanitize(l.Label)
+		links[i] = l
+	}
+	it.Links = links
+	return it
+}
+
+func sanitizeSections(sections []BrowserSection) []BrowserSection {
+	out := make([]BrowserSection, len(sections))
+	for i, sec := range sections {
+		sec.Title = output.Sanitize(sec.Title)
+		sec.Empty = output.Sanitize(sec.Empty)
+		rows := make([]BrowserSectionRow, len(sec.Rows))
+		for j, row := range sec.Rows {
+			rows[j] = BrowserSectionRow{Cells: sanitizeCells(row.Cells), Item: row.Item}
+		}
+		sec.Rows = rows
+		out[i] = sec
+	}
+	return out
+}
+
+func sanitizeCells(cells []string) []string {
+	out := make([]string, len(cells))
+	for i, c := range cells {
+		out[i] = output.Sanitize(c)
+	}
+	return out
 }
 
 func (f *bframe) visible() []BrowserItem {
@@ -302,7 +356,7 @@ func (m *browser) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.err != nil {
 				f.autoErr = msg.err.Error()
 			} else {
-				f.sections = msg.sections
+				f.sections = sanitizeSections(msg.sections)
 			}
 			// Clamp cursor so it stays within the new slot list.
 			slots := detailSlots(f)
@@ -484,7 +538,7 @@ func (m *browser) View() string {
 	}
 	if m.loadErr != "" {
 		return m.renderHeader("Error") +
-			"\n  " + brErr.Render("Error: "+m.loadErr) +
+			"\n  " + brErr.Render("Error: "+output.Sanitize(m.loadErr)) +
 			"\n\n  Press any key to dismiss.\n"
 	}
 	f := m.top()
@@ -780,7 +834,7 @@ func (m *browser) viewDetail(f *bframe) string {
 	if f.autoLoading {
 		sb.WriteString("\n  " + brDim.Render("Loading…") + "\n")
 	} else if f.autoErr != "" {
-		sb.WriteString("\n  " + brErr.Render("Error: "+f.autoErr) + "\n")
+		sb.WriteString("\n  " + brErr.Render("Error: "+output.Sanitize(f.autoErr)) + "\n")
 	} else {
 		for _, sec := range f.sections {
 			sb.WriteString("\n  " + brSection.Render(sec.Title) + "\n")

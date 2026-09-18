@@ -187,13 +187,15 @@ func (r *Renderer) renderHuman(v any) error {
 	}
 	keys := humanKeyOrder(m)
 	width := 0
-	for _, k := range keys {
-		if len(k) > width {
-			width = len(k)
+	labels := make([]string, len(keys))
+	for i, k := range keys {
+		labels[i] = Sanitize(k)
+		if len(labels[i]) > width {
+			width = len(labels[i])
 		}
 	}
-	for _, k := range keys {
-		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(k, width)), humanFieldValue(k, m[k]))
+	for i, k := range keys {
+		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(labels[i], width)), humanFieldValue(k, m[k]))
 	}
 	return nil
 }
@@ -232,14 +234,16 @@ func humanKeyOrder(m map[string]json.RawMessage) []string {
 }
 
 // humanValue renders one JSON value on one line: scalars verbatim, short
-// composites as compact JSON, long ones summarized.
+// composites as compact JSON, long ones summarized. Composites stay
+// JSON-encoded, which already escapes control bytes; bare strings go through
+// Sanitize.
 func humanValue(raw json.RawMessage) string {
 	var s string
 	if json.Unmarshal(raw, &s) == nil {
 		if s == "" {
 			return "—"
 		}
-		return s
+		return Sanitize(s)
 	}
 	trimmed := string(raw)
 	if trimmed == "null" {
@@ -322,11 +326,16 @@ func (r *Renderer) RenderTable(t Table) error {
 		fmt.Fprintln(r.stderr, r.style(r.info, "• ")+"no results")
 		return nil
 	}
-	widths := make([]int, len(t.Columns))
-	for i, c := range t.Columns {
+	columns := sanitizeAll(t.Columns)
+	rows := make([][]string, len(t.Rows))
+	for i, row := range t.Rows {
+		rows[i] = sanitizeAll(row)
+	}
+	widths := make([]int, len(columns))
+	for i, c := range columns {
 		widths[i] = len(c)
 	}
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i >= len(widths) {
 				continue
@@ -337,14 +346,14 @@ func (r *Renderer) RenderTable(t Table) error {
 		}
 	}
 	headerStyle := lipgloss.NewStyle().Bold(true)
-	for i, c := range t.Columns {
+	for i, c := range columns {
 		if i > 0 {
 			fmt.Fprint(r.stdout, "  ")
 		}
 		fmt.Fprint(r.stdout, r.style(headerStyle, padRight(c, widths[i])))
 	}
 	fmt.Fprintln(r.stdout)
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i > 0 {
 				fmt.Fprint(r.stdout, "  ")
@@ -378,21 +387,23 @@ func (r *Renderer) Success(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.success, "✓ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.success, "✓ ")+Sanitize(msg))
 }
 
 func (r *Renderer) Info(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+Sanitize(msg))
 }
 
 // Hyperlink wraps styledLabel in an OSC 8 terminal hyperlink pointing at url.
 // Supporting terminals make it clickable; others render the label text. This is
-// the one place the OSC 8 escape lives.
+// the one place the OSC 8 escape lives. url is sanitized: a control byte in a
+// server-supplied URL would close this sequence early and leave the rest of
+// the value to be interpreted as a new one.
 func Hyperlink(styledLabel, url string) string {
-	return "\x1b]8;;" + url + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
+	return "\x1b]8;;" + Sanitize(url) + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
 }
 
 // LinkText renders a clickable hyperlink (OSC 8) with a custom label instead of
@@ -400,7 +411,7 @@ func Hyperlink(styledLabel, url string) string {
 // falls back to "label (url)" so the URL stays copyable.
 func (r *Renderer) LinkText(label, url string) string {
 	if r.noColor {
-		return label + " (" + url + ")"
+		return label + " (" + Sanitize(url) + ")"
 	}
 	return Hyperlink(lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(label), url)
 }
@@ -410,7 +421,7 @@ func (r *Renderer) LinkText(label, url string) string {
 // terminal), so nothing leaks escape codes into piped or --no-color output.
 func (r *Renderer) Link(url string) string {
 	if r.noColor {
-		return url
+		return Sanitize(url)
 	}
 	return Hyperlink(lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(url), url)
 }
@@ -430,7 +441,7 @@ func (r *Renderer) Hint(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.dim, "  "+msg))
+	fmt.Fprintln(r.stderr, r.style(r.dim, "  "+Sanitize(msg)))
 }
 
 // Title starts a visually distinct section: a brand-colored bar plus a bold
@@ -440,7 +451,7 @@ func (r *Renderer) Title(msg string) {
 		return
 	}
 	fmt.Fprintln(r.stderr)
-	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
+	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, Sanitize(msg)))
 }
 
 // Lead is the orienting sentence(s) under a Title: what this flow is for
@@ -452,7 +463,7 @@ func (r *Renderer) Lead(text string) {
 		return
 	}
 	const width = 76
-	words := strings.Fields(text)
+	words := strings.Fields(Sanitize(text))
 	line := " "
 	for _, w := range words {
 		if len(line)+1+len(w) > width {
@@ -478,7 +489,7 @@ func (r *Renderer) Notice(lines ...string) {
 	fmt.Fprintln(r.stderr)
 	bar := lipgloss.NewStyle().Foreground(InfoBlue).Bold(true)
 	for _, line := range lines {
-		fmt.Fprintln(r.stderr, r.style(bar, "▐ ")+line)
+		fmt.Fprintln(r.stderr, r.style(bar, "▐ ")+Sanitize(line))
 	}
 	fmt.Fprintln(r.stderr)
 }
@@ -490,7 +501,7 @@ func (r *Renderer) Answer(key, value string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintf(r.stderr, "%s %s %s\n", r.style(r.success, "✓"), r.style(r.dim, padRight(key, 26)), value)
+	fmt.Fprintf(r.stderr, "%s %s %s\n", r.style(r.success, "✓"), r.style(r.dim, padRight(Sanitize(key), 26)), Sanitize(value))
 }
 
 // Plan renders the guided-command plan: a titled, numbered list of the
@@ -512,12 +523,13 @@ func (r *Renderer) Field(key, value string, note ...string) {
 	if r.json || r.quiet {
 		return
 	}
+	value = Sanitize(value)
 	if len(note) > 0 && note[0] != "" {
 		// Pad the value only when a note follows so notes column-align and
 		// bare values carry no trailing whitespace.
-		value = padRight(value, 15) + "  " + r.style(r.dim, "· "+note[0])
+		value = padRight(value, 15) + "  " + r.style(r.dim, "· "+Sanitize(note[0]))
 	}
-	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(key, 26)), value)
+	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(Sanitize(key), 26)), value)
 }
 
 // Blank prints an empty separator line between logical sections.
@@ -532,7 +544,7 @@ func (r *Renderer) Warn(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+Sanitize(msg))
 }
 
 // AlwaysWarn writes a warning to stderr even in --json mode.
@@ -540,12 +552,12 @@ func (r *Renderer) AlwaysWarn(msg string) {
 	if r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+Sanitize(msg))
 }
 
 func (r *Renderer) Error(msg string) {
 	if r.json {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+Sanitize(msg))
 }

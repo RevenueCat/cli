@@ -72,16 +72,16 @@ func (r *Renderer) RenderCard(c Card) error {
 	emptyStyle := lipgloss.NewStyle().Faint(true).Italic(true)
 
 	if c.Title != "" {
-		fmt.Fprintln(r.stdout, r.style(StyleAccent, "▍ ")+r.style(titleStyle, c.Title))
+		fmt.Fprintln(r.stdout, r.style(StyleAccent, "▍ ")+r.style(titleStyle, Sanitize(c.Title)))
 	}
 	if c.Subtitle != "" {
-		fmt.Fprintln(r.stdout, "  "+r.style(subtitleStyle, c.Subtitle))
+		fmt.Fprintln(r.stdout, "  "+r.style(subtitleStyle, Sanitize(c.Subtitle)))
 	}
 
 	for _, s := range c.Sections {
 		fmt.Fprintln(r.stdout)
 		if s.Heading != "" {
-			fmt.Fprintln(r.stdout, r.style(headingStyle, s.Heading))
+			fmt.Fprintln(r.stdout, r.style(headingStyle, Sanitize(s.Heading)))
 		}
 		switch {
 		case len(s.Chips) > 0:
@@ -95,7 +95,7 @@ func (r *Renderer) RenderCard(c Card) error {
 			if msg == "" {
 				msg = "none"
 			}
-			fmt.Fprintln(r.stdout, r.style(emptyStyle, "  "+msg))
+			fmt.Fprintln(r.stdout, r.style(emptyStyle, "  "+Sanitize(msg)))
 		}
 	}
 	return nil
@@ -110,8 +110,9 @@ func (r *Renderer) writeChips(chips []Chip) {
 }
 
 func (r *Renderer) styleChip(c Chip) string {
+	label := Sanitize(c.Label)
 	if r.noColor {
-		return "[" + c.Label + "]"
+		return "[" + label + "]"
 	}
 	base := lipgloss.NewStyle().Padding(0, 1).Bold(true)
 	white := lipgloss.Color("15")
@@ -129,15 +130,20 @@ func (r *Renderer) styleChip(c Chip) string {
 	default:
 		base = base.Background(NeutralGray).Foreground(white)
 	}
-	return base.Render(c.Label)
+	return base.Render(label)
 }
 
 func (r *Renderer) writeCardTable(t CardTable) {
-	widths := make([]int, len(t.Columns))
-	for i, c := range t.Columns {
+	columns := sanitizeAll(t.Columns)
+	rows := make([][]string, len(t.Rows))
+	for i, row := range t.Rows {
+		rows[i] = sanitizeAll(row)
+	}
+	widths := make([]int, len(columns))
+	for i, c := range columns {
 		widths[i] = len(c)
 	}
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i >= len(widths) {
 				continue
@@ -149,14 +155,14 @@ func (r *Renderer) writeCardTable(t CardTable) {
 	}
 	headerStyle := lipgloss.NewStyle().Bold(true)
 	fmt.Fprint(r.stdout, "  ")
-	for i, c := range t.Columns {
+	for i, c := range columns {
 		if i > 0 {
 			fmt.Fprint(r.stdout, "  ")
 		}
 		fmt.Fprint(r.stdout, r.style(headerStyle, padRight(c, widths[i])))
 	}
 	fmt.Fprintln(r.stdout)
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		fmt.Fprint(r.stdout, "  ")
 		for i, cell := range row {
 			if i > 0 {
@@ -169,14 +175,16 @@ func (r *Renderer) writeCardTable(t CardTable) {
 }
 
 func (r *Renderer) writeLines(lines []CardLine) {
+	safe := make([]CardLine, len(lines))
 	keyWidth := 0
-	for _, l := range lines {
-		if len(l.Key) > keyWidth {
-			keyWidth = len(l.Key)
+	for i, l := range lines {
+		safe[i] = CardLine{Key: Sanitize(l.Key), Value: Sanitize(l.Value)}
+		if len(safe[i].Key) > keyWidth {
+			keyWidth = len(safe[i].Key)
 		}
 	}
 	keyStyle := lipgloss.NewStyle().Faint(true)
-	for _, l := range lines {
+	for _, l := range safe {
 		fmt.Fprintf(r.stdout, "  %s  %s\n", r.style(keyStyle, padRight(l.Key+":", keyWidth+1)), l.Value)
 	}
 }

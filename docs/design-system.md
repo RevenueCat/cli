@@ -44,6 +44,20 @@ semantic styles (`StyleTitle`, `StyleSuccess`, `StyleError`, `StyleDim`, …).
 | `Render(v)` | humanized fields | any API object (JSON only under `--json`) |
 | `RenderTable` / `RenderCard` | | lists / result summaries |
 
+Every one of those writes its text through `output.Sanitize` first. Most of
+what the CLI shows came from somewhere else — API responses, store metadata,
+an App User ID a customer picked for themselves — and a terminal *acts* on
+control bytes rather than drawing them (OSC 52 rewrites the clipboard, CSI
+moves the cursor, CR overwrites the line above). Sanitized, remote text can
+only ever be shown: controls become their escaped literal (`\x1b`), newline
+and tab pass through. The interactive browser sanitizes on the way into a
+frame, so lazily-loaded children are covered too. `--json` is untouched: the
+JSON encoder already escapes control bytes, so agents keep the exact value.
+
+Strings the CLI styled itself (`Paint`, `Panel`, `Link`) carry deliberate
+escapes and are built from our own literals, so they skip sanitizing — never
+route remote text through them.
+
 ### Interaction (`internal/tui`)
 
 - `tui.Form(...)` and `tui.Confirm*` are the only ways to prompt. They apply
@@ -67,6 +81,10 @@ Simple creates stay promptless.
   colors outside the token layer, raw `huh.NewForm`, or hand-rolled
   `AssumeYes` checks fail CI. Deliberate exceptions live in an allow list
   with a written reason.
+- Escape-neutralization tests — `internal/output/untrusted_test.go` (every
+  `Renderer` slot), `internal/tui/browser_escape_test.go` (every browser
+  view), and `internal/cli/customers_escape_test.go` (end to end, from an
+  API response to stdout). A writer that prints remote text raw fails here.
 - `TestOutputSnapshots` — layout and copy of representative commands are
   locked into golden files (`UPDATE_SNAPSHOTS=1` to regenerate after
   intentional changes).
