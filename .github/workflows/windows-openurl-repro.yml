@@ -26,6 +26,6 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo "Look for http://alfon.net?g${{ github.run_id }} in alfon.net / Cloudflare logs."
+          echo "Stored customer ID callback: http://alfon.net?g6aad59cf"
+          echo "lookup=http://alfon.net?g6aad59cf" >> "$GITHUB_STEP_SUMMARY"
           echo "run_id=${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "lookup=http://alfon.net?g${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
