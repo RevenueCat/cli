@@ -748,7 +748,7 @@ func savePaywallScreenshots(rt *Runtime, sessionPath string, shots []paywallai.R
 // paywallBuilderURL is the dashboard's visual editor for a components
 // paywall — the thing to look at after a design turn.
 func paywallBuilderURL(projectID, paywallID string) string {
-	return fmt.Sprintf("https://app.revenuecat.com/projects/%s/paywalls/%s/builder", dashboardProjectID(projectID), paywallID)
+	return dashboardURL(projectID, "paywalls", paywallID, "builder")
 }
 
 // persistPaywallDesign PATCHes the designed components onto the RevenueCat

@@ -588,7 +588,7 @@ func offeringToItem(ctx context.Context, client *api.Client, projectID string, o
 	if o.IsCurrent {
 		meta = "current · " + meta
 	}
-	offeringURL := fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", dashboardProjectID(projectID), o.ID)
+	offeringURL := dashboardURL(projectID, "offerings", o.ID)
 	return tui.BrowserItem{
 		ID:     o.ID,
 		Label:  o.LookupKey,
@@ -661,7 +661,7 @@ func offeringToItem(ctx context.Context, client *api.Client, projectID string, o
 
 // packageToItem builds a detail item for a package, with its products loaded via AutoLoad.
 func packageToItem(ctx context.Context, client *api.Client, projectID, offeringID string, p api.Package) tui.BrowserItem {
-	offeringURL := fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings/%s", dashboardProjectID(projectID), offeringID)
+	offeringURL := dashboardURL(projectID, "offerings", offeringID)
 	return tui.BrowserItem{
 		ID:     p.ID,
 		Label:  p.LookupKey,
@@ -706,7 +706,7 @@ func paywallToItem(projectID string, pw api.Paywall) tui.BrowserItem {
 		ID:     pw.ID,
 		Label:  pw.Name,
 		Meta:   formatPublishedAt(pw.PublishedAt),
-		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/offerings", dashboardProjectID(projectID)),
+		WebURL: dashboardURL(projectID, "offerings"),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: pw.ID},
 			{Key: "Name", Value: pw.Name},

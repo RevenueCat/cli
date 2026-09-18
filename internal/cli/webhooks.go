@@ -89,7 +89,7 @@ func webhookToItem(projectID string, w api.Webhook) tui.BrowserItem {
 		Label:  w.URL,
 		Meta:   w.Environment,
 		Row:    []string{w.ID, w.Name, w.URL, w.Environment},
-		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/integrations", dashboardProjectID(projectID)),
+		WebURL: dashboardURL(projectID, "integrations"),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: w.ID},
 			{Key: "Name", Value: w.Name},

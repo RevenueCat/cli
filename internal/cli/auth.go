@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"strings"
 	"time"
@@ -884,14 +883,7 @@ func finishLogin(ctx context.Context, rt *Runtime, _ *api.Client) error {
 }
 
 func openBrowser(url string) error {
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "darwin":
-		cmd = exec.Command("open", url)
-	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", "", url)
-	default:
-		cmd = exec.Command("xdg-open", url)
-	}
-	return cmd.Start()
+	// Route every browser open through tui.OpenURL (scheme check +
+	// platform-native opener) instead of spawning a shell here.
+	return tui.OpenURL(url)
 }

@@ -975,7 +975,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 	if country != "" {
 		metaParts = append(metaParts, country)
 	}
-	customerURL := fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), c.ID)
+	customerURL := dashboardURL(projectID, "customers", c.ID)
 	return tui.BrowserItem{
 		ID:     c.ID,
 		Label:  c.ID,
@@ -1142,7 +1142,7 @@ func subscriptionToItem(ctx context.Context, client *api.Client, projectID, cust
 		ID:     s.ID,
 		Label:  productID,
 		Meta:   string(s.Status),
-		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
+		WebURL: dashboardURL(projectID, "customers", customerID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: s.ID},
 			{Key: "Product", Value: productID},
@@ -1202,7 +1202,7 @@ func purchaseToItem(ctx context.Context, client *api.Client, projectID, customer
 		ID:     p.ID,
 		Label:  p.ProductID,
 		Meta:   string(p.Store),
-		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/customers/%s", dashboardProjectID(projectID), customerID),
+		WebURL: dashboardURL(projectID, "customers", customerID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: p.ID},
 			{Key: "Product", Value: p.ProductID},
