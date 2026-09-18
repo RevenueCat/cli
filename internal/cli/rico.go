@@ -216,7 +216,7 @@ func pickRicoConversation(ctx context.Context, rt *Runtime, client *rico.Client)
 	}
 	options := make([]huh.Option[string], len(items))
 	for i, item := range items {
-		options[i] = huh.NewOption(item.Label, item.ID)
+		options[i] = huh.NewOption(output.SanitizeLine(item.Label), item.ID)
 	}
 	var chosen string
 	selectField := huh.NewSelect[string]().
@@ -372,7 +372,7 @@ func (s *ricoSession) repl(ctx context.Context) error {
 			return nil
 		}
 		if err := s.turn(ctx, message); err != nil {
-			s.rt.Out.Error(err.Error())
+			s.rt.Out.Error(output.Sanitize(err.Error()))
 		}
 	}
 }
@@ -473,9 +473,9 @@ func (s *ricoSession) streamRun(ctx context.Context, input rico.RunAgentInput, r
 func (s *ricoSession) resolveInterrupts(interrupts []rico.Interrupt, result *ricoTurnResult, sink ricoSink) ([]rico.ResumeEntry, error) {
 	entries := make([]rico.ResumeEntry, 0, len(interrupts))
 	for _, interrupt := range interrupts {
-		label := interrupt.Message
+		label := output.SanitizeLine(interrupt.Message)
 		if label == "" {
-			label = interrupt.Reason
+			label = output.SanitizeLine(interrupt.Reason)
 		}
 		approved, err := sink.Approve(interrupt, label)
 		if err != nil {
@@ -507,7 +507,7 @@ func (s *ricoPlainSink) Delta(text string) {
 	if s.silent {
 		return
 	}
-	fmt.Print(text)
+	fmt.Print(output.Sanitize(text))
 	s.midLine = true
 }
 
@@ -523,7 +523,7 @@ func (s *ricoPlainSink) Tool(name string) {
 		return
 	}
 	s.endLine()
-	s.session.rt.Out.Info("⚙ " + name)
+	s.session.rt.Out.Info("⚙ " + output.SanitizeLine(name))
 }
 
 func (s *ricoPlainSink) Approve(interrupt rico.Interrupt, label string) (bool, error) {
@@ -606,15 +606,15 @@ scope to a single Project.`,
 			for _, message := range snapshot.Messages {
 				text := message.Text()
 				for _, call := range message.ToolCalls {
-					rt.Out.Info("⚙ " + call.Function.Name)
+					rt.Out.Info("⚙ " + output.SanitizeLine(call.Function.Name))
 				}
 				if text == "" {
 					continue
 				}
-				fmt.Printf("%s: %s\n", message.Role, text)
+				fmt.Printf("%s: %s\n", message.Role, output.Sanitize(text))
 			}
 			for _, interrupt := range snapshot.PendingInterrupts {
-				rt.Out.Warn("Pending approval: " + interrupt.Reason)
+				rt.Out.Warn("Pending approval: " + output.SanitizeLine(interrupt.Reason))
 			}
 			return nil
 		},

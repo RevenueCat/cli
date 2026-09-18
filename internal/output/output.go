@@ -11,6 +11,7 @@
 package output
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -149,9 +150,7 @@ func (r *Renderer) Render(v any) error {
 		if r.format != "" {
 			return r.renderJSONFiltered(env)
 		}
-		enc := json.NewEncoder(r.stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(env)
+		return encodeJSON(r.stdout, env)
 	}
 	if r.format != "" {
 		// --format without --json: warn on stderr, fall through to pretty.
@@ -166,9 +165,45 @@ func (r *Renderer) RenderJSON(v any) error {
 	if r.json {
 		return r.Render(v)
 	}
-	enc := json.NewEncoder(r.stdout)
+	return encodeJSON(r.stdout, v)
+}
+
+// encodeJSON writes v as indented JSON with C1 codepoints \u-escaped:
+// encoding/json escapes C0 controls but emits U+0080–U+009F as raw UTF-8
+// bytes, and JSON output frequently lands on a terminal.
+func encodeJSON(w io.Writer, v any) error {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
-	return enc.Encode(v)
+	if err := enc.Encode(v); err != nil {
+		return err
+	}
+	_, err := w.Write(escapeC1(buf.Bytes()))
+	return err
+}
+
+// EscapeC1JSON exposes escapeC1 for callers that stream raw JSON bodies to
+// stdout (rc api): JSON guarantees C0 is escaped on the wire, but C1 arrives
+// as raw UTF-8 bytes.
+func EscapeC1JSON(b []byte) []byte { return escapeC1(b) }
+
+// escapeC1 rewrites UTF-8-encoded C1 codepoints (0xC2 0x80–0x9F; in valid
+// UTF-8, 0xC2 only ever appears as that lead byte) as JSON \u escapes.
+func escapeC1(b []byte) []byte {
+	if bytes.IndexByte(b, 0xC2) < 0 {
+		return b
+	}
+	var out bytes.Buffer
+	out.Grow(len(b) + 16)
+	for i := 0; i < len(b); i++ {
+		if b[i] == 0xC2 && i+1 < len(b) && b[i+1] >= 0x80 && b[i+1] <= 0x9F {
+			fmt.Fprintf(&out, `\u%04x`, b[i+1])
+			i++
+			continue
+		}
+		out.WriteByte(b[i])
+	}
+	return out.Bytes()
 }
 
 // renderHuman is the human-mode fallback for structured results: aligned
@@ -182,7 +217,7 @@ func (r *Renderer) renderHuman(v any) error {
 	var m map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &m); err != nil {
 		// Not an object (array/scalar): print compactly.
-		fmt.Fprintln(r.stdout, humanValue(raw))
+		fmt.Fprintln(r.stdout, Sanitize(humanValue(raw)))
 		return nil
 	}
 	keys := humanKeyOrder(m)
@@ -193,7 +228,7 @@ func (r *Renderer) renderHuman(v any) error {
 		}
 	}
 	for _, k := range keys {
-		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(k, width)), humanFieldValue(k, m[k]))
+		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(SanitizeLine(k), width)), SanitizeLine(humanFieldValue(k, m[k])))
 	}
 	return nil
 }
@@ -290,7 +325,9 @@ func (r *Renderer) renderJSONFiltered(env any) error {
 		}
 		switch t := v.(type) {
 		case string:
-			fmt.Fprintln(r.stdout, t)
+			// Unmarshal decoded the API's \u escapes back into real control
+			// bytes; keep --format output to visible text like every other path.
+			fmt.Fprintln(r.stdout, Sanitize(t))
 		case nil:
 			// jq emits nil for `.missing`; skip rather than print "null".
 		default:
@@ -322,11 +359,18 @@ func (r *Renderer) RenderTable(t Table) error {
 		fmt.Fprintln(r.stderr, r.style(r.info, "• ")+"no results")
 		return nil
 	}
+	rows := make([][]string, len(t.Rows))
+	for ri, row := range t.Rows {
+		rows[ri] = make([]string, len(row))
+		for i, cell := range row {
+			rows[ri][i] = SanitizeLine(cell)
+		}
+	}
 	widths := make([]int, len(t.Columns))
 	for i, c := range t.Columns {
 		widths[i] = len(c)
 	}
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i >= len(widths) {
 				continue
@@ -344,7 +388,7 @@ func (r *Renderer) RenderTable(t Table) error {
 		fmt.Fprint(r.stdout, r.style(headerStyle, padRight(c, widths[i])))
 	}
 	fmt.Fprintln(r.stdout)
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i > 0 {
 				fmt.Fprint(r.stdout, "  ")
@@ -392,13 +436,16 @@ func (r *Renderer) Info(msg string) {
 // Supporting terminals make it clickable; others render the label text. This is
 // the one place the OSC 8 escape lives.
 func Hyperlink(styledLabel, url string) string {
-	return "\x1b]8;;" + url + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
+	// A control character in url would terminate the OSC 8 sequence early and
+	// leave the rest to the terminal.
+	return "\x1b]8;;" + Sanitize(url) + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
 }
 
 // LinkText renders a clickable hyperlink (OSC 8) with a custom label instead of
 // the raw URL, so long auth URLs don't dominate the output. With color off it
 // falls back to "label (url)" so the URL stays copyable.
 func (r *Renderer) LinkText(label, url string) string {
+	label, url = SanitizeLine(label), Sanitize(url)
 	if r.noColor {
 		return label + " (" + url + ")"
 	}
@@ -490,7 +537,7 @@ func (r *Renderer) Answer(key, value string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintf(r.stderr, "%s %s %s\n", r.style(r.success, "✓"), r.style(r.dim, padRight(key, 26)), value)
+	fmt.Fprintf(r.stderr, "%s %s %s\n", r.style(r.success, "✓"), r.style(r.dim, padRight(key, 26)), SanitizeLine(value))
 }
 
 // Plan renders the guided-command plan: a titled, numbered list of the
@@ -547,5 +594,5 @@ func (r *Renderer) Error(msg string) {
 	if r.json {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+Sanitize(msg))
 }

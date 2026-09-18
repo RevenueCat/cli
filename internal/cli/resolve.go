@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 
+	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -39,7 +40,7 @@ func requireID(rt *Runtime, arg, noun string, fetch func() ([]PickerItem, error)
 		return "", fmt.Errorf("no %ss found — pass an ID explicitly", noun)
 	}
 	if len(items) == 1 {
-		rt.Out.Info(fmt.Sprintf("Only one %s available: %s", noun, items[0].Label))
+		rt.Out.Info(fmt.Sprintf("Only one %s available: %s", noun, output.SanitizeLine(items[0].Label)))
 		return items[0].ID, nil
 	}
 	return selectID(rt, noun, items, "")
@@ -51,7 +52,7 @@ func requireID(rt *Runtime, arg, noun string, fetch func() ([]PickerItem, error)
 func selectID(rt *Runtime, noun string, items []PickerItem, defaultID string) (string, error) {
 	opts := make([]huh.Option[string], len(items))
 	for i, item := range items {
-		opts[i] = huh.NewOption(item.Label, item.ID)
+		opts[i] = huh.NewOption(output.SanitizeLine(item.Label), item.ID)
 	}
 	chosen := defaultID
 	sel := huh.NewSelect[string]().
