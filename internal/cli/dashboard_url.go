@@ -6,10 +6,7 @@ import (
 )
 
 // dashboardURL builds an app.revenuecat.com project URL from path segments,
-// strictly percent-encoding each one. Some segments (customer IDs) are
-// arbitrary free text, and these URLs are displayed and handed to the OS URL
-// opener, so every byte outside the RFC 3986 unreserved set is encoded —
-// url.PathEscape is not enough, since it passes sub-delims like `&` through.
+// percent-encoding each one.
 func dashboardURL(projectID string, segments ...string) string {
 	var b strings.Builder
 	b.WriteString("https://app.revenuecat.com/projects/")
@@ -21,6 +18,7 @@ func dashboardURL(projectID string, segments ...string) string {
 	return b.String()
 }
 
+// not url.PathEscape: it leaves sub-delims like `&` unencoded
 func escapePathSegment(s string) string {
 	var b strings.Builder
 	for i := 0; i < len(s); i++ {
