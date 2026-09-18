@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-// Sanitize renders terminal control sequences inert. Everything the CLI shows
-// a human passes through here first, because most of what it shows came from
-// somewhere else: API responses, store metadata, App User IDs a customer chose
-// for themselves. A terminal *acts* on those bytes rather than printing them —
-// OSC 52 rewrites the clipboard, CSI moves the cursor, CR overwrites the line
-// just printed — so an identifier is enough to drive the reader's terminal.
-// After this, remote text can only ever be shown.
+// Sanitize renders terminal control sequences inert. Every value the Renderer
+// and the interactive browser show passes through here first, because most of
+// what they show came from somewhere else: API responses, store metadata, App
+// User IDs a customer chose. A terminal *acts* on those bytes rather than
+// printing them — OSC 52 rewrites the clipboard, CSI moves the cursor, CR
+// overwrites the line just printed — so an identifier is enough to drive the
+// reader's terminal. After this, remote text can only ever be shown.
 //
 // Newline and tab survive: they move the cursor the same way ordinary text
 // does, and some payloads legitimately carry them. Every other C0/C1 control
