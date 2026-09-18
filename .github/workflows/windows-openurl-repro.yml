@@ -1,0 +1,30 @@
+name: windows-openurl-repro
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/windows-openurl-repro.yml
+      - scripts/repro_windows_openurl/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unpatched-cmd-start:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Reproduce v0.1.2 cmd /c start injection
+        run: go run ./scripts/repro_windows_openurl
+      - name: Point at alfon.net query
+        if: always()
+        shell: bash
+        run: |
+          echo "Look for http://alfon.net?g${{ github.run_id }} in alfon.net / Cloudflare logs."
+          echo "run_id=${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "lookup=http://alfon.net?g${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
