@@ -410,8 +410,9 @@ func Hyperlink(styledLabel, url string) string {
 // the raw URL, so long auth URLs don't dominate the output. With color off it
 // falls back to "label (url)" so the URL stays copyable.
 func (r *Renderer) LinkText(label, url string) string {
+	url = Sanitize(url)
 	if r.noColor {
-		return label + " (" + Sanitize(url) + ")"
+		return label + " (" + url + ")"
 	}
 	return Hyperlink(lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(label), url)
 }
@@ -420,8 +421,9 @@ func (r *Renderer) LinkText(label, url string) string {
 // back to the plain URL when color is off (our proxy for a dumb/non-interactive
 // terminal), so nothing leaks escape codes into piped or --no-color output.
 func (r *Renderer) Link(url string) string {
+	url = Sanitize(url)
 	if r.noColor {
-		return Sanitize(url)
+		return url
 	}
 	return Hyperlink(lipgloss.NewStyle().Foreground(BrandRed).Underline(true).Render(url), url)
 }
