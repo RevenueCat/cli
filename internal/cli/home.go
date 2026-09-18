@@ -107,7 +107,7 @@ func homePanel(rt *Runtime) string {
 	if rt.Config.ProjectID != "" {
 		lines = append(lines,
 			paint(output.ToneDim, "project "+rt.Config.ProjectID),
-			paint(output.ToneLink, "https://app.revenuecat.com/projects/"+dashboardProjectID(rt.Config.ProjectID)))
+			paint(output.ToneLink, dashboardURL(rt.Config.ProjectID)))
 	} else {
 		lines = append(lines, paint(output.ToneDim, "no project selected"))
 	}

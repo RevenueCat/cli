@@ -137,7 +137,7 @@ func newSetupGoogleCmd() *cobra.Command {
 					}
 					method = choice
 				}
-				if method == "open" && openBrowser(u) == nil {
+				if method == "open" && tui.OpenURL(u) == nil {
 					fl.Say("Opened your browser. Sign in with the right account.")
 				} else {
 					if clipboard.WriteAll(u) == nil {
@@ -351,7 +351,7 @@ func newSetupGoogleCmd() *cobra.Command {
 			if rt.Out.IsJSON() {
 				return rt.Out.Render(result)
 			}
-			uploadURL := "https://app.revenuecat.com/projects/" + rcProject + "/apps/" + chosenApp.ID
+			uploadURL := dashboardURL(rcProject, "apps", chosenApp.ID)
 			if result.CredentialUploaded {
 				fl.Outro("Google Play connected 🎉",
 					rt.Out.LinkText("Open your app in RevenueCat ↗", uploadURL),
@@ -410,7 +410,7 @@ func enableAPIsWithToS(ctx context.Context, rt *Runtime, ts oauth2.TokenSource, 
 		// noise, and if it landed on the wrong account the link above (with
 		// authuser) plus the explicit account name is the fix, not another tab.
 		if attempt == 0 && !noBrowser {
-			_ = openBrowser(acceptURL)
+			_ = tui.OpenURL(acceptURL)
 		}
 		ok, err := tui.ConfirmDefault(rt.Globals.NoInput, "Press Enter once you've accepted the terms to continue", true)
 		if err != nil {

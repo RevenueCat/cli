@@ -531,7 +531,7 @@ func appToItem(projectID string, a api.App) tui.BrowserItem {
 		Label:  a.Name,
 		Meta:   string(a.Type),
 		Row:    []string{a.ID, a.Name, string(a.Type), formatMillis(a.CreatedAt), appCredentialStatus(a)},
-		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/apps/%s", dashboardProjectID(projectID), a.ID),
+		WebURL: dashboardURL(projectID, "apps", a.ID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: a.ID},
 			{Key: "Name", Value: a.Name},

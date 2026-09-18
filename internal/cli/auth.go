@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"strings"
 	"time"
@@ -630,7 +629,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	rt.Out.Info("Opening browser for authorization…")
 	rt.Out.Info(fmt.Sprintf("If the browser doesn't open, visit:\n  %s", authURL))
 
-	_ = openBrowser(authURL)
+	_ = tui.OpenURL(authURL)
 
 	codeCh := make(chan string, 1)
 	errCh := make(chan error, 1)
@@ -881,17 +880,4 @@ func finishLogin(ctx context.Context, rt *Runtime, _ *api.Client) error {
 	return rt.Out.Render(map[string]any{
 		"profile": config.ProfileName(rt.Globals.Profile),
 	})
-}
-
-func openBrowser(url string) error {
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "darwin":
-		cmd = exec.Command("open", url)
-	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", "", url)
-	default:
-		cmd = exec.Command("xdg-open", url)
-	}
-	return cmd.Start()
 }

@@ -460,7 +460,7 @@ func entitlementToItem(ctx context.Context, client *api.Client, projectID string
 		Label:  label,
 		Meta:   e.DisplayName,
 		Row:    []string{e.ID, nonEmpty(e.LookupKey, e.ID), e.DisplayName},
-		WebURL: fmt.Sprintf("https://app.revenuecat.com/projects/%s/entitlements/%s", dashboardProjectID(projectID), e.ID),
+		WebURL: dashboardURL(projectID, "entitlements", e.ID),
 		Fields: []tui.BrowserField{
 			{Key: "ID", Value: e.ID},
 			{Key: "Lookup key", Value: e.LookupKey},

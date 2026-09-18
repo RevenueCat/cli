@@ -70,7 +70,7 @@ Prints the URL as well, so it can be copied or shared.`,
 			id := argAt(args, 1)
 			switch {
 			case strings.Contains(path, "{id}") && id != "":
-				path = strings.ReplaceAll(path, "{id}", id)
+				path = strings.ReplaceAll(path, "{id}", escapePathSegment(id))
 			case strings.Contains(path, "{id}"):
 				path = strings.TrimSuffix(strings.ReplaceAll(path, "{id}", ""), "/")
 			case id != "":

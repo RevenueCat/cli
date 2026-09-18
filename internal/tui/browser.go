@@ -3,8 +3,6 @@ package tui
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"runtime"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -97,18 +95,7 @@ func OpenURL(url string) error {
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		return fmt.Errorf("refusing to open non-http(s) URL: %q", url)
 	}
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "darwin":
-		cmd = exec.Command("open", url)
-	case "windows":
-		// The first quoted argument to `start` is the window title; pass an
-		// empty title so URLs with special characters open correctly.
-		cmd = exec.Command("cmd", "/c", "start", "", url)
-	default:
-		cmd = exec.Command("xdg-open", url)
-	}
-	return cmd.Start()
+	return openURLPlatform(url)
 }
 
 // ── frames ───────────────────────────────────────────────────────────────────
