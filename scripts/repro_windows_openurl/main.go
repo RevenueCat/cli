@@ -8,6 +8,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -52,7 +53,10 @@ func main() {
 	fmt.Printf("url=%s\n", url)
 	fmt.Printf("::notice::alfon.net query g%s\n", runID)
 
-	cmd := exec.Command("cmd", "/c", "start", "", url)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "cmd", "/c", "start", "", url)
 	cmd.Dir = cwd
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
