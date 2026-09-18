@@ -746,7 +746,7 @@ func (m *browser) viewDetail(f *bframe) string {
 	if f.item.ID != "" && f.item.ID != f.item.Label {
 		label = f.item.ID
 	}
-	sb.WriteString(m.renderHeader(label))
+	sb.WriteString(m.renderHeader(output.Sanitize(label)))
 	sb.WriteString("\n")
 
 	keyW := 0
@@ -759,8 +759,8 @@ func (m *browser) viewDetail(f *bframe) string {
 		if field.Value == "" {
 			continue
 		}
-		k := brPadRight(field.Key, keyW)
-		sb.WriteString("  " + brDim.Render(k) + "  " + field.Value + "\n")
+		k := brPadRight(output.Sanitize(field.Key), keyW)
+		sb.WriteString("  " + brDim.Render(k) + "  " + output.Sanitize(field.Value) + "\n")
 	}
 
 	slotIdx := 0
@@ -866,10 +866,13 @@ var (
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+// brTrunc caps a display value at maxLen runes. Values pass through
+// output.Sanitize on the way: everything shown here came from the API and must
+// render as visible characters only.
 func brTrunc(s string, maxLen int) string {
-	runes := []rune(s)
+	runes := []rune(output.Sanitize(s))
 	if maxLen <= 3 || len(runes) <= maxLen {
-		return s
+		return string(runes)
 	}
 	return string(runes[:maxLen-1]) + "…"
 }

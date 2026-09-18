@@ -182,7 +182,7 @@ func (r *Renderer) renderHuman(v any) error {
 	var m map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &m); err != nil {
 		// Not an object (array/scalar): print compactly.
-		fmt.Fprintln(r.stdout, humanValue(raw))
+		fmt.Fprintln(r.stdout, Sanitize(humanValue(raw)))
 		return nil
 	}
 	keys := humanKeyOrder(m)
@@ -193,7 +193,7 @@ func (r *Renderer) renderHuman(v any) error {
 		}
 	}
 	for _, k := range keys {
-		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(k, width)), humanFieldValue(k, m[k]))
+		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(Sanitize(k), width)), Sanitize(humanFieldValue(k, m[k])))
 	}
 	return nil
 }
@@ -322,11 +322,18 @@ func (r *Renderer) RenderTable(t Table) error {
 		fmt.Fprintln(r.stderr, r.style(r.info, "• ")+"no results")
 		return nil
 	}
+	rows := make([][]string, len(t.Rows))
+	for ri, row := range t.Rows {
+		rows[ri] = make([]string, len(row))
+		for i, cell := range row {
+			rows[ri][i] = Sanitize(cell)
+		}
+	}
 	widths := make([]int, len(t.Columns))
 	for i, c := range t.Columns {
 		widths[i] = len(c)
 	}
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i >= len(widths) {
 				continue
@@ -344,7 +351,7 @@ func (r *Renderer) RenderTable(t Table) error {
 		fmt.Fprint(r.stdout, r.style(headerStyle, padRight(c, widths[i])))
 	}
 	fmt.Fprintln(r.stdout)
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i > 0 {
 				fmt.Fprint(r.stdout, "  ")

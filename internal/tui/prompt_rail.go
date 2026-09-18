@@ -219,7 +219,7 @@ func (m selectModel) View() string {
 	b.WriteString(railSpacer() + "\n")
 	if m.done {
 		b.WriteString(railHead("◇", m.title) + "\n")
-		b.WriteString(railBody(prOKSty.Render("✓")+" "+m.opts[m.cursor].Label) + "\n")
+		b.WriteString(railBody(prOKSty.Render("✓")+" "+output.Sanitize(m.opts[m.cursor].Label)) + "\n")
 		return b.String()
 	}
 	b.WriteString(railHead("◆", m.title) + "\n")
@@ -228,9 +228,9 @@ func (m selectModel) View() string {
 	}
 	for i, o := range m.opts {
 		if i == m.cursor {
-			b.WriteString(railBody(prSelSty.Render("▸ "+o.Label)) + "\n")
+			b.WriteString(railBody(prSelSty.Render("▸ "+output.Sanitize(o.Label))) + "\n")
 		} else {
-			b.WriteString(railBody("  "+o.Label) + "\n")
+			b.WriteString(railBody("  "+output.Sanitize(o.Label)) + "\n")
 		}
 	}
 	return b.String()
