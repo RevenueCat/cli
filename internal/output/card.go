@@ -65,6 +65,7 @@ func (r *Renderer) RenderCard(c Card) error {
 	if r.json {
 		return r.Render(c.Raw)
 	}
+	c = sanitizeCard(c)
 
 	titleStyle := lipgloss.NewStyle().Bold(true)
 	subtitleStyle := StyleDim
@@ -99,6 +100,49 @@ func (r *Renderer) RenderCard(c Card) error {
 		}
 	}
 	return nil
+}
+
+// sanitizeCard runs every displayed card value through SanitizeLine. Raw is
+// left alone — it's the --json payload and never printed here.
+func sanitizeCard(c Card) Card {
+	c.Title = SanitizeLine(c.Title)
+	c.Subtitle = SanitizeLine(c.Subtitle)
+	sections := make([]CardSection, len(c.Sections))
+	for i, s := range c.Sections {
+		s.Heading = SanitizeLine(s.Heading)
+		if len(s.Chips) > 0 {
+			chips := make([]Chip, len(s.Chips))
+			for j, ch := range s.Chips {
+				ch.Label = SanitizeLine(ch.Label)
+				chips[j] = ch
+			}
+			s.Chips = chips
+		}
+		if s.Table != nil {
+			t := *s.Table
+			rows := make([][]string, len(t.Rows))
+			for ri, row := range t.Rows {
+				rows[ri] = make([]string, len(row))
+				for ci, cell := range row {
+					rows[ri][ci] = SanitizeLine(cell)
+				}
+			}
+			t.Rows = rows
+			s.Table = &t
+		}
+		if len(s.Lines) > 0 {
+			lines := make([]CardLine, len(s.Lines))
+			for j, l := range s.Lines {
+				l.Key = SanitizeLine(l.Key)
+				l.Value = SanitizeLine(l.Value)
+				lines[j] = l
+			}
+			s.Lines = lines
+		}
+		sections[i] = s
+	}
+	c.Sections = sections
+	return c
 }
 
 func (r *Renderer) writeChips(chips []Chip) {

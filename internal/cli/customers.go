@@ -575,7 +575,7 @@ func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
 	const noDefault = "__no_default__"
 	projectOpts := make([]huh.Option[string], len(page.Items))
 	for i, p := range page.Items {
-		projectOpts[i] = huh.NewOption(fmt.Sprintf("%s  (%s)", p.Name, p.ID), p.ID)
+		projectOpts[i] = huh.NewOption(output.SanitizeLine(fmt.Sprintf("%s  (%s)", p.Name, p.ID)), p.ID)
 	}
 	allOpts := append([]huh.Option[string]{
 		huh.NewOption("Ask me every time  (don't save a default)", noDefault),
@@ -672,7 +672,7 @@ pass --json for machine-readable output or --no-input to disable the browser.`,
 				return err
 			}
 			if page.NextPage != "" && !rt.Globals.JSON {
-				rt.Out.Info(fmt.Sprintf("more results — pass --cursor %s for the next page", lastID(page.Items)))
+				rt.Out.Info("more results — pass --cursor " + output.SanitizeLine(lastID(page.Items)) + " for the next page")
 			}
 			return nil
 		},

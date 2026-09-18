@@ -10,7 +10,7 @@ func TestSanitize(t *testing.T) {
 	cases := map[string]string{
 		"plain-id_1.2":                   "plain-id_1.2",
 		"keep\nnewlines\tand tabs":       "keep\nnewlines\tand tabs",
-		"esc\x1b]52;c;UkNCQg==\x07seq":   "esc]52;c;UkNCQg==seq",
+		"osc\x1b]0;title\x07seq":         "osc]0;titleseq",
 		"csi\x1b[31mred\x1b[0m":          "csi[31mred[0m",
 		"bell\x07 backspace\x08 del\x7f": "bell backspace del",
 		"c1\u0085dev\u009bice\u0090str":  "c1devicestr",
@@ -25,13 +25,26 @@ func TestSanitize(t *testing.T) {
 	}
 }
 
+func TestSanitizeLine(t *testing.T) {
+	cases := map[string]string{
+		"one line":            "one line",
+		"two\nlines\tand tab": "two lines and tab",
+		"ctrl\x1b[2Jhere":     "ctrl[2Jhere",
+	}
+	for in, want := range cases {
+		if got := SanitizeLine(in); got != want {
+			t.Errorf("SanitizeLine(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestRenderTable_ValuesRenderAsVisibleText(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	r := NewRenderer(&out, &errBuf, false, true, false, "")
 	err := r.RenderTable(Table{
 		Columns: []string{"ID", "NAME"},
 		Rows: [][]string{
-			{"cus_\x1b]52;c;UkNCQg==\x07x", "a\rb"},
+			{"id_\x1b]0;title\x07x", "a\rb\nc"},
 		},
 	})
 	if err != nil {
@@ -42,11 +55,31 @@ func TestRenderTable_ValuesRenderAsVisibleText(t *testing.T) {
 	}
 }
 
+func TestRenderCard_ValuesRenderAsVisibleText(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	r := NewRenderer(&out, &errBuf, false, true, false, "")
+	err := r.RenderCard(Card{
+		Title:    "id_\x1b]0;title\x07x",
+		Subtitle: "sub\x1b[2J",
+		Sections: []CardSection{
+			{Heading: "chips\x07", Chips: []Chip{{Label: "ent\x1b[31m"}}},
+			{Heading: "table", Table: &CardTable{Columns: []string{"A"}, Rows: [][]string{{"v\x1b[2J"}}}},
+			{Heading: "lines", Lines: []CardLine{{Key: "k\x1b", Value: "v\x07"}}},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s := out.String(); strings.ContainsAny(s, "\x1b\x07") {
+		t.Errorf("card output contains raw control bytes: %q", s)
+	}
+}
+
 func TestRenderHuman_ValuesRenderAsVisibleText(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	r := NewRenderer(&out, &errBuf, false, true, false, "")
 	err := r.Render(map[string]any{
-		"id":           "cus_\x1b]52;c;UkNCQg==\x07x",
+		"id":           "id_\x1b]0;title\x07x",
 		"na\x1bme_key": "value\x07",
 	})
 	if err != nil {
@@ -57,17 +90,26 @@ func TestRenderHuman_ValuesRenderAsVisibleText(t *testing.T) {
 	}
 }
 
+// JSON output must stay losslessly escaped rather than stripped — including C1
+// codepoints, which encoding/json would otherwise emit as raw UTF-8 bytes.
 func TestRenderJSON_LeavesValuesEncoded(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	r := NewRenderer(&out, &errBuf, true, true, false, "")
-	if err := r.Render(map[string]any{"id": "a\x1bb"}); err != nil {
+	if err := r.Render(map[string]any{"id": "a\x1bb\u0085c"}); err != nil {
 		t.Fatal(err)
 	}
 	s := out.String()
-	if strings.Contains(s, "\x1b") {
-		t.Errorf("json output contains a raw escape byte: %q", s)
+	if strings.Contains(s, "\x1b") || strings.Contains(s, "\u0085") {
+		t.Errorf("json output contains a raw control byte: %q", s)
 	}
-	if !strings.Contains(s, `\u001b`) {
+	if !strings.Contains(s, `\u001b`) || !strings.Contains(s, `\u0085`) {
 		t.Errorf("json output should keep the value losslessly escaped, got %q", s)
+	}
+}
+
+func TestHyperlink_URLCannotTerminateSequence(t *testing.T) {
+	got := Hyperlink("label", "https://example.com/\x1b\\x\x07")
+	if strings.Count(got, "\x1b]8;;") != 2 || strings.Contains(got, "\x07") {
+		t.Errorf("hyperlink URL broke out of the OSC 8 sequence: %q", got)
 	}
 }

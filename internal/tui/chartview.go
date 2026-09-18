@@ -439,7 +439,7 @@ func (m *chartApp) View() string {
 	sb.WriteString("\n")
 
 	if m.fetchErr != nil && !m.loading {
-		sb.WriteString(fmt.Sprintf("  error: %v\n", m.fetchErr))
+		sb.WriteString("  error: " + output.Sanitize(m.fetchErr.Error()) + "\n")
 	} else {
 		if m.chartTypeIdx == 0 {
 			sb.WriteString(m.buildBarView())
@@ -535,7 +535,7 @@ func newChartApp(
 		bars:            bars,
 		maxVal:          maxVal,
 		unit:            unit,
-		title:           data.DisplayName,
+		title:           output.SanitizeLine(data.DisplayName),
 		fetchFn:         fetchFn,
 		noColor:         noColor,
 		completeStyle:   completeStyle,
