@@ -393,16 +393,15 @@ func (m *chatModel) renderTranscript() string {
 func (m *chatModel) renderEntry(entry ChatEntry) string {
 	// Transcript text is untrusted (assistant/server-composed, and it quotes
 	// API data); the markdown renderer passes control characters through.
-	entry.Text = output.Sanitize(entry.Text)
 	switch entry.Role {
 	case ChatUser:
-		return "\n" + chatUserStyle.Render("❯ ") + entry.Text + "\n"
+		return "\n" + chatUserStyle.Render("❯ ") + output.Sanitize(entry.Text) + "\n"
 	case ChatTool:
 		return chatToolStyle.Render("  ⚙ "+output.SanitizeLine(entry.Text)) + "\n"
 	case ChatNotice:
 		return chatNoticeStyle.Render("  "+output.SanitizeLine(entry.Text)) + "\n"
 	default: // assistant
-		text := entry.Text
+		text := output.Sanitize(entry.Text)
 		if m.cfg.RelativeLinkBase != "" {
 			text = absolutizeLinks(text, m.cfg.RelativeLinkBase)
 		}

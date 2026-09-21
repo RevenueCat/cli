@@ -178,18 +178,14 @@ func encodeJSON(w io.Writer, v any) error {
 	if err := enc.Encode(v); err != nil {
 		return err
 	}
-	_, err := w.Write(escapeC1(buf.Bytes()))
+	_, err := w.Write(EscapeC1JSON(buf.Bytes()))
 	return err
 }
 
-// EscapeC1JSON exposes escapeC1 for callers that stream raw JSON bodies to
-// stdout (rc api): JSON guarantees C0 is escaped on the wire, but C1 arrives
-// as raw UTF-8 bytes.
-func EscapeC1JSON(b []byte) []byte { return escapeC1(b) }
-
-// escapeC1 rewrites UTF-8-encoded C1 codepoints (0xC2 0x80–0x9F; in valid
-// UTF-8, 0xC2 only ever appears as that lead byte) as JSON \u escapes.
-func escapeC1(b []byte) []byte {
+// EscapeC1JSON rewrites UTF-8-encoded C1 codepoints (0xC2 0x80–0x9F; in valid
+// UTF-8, 0xC2 only ever appears as that lead byte) as JSON \u escapes:
+// encoding/json escapes C0 on the wire but leaves C1 as raw bytes.
+func EscapeC1JSON(b []byte) []byte {
 	if bytes.IndexByte(b, 0xC2) < 0 {
 		return b
 	}

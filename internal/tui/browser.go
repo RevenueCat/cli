@@ -675,7 +675,7 @@ func (m *browser) viewTable(f *bframe) string {
 			if j > 0 {
 				row.WriteString("  ")
 			}
-			row.WriteString(brTrunc(brPadRight(output.SanitizeLine(cell), colW[j]), colW[j]))
+			row.WriteString(brPadRight(brTrunc(cell, colW[j]), colW[j]))
 		}
 		rowStr := row.String()
 		if i == f.cursor {
@@ -818,7 +818,7 @@ func (m *browser) viewDetail(f *bframe) string {
 					if i > 0 {
 						cells.WriteString("  ")
 					}
-					cells.WriteString(brTrunc(brPadRight(output.SanitizeLine(cell), colW[i]), colW[i]))
+					cells.WriteString(brPadRight(brTrunc(cell, colW[i]), colW[i]))
 				}
 				cellStr := cells.String()
 
