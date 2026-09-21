@@ -10,35 +10,24 @@ import (
 // and must render as visible characters only — they must never be able to move
 // the cursor or address the terminal.
 func Sanitize(s string) string {
-	if !strings.ContainsFunc(s, isControlRune) {
-		return s
-	}
-	var b strings.Builder
-	b.Grow(len(s))
-	for _, r := range s {
-		if !isControlRune(r) {
-			b.WriteRune(r)
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) && r != '\n' && r != '\t' {
+			return -1
 		}
-	}
-	return b.String()
-}
-
-// unicode.IsControl is exactly the Cc category: C0, DEL, and C1.
-func isControlRune(r rune) bool {
-	return unicode.IsControl(r) && r != '\n' && r != '\t'
+		return r
+	}, s)
 }
 
 // SanitizeLine is Sanitize for single-line contexts — table cells, labels,
 // breadcrumbs, chips — where a newline would fake extra rows and a tab would
 // shift columns; both collapse to a space.
 func SanitizeLine(s string) string {
-	s = Sanitize(s)
-	if !strings.ContainsAny(s, "\n\t") {
-		return s
-	}
 	return strings.Map(func(r rune) rune {
-		if r == '\n' || r == '\t' {
+		switch {
+		case r == '\n' || r == '\t':
 			return ' '
+		case unicode.IsControl(r):
+			return -1
 		}
 		return r
 	}, s)
