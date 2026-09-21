@@ -65,24 +65,22 @@ func (r *Renderer) RenderCard(c Card) error {
 	if r.json {
 		return r.Render(c.Raw)
 	}
-	c = sanitizeCard(c)
-
 	titleStyle := lipgloss.NewStyle().Bold(true)
 	subtitleStyle := StyleDim
 	headingStyle := lipgloss.NewStyle().Foreground(BrandRed).Bold(true)
 	emptyStyle := lipgloss.NewStyle().Faint(true).Italic(true)
 
 	if c.Title != "" {
-		fmt.Fprintln(r.stdout, r.style(StyleAccent, "▍ ")+r.style(titleStyle, c.Title))
+		fmt.Fprintln(r.stdout, r.style(StyleAccent, "▍ ")+r.style(titleStyle, SanitizeLine(c.Title)))
 	}
 	if c.Subtitle != "" {
-		fmt.Fprintln(r.stdout, "  "+r.style(subtitleStyle, c.Subtitle))
+		fmt.Fprintln(r.stdout, "  "+r.style(subtitleStyle, SanitizeLine(c.Subtitle)))
 	}
 
 	for _, s := range c.Sections {
 		fmt.Fprintln(r.stdout)
 		if s.Heading != "" {
-			fmt.Fprintln(r.stdout, r.style(headingStyle, s.Heading))
+			fmt.Fprintln(r.stdout, r.style(headingStyle, SanitizeLine(s.Heading)))
 		}
 		switch {
 		case len(s.Chips) > 0:
@@ -102,49 +100,6 @@ func (r *Renderer) RenderCard(c Card) error {
 	return nil
 }
 
-// sanitizeCard runs every displayed card value through SanitizeLine. Raw is
-// left alone — it's the --json payload and never printed here.
-func sanitizeCard(c Card) Card {
-	c.Title = SanitizeLine(c.Title)
-	c.Subtitle = SanitizeLine(c.Subtitle)
-	sections := make([]CardSection, len(c.Sections))
-	for i, s := range c.Sections {
-		s.Heading = SanitizeLine(s.Heading)
-		if len(s.Chips) > 0 {
-			chips := make([]Chip, len(s.Chips))
-			for j, ch := range s.Chips {
-				ch.Label = SanitizeLine(ch.Label)
-				chips[j] = ch
-			}
-			s.Chips = chips
-		}
-		if s.Table != nil {
-			t := *s.Table
-			rows := make([][]string, len(t.Rows))
-			for ri, row := range t.Rows {
-				rows[ri] = make([]string, len(row))
-				for ci, cell := range row {
-					rows[ri][ci] = SanitizeLine(cell)
-				}
-			}
-			t.Rows = rows
-			s.Table = &t
-		}
-		if len(s.Lines) > 0 {
-			lines := make([]CardLine, len(s.Lines))
-			for j, l := range s.Lines {
-				l.Key = SanitizeLine(l.Key)
-				l.Value = SanitizeLine(l.Value)
-				lines[j] = l
-			}
-			s.Lines = lines
-		}
-		sections[i] = s
-	}
-	c.Sections = sections
-	return c
-}
-
 func (r *Renderer) writeChips(chips []Chip) {
 	var parts []string
 	for _, c := range chips {
@@ -154,6 +109,7 @@ func (r *Renderer) writeChips(chips []Chip) {
 }
 
 func (r *Renderer) styleChip(c Chip) string {
+	c.Label = SanitizeLine(c.Label)
 	if r.noColor {
 		return "[" + c.Label + "]"
 	}
@@ -177,11 +133,19 @@ func (r *Renderer) styleChip(c Chip) string {
 }
 
 func (r *Renderer) writeCardTable(t CardTable) {
+	// Sanitize before measuring so padding is computed on what actually prints.
+	rows := make([][]string, len(t.Rows))
+	for i, row := range t.Rows {
+		rows[i] = make([]string, len(row))
+		for j, cell := range row {
+			rows[i][j] = SanitizeLine(cell)
+		}
+	}
 	widths := make([]int, len(t.Columns))
 	for i, c := range t.Columns {
 		widths[i] = len(c)
 	}
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i >= len(widths) {
 				continue
@@ -200,7 +164,7 @@ func (r *Renderer) writeCardTable(t CardTable) {
 		fmt.Fprint(r.stdout, r.style(headerStyle, padRight(c, widths[i])))
 	}
 	fmt.Fprintln(r.stdout)
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		fmt.Fprint(r.stdout, "  ")
 		for i, cell := range row {
 			if i > 0 {
@@ -215,12 +179,12 @@ func (r *Renderer) writeCardTable(t CardTable) {
 func (r *Renderer) writeLines(lines []CardLine) {
 	keyWidth := 0
 	for _, l := range lines {
-		if len(l.Key) > keyWidth {
-			keyWidth = len(l.Key)
+		if k := len(SanitizeLine(l.Key)); k > keyWidth {
+			keyWidth = k
 		}
 	}
 	keyStyle := lipgloss.NewStyle().Faint(true)
 	for _, l := range lines {
-		fmt.Fprintf(r.stdout, "  %s  %s\n", r.style(keyStyle, padRight(l.Key+":", keyWidth+1)), l.Value)
+		fmt.Fprintf(r.stdout, "  %s  %s\n", r.style(keyStyle, padRight(SanitizeLine(l.Key)+":", keyWidth+1)), SanitizeLine(l.Value))
 	}
 }
