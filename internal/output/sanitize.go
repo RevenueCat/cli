@@ -1,6 +1,9 @@
 package output
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 // Sanitize strips control characters (C0 except \n and \t, DEL, and C1) from a
 // value before it is rendered as human output. API values are arbitrary text
@@ -20,11 +23,9 @@ func Sanitize(s string) string {
 	return b.String()
 }
 
+// unicode.IsControl is exactly the Cc category: C0, DEL, and C1.
 func isControlRune(r rune) bool {
-	if r == '\n' || r == '\t' {
-		return false
-	}
-	return r < 0x20 || r == 0x7F || (r >= 0x80 && r <= 0x9F)
+	return unicode.IsControl(r) && r != '\n' && r != '\t'
 }
 
 // SanitizeLine is Sanitize for single-line contexts — table cells, labels,
