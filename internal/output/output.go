@@ -418,18 +418,20 @@ func spaces(n int) string {
 	return string(b)
 }
 
+// Message methods sanitize their text: call sites routinely interpolate API
+// values, and stderr is still a terminal.
 func (r *Renderer) Success(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.success, "✓ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.success, "✓ ")+Sanitize(msg))
 }
 
 func (r *Renderer) Info(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+Sanitize(msg))
 }
 
 // Hyperlink wraps styledLabel in an OSC 8 terminal hyperlink pointing at url.
@@ -477,7 +479,7 @@ func (r *Renderer) Hint(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.dim, "  "+msg))
+	fmt.Fprintln(r.stderr, r.style(r.dim, "  "+Sanitize(msg)))
 }
 
 // Title starts a visually distinct section: a brand-colored bar plus a bold
@@ -487,7 +489,7 @@ func (r *Renderer) Title(msg string) {
 		return
 	}
 	fmt.Fprintln(r.stderr)
-	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
+	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, SanitizeLine(msg)))
 }
 
 // Lead is the orienting sentence(s) under a Title: what this flow is for
@@ -564,7 +566,7 @@ func (r *Renderer) Field(key, value string, note ...string) {
 		// bare values carry no trailing whitespace.
 		value = padRight(value, 15) + "  " + r.style(r.dim, "· "+note[0])
 	}
-	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(key, 26)), value)
+	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(SanitizeLine(key), 26)), SanitizeLine(value))
 }
 
 // Blank prints an empty separator line between logical sections.
@@ -579,7 +581,7 @@ func (r *Renderer) Warn(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+Sanitize(msg))
 }
 
 // AlwaysWarn writes a warning to stderr even in --json mode.
@@ -587,7 +589,7 @@ func (r *Renderer) AlwaysWarn(msg string) {
 	if r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+Sanitize(msg))
 }
 
 func (r *Renderer) Error(msg string) {

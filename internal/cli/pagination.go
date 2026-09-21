@@ -4,7 +4,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
-	"github.com/revenuecat/cli/internal/output"
 )
 
 // addListPaginationFlags binds --limit / --cursor.
@@ -19,6 +18,6 @@ func hintMoreResults[T any](rt *Runtime, page *api.Page[T]) {
 		return
 	}
 	if cursor := page.NextCursor(); cursor != "" {
-		rt.Out.Info("more results — pass --cursor " + output.SanitizeLine(cursor) + " for the next page")
+		rt.Out.Info("more results — pass --cursor " + cursor + " for the next page")
 	}
 }

@@ -672,7 +672,7 @@ pass --json for machine-readable output or --no-input to disable the browser.`,
 				return err
 			}
 			if page.NextPage != "" && !rt.Globals.JSON {
-				rt.Out.Info("more results — pass --cursor " + output.SanitizeLine(lastID(page.Items)) + " for the next page")
+				rt.Out.Info("more results — pass --cursor " + lastID(page.Items) + " for the next page")
 			}
 			return nil
 		},

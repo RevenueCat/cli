@@ -59,6 +59,31 @@ func TestDesignSystemBoundaries(t *testing.T) {
 			useThis: "use confirmOrAbort(rt, msg) so --yes/--no-input behave uniformly",
 		},
 		{
+			// API values must reach a terminal only through the output
+			// renderer / tui components, which keep them to visible text.
+			// A direct print of a decoded API string bypasses that.
+			name:   "terminal writes only through the renderer",
+			needle: "fmt.Print",
+			roots:  []string{"internal/output", "internal/tui"},
+			allow: map[string]string{
+				"rico.go":  "streaming sink; text passes output.Sanitize at the call site",
+				"scrub.go": "testdata generator, not shipped output",
+			},
+			useThis: "use rt.Out (Render*/Info/Warn/...) — or sanitize explicitly and add an allow entry",
+		},
+		{
+			name:   "no raw writes to the process streams",
+			needle: "fmt.Fprintln(os.Std",
+			roots:  []string{"internal/output", "internal/tui"},
+			allow: map[string]string{
+				"run.go":          "top-level error printer; sanitizes explicitly",
+				"rico.go":         "repl prompt glyphs; no API data",
+				"scrub.go":        "testdata generator, not shipped output",
+				"setup_google.go": "JSON-mode sign-in URL fallback; locally composed URL",
+			},
+			useThis: "use rt.Out (Render*/Info/Warn/...) — or sanitize explicitly and add an allow entry",
+		},
+		{
 			name:   "prompt-gate only through rt.CanPrompt",
 			needle: "tui.IsInteractive(",
 			roots:  []string{"internal/tui"},

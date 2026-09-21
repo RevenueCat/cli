@@ -372,7 +372,7 @@ func (s *ricoSession) repl(ctx context.Context) error {
 			return nil
 		}
 		if err := s.turn(ctx, message); err != nil {
-			s.rt.Out.Error(output.Sanitize(err.Error()))
+			s.rt.Out.Error(err.Error())
 		}
 	}
 }
@@ -523,7 +523,7 @@ func (s *ricoPlainSink) Tool(name string) {
 		return
 	}
 	s.endLine()
-	s.session.rt.Out.Info("⚙ " + output.SanitizeLine(name))
+	s.session.rt.Out.Info("⚙ " + name)
 }
 
 func (s *ricoPlainSink) Approve(interrupt rico.Interrupt, label string) (bool, error) {
@@ -606,7 +606,7 @@ scope to a single Project.`,
 			for _, message := range snapshot.Messages {
 				text := message.Text()
 				for _, call := range message.ToolCalls {
-					rt.Out.Info("⚙ " + output.SanitizeLine(call.Function.Name))
+					rt.Out.Info("⚙ " + call.Function.Name)
 				}
 				if text == "" {
 					continue
@@ -614,7 +614,7 @@ scope to a single Project.`,
 				fmt.Printf("%s: %s\n", message.Role, output.Sanitize(text))
 			}
 			for _, interrupt := range snapshot.PendingInterrupts {
-				rt.Out.Warn("Pending approval: " + output.SanitizeLine(interrupt.Reason))
+				rt.Out.Warn("Pending approval: " + interrupt.Reason)
 			}
 			return nil
 		},
