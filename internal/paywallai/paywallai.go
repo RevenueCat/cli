@@ -49,8 +49,11 @@ type InputAttachment struct {
 // EditorRequest is the POST /editor/v1/stream body. UIConfig, SessionItems,
 // and AppContext are opaque server round-trips.
 type EditorRequest struct {
-	ProjectID                string            `json:"project_id"`
-	PaywallID                string            `json:"paywall_id"`
+	ProjectID string `json:"project_id"`
+	PaywallID string `json:"paywall_id"`
+	// StepID selects a specific screen from PaywallID's graph to edit;
+	// omitted, the editor falls back to the draft purchase screen.
+	StepID                   *string           `json:"step_id,omitempty"`
 	Revision                 *int              `json:"revision"`
 	SessionID                string            `json:"session_id,omitempty"`
 	Paywall                  PaywallData       `json:"paywall"`
