@@ -108,8 +108,42 @@ func TestRenderJSON_LeavesValuesEncoded(t *testing.T) {
 }
 
 func TestHyperlink_URLCannotTerminateSequence(t *testing.T) {
-	got := Hyperlink("label", "https://example.com/\x1b\\x\x07")
-	if strings.Count(got, "\x1b]8;;") != 2 || strings.Contains(got, "\x07") {
+	got := Hyperlink("label", "https://example.com/\x1b\\x\x07a\nb")
+	if strings.Count(got, "\x1b]8;;") != 2 || strings.ContainsAny(got, "\x07\n") {
 		t.Errorf("hyperlink URL broke out of the OSC 8 sequence: %q", got)
+	}
+}
+
+// The note is styled after sanitizing; sanitizing the composed string would
+// strip the styling itself.
+func TestField_SanitizesValueAndNoteSeparately(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	r := NewRenderer(&out, &errBuf, false, true, false, "")
+	r.Field("k\x1bey", "va\x07lue", "no\x1b[2Jte")
+	s := errBuf.String()
+	if strings.ContainsAny(s, "\x1b\x07") {
+		t.Errorf("field output contains raw control bytes: %q", s)
+	}
+	if !strings.Contains(s, "value") || !strings.Contains(s, "no[2Jte") {
+		t.Errorf("field output lost its text: %q", s)
+	}
+}
+
+func TestRenderFormat_EscapesControlBytes(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	r := NewRenderer(&out, &errBuf, true, true, false, ".data.items[]")
+	err := r.Render(map[string]any{"items": []any{
+		"str\x1bing\u0085val",
+		map[string]any{"id": "ob\u0085ject"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	if strings.Contains(s, "\x1b") || strings.Contains(s, "\u0085") {
+		t.Errorf("--format output contains raw control bytes: %q", s)
+	}
+	if !strings.Contains(s, `\u0085`) {
+		t.Errorf("--format JSON results should keep C1 escaped, got %q", s)
 	}
 }

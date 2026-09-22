@@ -331,7 +331,7 @@ func (r *Renderer) renderJSONFiltered(env any) error {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(r.stdout, string(b))
+			fmt.Fprintln(r.stdout, string(EscapeC1JSON(b)))
 		}
 	}
 }
@@ -434,16 +434,16 @@ func (r *Renderer) Info(msg string) {
 // Supporting terminals make it clickable; others render the label text. This is
 // the one place the OSC 8 escape lives.
 func Hyperlink(styledLabel, url string) string {
-	// A control character in url would terminate the OSC 8 sequence early and
-	// leave the rest to the terminal.
-	return "\x1b]8;;" + Sanitize(url) + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
+	// A control character — including a newline — in url would terminate the
+	// OSC 8 sequence early and leave the rest to the terminal.
+	return "\x1b]8;;" + SanitizeLine(url) + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
 }
 
 // LinkText renders a clickable hyperlink (OSC 8) with a custom label instead of
 // the raw URL, so long auth URLs don't dominate the output. With color off it
 // falls back to "label (url)" so the URL stays copyable.
 func (r *Renderer) LinkText(label, url string) string {
-	label, url = SanitizeLine(label), Sanitize(url)
+	label, url = SanitizeLine(label), SanitizeLine(url)
 	if r.noColor {
 		return label + " (" + url + ")"
 	}
@@ -557,12 +557,15 @@ func (r *Renderer) Field(key, value string, note ...string) {
 	if r.json || r.quiet {
 		return
 	}
+	// Sanitize before composing: the note is styled below, and sanitizing the
+	// finished string would strip our own ANSI codes.
+	value = SanitizeLine(value)
 	if len(note) > 0 && note[0] != "" {
 		// Pad the value only when a note follows so notes column-align and
 		// bare values carry no trailing whitespace.
-		value = padRight(value, 15) + "  " + r.style(r.dim, "· "+note[0])
+		value = padRight(value, 15) + "  " + r.style(r.dim, "· "+SanitizeLine(note[0]))
 	}
-	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(SanitizeLine(key), 26)), SanitizeLine(value))
+	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(SanitizeLine(key), 26)), value)
 }
 
 // Blank prints an empty separator line between logical sections.
