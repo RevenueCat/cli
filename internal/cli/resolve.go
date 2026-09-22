@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 
+	"github.com/revenuecat/cli/internal/output"
 	"github.com/revenuecat/cli/internal/tui"
 )
 
@@ -51,7 +52,7 @@ func requireID(rt *Runtime, arg, noun string, fetch func() ([]PickerItem, error)
 func selectID(rt *Runtime, noun string, items []PickerItem, defaultID string) (string, error) {
 	opts := make([]huh.Option[string], len(items))
 	for i, item := range items {
-		opts[i] = huh.NewOption(item.Label, item.ID)
+		opts[i] = huh.NewOption(output.SanitizeLine(item.Label), item.ID)
 	}
 	chosen := defaultID
 	sel := huh.NewSelect[string]().

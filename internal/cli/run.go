@@ -43,7 +43,7 @@ func Run(version string) int {
 	if jsonMode {
 		writeJSONError(os.Stderr, err)
 	} else {
-		fmt.Fprintln(os.Stderr, output.StyleError.Render("✗")+" "+err.Error())
+		fmt.Fprintln(os.Stderr, output.StyleError.Render("✗")+" "+output.Sanitize(err.Error()))
 		if hint := hintFor(err); hint != "" {
 			fmt.Fprintln(os.Stderr, output.StyleDim.Render("Hint: "+hint))
 		}
