@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg width="774.00" height="370.00" xmlns="http://www.w3.org/2000/svg">
+<svg width="1357.33" height="554.00" xmlns="http://www.w3.org/2000/svg">
 <style>
 @font-face {
 	font-family: &apos;JetBrains Mono&apos;;
@@ -8,7 +8,7 @@
 	font-weight: normal;
 	font-style: normal;
 }
-</style><rect width="774.00" height="370.00" fill="#282a36" x="0.00px" y="0.00px"/>
+</style><rect width="1357.33" height="554.00" fill="#282a36" x="0.00px" y="0.00px"/>
 <g font-family="JetBrains Mono" font-size="14.00px" fill="#f8f8f2" clip-path="url(#terminalMask)">
 <text x="12.00px" y="43.80px" xml:space="preserve">$ rc experiments start exp_snap --yes --no-input --project-id proj_snap --api-key sk_snap
 </text><text x="12.00px" y="60.60px" xml:space="preserve">
@@ -16,19 +16,30 @@
 </text><text x="12.00px" y="94.20px" xml:space="preserve">  Start enrolling eligible customers in the experiment.
 </text><text x="12.00px" y="111.00px" xml:space="preserve">
 </text><text x="12.00px" y="127.80px" xml:space="preserve">  Status                      draft
-</text><text x="12.00px" y="144.60px" xml:space="preserve">  Control                     ofrng_control
-</text><text x="12.00px" y="161.40px" xml:space="preserve">  Treatment                   ofrng_treatment
-</text><text x="12.00px" y="178.20px" xml:space="preserve">  Enrollment                  50%
-</text><text x="12.00px" y="195.00px" xml:space="preserve">
-</text><text x="12.00px" y="211.80px" xml:space="preserve">▍ Plan
-</text><text x="12.00px" y="228.60px" xml:space="preserve">· 1. Start the experiment and enroll eligible customers
-</text><text x="12.00px" y="245.40px" xml:space="preserve">· Starting experiment…
-</text><text x="12.00px" y="262.20px" xml:space="preserve">✓ Started experiment exp_snap
-</text><text x="12.00px" y="279.00px" xml:space="preserve">  rc experiments results exp_snap
-</text><text x="12.00px" y="295.80px" xml:space="preserve">▍ New paywall
-</text><text x="12.00px" y="312.60px" xml:space="preserve">
-</text><text x="12.00px" y="329.40px" xml:space="preserve">  ID:      exp_snap
-</text><text x="12.00px" y="346.20px" xml:space="preserve">  Status:  running
+</text><text x="12.00px" y="144.60px" xml:space="preserve">  Control                     ofrng_control (Control) · paywall pw_control
+</text><text x="12.00px" y="161.40px" xml:space="preserve">  Treatment                   ofrng_treatment (Treatment) · paywall pw_treatment
+</text><text x="12.00px" y="178.20px" xml:space="preserve">  Treatment C                 ofrng_extra
+</text><text x="12.00px" y="195.00px" xml:space="preserve">  Enrollment                  50%
+</text><text x="12.00px" y="211.80px" xml:space="preserve">  Audience                    aud_paid
+</text><text x="12.00px" y="228.60px" xml:space="preserve">  Placements                  {&quot;placement_offerings&quot;:[{&quot;offering_a_id&quot;:&quot;ofrng_control&quot;,&quot;offering_b_id&quot;:&quot;ofrng_treatment&quot;,&quot;placement_identifier&quot;:&quot;onboarding&quot;}]}
+</text><text x="12.00px" y="245.40px" xml:space="preserve">  Type                        paywall_design
+</text><text x="12.00px" y="262.20px" xml:space="preserve">  Primary metric              initial_conversion_rate
+</text><text x="12.00px" y="279.00px" xml:space="preserve">  Secondary metrics           realized_ltv_per_customer
+</text><text x="12.00px" y="295.80px" xml:space="preserve">  Enrollment mode             only_new
+</text><text x="12.00px" y="312.60px" xml:space="preserve">  Duration                    {&quot;chance_to_win_percentage&quot;:95}
+</text><text x="12.00px" y="329.40px" xml:space="preserve">
+</text><text x="12.00px" y="346.20px" xml:space="preserve">▐ Experiment conflicts: [{&quot;id&quot;:&quot;exp_other&quot;}]
+</text><text x="12.00px" y="363.00px" xml:space="preserve">
+</text><text x="12.00px" y="379.80px" xml:space="preserve">
+</text><text x="12.00px" y="396.60px" xml:space="preserve">▍ Plan
+</text><text x="12.00px" y="413.40px" xml:space="preserve">· 1. Start the experiment and enroll eligible customers
+</text><text x="12.00px" y="430.20px" xml:space="preserve">· Starting experiment…
+</text><text x="12.00px" y="447.00px" xml:space="preserve">✓ Started experiment exp_snap
+</text><text x="12.00px" y="463.80px" xml:space="preserve">  rc experiments results exp_snap
+</text><text x="12.00px" y="480.60px" xml:space="preserve">▍ New paywall
+</text><text x="12.00px" y="497.40px" xml:space="preserve">
+</text><text x="12.00px" y="514.20px" xml:space="preserve">  ID:      exp_snap
+</text><text x="12.00px" y="531.00px" xml:space="preserve">  Status:  running
 </text>
 </g>
 <svg x="0.00px" y="0.00px"><circle cx="13.50" cy="12.00" r="5.50" fill="#FF5A54"/><circle cx="32.50" cy="12.00" r="5.50" fill="#E6BF29"/><circle cx="51.50" cy="12.00" r="5.50" fill="#52C12B"/></svg></svg>
