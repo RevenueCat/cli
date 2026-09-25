@@ -1,0 +1,17 @@
+$ rc targeting show trle_snap --no-input --project-id proj_snap --api-key sk_snap
+  Use --json for the complete API response.
+▍ US annual paywall
+  trle_snap · legacy · active
+
+Serves
+  Offering:  ofrng_us
+
+Audience
+  Condition 1:  platform in ios
+
+Placements
+  Fallback:    ofrng_default
+  onboarding:  ofrng_us
+
+Schedule
+  Start:  2026-09-25T12:00:00Z

@@ -202,6 +202,13 @@ rc experiments pause <id>
 rc experiments resume <id>                             # resumes enrollment; configuration review + confirmation/--yes
 rc experiments stop <id>                                # permanent; confirmation/--yes
 
+# Targeting rules — development v2 endpoints
+rc targeting list [--state <state>]
+rc targeting show <id>                                 # human detail view shows audience, placements, schedule, and checkpoints
+rc targeting create (--name <name> --offering <offering-id> [--state inactive|active] | --config <json-file>)  # initially inactive
+rc targeting update <id> --config <json-file>           # partial update
+rc targeting delete <id>                                # confirmation/--yes
+
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)
 rc rico --continue                                       # continue the most recent conversation

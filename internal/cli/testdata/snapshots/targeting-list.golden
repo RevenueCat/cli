@@ -1,0 +1,3 @@
+$ rc targeting list --no-input --project-id proj_snap --api-key sk_snap
+ID         NAME               TYPE    STATE   SERVES  
+trle_snap  US annual paywall  legacy  active  ofrng_us
