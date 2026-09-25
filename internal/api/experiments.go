@@ -16,31 +16,72 @@ type ExperimentOffering struct {
 	PaywallID   string `json:"paywall_id,omitempty"`
 }
 
-type Experiment struct {
-	Object              string              `json:"object"`
-	ID                  string              `json:"id"`
-	DisplayName         string              `json:"display_name"`
-	Status              string              `json:"status"`
-	CreatedAt           Millis              `json:"created_at"`
-	UpdatedAt           Millis              `json:"updated_at"`
-	StartedAt           *Millis             `json:"started_at,omitempty"`
-	StoppedAt           *Millis             `json:"stopped_at,omitempty"`
-	PausedAt            *Millis             `json:"paused_at,omitempty"`
-	EnrollmentPercent   *int                `json:"enrollment_percentage,omitempty"`
-	Priority            *int                `json:"priority,omitempty"`
+type ExperimentCondition struct {
+	Field    string `json:"field"`
+	Operator string `json:"operator"`
+	Value    any    `json:"value"`
+	Context  any    `json:"context,omitempty"`
+}
+
+type ExperimentPlacementOffering struct {
+	PlacementIdentifier string              `json:"placement_identifier"`
 	OfferingA           *ExperimentOffering `json:"offering_a,omitempty"`
 	OfferingB           *ExperimentOffering `json:"offering_b,omitempty"`
 	OfferingC           *ExperimentOffering `json:"offering_c,omitempty"`
 	OfferingD           *ExperimentOffering `json:"offering_d,omitempty"`
-	Notes               *string             `json:"notes,omitempty"`
-	ExperimentType      *string             `json:"experiment_type,omitempty"`
-	PrimaryMetric       *string             `json:"primary_metric,omitempty"`
-	SecondaryMetrics    []string            `json:"secondary_metrics,omitempty"`
-	EnrollmentMode      *string             `json:"enrollment_mode,omitempty"`
-	AudienceID          *string             `json:"audience_id,omitempty"`
-	TargetingConditions []any               `json:"targeting_conditions,omitempty"`
-	Placements          any                 `json:"placements,omitempty"`
-	Conflicts           []any               `json:"conflicts,omitempty"`
+}
+
+type ExperimentPlacements struct {
+	FallbackOfferingA  *ExperimentOffering           `json:"fallback_offering_a,omitempty"`
+	FallbackOfferingB  *ExperimentOffering           `json:"fallback_offering_b,omitempty"`
+	FallbackOfferingC  *ExperimentOffering           `json:"fallback_offering_c,omitempty"`
+	FallbackOfferingD  *ExperimentOffering           `json:"fallback_offering_d,omitempty"`
+	PlacementOfferings []ExperimentPlacementOffering `json:"placement_offerings,omitempty"`
+}
+
+type ExperimentDurationSettings struct {
+	ConversionRatePercentage          *float64 `json:"conversion_rate_percentage,omitempty"`
+	DailyEnrolledCustomers            *int     `json:"daily_enrolled_customers,omitempty"`
+	MinimumDetectableEffectPercentage *int     `json:"minimum_detectable_effect_percentage,omitempty"`
+	ChanceToWinPercentage             *int     `json:"chance_to_win_percentage,omitempty"`
+	ConversionRateIsOverride          *bool    `json:"conversion_rate_percentage_is_override,omitempty"`
+	DailyEnrolledIsOverride           *bool    `json:"daily_enrolled_customers_is_override,omitempty"`
+}
+
+type ExperimentConflict struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"display_name,omitempty"`
+}
+
+type Experiment struct {
+	Object              string                      `json:"object"`
+	ID                  string                      `json:"id"`
+	DisplayName         string                      `json:"display_name"`
+	Status              string                      `json:"status"`
+	CreatedAt           Millis                      `json:"created_at"`
+	UpdatedAt           Millis                      `json:"updated_at"`
+	StartedAt           *Millis                     `json:"started_at,omitempty"`
+	StoppedAt           *Millis                     `json:"stopped_at,omitempty"`
+	PausedAt            *Millis                     `json:"paused_at,omitempty"`
+	ResumedAt           *Millis                     `json:"resumed_at,omitempty"`
+	TotalRunningSeconds *int                        `json:"total_running_time_seconds,omitempty"`
+	EnrollmentPercent   *int                        `json:"enrollment_percentage,omitempty"`
+	Priority            *int                        `json:"priority,omitempty"`
+	OfferingA           *ExperimentOffering         `json:"offering_a,omitempty"`
+	OfferingB           *ExperimentOffering         `json:"offering_b,omitempty"`
+	OfferingC           *ExperimentOffering         `json:"offering_c,omitempty"`
+	OfferingD           *ExperimentOffering         `json:"offering_d,omitempty"`
+	Notes               *string                     `json:"notes,omitempty"`
+	ExperimentType      *string                     `json:"experiment_type,omitempty"`
+	PrimaryMetric       *string                     `json:"primary_metric,omitempty"`
+	SecondaryMetrics    []string                    `json:"secondary_metrics,omitempty"`
+	EnrollmentMode      *string                     `json:"enrollment_mode,omitempty"`
+	AudienceID          *string                     `json:"audience_id,omitempty"`
+	TargetingConditions []ExperimentCondition       `json:"targeting_conditions,omitempty"`
+	PinnedAudience      any                         `json:"pinned_audience,omitempty"`
+	DurationSettings    *ExperimentDurationSettings `json:"experiment_duration_settings,omitempty"`
+	Placements          *ExperimentPlacements       `json:"placements,omitempty"`
+	Conflicts           []ExperimentConflict        `json:"conflicts,omitempty"`
 }
 
 type ListExperimentsOptions struct {

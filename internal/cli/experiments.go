@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -108,13 +109,7 @@ func newExperimentsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := rt.Out.Render(experiment); err != nil {
-				return err
-			}
-			if !rt.Globals.JSON {
-				rt.Out.Hint("Use --json to inspect targeting, placements, and all variant details.")
-			}
-			return nil
+			return renderExperimentShow(rt, experiment)
 		},
 	}
 }
@@ -129,6 +124,17 @@ func newExperimentsResultsCmd() *cobra.Command {
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			var err error
+			opts.Platform, err = experimentResultsPlatform(opts.Platform)
+			if err != nil {
+				return err
+			}
+			opts.ExposureStatus, err = experimentExposureStatus(opts.ExposureStatus)
+			if err != nil {
+				return err
+			}
+			opts.Country = strings.ToUpper(strings.TrimSpace(opts.Country))
+			opts.Currency = strings.ToUpper(strings.TrimSpace(opts.Currency))
 			projectID, err := requireProject(rt)
 			if err != nil {
 				return err
@@ -153,11 +159,53 @@ func newExperimentsResultsCmd() *cobra.Command {
 			return renderExperimentResults(rt, results)
 		},
 	}
-	cmd.Flags().StringVar(&opts.Platform, "platform", "", "filter by platform")
-	cmd.Flags().StringVar(&opts.Country, "country", "", "filter by country code")
-	cmd.Flags().StringVar(&opts.ExposureStatus, "exposure-status", "", "filter by exposure status")
+	cmd.Flags().StringVar(&opts.Platform, "platform", "", "filter by iOS, Android, macOS, tvOS, watchOS, visionOS, Amazon, Roku, or Web (case-insensitive; app_store/play_store aliases)")
+	cmd.Flags().StringVar(&opts.Country, "country", "", "filter by ISO country code (for example, US)")
+	cmd.Flags().StringVar(&opts.ExposureStatus, "exposure-status", "", "filter by exposed or not_exposed; omit for all enrolled customers")
 	cmd.Flags().StringVar(&opts.Currency, "currency", "", "display currency for monetary metrics")
 	return cmd
+}
+
+func experimentResultsPlatform(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "ios", "app_store":
+		return "iOS", nil
+	case "android", "play_store":
+		return "Android", nil
+	case "macos", "mac_app_store":
+		return "macOS", nil
+	case "tvos":
+		return "tvOS", nil
+	case "watchos":
+		return "watchOS", nil
+	case "visionos":
+		return "visionOS", nil
+	case "amazon":
+		return "Amazon", nil
+	case "roku":
+		return "Roku", nil
+	case "web":
+		return "Web", nil
+	default:
+		return strings.TrimSpace(value), nil
+	}
+}
+
+func experimentExposureStatus(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "exposed":
+		return "exposed", nil
+	case "not_exposed":
+		return "not_exposed", nil
+	default:
+		return "", fmt.Errorf("exposure status must be exposed or not_exposed")
+	}
 }
 
 func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error {
@@ -165,27 +213,49 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 	rt.Out.Field("Currency", results.Currency)
 	shownSections := 0
 	for _, section := range results.Sections {
-		rows := make([][]string, 0)
+		valuesByMetric := make(map[int]map[string]api.ExperimentResultValue)
+		hasTreatmentC, hasTreatmentD := false, false
 		for _, value := range section.Values {
 			if value.Metric < 0 || value.Metric >= len(section.Metrics) || value.Segment < 0 || value.Segment >= len(section.Segments) || !section.Segments[value.Segment].IsTotal {
 				continue
 			}
-			metric := section.Metrics[value.Metric]
-			shownValue, change := "—", "—"
-			if value.Value != nil {
-				shownValue = strconv.FormatFloat(*value.Value, 'f', -1, 64)
+			if valuesByMetric[value.Metric] == nil {
+				valuesByMetric[value.Metric] = make(map[string]api.ExperimentResultValue)
 			}
-			if value.Change != nil {
-				change = fmt.Sprintf("%+.2f%%", *value.Change)
-			}
-			rows = append(rows, []string{metric.Name, value.Variant, shownValue, metric.Unit, change})
+			valuesByMetric[value.Metric][value.Variant] = value
+			hasTreatmentC = hasTreatmentC || value.Variant == "TreatmentC"
+			hasTreatmentD = hasTreatmentD || value.Variant == "TreatmentD"
 		}
-		if len(rows) == 0 {
+		if len(valuesByMetric) == 0 {
 			continue
+		}
+		columns := []string{"METRIC", "CONTROL", "TREATMENT", "CHANGE"}
+		if hasTreatmentC {
+			columns = append(columns, "TREATMENT C", "CHANGE C")
+		}
+		if hasTreatmentD {
+			columns = append(columns, "TREATMENT D", "CHANGE D")
+		}
+		columns = append(columns, "UNIT")
+		rows := make([][]string, 0, len(valuesByMetric))
+		for i, metric := range section.Metrics {
+			values := valuesByMetric[i]
+			if len(values) == 0 {
+				continue
+			}
+			row := []string{metric.Name, resultValue(values["Control"]), resultValue(values["Treatment"]), resultChange(values["Treatment"])}
+			if hasTreatmentC {
+				row = append(row, resultValue(values["TreatmentC"]), resultChange(values["TreatmentC"]))
+			}
+			if hasTreatmentD {
+				row = append(row, resultValue(values["TreatmentD"]), resultChange(values["TreatmentD"]))
+			}
+			row = append(row, metric.Unit)
+			rows = append(rows, row)
 		}
 		shownSections++
 		rt.Out.Title(section.Section)
-		if err := rt.Out.RenderTable(output.Table{Columns: []string{"METRIC", "VARIANT", "VALUE", "UNIT", "CHANGE"}, Rows: rows}); err != nil {
+		if err := rt.Out.RenderTable(output.Table{Columns: columns, Rows: rows}); err != nil {
 			return err
 		}
 	}
@@ -202,4 +272,18 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 		rt.Out.Field("Confidence", fmt.Sprintf("%d%%", results.PredictedLTV.Confidence))
 	}
 	return nil
+}
+
+func resultValue(value api.ExperimentResultValue) string {
+	if value.Value == nil {
+		return "—"
+	}
+	return strconv.FormatFloat(*value.Value, 'f', -1, 64)
+}
+
+func resultChange(value api.ExperimentResultValue) string {
+	if value.Change == nil {
+		return "—"
+	}
+	return fmt.Sprintf("%+.2f%%", *value.Change)
 }
