@@ -222,6 +222,14 @@ endpoints:
   - method: GET
     path: /projects/{project_id}/metrics/overview
 
+  # Experiments (development-status; provided by the beta overlay)
+  - method: GET
+    path: /projects/{project_id}/experiments
+  - method: GET
+    path: /projects/{project_id}/experiments/{experiment_id}
+  - method: GET
+    path: /projects/{project_id}/experiments/{experiment_id}/results
+
   # Audit
   - method: GET
     path: /projects/{project_id}/audit_logs

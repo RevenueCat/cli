@@ -919,6 +919,271 @@ paths:
       responses:
         '200':
           description: OK
+  /projects/{project_id}/experiments:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a list of experiments
+      operationId: list-experiments
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create an experiment
+      operationId: create-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/priority_list:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    put:
+      summary: Update the experiment priority list
+      operationId: update-experiment-priority-list
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/{experiment_id}:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: experiment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    delete:
+      summary: Delete an experiment
+      operationId: delete-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read_write
+      responses:
+        '200':
+          description: OK
+    get:
+      summary: Get an experiment
+      operationId: get-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Update an experiment
+      operationId: update-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/{experiment_id}/actions/pause:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: experiment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Pause an experiment
+      operationId: pause-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/{experiment_id}/actions/resume:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: experiment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Resume an experiment
+      operationId: resume-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/{experiment_id}/actions/start:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: experiment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Start an experiment
+      operationId: start-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/{experiment_id}/actions/stop:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: experiment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Stop an experiment
+      operationId: stop-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/{experiment_id}/results:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: experiment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get experiment results
+      operationId: get-experiment-results
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - charts_metrics:experiment_results:read
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/targeting_rules:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a list of targeting rules
+      operationId: list-targeting-rules
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create a targeting rule
+      operationId: create-targeting-rule
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/targeting_rules/{targeting_rule_id}:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: targeting_rule_id
+      in: path
+      required: true
+      schema:
+        type: string
+    delete:
+      summary: Delete a targeting rule
+      operationId: delete-targeting-rule
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read_write
+      responses:
+        '200':
+          description: OK
+    get:
+      summary: Get a targeting rule
+      operationId: get-targeting-rule
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Update a targeting rule
+      operationId: update-targeting-rule
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read_write
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     Currency:

@@ -122,6 +122,18 @@ func pathEntitlements(projectID string) string {
 	return encodePath("projects", projectID, "entitlements")
 }
 
+func pathExperiment(projectID string, experimentID string) string {
+	return encodePath("projects", projectID, "experiments", experimentID)
+}
+
+func pathExperimentResults(projectID string, experimentID string) string {
+	return encodePath("projects", projectID, "experiments", experimentID, "results")
+}
+
+func pathExperiments(projectID string) string {
+	return encodePath("projects", projectID, "experiments")
+}
+
 func pathIntegrationsWebhook(projectID string, webhookIntegrationID string) string {
 	return encodePath("projects", projectID, "integrations", "webhooks", webhookIntegrationID)
 }
