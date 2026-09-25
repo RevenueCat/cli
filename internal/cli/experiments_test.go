@@ -201,7 +201,7 @@ func TestRunningExperimentUpdateShowsChangesBeforeApproval(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, stderr, err := runAgentCmd(t, "experiments", "update", "exp1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--no-input")
-	if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 || !strings.Contains(stderr, `"enrollment_percentage":80`) {
+	if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 || !strings.Contains(stderr, "Change enrollment percentage") || !strings.Contains(stderr, "80") {
 		t.Fatalf("expected reviewed approval before update; err=%v mutations=%d stderr=%q", err, mutations, stderr)
 	}
 }

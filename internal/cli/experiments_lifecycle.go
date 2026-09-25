@@ -177,7 +177,7 @@ func newExperimentsUpdateCmd() *cobra.Command {
 			}
 			if current.Status == "running" {
 				showExperimentEnrollmentState(rt, current, "Review the current experiment before changing enrollment.")
-				rt.Out.Field("Changes", compactJSON(body))
+				showExperimentUpdateChanges(rt, body)
 				rt.Out.Notice("Changes to a running experiment may affect customers being enrolled now.")
 				rt.Out.Plan([]string{"Update the running experiment"})
 				if err := confirmOrAbort(rt, "Update running experiment now?"); err != nil {
@@ -271,12 +271,14 @@ func showExperimentEnrollmentState(rt *Runtime, current *api.Experiment, lead st
 	if current.AudienceID != nil {
 		rt.Out.Field("Audience", *current.AudienceID)
 	} else if len(current.TargetingConditions) > 0 {
-		rt.Out.Field("Conditions", compactJSON(current.TargetingConditions))
+		for i, condition := range current.TargetingConditions {
+			rt.Out.Field(fmt.Sprintf("Condition %d", i+1), experimentConditionLabel(condition))
+		}
 	} else {
 		rt.Out.Field("Audience", "All eligible customers")
 	}
-	if current.Placements != nil {
-		rt.Out.Field("Placements", compactJSON(current.Placements))
+	for _, placement := range experimentPlacementLines(current.Placements) {
+		rt.Out.Field("Placement "+placement.Key, placement.Value)
 	}
 	if current.ExperimentType != nil {
 		rt.Out.Field("Type", *current.ExperimentType)
@@ -291,25 +293,14 @@ func showExperimentEnrollmentState(rt *Runtime, current *api.Experiment, lead st
 		rt.Out.Field("Enrollment mode", *current.EnrollmentMode)
 	}
 	if current.DurationSettings != nil {
-		rt.Out.Field("Duration", compactJSON(current.DurationSettings))
+		rt.Out.Field("Duration", experimentDurationSummary(current.DurationSettings))
 	}
 	if current.Priority != nil {
 		rt.Out.Field("Priority", strconv.Itoa(*current.Priority))
 	}
 	if len(current.Conflicts) > 0 {
-		rt.Out.Notice("Experiment conflicts: " + compactJSON(current.Conflicts))
+		rt.Out.Notice("Experiment conflicts: " + experimentConflictsSummary(current.Conflicts))
 	}
-}
-
-func experimentOfferingLabel(offering *api.ExperimentOffering) string {
-	label := offering.ID
-	if offering.DisplayName != "" {
-		label += " (" + offering.DisplayName + ")"
-	}
-	if offering.PaywallID != "" {
-		label += " · paywall " + offering.PaywallID
-	}
-	return label
 }
 
 func newExperimentsPauseCmd() *cobra.Command {
