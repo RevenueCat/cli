@@ -324,14 +324,14 @@ func (r *Renderer) RenderTable(t Table) error {
 	}
 	widths := make([]int, len(t.Columns))
 	for i, c := range t.Columns {
-		widths[i] = len(c)
+		widths[i] = lipgloss.Width(c)
 	}
 	for _, row := range t.Rows {
 		for i, cell := range row {
 			if i >= len(widths) {
 				continue
 			}
-			if l := len(cell); l > widths[i] {
+			if l := lipgloss.Width(cell); l > widths[i] {
 				widths[i] = l
 			}
 		}
@@ -357,10 +357,11 @@ func (r *Renderer) RenderTable(t Table) error {
 }
 
 func padRight(s string, n int) string {
-	if len(s) >= n {
+	width := lipgloss.Width(s)
+	if width >= n {
 		return s
 	}
-	return s + spaces(n-len(s))
+	return s + spaces(n-width)
 }
 
 func spaces(n int) string {

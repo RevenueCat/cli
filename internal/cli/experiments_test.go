@@ -41,6 +41,41 @@ func TestExperimentResultsJSONIncludesAllSegments(t *testing.T) {
 	}
 }
 
+func TestExperimentResultsNormalizesFilters(t *testing.T) {
+	for _, tc := range []struct {
+		platform string
+		want     string
+	}{
+		{"ios", "iOS"},
+		{"app_store", "iOS"},
+		{"iOS", "iOS"},
+		{"android", "Android"},
+	} {
+		t.Run(tc.platform, func(t *testing.T) {
+			var platform, exposure string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				platform = r.URL.Query().Get("platform")
+				exposure = r.URL.Query().Get("exposure_status")
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"object":"experiment_results","currency":"USD","sections":[],"statistics":[],"predicted_ltv":null}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			_, _, err := runAgentCmd(t, "experiments", "results", "exp1", "--platform", tc.platform, "--exposure-status", "EXPOSED", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+			if err != nil || platform != tc.want || exposure != "exposed" {
+				t.Fatalf("err=%v platform=%q exposure=%q", err, platform, exposure)
+			}
+		})
+	}
+}
+
+func TestExperimentResultsRejectsUnknownExposureStatus(t *testing.T) {
+	_, _, err := runCmd(t, "experiments", "results", "exp1", "--exposure-status", "viewed")
+	if err == nil || !strings.Contains(err.Error(), "exposure status must be") {
+		t.Fatalf("expected supported-value error, got %v", err)
+	}
+}
+
 func TestExperimentResultsHumanExplainsMissingTotals(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

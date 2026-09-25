@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/lipgloss"
+
 	"github.com/revenuecat/cli/internal/output"
 )
 
@@ -87,6 +89,33 @@ func TestRenderTable_AlignsColumnsByWidestRow(t *testing.T) {
 	// All rows should have equal width (alignment contract).
 	if len(lines[0]) != len(lines[1]) || len(lines[1]) != len(lines[2]) {
 		t.Errorf("rows are not aligned:\n%q\n%q\n%q", lines[0], lines[1], lines[2])
+	}
+}
+
+func TestRenderTable_AlignsUnicodeByDisplayWidth(t *testing.T) {
+	r, out, _ := newR(false)
+	err := r.RenderTable(output.Table{
+		Columns: []string{"NAME", "STATUS"},
+		Rows: [][]string{
+			{"Trial — iOS", "running"},
+			{"Test", "draft"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	for _, line := range lines {
+		status := strings.Index(line, "STATUS")
+		if status < 0 {
+			status = strings.Index(line, "running")
+		}
+		if status < 0 {
+			status = strings.Index(line, "draft")
+		}
+		if status < 0 || lipgloss.Width(line[:status]) != 13 {
+			t.Fatalf("second column shifted: %q", line)
+		}
 	}
 }
 
