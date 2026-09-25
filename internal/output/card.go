@@ -143,14 +143,14 @@ func (r *Renderer) writeCardTable(t CardTable) {
 	}
 	widths := make([]int, len(t.Columns))
 	for i, c := range t.Columns {
-		widths[i] = len(c)
+		widths[i] = lipgloss.Width(c)
 	}
 	for _, row := range rows {
 		for i, cell := range row {
 			if i >= len(widths) {
 				continue
 			}
-			if l := len(cell); l > widths[i] {
+			if l := lipgloss.Width(cell); l > widths[i] {
 				widths[i] = l
 			}
 		}
@@ -179,8 +179,8 @@ func (r *Renderer) writeCardTable(t CardTable) {
 func (r *Renderer) writeLines(lines []CardLine) {
 	keyWidth := 0
 	for _, l := range lines {
-		if k := len(SanitizeLine(l.Key)); k > keyWidth {
-			keyWidth = k
+		if width := lipgloss.Width(SanitizeLine(l.Key)); width > keyWidth {
+			keyWidth = width
 		}
 	}
 	keyStyle := lipgloss.NewStyle().Faint(true)

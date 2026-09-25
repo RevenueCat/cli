@@ -28,6 +28,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap"):
+			io.WriteString(w, `{"object":"experiment","id":"exp_snap","display_name":"Price — paywall","status":"paused","created_at":1784297950368,"updated_at":1784297950368,"total_running_time_seconds":1989824,"enrollment_percentage":50,"offering_a":{"id":"ofrng_control","display_name":"Control"},"offering_b":{"id":"ofrng_treatment","display_name":"Treatment"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_control"},"offering_b":{"id":"ofrng_treatment"}}]},"primary_metric":"initial_conversion_rate","secondary_metrics":["realized_ltv_per_customer","trial_conversion_rate"],"experiment_duration_settings":{"chance_to_win_percentage":95}}`)
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/results"):
 			io.WriteString(w, `{"object":"experiment_results","currency":"USD","sections":[{"object":"experiment_results_section","section":"Conversion","metrics":[{"name":"trial_conversion_rate","unit":"%"}],"segments":[{"object":"experiment_results_segment","id":"total","display_name":"Total","is_total":true}],"values":[{"object":"experiment_results_value","metric":0,"segment":0,"variant":"Control","value":12.5,"change":null,"credible_interval":null,"lift_credible_interval":null},{"object":"experiment_results_value","metric":0,"segment":0,"variant":"Treatment","value":15.0,"change":20,"credible_interval":null,"lift_credible_interval":null}]}],"statistics":[],"predicted_ltv":null}`)
 		case strings.HasSuffix(r.URL.Path, "/offerings/ofrng_snap"):
@@ -60,6 +62,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"version", []string{"version"}},
 		{"auth-status-logged-out", []string{"auth", "status", "--no-input"}},
 		{"offerings-show", []string{"offerings", "show", "ofrng_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"experiments-show", []string{"experiments", "show", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-results", []string{"experiments", "results", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list", []string{"apps", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
