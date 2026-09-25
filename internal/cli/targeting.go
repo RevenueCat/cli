@@ -121,12 +121,8 @@ func newTargetingCreateCmd() *cobra.Command {
 		Short: "Create a targeting rule",
 		Long:  "Creates an inactive Offering rule by default. Without audience_id or conditions, a legacy rule matches everyone. Use --config for audience_id, conditions, schedule, placements, position, or a checkpoint rule with flow_id and checkpoints. Active or scheduled rules require confirmation.",
 		Example: `  rc targeting create --name "Default paywall" --offering ofrng_default
-  rc targeting create --config - --no-input <<'JSON'
-  {"rule_type":"legacy","display_name":"US paywall","offering_id":"ofrng_us","conditions":[{"field":"country","operator":"in","value":["US"]}]}
-  JSON
-  rc targeting create --config - --no-input <<'JSON'
-  {"rule_type":"checkpoint","display_name":"After onboarding","audience_id":"aud_123","flow_id":"wf_123","checkpoints":[{"checkpoint_id":"chkpt_123"}]}
-  JSON`,
+  echo '{"rule_type":"legacy","display_name":"US paywall","offering_id":"ofrng_us","conditions":[{"field":"country","operator":"in","value":["US"]}]}' | rc targeting create --config - --no-input
+  echo '{"rule_type":"checkpoint","display_name":"After onboarding","audience_id":"aud_123","flow_id":"wf_123","checkpoints":[{"checkpoint_id":"chkpt_123"}]}' | rc targeting create --config - --no-input`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -348,9 +344,17 @@ func newTargetingUpdateCmd() *cobra.Command {
 				} else if len(current.Conditions) > 0 {
 					rt.Out.Field("Current conditions", compactJSON(current.Conditions))
 				} else {
-					rt.Out.Notice("Current rule matches everyone. Active rules use the first match.")
+					rt.Out.Field("Current audience", "Everyone")
 				}
 				rt.Out.Field("Changes", compactJSON(body))
+				resultingAudience, everyone, err := targetingAudienceAfterUpdate(current, body)
+				if err != nil {
+					return err
+				}
+				rt.Out.Field("Resulting audience", resultingAudience)
+				if everyone {
+					rt.Out.Notice("Resulting rule matches everyone. Active rules use the first match.")
+				}
 				rt.Out.Plan([]string{"Update the targeting rule"})
 				if err := confirmOrAbort(rt, "Update targeting rule now?"); err != nil {
 					return err
@@ -379,6 +383,32 @@ func validTargetingUpdate(body api.TargetingRuleUpdate) error {
 		}
 	}
 	return nil
+}
+
+func targetingAudienceAfterUpdate(current *api.TargetingRule, body api.TargetingRuleUpdate) (string, bool, error) {
+	audienceID := ""
+	if current.AudienceID != nil {
+		audienceID = *current.AudienceID
+	}
+	conditions := current.Conditions
+	if value, ok := body["audience_id"]; ok {
+		audienceID = ""
+		if err := json.Unmarshal(value, &audienceID); err != nil {
+			return "", false, fmt.Errorf("audience_id must be a string or null")
+		}
+	}
+	if value, ok := body["conditions"]; ok {
+		if err := json.Unmarshal(value, &conditions); err != nil {
+			return "", false, fmt.Errorf("conditions must be an array")
+		}
+	}
+	if audienceID != "" {
+		return audienceID, false, nil
+	}
+	if len(conditions) > 0 {
+		return compactJSON(conditions), false, nil
+	}
+	return "Everyone", true, nil
 }
 
 func newTargetingDeleteCmd() *cobra.Command {

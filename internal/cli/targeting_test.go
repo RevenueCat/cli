@@ -57,3 +57,20 @@ func TestTargetingUpdateActiveRuleRequiresApproval(t *testing.T) {
 		t.Fatalf("expected approval error before mutation: err=%v mutations=%d", err, mutations)
 	}
 }
+
+func TestTargetingUpdateWarnsWhenAudienceIsCleared(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"targeting_rule","id":"trle1","rule_type":"legacy","state":"active","display_name":"US paywall","offering_id":"ofrng_us","audience_id":"aud_us","conditions":[]}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	configPath := filepath.Join(t.TempDir(), "change.json")
+	if err := os.WriteFile(configPath, []byte(`{"audience_id":null}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr, err := runAgentCmd(t, "targeting", "update", "trle1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "--yes") || !strings.Contains(stderr, "Resulting audience") || !strings.Contains(stderr, "matches everyone") {
+		t.Fatalf("expected global-scope warning before approval; err=%v stderr=%q", err, stderr)
+	}
+}
