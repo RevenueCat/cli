@@ -21,7 +21,7 @@ func newExperimentsCmd() *cobra.Command {
 }
 
 func newExperimentsListCmd() *cobra.Command {
-	var status, startingAfter string
+	var status, cursor string
 	var limit int
 	cmd := &cobra.Command{
 		Use:     "list",
@@ -38,7 +38,7 @@ func newExperimentsListCmd() *cobra.Command {
 				return err
 			}
 			page, err := client.Experiments.List(cmd.Context(), projectID, api.ListExperimentsOptions{
-				Status: status, Limit: limit, StartingAfter: startingAfter,
+				Status: status, Limit: limit, StartingAfter: cursor,
 			})
 			if err != nil {
 				return err
@@ -54,15 +54,19 @@ func newExperimentsListCmd() *cobra.Command {
 				}
 				rows = append(rows, []string{experiment.ID, experiment.DisplayName, experiment.Status, control, treatment})
 			}
-			return rt.Out.RenderTable(output.Table{
+			if err := rt.Out.RenderTable(output.Table{
 				Columns: []string{"ID", "NAME", "STATUS", "CONTROL", "TREATMENT"},
 				Rows:    rows, Raw: page,
-			})
+			}); err != nil {
+				return err
+			}
+			hintMoreResults(rt, page)
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&status, "status", "", "filter by draft, running, paused, or stopped")
 	cmd.Flags().IntVar(&limit, "limit", 20, "maximum experiments to return (1–100)")
-	cmd.Flags().StringVar(&startingAfter, "starting-after", "", "pagination cursor from the previous page")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "item ID to start after (pagination)")
 	return cmd
 }
 
@@ -104,7 +108,13 @@ func newExperimentsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return rt.Out.Render(experiment)
+			if err := rt.Out.Render(experiment); err != nil {
+				return err
+			}
+			if !rt.Globals.JSON {
+				rt.Out.Hint("Use --json to inspect targeting, placements, and all variant details.")
+			}
+			return nil
 		},
 	}
 }
@@ -153,6 +163,7 @@ func newExperimentsResultsCmd() *cobra.Command {
 func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error {
 	rt.Out.Title("Experiment results")
 	rt.Out.Field("Currency", results.Currency)
+	shownSections := 0
 	for _, section := range results.Sections {
 		rows := make([][]string, 0)
 		for _, value := range section.Values {
@@ -172,13 +183,22 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 		if len(rows) == 0 {
 			continue
 		}
+		shownSections++
 		rt.Out.Title(section.Section)
 		if err := rt.Out.RenderTable(output.Table{Columns: []string{"METRIC", "VARIANT", "VALUE", "UNIT", "CHANGE"}, Rows: rows}); err != nil {
 			return err
 		}
 	}
+	if shownSections == 0 {
+		rt.Out.Info("No total-segment metrics available.")
+		rt.Out.Hint("Use --json to inspect all segments and statistics.")
+	}
 	if results.PredictedLTV != nil {
-		rt.Out.Field("Predicted winner", results.PredictedLTV.PredictedWinnerVariant)
+		winner := map[string]string{"a": "Control", "b": "Treatment", "c": "Treatment C", "d": "Treatment D"}[results.PredictedLTV.PredictedWinnerVariant]
+		if winner == "" {
+			winner = results.PredictedLTV.PredictedWinnerVariant
+		}
+		rt.Out.Field("Predicted winner", winner)
 		rt.Out.Field("Confidence", fmt.Sprintf("%d%%", results.PredictedLTV.Confidence))
 	}
 	return nil
