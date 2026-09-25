@@ -103,13 +103,7 @@ func newTargetingShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := rt.Out.Render(rule); err != nil {
-				return err
-			}
-			if !rt.Globals.JSON {
-				rt.Out.Hint("Use --json to inspect conditions, placements, schedule, and checkpoints.")
-			}
-			return nil
+			return renderTargetingShow(rt, rule)
 		},
 	}
 }
@@ -175,7 +169,7 @@ func newTargetingCreateCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success("Created targeting rule " + rule.ID)
-			return rt.Out.Render(rule)
+			return renderTargetingShow(rt, rule)
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "rule display name")
@@ -365,7 +359,7 @@ func newTargetingUpdateCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success("Updated targeting rule " + rule.ID)
-			return rt.Out.Render(rule)
+			return renderTargetingShow(rt, rule)
 		},
 	}
 	cmd.Flags().StringVar(&config, "config", "", "JSON object of fields to update; use - for stdin")
