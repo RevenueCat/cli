@@ -20,7 +20,7 @@ func newExperimentsCmd() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newExperimentsListCmd(), newExperimentsShowCmd(), newExperimentsResultsCmd(),
-		newExperimentsCreateCmd(), newExperimentsUpdateCmd(), newExperimentsDeleteCmd(),
+		newExperimentsCreateCmd(), newExperimentsDuplicateCmd(), newExperimentsUpdateCmd(), newExperimentsDeleteCmd(),
 		newExperimentsStartCmd(), newExperimentsPauseCmd(), newExperimentsResumeCmd(), newExperimentsStopCmd(),
 	)
 	return cmd

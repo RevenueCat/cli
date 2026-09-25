@@ -235,3 +235,38 @@ func TestExperimentCreateListsMissingFlags(t *testing.T) {
 		}
 	}
 }
+
+func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
+	var posted map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"},"offering_c":{"id":"ofrng_c"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"fallback_offering_a":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_pa"},"offering_b":{"id":"ofrng_pb"}}]},"experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
+			return
+		}
+		if r.URL.Path != "/projects/proj/experiments" {
+			t.Errorf("unexpected mutation path: %s", r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+			t.Error(err)
+		}
+		_, _ = io.WriteString(w, `{"id":"exp2","display_name":"New test","status":"draft"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--name", "New test", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if posted["display_name"] != "New test" || posted["offering_c_id"] != "ofrng_c" || posted["primary_metric"] != "initial_conversion_rate" {
+		t.Fatalf("missing copied fields: %#v", posted)
+	}
+	placements := posted["placements"].(map[string]any)
+	rows := placements["placement_offerings"].([]any)
+	if placements["fallback_offering_a_id"] != "ofrng_fa" || rows[0].(map[string]any)["offering_b_id"] != "ofrng_pb" {
+		t.Fatalf("placement IDs not copied: %#v", placements)
+	}
+	if _, exists := posted["status"]; exists {
+		t.Fatalf("status should not be copied: %#v", posted)
+	}
+}
