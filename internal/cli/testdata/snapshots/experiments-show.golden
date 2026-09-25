@@ -1,11 +1,12 @@
 $ rc experiments show exp_snap --no-input --project-id proj_snap --api-key sk_snap
   Use --json for the complete API response.
 ▍ Price — paywall
-  exp_snap · paused
+  exp_snap · draft
 
 Variants
-  Control:    ofrng_control (Control)
-  Treatment:  ofrng_treatment (Treatment)
+  Control:      ofrng_control (Control) · paywall pw_control
+  Treatment:    ofrng_treatment (Treatment) · paywall pw_treatment
+  Treatment C:  ofrng_extra
 
 Audience
   Condition 1:  platform in ios
@@ -15,9 +16,14 @@ Placements
 
 Setup
   Enrollment:         50%
+  Enrollment mode:    only_new
+  Type:               paywall_design
   Primary metric:     initial_conversion_rate
   Secondary metrics:  realized_ltv_per_customer, trial_conversion_rate
   Duration settings:  chance to win 95%
 
 Timeline
   Running time:  23d 0h 43m
+
+Conflicts
+  Experiments:  exp_other

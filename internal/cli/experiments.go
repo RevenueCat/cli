@@ -18,7 +18,11 @@ func newExperimentsCmd() *cobra.Command {
 		Short: "Run and analyze offering experiments",
 		Long:  "Inspect experiments, compare their results, and manage their lifecycle.",
 	}
-	cmd.AddCommand(newExperimentsListCmd(), newExperimentsShowCmd(), newExperimentsResultsCmd())
+	cmd.AddCommand(
+		newExperimentsListCmd(), newExperimentsShowCmd(), newExperimentsResultsCmd(),
+		newExperimentsCreateCmd(), newExperimentsDuplicateCmd(), newExperimentsUpdateCmd(), newExperimentsDeleteCmd(),
+		newExperimentsStartCmd(), newExperimentsPauseCmd(), newExperimentsResumeCmd(), newExperimentsStopCmd(),
+	)
 	return cmd
 }
 

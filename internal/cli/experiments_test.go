@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -130,5 +132,212 @@ func TestExperimentsDiscoverable(t *testing.T) {
 	}
 	if !strings.Contains(out, `"path": "rc experiments results"`) || strings.Contains(out, `"experimental": true`) {
 		t.Fatalf("results command not discoverable as a default command: %s", out)
+	}
+}
+
+func TestExperimentStartRequiresApprovalBeforeMutation(t *testing.T) {
+	mutations := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			mutations++
+			_, _ = io.WriteString(w, `{"object":"experiment","id":"exp1","display_name":"New paywall","status":"running","created_at":1,"updated_at":2}`)
+			return
+		}
+		_, _ = io.WriteString(w, `{"object":"experiment","id":"exp1","display_name":"New paywall","status":"draft","created_at":1,"updated_at":2,"enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	args := []string{"experiments", "start", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	_, _, err := runAgentCmd(t, args...)
+	if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 {
+		t.Fatalf("expected approval error before mutation; err=%v mutations=%d", err, mutations)
+	}
+	args = append(args, "--yes", "--json")
+	out, stderr, err := runAgentCmd(t, args...)
+	if err != nil || stderr != "" || mutations != 1 || !strings.Contains(out, `"status": "running"`) {
+		t.Fatalf("approved start failed: err=%v stderr=%q mutations=%d out=%s", err, stderr, mutations, out)
+	}
+}
+
+func TestExperimentResumeRequiresApprovalBeforeMutation(t *testing.T) {
+	mutations := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			mutations++
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"running"}`)
+			return
+		}
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"paused","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	args := []string{"experiments", "resume", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	_, stderr, err := runAgentCmd(t, args...)
+	if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 || !strings.Contains(stderr, "Control") {
+		t.Fatalf("expected reviewed approval before resume; err=%v mutations=%d stderr=%q", err, mutations, stderr)
+	}
+	args = append(args, "--yes", "--json")
+	_, _, err = runAgentCmd(t, args...)
+	if err != nil || mutations != 1 {
+		t.Fatalf("approved resume failed: err=%v mutations=%d", err, mutations)
+	}
+}
+
+func TestExperimentPauseShowsReadableResult(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Paywall test","status":"paused","offering_a":{"id":"ofrng_a","display_name":"Control"},"offering_b":{"id":"ofrng_b","display_name":"Treatment"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}]}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	out, _, err := runAgentCmd(t, "experiments", "pause", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"ofrng_a (Control)", "platform in ios", "onboarding", "Treatment ofrng_b"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q from pause result: %s", want, out)
+		}
+	}
+}
+
+func TestRunningExperimentUpdateShowsChangesBeforeApproval(t *testing.T) {
+	mutations := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			mutations++
+		}
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"running","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	configPath := filepath.Join(t.TempDir(), "changes.json")
+	if err := os.WriteFile(configPath, []byte(`{"enrollment_percentage":80}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr, err := runAgentCmd(t, "experiments", "update", "exp1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 || !strings.Contains(stderr, "Change enrollment percentage") || !strings.Contains(stderr, "80") {
+		t.Fatalf("expected reviewed approval before update; err=%v mutations=%d stderr=%q", err, mutations, stderr)
+	}
+}
+
+func TestExperimentCreateListsMissingFlags(t *testing.T) {
+	_, _, err := runCmd(t, "experiments", "create", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err == nil {
+		t.Fatal("expected missing input error")
+	}
+	for _, flag := range []string{"--name", "--control", "--treatment", "--enrollment"} {
+		if !strings.Contains(err.Error(), flag) {
+			t.Fatalf("missing %s from error: %v", flag, err)
+		}
+	}
+}
+
+func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
+	var posted map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"},"offering_c":{"id":"ofrng_c"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"fallback_offering_a":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_pa"},"offering_b":{"id":"ofrng_pb"}}]},"experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
+			return
+		}
+		if r.URL.Path != "/projects/proj/experiments" {
+			t.Errorf("unexpected mutation path: %s", r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+			t.Error(err)
+		}
+		_, _ = io.WriteString(w, `{"id":"exp2","display_name":"New test","status":"draft"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--name", "New test", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if posted["display_name"] != "New test" || posted["offering_c_id"] != "ofrng_c" || posted["primary_metric"] != "initial_conversion_rate" {
+		t.Fatalf("missing copied fields: %#v", posted)
+	}
+	placements := posted["placements"].(map[string]any)
+	rows := placements["placement_offerings"].([]any)
+	if placements["fallback_offering_a_id"] != "ofrng_fa" || rows[0].(map[string]any)["offering_b_id"] != "ofrng_pb" {
+		t.Fatalf("placement IDs not copied: %#v", placements)
+	}
+	if _, exists := posted["status"]; exists {
+		t.Fatalf("status should not be copied: %#v", posted)
+	}
+}
+
+func TestExperimentStopAndDeleteRequireApproval(t *testing.T) {
+	for _, tc := range []struct {
+		command string
+		method  string
+		path    string
+	}{
+		{"stop", http.MethodPost, "/projects/proj/experiments/exp1/actions/stop"},
+		{"delete", http.MethodDelete, "/projects/proj/experiments/exp1"},
+	} {
+		t.Run(tc.command, func(t *testing.T) {
+			mutations := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != tc.method || r.URL.Path != tc.path {
+					t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+				}
+				mutations++
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"stopped"}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			args := []string{"experiments", tc.command, "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+			_, _, err := runAgentCmd(t, args...)
+			if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 {
+				t.Fatalf("expected approval before mutation: err=%v mutations=%d", err, mutations)
+			}
+			_, _, err = runAgentCmd(t, append(args, "--yes", "--json")...)
+			if err != nil || mutations != 1 {
+				t.Fatalf("approved %s failed: err=%v mutations=%d", tc.command, err, mutations)
+			}
+		})
+	}
+}
+
+func TestExperimentCreateAndApprovedUpdate(t *testing.T) {
+	var created, updated map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/projects/proj/experiments":
+			if err := json.NewDecoder(r.Body).Decode(&created); err != nil {
+				t.Error(err)
+			}
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		case r.Method == http.MethodGet && r.URL.Path == "/projects/proj/experiments/exp1":
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"running","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		case r.Method == http.MethodPost && r.URL.Path == "/projects/proj/experiments/exp1":
+			if err := json.NewDecoder(r.Body).Decode(&updated); err != nil {
+				t.Error(err)
+			}
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"running","enrollment_percentage":60,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		default:
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, _, err := runAgentCmd(t, "experiments", "create", "--name", "Test", "--control", "ofrng_a", "--treatment", "ofrng_b", "--enrollment", "50", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+	if err != nil || created["enrollment_percentage"] != float64(50) {
+		t.Fatalf("create failed: err=%v body=%v", err, created)
+	}
+	configPath := filepath.Join(t.TempDir(), "update.json")
+	if err := os.WriteFile(configPath, []byte(`{"enrollment_percentage":60}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = runAgentCmd(t, "experiments", "update", "exp1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--yes", "--json", "--no-input")
+	if err != nil || updated["enrollment_percentage"] != float64(60) {
+		t.Fatalf("approved update failed: err=%v body=%v", err, updated)
 	}
 }
