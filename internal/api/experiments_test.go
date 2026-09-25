@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,59 @@ import (
 
 	"github.com/revenuecat/cli/internal/api"
 )
+
+func TestExperimentLifecycleRoutes(t *testing.T) {
+	requests := []string{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost && r.URL.Path == "/projects/proj/experiments" {
+			var body api.ExperimentCreate
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			if body.OfferingAID != "ofrng_a" || body.OfferingBID != "ofrng_b" || body.EnrollmentPercentage != 50 {
+				t.Fatalf("unexpected create request: %+v", body)
+			}
+		}
+		if r.Method == http.MethodDelete {
+			fmt.Fprint(w, `{"object":"deleted_object","id":"exp1"}`)
+			return
+		}
+		fmt.Fprint(w, `{"object":"experiment","id":"exp1","display_name":"Test","status":"draft","created_at":1,"updated_at":2}`)
+	}))
+	t.Cleanup(srv.Close)
+	client := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+	ctx := context.Background()
+	_, err := client.Experiments.Create(ctx, "proj", api.ExperimentCreate{DisplayName: "Test", OfferingAID: "ofrng_a", OfferingBID: "ofrng_b", EnrollmentPercentage: 50})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Experiments.Update(ctx, "proj", "exp1", api.ExperimentUpdate{"notes": json.RawMessage(`"reviewed"`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, action := range []func(context.Context, string, string) (*api.Experiment, error){client.Experiments.Start, client.Experiments.Pause, client.Experiments.Resume, client.Experiments.Stop} {
+		if _, err := action(ctx, "proj", "exp1"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := client.Experiments.Delete(ctx, "proj", "exp1"); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"POST /projects/proj/experiments",
+		"POST /projects/proj/experiments/exp1",
+		"POST /projects/proj/experiments/exp1/actions/start",
+		"POST /projects/proj/experiments/exp1/actions/pause",
+		"POST /projects/proj/experiments/exp1/actions/resume",
+		"POST /projects/proj/experiments/exp1/actions/stop",
+		"DELETE /projects/proj/experiments/exp1",
+	}
+	if fmt.Sprint(requests) != fmt.Sprint(want) {
+		t.Fatalf("requests = %v, want %v", requests, want)
+	}
+}
 
 func TestExperimentsReadRoutesAndFilters(t *testing.T) {
 	requests := []string{}

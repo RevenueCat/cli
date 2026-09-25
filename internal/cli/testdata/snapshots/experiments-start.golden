@@ -1,0 +1,19 @@
+$ rc experiments start exp_snap --yes --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Experiment — New paywall
+  Start enrolling eligible customers in the experiment.
+
+  Status                      draft
+  Control                     ofrng_control
+  Treatment                   ofrng_treatment
+  Enrollment                  50%
+
+▍ Plan
+· 1. Start the experiment and enroll eligible customers
+· Starting experiment…
+✓ Started experiment exp_snap
+  rc experiments results exp_snap
+▍ New paywall
+
+  ID:      exp_snap
+  Status:  running
