@@ -23,6 +23,21 @@ func TestExperimentConfigSchemaExplainsNestedFields(t *testing.T) {
 	}
 }
 
+func TestTargetingConfigSchemaExplainsConditionsAndRuleTypes(t *testing.T) {
+	root := NewRootCmd("test")
+	for _, path := range []string{"targeting create", "targeting update"} {
+		data, err := json.Marshal(commandSchema(findCommand(t, root, path))["config_fields"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{"conditions", "app_version", "context", "placement_offerings", "schedule", "position"} {
+			if !strings.Contains(string(data), want) {
+				t.Errorf("%s schema missing %q", path, want)
+			}
+		}
+	}
+}
+
 func findCommand(t *testing.T, root *cobra.Command, path string) *cobra.Command {
 	t.Helper()
 	cur := root
