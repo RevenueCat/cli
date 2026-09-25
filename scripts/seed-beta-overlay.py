@@ -2,8 +2,8 @@
 """Seed docs/specs/v2-beta-overlay.yaml from a source OpenAPI spec.
 
 The public spec we fetch from docs is release-filtered and omits endpoints the
-CLI uses but that the backend marks `x-release-status: development` (the
-store_state family). This extracts just those path keys — with request/response
+CLI uses but that the backend marks `x-release-status: development`.
+This extracts just those path keys — with request/response
 bodies stripped — into a small overlay that preprocess-spec.py merges on top of
 the public spec at codegen/diff time. The overlay declares that the paths exist
 so gen-paths builds path helpers and spec-diff tracks coverage; the CLI
@@ -11,7 +11,7 @@ hand-writes the types, so oapi-codegen generates nothing from it.
 
 This is a *seeding* tool, not part of CI: run it once against a local checkout
 of the dev spec, then hand-maintain the result. Re-run to reseed when the
-upstream store_state schema changes.
+upstream development schema changes.
 
     python3 scripts/seed-beta-overlay.py \
         path/to/source-openapi.yaml \
@@ -26,15 +26,13 @@ import sys
 import yaml
 
 # Only pull paths whose key contains one of these — the development-status
-# endpoints the CLI depends on: per-product store_state, the store_state plans
-# tree, and product price management. Keep this to paths the CLI actually calls.
+# endpoints the CLI depends on. Keep this to paths the CLI actually calls.
 PATH_SUBSTRINGS = [
     "/products/{product_id}/store_state",
     "/store_state/plans",
     "/products/{product_id}/prices",
     "/products/{product_id}/test_store_prices",
     "/experiments",
-    "/targeting_rules",
 ]
 
 REF_RE = re.compile(r"#/components/([A-Za-z0-9]+)/([A-Za-z0-9_.-]+)")
@@ -73,8 +71,7 @@ def main():
         print("no matching paths found — check PATH_SUBSTRINGS", file=sys.stderr)
         sys.exit(1)
 
-    # The CLI hand-writes the types for these development-status endpoints (see
-    # internal/api/store_state_*.go and products.go). The overlay only needs to
+    # The CLI hand-writes the types for these development-status endpoints. The overlay only needs to
     # declare that the paths exist — so gen-paths builds path helpers and
     # spec-diff tracks coverage — not to generate models. Strip request/response
     # bodies so oapi-codegen emits nothing for them.

@@ -41,6 +41,24 @@ func TestExperimentResultsJSONIncludesAllSegments(t *testing.T) {
 	}
 }
 
+func TestExperimentResultsHumanExplainsMissingTotals(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"experiment_results","currency":"USD","sections":[{"section":"Revenue","metrics":[{"name":"revenue"}],"segments":[{"id":"product","display_name":"Annual","is_total":false}],"values":[{"metric":0,"segment":0,"variant":"Treatment","value":12.5}]}],"statistics":[],"predicted_ltv":{"predicted_winner_variant":"b","confidence":85}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	out, stderr, err := runAgentCmd(t, "experiments", "results", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"No total-segment metrics available", "Use --json", "Predicted winner", "Treatment"} {
+		if !strings.Contains(out+stderr, want) {
+			t.Fatalf("missing %q in output: stdout=%s stderr=%s", want, out, stderr)
+		}
+	}
+}
+
 func TestExperimentsDiscoverable(t *testing.T) {
 	out, _, err := runCmd(t, "schema", "experiments", "results", "--json")
 	if err != nil {
