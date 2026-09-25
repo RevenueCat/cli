@@ -202,12 +202,12 @@ rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # exper
 rc experiments list [--status <status>]
 rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline
 rc experiments results <id> [--platform <p>] [--country <code>] [--exposure-status exposed|not_exposed] [--currency <code>]  # human totals and decision signals; unknown platforms warn before passing through
-rc experiments create --name <name> --control <offering-id> --treatment <offering-id> --enrollment <percent> [--config <json-file>]
+rc experiments create (--name <name> --control <offering-id> --treatment <offering-id> --enrollment <percent> | --config <json-file>)
 rc experiments update <id> --config <json-file>         # partial update; file or - for stdin
 rc experiments delete <id>                              # draft only; confirmation/--yes
 rc experiments start <id>                               # approval gate: confirmation/--yes; shows current configuration first
 rc experiments pause <id>
-rc experiments resume <id>
+rc experiments resume <id>                             # resumes enrollment; configuration review + confirmation/--yes
 rc experiments stop <id>                                # permanent; confirmation/--yes
 
 # Rico (AI assistant)
