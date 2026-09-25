@@ -8,8 +8,51 @@ func configFieldsFor(cmd *cobra.Command) map[string]any {
 		return experimentConfigFields(true)
 	case "rc experiments update":
 		return experimentConfigFields(false)
+	case "rc targeting create":
+		return targetingConfigFields(true)
+	case "rc targeting update":
+		return targetingConfigFields(false)
 	}
 	return nil
+}
+
+func targetingConfigFields(create bool) map[string]any {
+	schedule := map[string]any{"type": "object", "description": "UTC timestamps ending in Z", "properties": map[string]any{
+		"start_date": configField("string", "Start time, for example 2026-05-25T10:00:00Z"),
+		"end_date":   configField("string", "Optional end time in the same format"),
+	}}
+	placements := map[string]any{"type": "object", "description": "Legacy rules only", "properties": map[string]any{
+		"fallback_offering_id": configField("string", "Fallback Offering ID"),
+		"placement_offerings": map[string]any{"type": "array", "items": map[string]any{
+			"type": "object", "required": []string{"placement_identifier", "offering_id"}, "properties": map[string]any{
+				"placement_identifier": configField("string", "Placement identifier, such as onboarding"),
+				"offering_id":          configField("string", "Offering ID for this placement"),
+			},
+		}},
+	}}
+	fields := map[string]any{
+		"position":     map[string]any{"type": "integer", "minimum": 1, "description": "One-based priority among rules in the same state; legacy rules only"},
+		"state":        configEnum("active or inactive for legacy; checkpoint also supports scheduled", "active", "inactive", "scheduled"),
+		"display_name": configField("string", "Rule name"),
+		"offering_id":  configField("string", "Offering ID served by a legacy rule"),
+		"audience_id":  configField("string", "Audience ID; mutually exclusive with conditions"),
+		"conditions":   targetingConditionsSchema(),
+		"schedule":     schedule,
+		"placements":   placements,
+	}
+	if create {
+		fields["rule_type"] = configEnum("Rule type; defaults to legacy", "legacy", "checkpoint")
+		fields["id"] = configField("string", "Optional custom ID for a legacy rule")
+		fields["flow_id"] = configField("string", "Flow ID served by a checkpoint rule")
+		fields["checkpoints"] = map[string]any{"type": "array", "description": "Exactly one checkpoint for a checkpoint rule", "items": map[string]any{
+			"type": "object", "required": []string{"checkpoint_id"}, "properties": map[string]any{
+				"checkpoint_id": configField("string", "Checkpoint ID"),
+				"position":      map[string]any{"type": "integer", "minimum": 0, "description": "Priority within the checkpoint"},
+			},
+		}}
+		return map[string]any{"type": "object", "properties": fields, "description": "Legacy: display_name and offering_id required. Checkpoint: rule_type, display_name, audience_id, flow_id, checkpoints required."}
+	}
+	return map[string]any{"type": "object", "properties": fields, "description": "Partial update of a legacy rule. Checkpoint updates are unavailable."}
 }
 
 func configField(kind, description string) map[string]any {
@@ -92,6 +135,14 @@ func targetingConditionsSchema() map[string]any {
 			"examples": []map[string]any{
 				{"field": "platform", "operator": "in", "value": []string{"ios"}},
 				{"field": "app_version", "operator": ">=", "value": "1.2.0", "context": "app1a2b3c4"},
+			},
+			"field_rules": map[string]any{
+				"app_config":       map[string]any{"operators": []string{"in", "not in"}, "value": "array of app IDs"},
+				"country":          map[string]any{"operators": []string{"in", "not in"}, "value": "array of uppercase two-letter country codes"},
+				"platform":         map[string]any{"operators": []string{"in", "not in"}, "value": "array of lowercase platforms", "values": []string{"amazon", "android", "ios", "macos", "roku", "tvos", "visionos", "watchos", "web"}},
+				"custom_attribute": map[string]any{"operators": []string{"in", "not in"}, "value": "array of strings or integers", "context": "required attribute key"},
+				"app_version":      map[string]any{"operators": []string{"=", "!=", ">", ">=", "<", "<="}, "value": "semantic version string", "context": "required app ID"},
+				"sdk_version":      map[string]any{"operators": []string{"=", "!=", ">", ">=", "<", "<="}, "value": "semantic version string", "context": "required SDK flavor, such as ios, android, flutter, or react-native"},
 			},
 		},
 	}

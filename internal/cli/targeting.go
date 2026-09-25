@@ -113,7 +113,7 @@ func newTargetingCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a targeting rule",
-		Long:  "Creates an inactive Offering rule by default. Without audience_id or conditions, a legacy rule matches everyone. Use --config for audience_id, conditions, schedule, placements, position, or a checkpoint rule with flow_id and checkpoints. Active or scheduled rules require confirmation.",
+		Long:  "Creates an inactive Offering rule by default. Without audience_id or conditions, a legacy rule matches everyone. Use --config for audience_id, conditions, schedule, placements, position, or a checkpoint rule with flow_id and checkpoints. Run rc schema targeting create for config fields and accepted values. Active or scheduled rules require confirmation.",
 		Example: `  rc targeting create --name "Default paywall" --offering ofrng_default
   echo '{"rule_type":"legacy","display_name":"US paywall","offering_id":"ofrng_us","conditions":[{"field":"country","operator":"in","value":["US"]}]}' | rc targeting create --config - --no-input
   echo '{"rule_type":"checkpoint","display_name":"After onboarding","audience_id":"aud_123","flow_id":"wf_123","checkpoints":[{"checkpoint_id":"chkpt_123"}]}' | rc targeting create --config - --no-input`,
@@ -283,7 +283,7 @@ func newTargetingUpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "update [id]",
 		Short:   "Update an Offering targeting rule",
-		Long:    "Partially updates a legacy targeting rule from a JSON object with position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
+		Long:    "Partially updates a legacy targeting rule from a JSON object with position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. Run rc schema targeting update for config fields and accepted values. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
 		Example: `  echo '{"state":"active","position":1}' | rc targeting update trle_123 --config - --yes --no-input`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
