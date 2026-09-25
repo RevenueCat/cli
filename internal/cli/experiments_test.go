@@ -132,3 +132,40 @@ func TestExperimentsDiscoverable(t *testing.T) {
 		t.Fatalf("results command not discoverable as a default command: %s", out)
 	}
 }
+
+func TestExperimentStartRequiresApprovalBeforeMutation(t *testing.T) {
+	mutations := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			mutations++
+			_, _ = io.WriteString(w, `{"object":"experiment","id":"exp1","display_name":"New paywall","status":"running","created_at":1,"updated_at":2}`)
+			return
+		}
+		_, _ = io.WriteString(w, `{"object":"experiment","id":"exp1","display_name":"New paywall","status":"draft","created_at":1,"updated_at":2,"enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	args := []string{"experiments", "start", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	_, _, err := runAgentCmd(t, args...)
+	if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 {
+		t.Fatalf("expected approval error before mutation; err=%v mutations=%d", err, mutations)
+	}
+	args = append(args, "--yes", "--json")
+	out, stderr, err := runAgentCmd(t, args...)
+	if err != nil || stderr != "" || mutations != 1 || !strings.Contains(out, `"status": "running"`) {
+		t.Fatalf("approved start failed: err=%v stderr=%q mutations=%d out=%s", err, stderr, mutations, out)
+	}
+}
+
+func TestExperimentCreateListsMissingFlags(t *testing.T) {
+	_, _, err := runCmd(t, "experiments", "create", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err == nil {
+		t.Fatal("expected missing input error")
+	}
+	for _, flag := range []string{"--name", "--control", "--treatment", "--enrollment"} {
+		if !strings.Contains(err.Error(), flag) {
+			t.Fatalf("missing %s from error: %v", flag, err)
+		}
+	}
+}

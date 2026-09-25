@@ -18,7 +18,20 @@ func newExperimentsCmd() *cobra.Command {
 		Short: "Run and analyze offering experiments",
 		Long:  "Inspect experiments, compare their results, and manage their lifecycle.",
 	}
-	cmd.AddCommand(newExperimentsListCmd(), newExperimentsShowCmd(), newExperimentsResultsCmd())
+	cmd.AddCommand(
+		newExperimentsListCmd(), newExperimentsShowCmd(), newExperimentsResultsCmd(),
+		newExperimentsCreateCmd(), newExperimentsUpdateCmd(), newExperimentsDeleteCmd(),
+		newExperimentsStartCmd(),
+		experimentActionCmd("pause", func(s *api.ExperimentsService, cmd *cobra.Command, projectID, id string) (*api.Experiment, error) {
+			return s.Pause(cmd.Context(), projectID, id)
+		}),
+		experimentActionCmd("resume", func(s *api.ExperimentsService, cmd *cobra.Command, projectID, id string) (*api.Experiment, error) {
+			return s.Resume(cmd.Context(), projectID, id)
+		}),
+		experimentActionCmd("stop", func(s *api.ExperimentsService, cmd *cobra.Command, projectID, id string) (*api.Experiment, error) {
+			return s.Stop(cmd.Context(), projectID, id)
+		}),
+	)
 	return cmd
 }
 
