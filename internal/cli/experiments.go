@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -265,6 +266,30 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 		rt.Out.Info("No total-segment metrics available.")
 		rt.Out.Hint("Use --json to inspect all segments and statistics.")
 	}
+	statistics := [][]string{}
+	for _, metric := range results.Statistics {
+		for _, raw := range metric.Variants {
+			var variant api.ExperimentResultVariantStatistic
+			if err := json.Unmarshal(raw, &variant); err != nil {
+				return err
+			}
+			if variant.Name == "Control" {
+				continue
+			}
+			statistics = append(statistics, []string{
+				metric.MetricName,
+				variant.Name,
+				chanceToWinLabel(variant),
+				liftIntervalLabel(variant),
+			})
+		}
+	}
+	if len(statistics) > 0 {
+		rt.Out.Title("Decision signals")
+		if err := rt.Out.RenderTable(output.Table{Columns: []string{"METRIC", "VARIANT", "CHANCE TO WIN", "95% LIFT INTERVAL"}, Rows: statistics}); err != nil {
+			return err
+		}
+	}
 	if results.PredictedLTV != nil {
 		winner := map[string]string{"a": "Control", "b": "Treatment", "c": "Treatment C", "d": "Treatment D"}[results.PredictedLTV.PredictedWinnerVariant]
 		if winner == "" {
@@ -274,6 +299,26 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 		rt.Out.Field("Confidence", fmt.Sprintf("%d%%", results.PredictedLTV.Confidence))
 	}
 	return nil
+}
+
+func chanceToWinLabel(stat api.ExperimentResultVariantStatistic) string {
+	if stat.ChanceToWin != nil {
+		return fmt.Sprintf("%.1f%%", *stat.ChanceToWin*100)
+	}
+	if stat.ChanceToWinStatus == "insufficient_data" {
+		return "Need more data"
+	}
+	return "—"
+}
+
+func liftIntervalLabel(stat api.ExperimentResultVariantStatistic) string {
+	if stat.LiftCredibleIntervalLower != nil && stat.LiftCredibleIntervalUpper != nil {
+		return fmt.Sprintf("%+.1f%% to %+.1f%%", *stat.LiftCredibleIntervalLower*100, *stat.LiftCredibleIntervalUpper*100)
+	}
+	if stat.LiftCredibleIntervalStatus == "insufficient_data" {
+		return "Need more data"
+	}
+	return "—"
 }
 
 func resultValue(value api.ExperimentResultValue) string {
