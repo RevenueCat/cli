@@ -22,9 +22,7 @@ func newExperimentsCreateCmd() *cobra.Command {
 		Short: "Create a draft experiment",
 		Long:  "Creates a draft comparing two Offerings. Use --config for audience_id or targeting_conditions, placements, offering_c_id/offering_d_id, primary_metric, secondary_metrics, enrollment_mode, and experiment_duration_settings. Creating a draft does not enroll customers.",
 		Example: `  rc experiments create --name "New paywall" --control ofrng_a --treatment ofrng_b --enrollment 50
-  rc experiments create --config - --json --no-input <<'JSON'
-  {"display_name":"New paywall","offering_a_id":"ofrng_a","offering_b_id":"ofrng_b","enrollment_percentage":50,"audience_id":"aud_123","primary_metric":"initial_conversion_rate"}
-  JSON`,
+  echo '{"display_name":"New paywall","offering_a_id":"ofrng_a","offering_b_id":"ofrng_b","enrollment_percentage":50,"audience_id":"aud_123","primary_metric":"initial_conversion_rate"}' | rc experiments create --config - --json --no-input`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -178,7 +176,10 @@ func newExperimentsUpdateCmd() *cobra.Command {
 				return err
 			}
 			if current.Status == "running" {
-				rt.Out.Notice("This experiment is running. Changes may affect customers being enrolled now.")
+				showExperimentEnrollmentState(rt, current, "Review the current experiment before changing enrollment.")
+				rt.Out.Field("Changes", compactJSON(body))
+				rt.Out.Notice("Changes to a running experiment may affect customers being enrolled now.")
+				rt.Out.Plan([]string{"Update the running experiment"})
 				if err := confirmOrAbort(rt, "Update running experiment now?"); err != nil {
 					return err
 				}
@@ -224,55 +225,7 @@ func newExperimentsStartCmd() *cobra.Command {
 			if current.Status != "draft" {
 				return fmt.Errorf("experiment %s is %s; only drafts can be started", id, current.Status)
 			}
-			rt.Out.Title("Experiment — " + current.DisplayName)
-			rt.Out.Lead("Start enrolling eligible customers in the experiment.")
-			rt.Out.Field("Status", current.Status)
-			if current.OfferingA != nil {
-				rt.Out.Field("Control", experimentOfferingLabel(current.OfferingA))
-			}
-			if current.OfferingB != nil {
-				rt.Out.Field("Treatment", experimentOfferingLabel(current.OfferingB))
-			}
-			if current.OfferingC != nil {
-				rt.Out.Field("Treatment C", experimentOfferingLabel(current.OfferingC))
-			}
-			if current.OfferingD != nil {
-				rt.Out.Field("Treatment D", experimentOfferingLabel(current.OfferingD))
-			}
-			if current.EnrollmentPercent != nil {
-				rt.Out.Field("Enrollment", fmt.Sprintf("%d%%", *current.EnrollmentPercent))
-			}
-			if current.AudienceID != nil {
-				rt.Out.Field("Audience", *current.AudienceID)
-			} else if len(current.TargetingConditions) > 0 {
-				rt.Out.Field("Conditions", compactJSON(current.TargetingConditions))
-			} else {
-				rt.Out.Field("Audience", "All eligible customers")
-			}
-			if current.Placements != nil {
-				rt.Out.Field("Placements", compactJSON(current.Placements))
-			}
-			if current.ExperimentType != nil {
-				rt.Out.Field("Type", *current.ExperimentType)
-			}
-			if current.PrimaryMetric != nil {
-				rt.Out.Field("Primary metric", *current.PrimaryMetric)
-			}
-			if len(current.SecondaryMetrics) > 0 {
-				rt.Out.Field("Secondary metrics", strings.Join(current.SecondaryMetrics, ", "))
-			}
-			if current.EnrollmentMode != nil {
-				rt.Out.Field("Enrollment mode", *current.EnrollmentMode)
-			}
-			if current.DurationSettings != nil {
-				rt.Out.Field("Duration", compactJSON(current.DurationSettings))
-			}
-			if current.Priority != nil {
-				rt.Out.Field("Priority", strconv.Itoa(*current.Priority))
-			}
-			if len(current.Conflicts) > 0 {
-				rt.Out.Notice("Experiment conflicts: " + compactJSON(current.Conflicts))
-			}
+			showExperimentEnrollmentState(rt, current, "Start enrolling eligible customers in the experiment.")
 			rt.Out.Plan([]string{"Start the experiment and enroll eligible customers"})
 			if err := confirmOrAbort(rt, "Start experiment now?"); err != nil {
 				return err
@@ -293,6 +246,58 @@ func newExperimentsStartCmd() *cobra.Command {
 			rt.Out.Hint("rc experiments results " + experiment.ID)
 			return nil
 		},
+	}
+}
+
+func showExperimentEnrollmentState(rt *Runtime, current *api.Experiment, lead string) {
+	rt.Out.Title("Experiment — " + current.DisplayName)
+	rt.Out.Lead(lead)
+	rt.Out.Field("Status", current.Status)
+	if current.OfferingA != nil {
+		rt.Out.Field("Control", experimentOfferingLabel(current.OfferingA))
+	}
+	if current.OfferingB != nil {
+		rt.Out.Field("Treatment", experimentOfferingLabel(current.OfferingB))
+	}
+	if current.OfferingC != nil {
+		rt.Out.Field("Treatment C", experimentOfferingLabel(current.OfferingC))
+	}
+	if current.OfferingD != nil {
+		rt.Out.Field("Treatment D", experimentOfferingLabel(current.OfferingD))
+	}
+	if current.EnrollmentPercent != nil {
+		rt.Out.Field("Enrollment", fmt.Sprintf("%d%%", *current.EnrollmentPercent))
+	}
+	if current.AudienceID != nil {
+		rt.Out.Field("Audience", *current.AudienceID)
+	} else if len(current.TargetingConditions) > 0 {
+		rt.Out.Field("Conditions", compactJSON(current.TargetingConditions))
+	} else {
+		rt.Out.Field("Audience", "All eligible customers")
+	}
+	if current.Placements != nil {
+		rt.Out.Field("Placements", compactJSON(current.Placements))
+	}
+	if current.ExperimentType != nil {
+		rt.Out.Field("Type", *current.ExperimentType)
+	}
+	if current.PrimaryMetric != nil {
+		rt.Out.Field("Primary metric", *current.PrimaryMetric)
+	}
+	if len(current.SecondaryMetrics) > 0 {
+		rt.Out.Field("Secondary metrics", strings.Join(current.SecondaryMetrics, ", "))
+	}
+	if current.EnrollmentMode != nil {
+		rt.Out.Field("Enrollment mode", *current.EnrollmentMode)
+	}
+	if current.DurationSettings != nil {
+		rt.Out.Field("Duration", compactJSON(current.DurationSettings))
+	}
+	if current.Priority != nil {
+		rt.Out.Field("Priority", strconv.Itoa(*current.Priority))
+	}
+	if len(current.Conflicts) > 0 {
+		rt.Out.Notice("Experiment conflicts: " + compactJSON(current.Conflicts))
 	}
 }
 
@@ -338,7 +343,7 @@ func newExperimentsPauseCmd() *cobra.Command {
 
 func newExperimentsResumeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use: "resume [id]", Short: "Resume an experiment", Args: cobra.MaximumNArgs(1),
+		Use: "resume [id]", Short: "Resume enrollment in a paused experiment", Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -355,6 +360,19 @@ func newExperimentsResumeCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			current, err := client.Experiments.Get(cmd.Context(), projectID, id)
+			if err != nil {
+				return err
+			}
+			if current.Status != "paused" {
+				return fmt.Errorf("experiment %s is %s; only paused experiments can be resumed", id, current.Status)
+			}
+			showExperimentEnrollmentState(rt, current, "Resume enrolling eligible customers in the experiment.")
+			rt.Out.Plan([]string{"Resume the experiment and enroll eligible customers"})
+			if err := confirmOrAbort(rt, "Resume experiment now?"); err != nil {
+				return err
+			}
+			rt.Out.Info("Resuming experiment…")
 			experiment, err := client.Experiments.Resume(cmd.Context(), projectID, id)
 			if err != nil {
 				return err
