@@ -1,11 +1,27 @@
 package cli
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 )
+
+func TestExperimentConfigSchemaExplainsNestedFields(t *testing.T) {
+	root := NewRootCmd("test")
+	for _, path := range []string{"experiments create", "experiments update"} {
+		data, err := json.Marshal(commandSchema(findCommand(t, root, path))["config_fields"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{"primary_metric", "new_and_existing", "experiment_duration_settings", "placement_offerings", "app_version", "context"} {
+			if !strings.Contains(string(data), want) {
+				t.Errorf("%s schema missing %q", path, want)
+			}
+		}
+	}
+}
 
 func findCommand(t *testing.T, root *cobra.Command, path string) *cobra.Command {
 	t.Helper()
