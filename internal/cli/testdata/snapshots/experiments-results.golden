@@ -1,0 +1,12 @@
+$ rc experiments results exp_snap --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Experiment results
+  Currency                    USD
+
+▍ Conversion
+
+▍ Decision signals
+METRIC                 CONTROL  TREATMENT  CHANGE   UNIT
+trial_conversion_rate  12.5     15         +20.00%  %   
+METRIC                 VARIANT    CHANCE TO WIN  95% LIFT INTERVAL
+trial_conversion_rate  Treatment  98.0%          -5.0% to +22.0%  
