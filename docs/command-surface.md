@@ -205,7 +205,7 @@ rc experiments stop <id>                                # permanent; confirmatio
 # Targeting rules — development v2 endpoints
 rc targeting list [--state <state>]
 rc targeting show <id>
-rc targeting create --name <name> --offering <offering-id> [--state inactive|active] [--config <json-file>]  # initially inactive
+rc targeting create (--name <name> --offering <offering-id> [--state inactive|active] | --config <json-file>)  # initially inactive
 rc targeting update <id> --config <json-file>           # partial update
 rc targeting delete <id>                                # confirmation/--yes
 
