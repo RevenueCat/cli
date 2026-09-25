@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,37 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestTargetingReorderNeedsApprovalAndSendsPosition(t *testing.T) {
+	var posted map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			if r.URL.Path != "/projects/proj/targeting_rules/trle1" {
+				t.Errorf("unexpected path: %s", r.URL.Path)
+			}
+			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+				t.Error(err)
+			}
+		}
+		_, _ = io.WriteString(w, `{"id":"trle1","rule_type":"legacy","state":"active","display_name":"US paywall","offering_id":"ofrng_us"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	configPath := filepath.Join(t.TempDir(), "reorder.json")
+	if err := os.WriteFile(configPath, []byte(`{"position":1}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"targeting", "update", "trle1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	_, _, err := runAgentCmd(t, args...)
+	if err == nil || !strings.Contains(err.Error(), "--yes") || posted != nil {
+		t.Fatalf("reorder should require approval: err=%v posted=%v", err, posted)
+	}
+	_, _, err = runAgentCmd(t, append(args, "--yes", "--json")...)
+	if err != nil || posted["position"] != float64(1) {
+		t.Fatalf("approved reorder failed: err=%v posted=%v", err, posted)
+	}
+}
 
 func TestTargetingActivationRequiresApproval(t *testing.T) {
 	mutations := 0
