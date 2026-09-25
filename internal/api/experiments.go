@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -158,9 +159,22 @@ type ExperimentResultValue struct {
 }
 
 type ExperimentResultStatistic struct {
-	Object     string `json:"object"`
-	MetricName string `json:"metric_name"`
-	Variants   []any  `json:"variants"`
+	Object     string            `json:"object"`
+	MetricName string            `json:"metric_name"`
+	Variants   []json.RawMessage `json:"variants"`
+}
+
+type ExperimentResultVariantStatistic struct {
+	Object                     string   `json:"object"`
+	Name                       string   `json:"name"`
+	ChanceToWin                *float64 `json:"chance_to_win"`
+	ChanceToWinStatus          string   `json:"chance_to_win_status"`
+	CredibleIntervalLower      *float64 `json:"credible_interval_lower"`
+	CredibleIntervalUpper      *float64 `json:"credible_interval_upper"`
+	CredibleIntervalStatus     string   `json:"credible_interval_status"`
+	LiftCredibleIntervalLower  *float64 `json:"lift_credible_interval_lower"`
+	LiftCredibleIntervalUpper  *float64 `json:"lift_credible_interval_upper"`
+	LiftCredibleIntervalStatus string   `json:"lift_credible_interval_status"`
 }
 
 type ExperimentPredictedLTV struct {

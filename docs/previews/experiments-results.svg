@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg width="740.67" height="185.00" xmlns="http://www.w3.org/2000/svg">
+<svg width="740.67" height="252.00" xmlns="http://www.w3.org/2000/svg">
 <style>
 @font-face {
 	font-family: &apos;JetBrains Mono&apos;;
@@ -8,7 +8,7 @@
 	font-weight: normal;
 	font-style: normal;
 }
-</style><rect width="740.67" height="185.00" fill="#282a36" x="0.00px" y="0.00px"/>
+</style><rect width="740.67" height="252.00" fill="#282a36" x="0.00px" y="0.00px"/>
 <g font-family="JetBrains Mono" font-size="14.00px" fill="#f8f8f2" clip-path="url(#terminalMask)">
 <text x="12.00px" y="43.80px" xml:space="preserve">$ rc experiments results exp_snap --no-input --project-id proj_snap --api-key sk_snap
 </text><text x="12.00px" y="60.60px" xml:space="preserve">
@@ -16,8 +16,12 @@
 </text><text x="12.00px" y="94.20px" xml:space="preserve">  Currency                    USD
 </text><text x="12.00px" y="111.00px" xml:space="preserve">
 </text><text x="12.00px" y="127.80px" xml:space="preserve">▍ Conversion
-</text><text x="12.00px" y="144.60px" xml:space="preserve">METRIC                 CONTROL  TREATMENT  CHANGE   UNIT
-</text><text x="12.00px" y="161.40px" xml:space="preserve">trial_conversion_rate  12.5     15         +20.00%  %   
+</text><text x="12.00px" y="144.60px" xml:space="preserve">
+</text><text x="12.00px" y="161.40px" xml:space="preserve">▍ Decision signals
+</text><text x="12.00px" y="178.20px" xml:space="preserve">METRIC                 CONTROL  TREATMENT  CHANGE   UNIT
+</text><text x="12.00px" y="195.00px" xml:space="preserve">trial_conversion_rate  12.5     15         +20.00%  %   
+</text><text x="12.00px" y="211.80px" xml:space="preserve">METRIC                 VARIANT    CHANCE TO WIN  95% LIFT INTERVAL
+</text><text x="12.00px" y="228.60px" xml:space="preserve">trial_conversion_rate  Treatment  98.0%          -5.0% to +22.0%  
 </text>
 </g>
 <svg x="0.00px" y="0.00px"><circle cx="13.50" cy="12.00" r="5.50" fill="#FF5A54"/><circle cx="32.50" cy="12.00" r="5.50" fill="#E6BF29"/><circle cx="51.50" cy="12.00" r="5.50" fill="#52C12B"/></svg></svg>

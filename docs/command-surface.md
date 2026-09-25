@@ -192,7 +192,7 @@ rc paywalls delete <id> [--force]                        # attached/published pa
 # Experiments — development v2 endpoints, normal discoverable CLI surface
 rc experiments list [--status <status>]
 rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline
-rc experiments results <id> [--platform <p>] [--country <code>] [--exposure-status exposed|not_exposed] [--currency <code>]  # human totals compare variants by metric; unknown platforms warn before passing through
+rc experiments results <id> [--platform <p>] [--country <code>] [--exposure-status exposed|not_exposed] [--currency <code>]  # human totals and decision signals; unknown platforms warn before passing through
 
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)
