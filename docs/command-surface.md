@@ -194,6 +194,7 @@ rc experiments list [--status <status>]
 rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline
 rc experiments results <id> [--platform <p>] [--country <code>] [--exposure-status exposed|not_exposed] [--currency <code>]  # human totals and decision signals; unknown platforms warn before passing through
 rc experiments create (--name <name> --control <offering-id> --treatment <offering-id> --enrollment <percent> | --config <json-file>)
+rc experiments duplicate <id> [--name <name>]          # copy configuration into a new draft; never copies results or status
 rc experiments update <id> --config <json-file>         # partial update; file or - for stdin
 rc experiments delete <id>                              # draft only; confirmation/--yes
 rc experiments start <id>                               # approval gate: confirmation/--yes; shows current configuration first

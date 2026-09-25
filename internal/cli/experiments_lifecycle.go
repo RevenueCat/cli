@@ -20,7 +20,7 @@ func newExperimentsCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a draft experiment",
-		Long:  "Creates a draft comparing two Offerings. Use --config for audience_id or targeting_conditions, placements, offering_c_id/offering_d_id, primary_metric, secondary_metrics, enrollment_mode, and experiment_duration_settings. Creating a draft does not enroll customers.",
+		Long:  "Creates a draft comparing two Offerings. Use --config for audience_id or targeting_conditions, placements, offering_c_id/offering_d_id, primary_metric, secondary_metrics, enrollment_mode, and experiment_duration_settings. Run rc schema experiments create for config fields and accepted values. Creating a draft does not enroll customers.",
 		Example: `  rc experiments create --name "New paywall" --control ofrng_a --treatment ofrng_b --enrollment 50
   echo '{"display_name":"New paywall","offering_a_id":"ofrng_a","offering_b_id":"ofrng_b","enrollment_percentage":50,"audience_id":"aud_123","primary_metric":"initial_conversion_rate"}' | rc experiments create --config - --json --no-input`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -139,7 +139,7 @@ func newExperimentsUpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "update [id]",
 		Short:   "Update an experiment",
-		Long:    "Partially updates an experiment from a JSON object. Only supplied fields change. A running experiment requires confirmation.",
+		Long:    "Partially updates an experiment from a JSON object. Only supplied fields change. Running experiments accept only enrollment_percentage and require confirmation. Paused experiments cannot be edited. Run rc schema experiments update to inspect config fields.",
 		Example: `  echo '{"display_name":"Updated test"}' | rc experiments update exp123 --config - --no-input`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
