@@ -189,6 +189,25 @@ rc paywalls attach <paywall-id> <offering-id>            # attach or move a payw
 rc paywalls detach <paywall-id>                          # make it standalone; unpublish a published paywall first
 rc paywalls delete <id> [--force]                        # attached/published paywalls refuse to delete without --force
 
+# Experiments — development v2 endpoints, normal discoverable CLI surface
+rc experiments list [--status <status>]
+rc experiments show <id>
+rc experiments results <id> [--platform <p>] [--country <code>] [--exposure-status <s>] [--currency <code>]
+rc experiments create --name <name> --control <offering-id> --treatment <offering-id> --enrollment <percent> [--config <json-file>]
+rc experiments update <id> --config <json-file>         # partial update; file or - for stdin
+rc experiments delete <id>                              # draft only; confirmation/--yes
+rc experiments start <id>                               # approval gate: confirmation/--yes; shows current configuration first
+rc experiments pause <id>
+rc experiments resume <id>
+rc experiments stop <id>                                # permanent; confirmation/--yes
+
+# Targeting rules — development v2 endpoints
+rc targeting list [--state <state>]
+rc targeting show <id>
+rc targeting create --config <json-file>                # structured rule, initially inactive unless configured otherwise
+rc targeting update <id> --config <json-file>           # partial update
+rc targeting delete <id>                                # confirmation/--yes
+
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)
 rc rico --continue                                       # continue the most recent conversation

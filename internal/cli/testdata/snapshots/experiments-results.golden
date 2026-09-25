@@ -1,0 +1,9 @@
+$ rc experiments results exp_snap --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Experiment results
+  Currency                    USD
+
+▍ Conversion
+METRIC                 VARIANT    VALUE  UNIT  CHANGE 
+trial_conversion_rate  Control    12.5   %     —    
+trial_conversion_rate  Treatment  15     %     +20.00%
