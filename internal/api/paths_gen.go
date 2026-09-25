@@ -313,3 +313,11 @@ func pathSubscriptionEntitlements(projectID string, subscriptionID string) strin
 func pathSubscriptionTransactions(projectID string, subscriptionID string) string {
 	return encodePath("projects", projectID, "subscriptions", subscriptionID, "transactions")
 }
+
+func pathTargetingRule(projectID string, targetingRuleID string) string {
+	return encodePath("projects", projectID, "targeting_rules", targetingRuleID)
+}
+
+func pathTargetingRules(projectID string) string {
+	return encodePath("projects", projectID, "targeting_rules")
+}

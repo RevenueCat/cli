@@ -28,6 +28,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/targeting_rules"):
+			io.WriteString(w, `{"object":"list","items":[{"object":"targeting_rule","id":"trle_snap","rule_type":"legacy","state":"active","display_name":"US annual paywall","offering_id":"ofrng_us"}],"next_page":null,"url":"/projects/proj_snap/targeting_rules"}`)
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/actions/start"):
 			io.WriteString(w, `{"object":"experiment","id":"exp_snap","display_name":"New paywall","status":"running","created_at":1784297950368,"updated_at":1784297950368}`)
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap"):
@@ -67,6 +69,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"experiments-show", []string{"experiments", "show", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-results", []string{"experiments", "results", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-start", []string{"experiments", "start", "exp_snap", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"targeting-list", []string{"targeting", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list", []string{"apps", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
 		{"error-not-found", []string{"offerings", "show", "ofrng_missing", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
