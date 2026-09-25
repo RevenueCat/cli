@@ -124,11 +124,12 @@ func newExperimentsResultsCmd() *cobra.Command {
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			var err error
-			opts.Platform, err = experimentResultsPlatform(opts.Platform)
-			if err != nil {
-				return err
+			platform, knownPlatform := experimentResultsPlatform(opts.Platform)
+			opts.Platform = platform
+			if !knownPlatform {
+				rt.Out.AlwaysWarn(fmt.Sprintf("Unknown platform %q; sending it as provided. Results may be empty.", platform))
 			}
+			var err error
 			opts.ExposureStatus, err = experimentExposureStatus(opts.ExposureStatus)
 			if err != nil {
 				return err
@@ -159,38 +160,39 @@ func newExperimentsResultsCmd() *cobra.Command {
 			return renderExperimentResults(rt, results)
 		},
 	}
-	cmd.Flags().StringVar(&opts.Platform, "platform", "", "filter by iOS, Android, macOS, tvOS, watchOS, visionOS, Amazon, Roku, or Web (case-insensitive; app_store/play_store aliases)")
+	cmd.Flags().StringVar(&opts.Platform, "platform", "", "filter by iOS, Android, macOS, tvOS, watchOS, visionOS, Amazon, Roku, or Web (case-insensitive; app_store/play_store aliases); other values pass through with a warning")
 	cmd.Flags().StringVar(&opts.Country, "country", "", "filter by ISO country code (for example, US)")
 	cmd.Flags().StringVar(&opts.ExposureStatus, "exposure-status", "", "filter by exposed or not_exposed; omit for all enrolled customers")
 	cmd.Flags().StringVar(&opts.Currency, "currency", "", "display currency for monetary metrics")
 	return cmd
 }
 
-func experimentResultsPlatform(value string) (string, error) {
+func experimentResultsPlatform(value string) (string, bool) {
+	value = strings.TrimSpace(value)
 	if value == "" {
-		return "", nil
+		return "", true
 	}
-	switch strings.ToLower(strings.TrimSpace(value)) {
+	switch strings.ToLower(value) {
 	case "ios", "app_store":
-		return "iOS", nil
+		return "iOS", true
 	case "android", "play_store":
-		return "Android", nil
+		return "Android", true
 	case "macos", "mac_app_store":
-		return "macOS", nil
+		return "macOS", true
 	case "tvos":
-		return "tvOS", nil
+		return "tvOS", true
 	case "watchos":
-		return "watchOS", nil
+		return "watchOS", true
 	case "visionos":
-		return "visionOS", nil
+		return "visionOS", true
 	case "amazon":
-		return "Amazon", nil
+		return "Amazon", true
 	case "roku":
-		return "Roku", nil
+		return "Roku", true
 	case "web":
-		return "Web", nil
+		return "Web", true
 	default:
-		return strings.TrimSpace(value), nil
+		return value, false
 	}
 }
 

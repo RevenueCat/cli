@@ -76,6 +76,35 @@ func TestExperimentResultsRejectsUnknownExposureStatus(t *testing.T) {
 	}
 }
 
+func TestExperimentResultsWarnsOnUnknownPlatform(t *testing.T) {
+	var platform string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		platform = r.URL.Query().Get("platform")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"experiment_results","currency":"USD","sections":[],"statistics":[],"predicted_ltv":null}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, stderr, err := runAgentCmd(t, "experiments", "results", "exp1", "--platform", "bogus", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err != nil || platform != "bogus" || !strings.Contains(stderr, `Unknown platform "bogus"`) {
+		t.Fatalf("err=%v platform=%q stderr=%q", err, platform, stderr)
+	}
+}
+
+func TestExperimentShowSortsTimeline(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Timeline test","status":"paused","started_at":1000,"paused_at":3000,"resumed_at":2000}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	out, _, err := runAgentCmd(t, "experiments", "show", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	started, resumed, paused := strings.Index(out, "Started:"), strings.Index(out, "Resumed:"), strings.Index(out, "Paused:")
+	if err != nil || started < 0 || resumed < 0 || paused < 0 || started > resumed || resumed > paused {
+		t.Fatalf("timeline out of order: err=%v out=%s", err, out)
+	}
+}
+
 func TestExperimentResultsHumanExplainsMissingTotals(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
