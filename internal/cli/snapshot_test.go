@@ -28,6 +28,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/results"):
+			io.WriteString(w, `{"object":"experiment_results","currency":"USD","sections":[{"object":"experiment_results_section","section":"Conversion","metrics":[{"name":"trial_conversion_rate","unit":"%"}],"segments":[{"object":"experiment_results_segment","id":"total","display_name":"Total","is_total":true}],"values":[{"object":"experiment_results_value","metric":0,"segment":0,"variant":"Control","value":12.5,"change":null,"credible_interval":null,"lift_credible_interval":null},{"object":"experiment_results_value","metric":0,"segment":0,"variant":"Treatment","value":15.0,"change":20,"credible_interval":null,"lift_credible_interval":null}]}],"statistics":[],"predicted_ltv":null}`)
 		case strings.HasSuffix(r.URL.Path, "/offerings/ofrng_snap"):
 			io.WriteString(w, `{"object":"offering","id":"ofrng_snap","lookup_key":"default","display_name":"Default","is_current":true,"created_at":1784297950368,"project_id":"proj_snap"}`)
 		case strings.HasSuffix(r.URL.Path, "/apps/app_snap1"):
@@ -58,6 +60,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"version", []string{"version"}},
 		{"auth-status-logged-out", []string{"auth", "status", "--no-input"}},
 		{"offerings-show", []string{"offerings", "show", "ofrng_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"experiments-results", []string{"experiments", "results", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list", []string{"apps", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
 		{"error-not-found", []string{"offerings", "show", "ofrng_missing", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
