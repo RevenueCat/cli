@@ -123,7 +123,7 @@ func newExperimentsCreateCmd() *cobra.Command {
 			}
 			rt.Out.Success(fmt.Sprintf("Created draft experiment %s", experiment.ID))
 			rt.Out.Hint("rc experiments start " + experiment.ID)
-			return rt.Out.Render(experiment)
+			return renderExperimentShow(rt, experiment)
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "experiment display name")
@@ -189,7 +189,7 @@ func newExperimentsUpdateCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success("Updated experiment " + experiment.ID)
-			return rt.Out.Render(experiment)
+			return renderExperimentShow(rt, experiment)
 		},
 	}
 	cmd.Flags().StringVar(&config, "config", "", "JSON object of fields to update; use - for stdin")
@@ -327,7 +327,7 @@ func newExperimentsPauseCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success("Paused experiment " + experiment.ID)
-			return rt.Out.Render(experiment)
+			return renderExperimentShow(rt, experiment)
 		},
 	}
 }
@@ -369,7 +369,7 @@ func newExperimentsResumeCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success("Resumed experiment " + experiment.ID)
-			return rt.Out.Render(experiment)
+			return renderExperimentShow(rt, experiment)
 		},
 	}
 }
@@ -401,7 +401,7 @@ func newExperimentsStopCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success("Stopped experiment " + experiment.ID)
-			return rt.Out.Render(experiment)
+			return renderExperimentShow(rt, experiment)
 		},
 	}
 }
