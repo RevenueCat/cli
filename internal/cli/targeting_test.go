@@ -74,3 +74,26 @@ func TestTargetingUpdateWarnsWhenAudienceIsCleared(t *testing.T) {
 		t.Fatalf("expected global-scope warning before approval; err=%v stderr=%q", err, stderr)
 	}
 }
+
+func TestTargetingShowCheckpointDetailsAndJSON(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"targeting_rule","id":"trle1","rule_type":"checkpoint","state":"scheduled","display_name":"After onboarding","flow_id":"wf1","audience_id":"aud1","checkpoints":[{"checkpoint_id":"chkpt1","position":2,"checkpoint":{"identifier":"app_open"}}],"schedule":{"start_date":null,"end_date":"2026-10-01T00:00:00Z"}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	args := []string{"targeting", "show", "trle1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	out, _, err := runAgentCmd(t, args...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"wf1", "aud1", "app_open (chkpt1)", "Position 2", "2026-10-01T00:00:00Z"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q from checkpoint view: %s", want, out)
+		}
+	}
+	out, _, err = runAgentCmd(t, append(args, "--json")...)
+	if err != nil || !strings.Contains(out, `"checkpoint_id": "chkpt1"`) || !strings.Contains(out, `"end_date": "2026-10-01T00:00:00Z"`) {
+		t.Fatalf("JSON lost checkpoint details: err=%v out=%s", err, out)
+	}
+}

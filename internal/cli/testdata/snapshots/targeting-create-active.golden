@@ -14,8 +14,15 @@ $ rc targeting create --name Default paywall --offering ofrng_default --state ac
 ▍ Plan
 · 1. Create the rule and apply it to matching customers
 ✓ Created targeting rule trle_snap
-id            trle_snap
-display_name  Default paywall
-offering_id   ofrng_default
-rule_type     legacy
-state         active
+  Use --json for the complete API response.
+▍ Default paywall
+  trle_snap · legacy · active
+
+Serves
+  Offering:  ofrng_default
+
+Audience
+  Audience:  All eligible customers
+
+Placements
+  No placement overrides

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg width="1215.67" height="521.00" xmlns="http://www.w3.org/2000/svg">
+<svg width="707.33" height="336.00" xmlns="http://www.w3.org/2000/svg">
 <style>
 @font-face {
 	font-family: &apos;JetBrains Mono&apos;;
@@ -8,36 +8,25 @@
 	font-weight: normal;
 	font-style: normal;
 }
-</style><rect width="1215.67" height="521.00" fill="#282a36" x="0.00px" y="0.00px"/>
+</style><rect width="707.33" height="336.00" fill="#282a36" x="0.00px" y="0.00px"/>
 <g font-family="JetBrains Mono" font-size="14.00px" fill="#f8f8f2" clip-path="url(#terminalMask)">
-<text x="12.00px" y="43.80px" xml:space="preserve">$ rc targeting create --name Default paywall --offering ofrng_default --state active --yes --no-input --project-id proj_snap --api-key sk_snap
-</text><text x="12.00px" y="60.60px" xml:space="preserve">
-</text><text x="12.00px" y="77.40px" xml:space="preserve">▍ Targeting rule — Default paywall
-</text><text x="12.00px" y="94.20px" xml:space="preserve">  Apply this rule in priority order when it becomes active.
+<text x="12.00px" y="43.80px" xml:space="preserve">$ rc targeting show trle_snap --no-input --project-id proj_snap --api-key sk_snap
+</text><text x="12.00px" y="60.60px" xml:space="preserve">  Use --json for the complete API response.
+</text><text x="12.00px" y="77.40px" xml:space="preserve">▍ US annual paywall
+</text><text x="12.00px" y="94.20px" xml:space="preserve">  trle_snap · legacy · active
 </text><text x="12.00px" y="111.00px" xml:space="preserve">
-</text><text x="12.00px" y="127.80px" xml:space="preserve">  Type                        legacy
-</text><text x="12.00px" y="144.60px" xml:space="preserve">  State                       active
-</text><text x="12.00px" y="161.40px" xml:space="preserve">  Offering                    ofrng_default
-</text><text x="12.00px" y="178.20px" xml:space="preserve">
-</text><text x="12.00px" y="195.00px" xml:space="preserve">▐ This rule matches everyone. Active rules use the first match.
+</text><text x="12.00px" y="127.80px" xml:space="preserve">Serves
+</text><text x="12.00px" y="144.60px" xml:space="preserve">  Offering:  ofrng_us
+</text><text x="12.00px" y="161.40px" xml:space="preserve">
+</text><text x="12.00px" y="178.20px" xml:space="preserve">Audience
+</text><text x="12.00px" y="195.00px" xml:space="preserve">  Condition 1:  platform in ios
 </text><text x="12.00px" y="211.80px" xml:space="preserve">
-</text><text x="12.00px" y="228.60px" xml:space="preserve">  Position                    Append to the end
-</text><text x="12.00px" y="245.40px" xml:space="preserve">
-</text><text x="12.00px" y="262.20px" xml:space="preserve">▍ Plan
-</text><text x="12.00px" y="279.00px" xml:space="preserve">· 1. Create the rule and apply it to matching customers
-</text><text x="12.00px" y="295.80px" xml:space="preserve">✓ Created targeting rule trle_snap
-</text><text x="12.00px" y="312.60px" xml:space="preserve">  Use --json for the complete API response.
-</text><text x="12.00px" y="329.40px" xml:space="preserve">▍ Default paywall
-</text><text x="12.00px" y="346.20px" xml:space="preserve">  trle_snap · legacy · active
-</text><text x="12.00px" y="363.00px" xml:space="preserve">
-</text><text x="12.00px" y="379.80px" xml:space="preserve">Serves
-</text><text x="12.00px" y="396.60px" xml:space="preserve">  Offering:  ofrng_default
-</text><text x="12.00px" y="413.40px" xml:space="preserve">
-</text><text x="12.00px" y="430.20px" xml:space="preserve">Audience
-</text><text x="12.00px" y="447.00px" xml:space="preserve">  Audience:  All eligible customers
-</text><text x="12.00px" y="463.80px" xml:space="preserve">
-</text><text x="12.00px" y="480.60px" xml:space="preserve">Placements
-</text><text x="12.00px" y="497.40px" xml:space="preserve">  No placement overrides
+</text><text x="12.00px" y="228.60px" xml:space="preserve">Placements
+</text><text x="12.00px" y="245.40px" xml:space="preserve">  Fallback:    ofrng_default
+</text><text x="12.00px" y="262.20px" xml:space="preserve">  onboarding:  ofrng_us
+</text><text x="12.00px" y="279.00px" xml:space="preserve">
+</text><text x="12.00px" y="295.80px" xml:space="preserve">Schedule
+</text><text x="12.00px" y="312.60px" xml:space="preserve">  Start:  2026-09-25T12:00:00Z
 </text>
 </g>
 <svg x="0.00px" y="0.00px"><circle cx="13.50" cy="12.00" r="5.50" fill="#FF5A54"/><circle cx="32.50" cy="12.00" r="5.50" fill="#E6BF29"/><circle cx="51.50" cy="12.00" r="5.50" fill="#52C12B"/></svg></svg>
