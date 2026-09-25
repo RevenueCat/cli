@@ -24,7 +24,7 @@ func newTargetingCmd() *cobra.Command {
 }
 
 func newTargetingListCmd() *cobra.Command {
-	var state, startingAfter string
+	var state, cursor string
 	var limit int
 	cmd := &cobra.Command{
 		Use:     "list",
@@ -40,7 +40,7 @@ func newTargetingListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			page, err := client.TargetingRules.List(cmd.Context(), projectID, api.ListTargetingRulesOptions{State: state, Limit: limit, StartingAfter: startingAfter})
+			page, err := client.TargetingRules.List(cmd.Context(), projectID, api.ListTargetingRulesOptions{State: state, Limit: limit, StartingAfter: cursor})
 			if err != nil {
 				return err
 			}
@@ -52,12 +52,16 @@ func newTargetingListCmd() *cobra.Command {
 				}
 				rows = append(rows, []string{rule.ID, rule.DisplayName, rule.RuleType, rule.State, serves})
 			}
-			return rt.Out.RenderTable(output.Table{Columns: []string{"ID", "NAME", "TYPE", "STATE", "SERVES"}, Rows: rows, Raw: page})
+			if err := rt.Out.RenderTable(output.Table{Columns: []string{"ID", "NAME", "TYPE", "STATE", "SERVES"}, Rows: rows, Raw: page}); err != nil {
+				return err
+			}
+			hintMoreResults(rt, page)
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&state, "state", "", "filter by active, scheduled, or inactive")
 	cmd.Flags().IntVar(&limit, "limit", 20, "maximum rules to return (1–100)")
-	cmd.Flags().StringVar(&startingAfter, "starting-after", "", "pagination cursor from the previous page")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "item ID to start after (pagination)")
 	return cmd
 }
 
@@ -99,7 +103,13 @@ func newTargetingShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return rt.Out.Render(rule)
+			if err := rt.Out.Render(rule); err != nil {
+				return err
+			}
+			if !rt.Globals.JSON {
+				rt.Out.Hint("Use --json to inspect conditions, placements, schedule, and checkpoints.")
+			}
+			return nil
 		},
 	}
 }
@@ -109,9 +119,14 @@ func newTargetingCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a targeting rule",
-		Long:  "Creates an inactive Offering rule by default. Use --config for audiences, conditions, schedules, placements, or a checkpoint rule. Activating a rule requires confirmation.",
-		Example: `  rc targeting create --name "US paywall" --offering ofrng_us
-  rc targeting create --config rule.json --yes --json --no-input`,
+		Long:  "Creates an inactive Offering rule by default. Without audience_id or conditions, a legacy rule matches everyone. Use --config for audience_id, conditions, schedule, placements, position, or a checkpoint rule with flow_id and checkpoints. Active or scheduled rules require confirmation.",
+		Example: `  rc targeting create --name "Default paywall" --offering ofrng_default
+  rc targeting create --config - --no-input <<'JSON'
+  {"rule_type":"legacy","display_name":"US paywall","offering_id":"ofrng_us","conditions":[{"field":"country","operator":"in","value":["US"]}]}
+  JSON
+  rc targeting create --config - --no-input <<'JSON'
+  {"rule_type":"checkpoint","display_name":"After onboarding","audience_id":"aud_123","flow_id":"wf_123","checkpoints":[{"checkpoint_id":"chkpt_123"}]}
+  JSON`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -139,15 +154,19 @@ func newTargetingCreateCmd() *cobra.Command {
 			if body.State == "" {
 				body.State = "inactive"
 			}
-			if err := gatherTargetingCreateInput(rt, &body); err != nil {
+			if err := gatherTargetingCreateInput(cmd, rt, projectID, &body); err != nil {
 				return err
 			}
 			if err := validateTargetingCreate(body); err != nil {
 				return err
 			}
 			if body.State != "inactive" {
-				rt.Out.Notice("This rule will affect which Offering or Flow matching customers receive.")
-				if err := confirmOrAbort(rt, "Activate targeting rule now?"); err != nil {
+				showTargetingCreatePlan(rt, body)
+				prompt := "Activate targeting rule now?"
+				if body.State == "scheduled" {
+					prompt = "Schedule targeting rule now?"
+				}
+				if err := confirmOrAbort(rt, prompt); err != nil {
 					return err
 				}
 			}
@@ -165,12 +184,12 @@ func newTargetingCreateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&name, "name", "", "rule display name")
 	cmd.Flags().StringVar(&offering, "offering", "", "Offering ID served by a legacy rule")
-	cmd.Flags().StringVar(&state, "state", "", "inactive (default) or active")
+	cmd.Flags().StringVar(&state, "state", "", "inactive (default), active, or scheduled (checkpoint only)")
 	cmd.Flags().StringVar(&config, "config", "", "JSON config file; use - for stdin")
 	return cmd
 }
 
-func gatherTargetingCreateInput(rt *Runtime, body *api.TargetingRuleCreate) error {
+func gatherTargetingCreateInput(cmd *cobra.Command, rt *Runtime, projectID string, body *api.TargetingRuleCreate) error {
 	if body.RuleType == "checkpoint" {
 		var missing []string
 		if body.DisplayName == "" {
@@ -207,10 +226,53 @@ func gatherTargetingCreateInput(rt *Runtime, body *api.TargetingRuleCreate) erro
 	if body.DisplayName == "" {
 		form.Field(huh.NewInput().Title("Rule name").Value(&body.DisplayName).Validate(tui.Required("rule name")))
 	}
-	if body.OfferingID == "" {
-		form.Field(huh.NewInput().Title("Offering ID").Value(&body.OfferingID).Validate(tui.Required("offering ID")))
+	if err := form.Run(); err != nil {
+		return err
 	}
-	return form.Run()
+	if body.OfferingID == "" {
+		client, err := rt.API()
+		if err != nil {
+			return err
+		}
+		body.OfferingID, err = requireID(rt, "", "offering", func() ([]PickerItem, error) {
+			return offeringPickerItems(cmd.Context(), client, projectID)
+		})
+		return err
+	}
+	return nil
+}
+
+func showTargetingCreatePlan(rt *Runtime, body api.TargetingRuleCreate) {
+	rt.Out.Title("Targeting rule — " + body.DisplayName)
+	rt.Out.Lead("Apply this rule in priority order when it becomes active.")
+	rt.Out.Field("Type", body.RuleType)
+	rt.Out.Field("State", body.State)
+	if body.RuleType == "legacy" {
+		rt.Out.Field("Offering", body.OfferingID)
+		if body.AudienceID != "" {
+			rt.Out.Field("Audience", body.AudienceID)
+		} else if len(body.Conditions) > 0 && string(body.Conditions) != "[]" {
+			rt.Out.Field("Conditions", string(body.Conditions))
+		} else {
+			rt.Out.Notice("This rule matches everyone. Active rules use the first match.")
+		}
+		if body.Position != nil {
+			rt.Out.Field("Position", fmt.Sprint(*body.Position))
+		} else {
+			rt.Out.Field("Position", "Append to the end")
+		}
+		if len(body.Placements) > 0 {
+			rt.Out.Field("Placements", string(body.Placements))
+		}
+	} else {
+		rt.Out.Field("Flow", body.FlowID)
+		rt.Out.Field("Audience", body.AudienceID)
+		rt.Out.Field("Checkpoints", string(body.Checkpoints))
+	}
+	if len(body.Schedule) > 0 {
+		rt.Out.Field("Schedule", string(body.Schedule))
+	}
+	rt.Out.Plan([]string{"Create the rule and apply it to matching customers"})
 }
 
 func validateTargetingCreate(body api.TargetingRuleCreate) error {
@@ -229,10 +291,11 @@ func validateTargetingCreate(body api.TargetingRuleCreate) error {
 func newTargetingUpdateCmd() *cobra.Command {
 	var config string
 	cmd := &cobra.Command{
-		Use:   "update [id]",
-		Short: "Update an Offering targeting rule",
-		Long:  "Partially updates a legacy targeting rule from a JSON object. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
-		Args:  cobra.MaximumNArgs(1),
+		Use:     "update [id]",
+		Short:   "Update an Offering targeting rule",
+		Long:    "Partially updates a legacy targeting rule from a JSON object with position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
+		Example: `  echo '{"state":"active","position":1}' | rc targeting update trle_123 --config - --yes --no-input`,
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if config == "" {
 				return fmt.Errorf("pass --config <file> or --config - for stdin")
@@ -276,7 +339,19 @@ func newTargetingUpdateCmd() *cobra.Command {
 				}
 			}
 			if current.State == "active" || newState == "active" {
-				rt.Out.Notice("This change may affect which Offering matching customers receive.")
+				rt.Out.Title("Targeting rule — " + current.DisplayName)
+				rt.Out.Lead("Change the rule used to choose an Offering for matching customers.")
+				rt.Out.Field("Current state", current.State)
+				rt.Out.Field("Current offering", current.OfferingID)
+				if current.AudienceID != nil {
+					rt.Out.Field("Current audience", *current.AudienceID)
+				} else if len(current.Conditions) > 0 {
+					rt.Out.Field("Current conditions", compactJSON(current.Conditions))
+				} else {
+					rt.Out.Notice("Current rule matches everyone. Active rules use the first match.")
+				}
+				rt.Out.Field("Changes", compactJSON(body))
+				rt.Out.Plan([]string{"Update the targeting rule"})
 				if err := confirmOrAbort(rt, "Update targeting rule now?"); err != nil {
 					return err
 				}

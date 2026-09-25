@@ -1,0 +1,21 @@
+$ rc targeting create --name Default paywall --offering ofrng_default --state active --yes --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Targeting rule — Default paywall
+  Apply this rule in priority order when it becomes active.
+
+  Type                        legacy
+  State                       active
+  Offering                    ofrng_default
+
+▐ This rule matches everyone. Active rules use the first match.
+
+  Position                    Append to the end
+
+▍ Plan
+· 1. Create the rule and apply it to matching customers
+✓ Created targeting rule trle_snap
+id            trle_snap
+display_name  Default paywall
+offering_id   ofrng_default
+rule_type     legacy
+state         active
