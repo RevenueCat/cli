@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -70,6 +71,11 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 	}
 
 	timeline := []output.CardLine{}
+	type timelineEvent struct {
+		name string
+		at   api.Millis
+	}
+	events := []timelineEvent{}
 	for _, event := range []struct {
 		name string
 		at   *api.Millis
@@ -80,8 +86,12 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 		{"Stopped", experiment.StoppedAt},
 	} {
 		if event.at != nil {
-			timeline = append(timeline, output.CardLine{Key: event.name, Value: formatMillis(int64(*event.at))})
+			events = append(events, timelineEvent{name: event.name, at: *event.at})
 		}
+	}
+	sort.SliceStable(events, func(i, j int) bool { return events[i].at < events[j].at })
+	for _, event := range events {
+		timeline = append(timeline, output.CardLine{Key: event.name, Value: formatMillis(int64(event.at))})
 	}
 	if experiment.TotalRunningSeconds != nil {
 		timeline = append(timeline, output.CardLine{Key: "Running time", Value: formatExperimentRunTime(*experiment.TotalRunningSeconds)})
