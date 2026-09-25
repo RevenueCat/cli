@@ -270,3 +270,74 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 		t.Fatalf("status should not be copied: %#v", posted)
 	}
 }
+
+func TestExperimentStopAndDeleteRequireApproval(t *testing.T) {
+	for _, tc := range []struct {
+		command string
+		method  string
+		path    string
+	}{
+		{"stop", http.MethodPost, "/projects/proj/experiments/exp1/actions/stop"},
+		{"delete", http.MethodDelete, "/projects/proj/experiments/exp1"},
+	} {
+		t.Run(tc.command, func(t *testing.T) {
+			mutations := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != tc.method || r.URL.Path != tc.path {
+					t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+				}
+				mutations++
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"stopped"}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			args := []string{"experiments", tc.command, "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+			_, _, err := runAgentCmd(t, args...)
+			if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 {
+				t.Fatalf("expected approval before mutation: err=%v mutations=%d", err, mutations)
+			}
+			_, _, err = runAgentCmd(t, append(args, "--yes", "--json")...)
+			if err != nil || mutations != 1 {
+				t.Fatalf("approved %s failed: err=%v mutations=%d", tc.command, err, mutations)
+			}
+		})
+	}
+}
+
+func TestExperimentCreateAndApprovedUpdate(t *testing.T) {
+	var created, updated map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/projects/proj/experiments":
+			if err := json.NewDecoder(r.Body).Decode(&created); err != nil {
+				t.Error(err)
+			}
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		case r.Method == http.MethodGet && r.URL.Path == "/projects/proj/experiments/exp1":
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"running","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		case r.Method == http.MethodPost && r.URL.Path == "/projects/proj/experiments/exp1":
+			if err := json.NewDecoder(r.Body).Decode(&updated); err != nil {
+				t.Error(err)
+			}
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"running","enrollment_percentage":60,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		default:
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, _, err := runAgentCmd(t, "experiments", "create", "--name", "Test", "--control", "ofrng_a", "--treatment", "ofrng_b", "--enrollment", "50", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+	if err != nil || created["enrollment_percentage"] != float64(50) {
+		t.Fatalf("create failed: err=%v body=%v", err, created)
+	}
+	configPath := filepath.Join(t.TempDir(), "update.json")
+	if err := os.WriteFile(configPath, []byte(`{"enrollment_percentage":60}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = runAgentCmd(t, "experiments", "update", "exp1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--yes", "--json", "--no-input")
+	if err != nil || updated["enrollment_percentage"] != float64(60) {
+		t.Fatalf("approved update failed: err=%v body=%v", err, updated)
+	}
+}
