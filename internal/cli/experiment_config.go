@@ -39,3 +39,8 @@ func readJSONConfig(path string, out any) error {
 	}
 	return nil
 }
+
+func compactJSON(v any) string {
+	data, _ := json.Marshal(v)
+	return string(data)
+}
