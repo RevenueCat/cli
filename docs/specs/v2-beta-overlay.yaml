@@ -1098,6 +1098,75 @@ paths:
       responses:
         '200':
           description: OK
+  /projects/{project_id}/targeting_rules:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a list of targeting rules
+      operationId: list-targeting-rules
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create a targeting rule
+      operationId: create-targeting-rule
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/targeting_rules/{targeting_rule_id}:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: targeting_rule_id
+      in: path
+      required: true
+      schema:
+        type: string
+    delete:
+      summary: Delete a targeting rule
+      operationId: delete-targeting-rule
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read_write
+      responses:
+        '200':
+          description: OK
+    get:
+      summary: Get a targeting rule
+      operationId: get-targeting-rule
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Update a targeting rule
+      operationId: update-targeting-rule
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read_write
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     Currency:
