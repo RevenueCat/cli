@@ -35,7 +35,7 @@ func targetingConfigFields(create bool) map[string]any {
 		"state":        configEnum("active or inactive for legacy; checkpoint also supports scheduled", "active", "inactive", "scheduled"),
 		"display_name": configField("string", "Rule name"),
 		"offering_id":  configField("string", "Offering ID served by a legacy rule"),
-		"audience_id":  configField("string", "Audience ID; mutually exclusive with conditions"),
+		"audience_id":  map[string]any{"type": "string", "nullable": true, "description": "Audience ID; mutually exclusive with conditions. Set null when switching to conditions; set conditions to [] when switching to an audience."},
 		"conditions":   targetingConditionsSchema(),
 		"schedule":     schedule,
 		"placements":   placements,

@@ -26,7 +26,8 @@ func TestExperimentConfigSchemaExplainsNestedFields(t *testing.T) {
 func TestTargetingConfigSchemaExplainsConditionsAndRuleTypes(t *testing.T) {
 	root := NewRootCmd("test")
 	for _, path := range []string{"targeting create", "targeting update"} {
-		data, err := json.Marshal(commandSchema(findCommand(t, root, path))["config_fields"])
+		config := commandSchema(findCommand(t, root, path))["config_fields"].(map[string]any)
+		data, err := json.Marshal(config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -34,6 +35,10 @@ func TestTargetingConfigSchemaExplainsConditionsAndRuleTypes(t *testing.T) {
 			if !strings.Contains(string(data), want) {
 				t.Errorf("%s schema missing %q", path, want)
 			}
+		}
+		audience := config["properties"].(map[string]any)["audience_id"].(map[string]any)
+		if audience["nullable"] != true || !strings.Contains(audience["description"].(string), "conditions to []") {
+			t.Errorf("%s schema must explain how to switch between audiences and conditions", path)
 		}
 	}
 }
