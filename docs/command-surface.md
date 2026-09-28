@@ -199,7 +199,7 @@ rc experiments duplicate <id> [--name <name>]          # copy configuration into
 rc experiments update <id> --config <json-file>         # partial update; file or - for stdin
 rc experiments delete <id>                              # draft only; confirmation/--yes
 rc experiments start <id>                               # approval gate: confirmation/--yes; shows current configuration first
-rc experiments pause <id>
+rc experiments pause <id>                              # pauses enrollment; configuration review + confirmation/--yes
 rc experiments resume <id>                             # resumes enrollment; configuration review + confirmation/--yes
 rc experiments stop <id>                                # permanent; confirmation/--yes
 

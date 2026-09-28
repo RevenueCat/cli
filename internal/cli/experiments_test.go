@@ -186,15 +186,29 @@ func TestExperimentResumeRequiresApprovalBeforeMutation(t *testing.T) {
 }
 
 func TestExperimentPauseShowsReadableResult(t *testing.T) {
+	mutations := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Paywall test","status":"paused","offering_a":{"id":"ofrng_a","display_name":"Control"},"offering_b":{"id":"ofrng_b","display_name":"Treatment"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}]}}`)
+		status := "running"
+		if r.Method == http.MethodPost {
+			mutations++
+			status = "paused"
+		}
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Paywall test","status":"`+status+`","offering_a":{"id":"ofrng_a","display_name":"Control"},"offering_b":{"id":"ofrng_b","display_name":"Treatment"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}]}}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
-	out, _, err := runAgentCmd(t, "experiments", "pause", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	args := []string{"experiments", "pause", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	_, preview, err := runAgentCmd(t, args...)
+	if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 || !strings.Contains(preview, "platform in ios") {
+		t.Fatalf("expected reviewed approval before pause: err=%v mutations=%d preview=%q", err, mutations, preview)
+	}
+	out, _, err := runAgentCmd(t, append(args, "--yes")...)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if mutations != 1 {
+		t.Fatalf("approved pause made %d mutations, want 1", mutations)
 	}
 	for _, want := range []string{"ofrng_a (Control)", "platform in ios", "onboarding", "Treatment ofrng_b"} {
 		if !strings.Contains(out, want) {
