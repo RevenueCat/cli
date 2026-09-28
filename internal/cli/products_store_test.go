@@ -57,6 +57,36 @@ func TestProductsStoreSync_AppliesAfterExplicitYes(t *testing.T) {
 	}
 }
 
+func TestProductsStoreList_AcceptedAPIKey(t *testing.T) {
+	requests := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		if r.Method != http.MethodGet || r.URL.Path != "/projects/proj/store_state/plans" {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer sk_test" {
+			t.Errorf("Authorization = %q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"items":[],"object":"list"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	t.Setenv("RC_BASE_URL", srv.URL)
+
+	var out, errOut bytes.Buffer
+	root := NewRootCmd("test")
+	root.SetOut(&out)
+	root.SetErr(&errOut)
+	root.SetArgs([]string{"products", "store", "list", "--api-key", "sk_test", "--project-id", "proj", "--no-input", "--json"})
+	if err := root.ExecuteContext(context.Background()); err != nil {
+		t.Fatalf("store list rejected API key: %v; stderr: %s", err, errOut.String())
+	}
+	if requests != 1 {
+		t.Errorf("requests = %d, want 1", requests)
+	}
+}
+
 func runStoreSync(t *testing.T, planOnly bool) (requests []string, stdout, stderr string, err error) {
 	t.Helper()
 	getCount := 0
