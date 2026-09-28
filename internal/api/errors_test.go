@@ -78,6 +78,9 @@ func TestStoreStatePlanFeatureGateHint(t *testing.T) {
 			if tc.wantAction != "" && (!strings.Contains(hint, tc.wantAction) || !strings.Contains(hint, "store-state plan access")) {
 				t.Errorf("hint = %q, want action %q and store-state plan access", hint, tc.wantAction)
 			}
+			if tc.source == "flag" && !strings.Contains(hint, "unset RC_API_KEY if set") {
+				t.Errorf("flag hint should account for an environment override: %q", hint)
+			}
 		})
 	}
 }
