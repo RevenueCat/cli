@@ -282,8 +282,8 @@ func newProductsStoreSubmitCmd() *cobra.Command {
 		Short: "Submit App Store products for Apple review",
 		Long: `Starts Apple review for the named App Store products. Applying a
 store-state plan pushes configuration to App Store Connect but never submits
-anything for review, so products stay configured-but-not-purchasable until this
-command runs.
+anything for review. Apple must review and approve products after submission
+before they can be purchased.
 
 Only the products passed as arguments are submitted, and they must all belong
 to the same app. A product is submittable only once it exists in App Store
@@ -291,11 +291,13 @@ Connect; one that isn't ready comes back skipped with a reason instead of
 failing the whole run. App Store only — Apple is the sole store that accepts
 review submissions through this command.
 
-The first In-App Purchase or subscription for an app cannot be submitted this
-way: App Store Connect requires the first one to be reviewed with a new app
+The first product of each In-App Purchase type must be reviewed with a new app
 version. Add it on the app's version page in App Store Connect and submit that
-version; this command works once the app has at least one approved product
-(before then it returns the product as skipped, explaining this).
+version. Later products of that type can be submitted separately after the
+first is approved and the app has an approved version.
+
+The result lists each product as submitted or skipped with a reason. If every
+product is skipped, the command exits nonzero; partial submissions exit zero.
 
 Reversibility: starts Apple review — manage the submission in App Store Connect.
 
@@ -320,7 +322,14 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
-			if err := confirmOrAbort(rt, fmt.Sprintf("Submit %d App Store product(s) for Apple review?", len(productIDs)),
+			rt.Out.Title("Submit products for Apple review")
+			rt.Out.Lead("Send these App Store products to Apple for review.")
+			rt.Out.Field("Project", projectID)
+			for i, id := range productIDs {
+				rt.Out.Field(fmt.Sprintf("Product %d", i+1), id)
+			}
+			rt.Out.Plan([]string{fmt.Sprintf("Submit %s for Apple review", pluralize(len(productIDs), "product"))})
+			if err := confirmOrAbort(rt, fmt.Sprintf("Submit %s for Apple review?", pluralize(len(productIDs), "App Store product")),
 				"nothing was submitted"); err != nil {
 				return err
 			}
@@ -335,8 +344,6 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 	return cmd
 }
 
-// cleanSubmitProductIDs trims the product IDs and enforces the server's bounds
-// (non-empty, at most 200) before spending a round trip.
 func cleanSubmitProductIDs(args []string) ([]string, error) {
 	ids := make([]string, 0, len(args))
 	for _, arg := range args {
@@ -364,7 +371,7 @@ func renderStoreSubmitResult(rt *Runtime, resp *api.SubmitProductsToStoreRespons
 		}
 		rows = append(rows, []string{result.ProductID, result.Status, detail})
 	}
-	rt.Out.Info(fmt.Sprintf("Submitted %d of %d product(s) for review", resp.SubmittedCount, len(resp.Results)))
+	rt.Out.Info(fmt.Sprintf("Submitted %d of %s for review", resp.SubmittedCount, pluralize(len(resp.Results), "product")))
 	if err := rt.Out.RenderTable(output.Table{
 		Columns: []string{"PRODUCT", "STATUS", "DETAIL"},
 		Rows:    rows,
@@ -374,7 +381,15 @@ func renderStoreSubmitResult(rt *Runtime, resp *api.SubmitProductsToStoreRespons
 	}
 	if resp.SubmittedCount < len(resp.Results) {
 		skipped := len(resp.Results) - resp.SubmittedCount
-		rt.Out.Hint(fmt.Sprintf("%d product(s) were not submitted — see the DETAIL column for why. Confirm each exists in App Store Connect (apply its plan first), then re-run submit.", skipped))
+		verb := "were"
+		if skipped == 1 {
+			verb = "was"
+		}
+		rt.Out.Hint(fmt.Sprintf("%s %s not submitted. Check each reason in DETAIL; resolve it before retrying.", pluralize(skipped, "product"), verb))
+	}
+	if resp.SubmittedCount == 0 {
+		rt.Out.Warn("No products were submitted for review")
+		return &SilentExitError{Code: 1}
 	}
 	return nil
 }

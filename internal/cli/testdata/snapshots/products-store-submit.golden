@@ -1,0 +1,16 @@
+$ rc products store submit prod_snap1 prod_snap2 --yes --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Submit products for Apple review
+  Send these App Store products to Apple for review.
+
+  Project                     proj_snap
+  Product 1                   prod_snap1
+  Product 2                   prod_snap2
+
+▍ Plan
+· 1. Submit 2 products for Apple review
+· Submitted 1 of 2 products for review
+  1 product was not submitted. Check each reason in DETAIL; resolve it before retrying.
+PRODUCT     STATUS     DETAIL                          
+prod_snap1  submitted  sub_snap1                       
+prod_snap2  skipped    App Store metadata is incomplete

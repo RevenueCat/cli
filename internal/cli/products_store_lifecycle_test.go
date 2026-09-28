@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -282,7 +283,7 @@ func TestCleanSubmitProductIDs(t *testing.T) {
 	}
 }
 
-func TestProductsStoreSubmit_AllSkippedExitsZero(t *testing.T) {
+func TestProductsStoreSubmit_AllSkippedExitsNonzero(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = io.WriteString(w, `{"object":"submit_products_to_store_response","submitted_count":0,"results":[`+
@@ -292,8 +293,9 @@ func TestProductsStoreSubmit_AllSkippedExitsZero(t *testing.T) {
 
 	out, _, err := runStoreLifecycleCommand(t, server.URL, "",
 		"products", "store", "submit", "prod_abc", "--yes", "--json", "--no-input")
-	if err != nil {
-		t.Fatalf("a fully-skipped response must exit 0, got %v", err)
+	var exit *SilentExitError
+	if !errors.As(err, &exit) || exit.Code != 1 {
+		t.Fatalf("a fully-skipped response must exit 1, got %v", err)
 	}
 	if !strings.Contains(out, `"submitted_count": 0`) {
 		t.Fatalf("output missing submitted_count 0: %s", out)

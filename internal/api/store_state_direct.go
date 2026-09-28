@@ -112,9 +112,7 @@ type SubmitProductToStoreResult struct {
 	Message      *string `json:"message"`
 }
 
-// SubmitToStore starts store review for the given products. The store is
-// required by the API and only app_store is accepted today; products that are
-// not yet ready come back with a skipped result rather than failing the call.
+// SubmitToStore starts store review for the given products.
 func (s *StoreStateService) SubmitToStore(ctx context.Context, projectID, store string, productIDs []string) (*SubmitProductsToStoreResponse, error) {
 	var out SubmitProductsToStoreResponse
 	body := map[string]any{"store": store, "product_ids": productIDs}
