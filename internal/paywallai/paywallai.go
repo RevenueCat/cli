@@ -46,7 +46,7 @@ type InputAttachment struct {
 	DataBase64 string `json:"data_base64"`
 }
 
-// editorSource tags CLI traffic so the editor doesn't report it as "unknown".
+// editorSource tags CLI traffic so the editor can report it.
 const editorSource = "cli"
 
 // EditorRequest is the POST /editor/v1/stream body. UIConfig, SessionItems,
