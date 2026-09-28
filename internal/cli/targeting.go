@@ -347,6 +347,10 @@ func newTargetingUpdateCmd() *cobra.Command {
 					return fmt.Errorf("state must be active or inactive")
 				}
 			}
+			resultingAudience, everyone, err := targetingAudienceAfterUpdate(current, body)
+			if err != nil {
+				return err
+			}
 			if current.State == "active" || newState == "active" {
 				rt.Out.Title("Targeting rule — " + current.DisplayName)
 				rt.Out.Lead("Change the rule used to choose an Offering for matching customers.")
@@ -364,10 +368,6 @@ func newTargetingUpdateCmd() *cobra.Command {
 					rt.Out.Field("Current audience", "Everyone")
 				}
 				if err := showTargetingUpdateChanges(rt, body); err != nil {
-					return err
-				}
-				resultingAudience, everyone, err := targetingAudienceAfterUpdate(current, body)
-				if err != nil {
 					return err
 				}
 				rt.Out.Field("Resulting audience", resultingAudience)
@@ -420,6 +420,9 @@ func targetingAudienceAfterUpdate(current *api.TargetingRule, body api.Targeting
 		if err := json.Unmarshal(value, &conditions); err != nil {
 			return "", false, fmt.Errorf("conditions must be an array")
 		}
+	}
+	if audienceID != "" && len(conditions) > 0 {
+		return "", false, fmt.Errorf("audience_id and conditions cannot both be set; clear the other field in the same update")
 	}
 	if audienceID != "" {
 		return audienceID, false, nil

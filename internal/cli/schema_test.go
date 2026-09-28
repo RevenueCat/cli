@@ -30,7 +30,7 @@ func TestTargetingConfigSchemaExplainsConditionsAndRuleTypes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, want := range []string{"conditions", "app_version", "context", "placement_offerings", "schedule", "position"} {
+		for _, want := range []string{"conditions", "app_version", "context", "placement_offerings", "fallback_offering_id", "required_for_legacy", "start_date", "schedule", "position"} {
 			if !strings.Contains(string(data), want) {
 				t.Errorf("%s schema missing %q", path, want)
 			}
