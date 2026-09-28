@@ -77,6 +77,13 @@ func (e *APIError) Hint() string {
 	if scope := MissingScope(e.Message); scope != "" {
 		return e.scopeHint(scope)
 	}
+	msg := strings.ToLower(e.Message)
+	if e.Status == http.StatusForbidden && e.Type == "authorization_error" &&
+		(e.CredentialSource == "flag" || e.CredentialSource == "env" || e.CredentialSource == "profile") &&
+		strings.Contains(msg, "product store state plans") &&
+		strings.Contains(msg, "not available for this project") {
+		return "This project needs store-state plan access enabled for API keys. Use `rc login` with OAuth or ask RevenueCat to enable access for this project."
+	}
 	switch e.Type {
 	case "unauthorized", "authentication_error":
 		return e.authHint()
