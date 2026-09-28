@@ -305,7 +305,7 @@ func showExperimentEnrollmentState(rt *Runtime, current *api.Experiment, lead st
 
 func newExperimentsPauseCmd() *cobra.Command {
 	return &cobra.Command{
-		Use: "pause [id]", Short: "Pause an experiment", Args: cobra.MaximumNArgs(1),
+		Use: "pause [id]", Short: "Pause an experiment", Long: "Pauses enrollment after showing the current experiment configuration. Requires confirmation or --yes.", Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -322,6 +322,19 @@ func newExperimentsPauseCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			current, err := client.Experiments.Get(cmd.Context(), projectID, id)
+			if err != nil {
+				return err
+			}
+			if current.Status != "running" {
+				return fmt.Errorf("experiment %s is %s; only running experiments can be paused", id, current.Status)
+			}
+			showExperimentEnrollmentState(rt, current, "Pause enrollment in the experiment.")
+			rt.Out.Plan([]string{"Pause the experiment and stop enrolling customers"})
+			if err := confirmOrAbort(rt, "Pause experiment now?"); err != nil {
+				return err
+			}
+			rt.Out.Info("Pausing experiment…")
 			experiment, err := client.Experiments.Pause(cmd.Context(), projectID, id)
 			if err != nil {
 				return err
