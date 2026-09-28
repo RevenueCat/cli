@@ -297,6 +297,11 @@ func TestExperimentStopAndDeleteRequireApproval(t *testing.T) {
 		t.Run(tc.command, func(t *testing.T) {
 			mutations := 0
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if tc.command == "delete" && r.Method == http.MethodGet && r.URL.Path == tc.path {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft"}`)
+					return
+				}
 				if r.Method != tc.method || r.URL.Path != tc.path {
 					t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 				}
@@ -314,6 +319,27 @@ func TestExperimentStopAndDeleteRequireApproval(t *testing.T) {
 			_, _, err = runAgentCmd(t, append(args, "--yes", "--json")...)
 			if err != nil || mutations != 1 {
 				t.Fatalf("approved %s failed: err=%v mutations=%d", tc.command, err, mutations)
+			}
+		})
+	}
+}
+
+func TestExperimentDeleteRejectsNonDraft(t *testing.T) {
+	for _, status := range []string{"running", "paused", "stopped"} {
+		t.Run(status, func(t *testing.T) {
+			mutations := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodDelete {
+					mutations++
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"`+status+`"}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			_, _, err := runAgentCmd(t, "experiments", "delete", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--yes", "--no-input")
+			if err == nil || !strings.Contains(err.Error(), "only draft experiments can be deleted") || mutations != 0 {
+				t.Fatalf("expected non-draft guard: err=%v mutations=%d", err, mutations)
 			}
 		})
 	}
