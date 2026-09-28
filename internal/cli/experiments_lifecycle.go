@@ -440,6 +440,13 @@ func newExperimentsDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			current, err := client.Experiments.Get(cmd.Context(), projectID, id)
+			if err != nil {
+				return err
+			}
+			if current.Status != "draft" {
+				return fmt.Errorf("experiment %s is %s; only draft experiments can be deleted", id, current.Status)
+			}
 			if err := confirmOrAbort(rt, "Delete draft experiment "+id+"?"); err != nil {
 				return err
 			}
