@@ -341,3 +341,18 @@ func TestExperimentCreateAndApprovedUpdate(t *testing.T) {
 		t.Fatalf("approved update failed: err=%v body=%v", err, updated)
 	}
 }
+
+func TestExperimentUpdateRejectsInvalidEnrollmentBeforeRequest(t *testing.T) {
+	for _, value := range []string{"0", "101", "null", `"5"`, "5.5"} {
+		t.Run(value, func(t *testing.T) {
+			configPath := filepath.Join(t.TempDir(), "update.json")
+			if err := os.WriteFile(configPath, []byte(`{"enrollment_percentage":`+value+`}`), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			_, _, err := runAgentCmd(t, "experiments", "update", "exp1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+			if err == nil || !strings.Contains(err.Error(), "1 to 100") {
+				t.Fatalf("expected local enrollment validation, got %v", err)
+			}
+		})
+	}
+}

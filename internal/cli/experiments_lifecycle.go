@@ -454,6 +454,12 @@ func validExperimentUpdate(body api.ExperimentUpdate) error {
 		if !json.Valid(value) {
 			return fmt.Errorf("invalid JSON value for %q", key)
 		}
+		if key == "enrollment_percentage" {
+			var percentage int
+			if err := json.Unmarshal(value, &percentage); err != nil || percentage < 1 || percentage > 100 {
+				return fmt.Errorf("enrollment must be an integer from 1 to 100")
+			}
+		}
 	}
 	return nil
 }
