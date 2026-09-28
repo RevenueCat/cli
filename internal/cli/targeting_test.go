@@ -42,6 +42,56 @@ func TestTargetingReorderNeedsApprovalAndSendsPosition(t *testing.T) {
 	}
 }
 
+func TestTargetingDeleteRequiresForceForLiveRule(t *testing.T) {
+	for _, state := range []string{"active", "scheduled"} {
+		t.Run(state, func(t *testing.T) {
+			deletes := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/projects/proj/targeting_rules/trle1" {
+					t.Errorf("unexpected path: %s", r.URL.Path)
+				}
+				if r.Method == http.MethodDelete {
+					deletes++
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":"trle1","rule_type":"legacy","state":"`+state+`","display_name":"US paywall","offering_id":"ofrng_us"}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			args := []string{"targeting", "delete", "trle1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+			_, _, err := runAgentCmd(t, append(args, "--yes")...)
+			if err == nil || !strings.Contains(err.Error(), "--force") || deletes != 0 {
+				t.Fatalf("expected force guard: err=%v deletes=%d", err, deletes)
+			}
+			_, _, err = runAgentCmd(t, append(args, "--force")...)
+			if err == nil || !strings.Contains(err.Error(), "--yes") || deletes != 0 {
+				t.Fatalf("expected confirmation after force: err=%v deletes=%d", err, deletes)
+			}
+			_, _, err = runAgentCmd(t, append(args, "--force", "--yes")...)
+			if err != nil || deletes != 1 {
+				t.Fatalf("approved force delete failed: err=%v deletes=%d", err, deletes)
+			}
+		})
+	}
+}
+
+func TestTargetingDeleteInactiveNeedsOnlyConfirmation(t *testing.T) {
+	deletes := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			deletes++
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"trle1","rule_type":"legacy","state":"inactive","display_name":"US paywall"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, _, err := runAgentCmd(t, "targeting", "delete", "trle1", "--project-id", "proj", "--api-key", "sk_test", "--yes", "--no-input")
+	if err != nil || deletes != 1 {
+		t.Fatalf("inactive delete failed: err=%v deletes=%d", err, deletes)
+	}
+}
+
 func TestTargetingActivationRequiresApproval(t *testing.T) {
 	mutations := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

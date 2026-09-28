@@ -208,7 +208,7 @@ rc targeting list [--state <state>]
 rc targeting show <id>                                 # human detail view shows audience, placements, schedule, and checkpoints
 rc targeting create (--name <name> --offering <offering-id> [--state inactive|active] | --config <json-file>)  # initially inactive
 rc targeting update <id> --config <json-file>           # partial update
-rc targeting delete <id>                                # confirmation/--yes
+rc targeting delete <id> [--force]                      # active or scheduled rules require --force; confirmation/--yes
 
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)

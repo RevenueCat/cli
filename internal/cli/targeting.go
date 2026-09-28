@@ -435,9 +435,11 @@ func targetingAudienceAfterUpdate(current *api.TargetingRule, body api.Targeting
 }
 
 func newTargetingDeleteCmd() *cobra.Command {
-	return &cobra.Command{
+	var force bool
+	cmd := &cobra.Command{
 		Use:   "delete [id]",
 		Short: "Delete a targeting rule",
+		Long:  "Permanently deletes a targeting rule. Active or scheduled rules require --force in addition to confirmation or --yes because deleting them may change which Offering customers see.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -455,6 +457,19 @@ func newTargetingDeleteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			current, err := client.TargetingRules.Get(cmd.Context(), projectID, id)
+			if err != nil {
+				return err
+			}
+			if current.State != "inactive" && !force {
+				return WithHint(
+					fmt.Errorf("targeting rule %s is %s and may be serving customers; pass --force to delete it", id, current.State),
+					"Deactivate it first, or pass --force after confirming this rule should be deleted.",
+				)
+			}
+			if current.State != "inactive" {
+				rt.Out.Warn("Deleting this rule may change which Offering customers see.")
+			}
 			if err := confirmOrAbort(rt, "Delete targeting rule "+id+"?"); err != nil {
 				return err
 			}
@@ -465,4 +480,6 @@ func newTargetingDeleteCmd() *cobra.Command {
 			return rt.Out.Render(map[string]any{"id": id, "deleted": true})
 		},
 	}
+	cmd.Flags().BoolVar(&force, "force", false, "delete an active or scheduled targeting rule")
+	return cmd
 }
