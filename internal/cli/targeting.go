@@ -151,7 +151,9 @@ func newTargetingCreateCmd() *cobra.Command {
 				return err
 			}
 			if body.State != "inactive" {
-				showTargetingCreatePlan(rt, body)
+				if err := showTargetingCreatePlan(rt, body); err != nil {
+					return err
+				}
 				prompt := "Activate targeting rule now?"
 				if body.State == "scheduled" {
 					prompt = "Schedule targeting rule now?"
@@ -232,7 +234,7 @@ func gatherTargetingCreateInput(cmd *cobra.Command, rt *Runtime, projectID strin
 	return nil
 }
 
-func showTargetingCreatePlan(rt *Runtime, body api.TargetingRuleCreate) {
+func showTargetingCreatePlan(rt *Runtime, body api.TargetingRuleCreate) error {
 	rt.Out.Title("Targeting rule — " + body.DisplayName)
 	rt.Out.Lead("Apply this rule in priority order when it becomes active.")
 	rt.Out.Field("Type", body.RuleType)
@@ -242,7 +244,11 @@ func showTargetingCreatePlan(rt *Runtime, body api.TargetingRuleCreate) {
 		if body.AudienceID != "" {
 			rt.Out.Field("Audience", body.AudienceID)
 		} else if len(body.Conditions) > 0 && string(body.Conditions) != "[]" {
-			rt.Out.Field("Conditions", string(body.Conditions))
+			conditions, err := targetingConfigSummary("conditions", body.Conditions)
+			if err != nil {
+				return err
+			}
+			rt.Out.Field("Conditions", conditions)
 		} else {
 			rt.Out.Notice("This rule matches everyone. Active rules use the first match.")
 		}
@@ -252,17 +258,30 @@ func showTargetingCreatePlan(rt *Runtime, body api.TargetingRuleCreate) {
 			rt.Out.Field("Position", "Append to the end")
 		}
 		if len(body.Placements) > 0 {
-			rt.Out.Field("Placements", string(body.Placements))
+			placements, err := targetingConfigSummary("placements", body.Placements)
+			if err != nil {
+				return err
+			}
+			rt.Out.Field("Placements", placements)
 		}
 	} else {
 		rt.Out.Field("Flow", body.FlowID)
 		rt.Out.Field("Audience", body.AudienceID)
-		rt.Out.Field("Checkpoints", string(body.Checkpoints))
+		checkpoints, err := targetingConfigSummary("checkpoints", body.Checkpoints)
+		if err != nil {
+			return err
+		}
+		rt.Out.Field("Checkpoints", checkpoints)
 	}
 	if len(body.Schedule) > 0 {
-		rt.Out.Field("Schedule", string(body.Schedule))
+		schedule, err := targetingConfigSummary("schedule", body.Schedule)
+		if err != nil {
+			return err
+		}
+		rt.Out.Field("Schedule", schedule)
 	}
 	rt.Out.Plan([]string{"Create the rule and apply it to matching customers"})
+	return nil
 }
 
 func validateTargetingCreate(body api.TargetingRuleCreate) error {
@@ -336,11 +355,17 @@ func newTargetingUpdateCmd() *cobra.Command {
 				if current.AudienceID != nil {
 					rt.Out.Field("Current audience", *current.AudienceID)
 				} else if len(current.Conditions) > 0 {
-					rt.Out.Field("Current conditions", compactJSON(current.Conditions))
+					conditions, err := targetingConditionsSummary(current.Conditions)
+					if err != nil {
+						return err
+					}
+					rt.Out.Field("Current conditions", conditions)
 				} else {
 					rt.Out.Field("Current audience", "Everyone")
 				}
-				rt.Out.Field("Changes", compactJSON(body))
+				if err := showTargetingUpdateChanges(rt, body); err != nil {
+					return err
+				}
 				resultingAudience, everyone, err := targetingAudienceAfterUpdate(current, body)
 				if err != nil {
 					return err
@@ -400,7 +425,8 @@ func targetingAudienceAfterUpdate(current *api.TargetingRule, body api.Targeting
 		return audienceID, false, nil
 	}
 	if len(conditions) > 0 {
-		return compactJSON(conditions), false, nil
+		formatted, err := targetingConditionsSummary(conditions)
+		return formatted, false, err
 	}
 	return "Everyone", true, nil
 }

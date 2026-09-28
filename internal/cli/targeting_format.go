@@ -3,10 +3,54 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
 )
+
+func targetingConfigSummary(key string, raw json.RawMessage) (string, error) {
+	if key == "conditions" {
+		var conditions []api.ExperimentCondition
+		if err := json.Unmarshal(raw, &conditions); err != nil {
+			return "", fmt.Errorf("conditions must be an array: %w", err)
+		}
+		if len(conditions) == 0 {
+			return "Everyone", nil
+		}
+		return experimentConditionSummary(conditions), nil
+	}
+	var value any
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return "", err
+	}
+	return experimentChangeValue(value), nil
+}
+
+func targetingConditionsSummary(conditions []any) (string, error) {
+	raw, err := json.Marshal(conditions)
+	if err != nil {
+		return "", err
+	}
+	return targetingConfigSummary("conditions", raw)
+}
+
+func showTargetingUpdateChanges(rt *Runtime, changes api.TargetingRuleUpdate) error {
+	keys := make([]string, 0, len(changes))
+	for key := range changes {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		value, err := targetingConfigSummary(key, changes[key])
+		if err != nil {
+			return err
+		}
+		rt.Out.Field("Change "+strings.ReplaceAll(key, "_", " "), value)
+	}
+	return nil
+}
 
 type targetingDisplay struct {
 	Conditions []api.ExperimentCondition `json:"conditions"`

@@ -69,6 +69,30 @@ func TestTargetingActivationRequiresApproval(t *testing.T) {
 	}
 }
 
+func TestTargetingActivationPreviewUsesReadableConditions(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		state := "inactive"
+		if r.Method == http.MethodPost {
+			state = "active"
+		}
+		_, _ = io.WriteString(w, `{"object":"targeting_rule","id":"trle1","rule_type":"legacy","state":"`+state+`","display_name":"US paywall","offering_id":"ofrng_us","conditions":[{"context":null,"field":"country","operator":"in","value":["US"]}]}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	configPath := filepath.Join(t.TempDir(), "activate.json")
+	if err := os.WriteFile(configPath, []byte(`{"state":"active"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr, err := runAgentCmd(t, "targeting", "update", "trle1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--yes", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(stderr, "country in US") < 2 || !strings.Contains(stderr, "Change state") || !strings.Contains(stderr, "active") || strings.Contains(stderr, `{"`) || strings.Contains(stderr, `[{`) {
+		t.Fatalf("activation preview should be readable: %s", stderr)
+	}
+}
+
 func TestTargetingUpdateActiveRuleRequiresApproval(t *testing.T) {
 	mutations := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
