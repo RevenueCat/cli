@@ -17,11 +17,11 @@ func configFieldsFor(cmd *cobra.Command) map[string]any {
 }
 
 func targetingConfigFields(create bool) map[string]any {
-	schedule := map[string]any{"type": "object", "description": "UTC timestamps ending in Z", "properties": map[string]any{
+	schedule := map[string]any{"type": "object", "description": "UTC timestamps ending in Z; legacy rules require start_date when schedule is provided", "required_for_legacy": []string{"start_date"}, "properties": map[string]any{
 		"start_date": configField("string", "Start time, for example 2026-05-25T10:00:00Z"),
 		"end_date":   configField("string", "Optional end time in the same format"),
 	}}
-	placements := map[string]any{"type": "object", "description": "Legacy rules only", "properties": map[string]any{
+	placements := map[string]any{"type": "object", "description": "Legacy rules only; both fields are required when placements is provided", "required": []string{"fallback_offering_id", "placement_offerings"}, "properties": map[string]any{
 		"fallback_offering_id": configField("string", "Fallback Offering ID"),
 		"placement_offerings": map[string]any{"type": "array", "items": map[string]any{
 			"type": "object", "required": []string{"placement_identifier", "offering_id"}, "properties": map[string]any{
