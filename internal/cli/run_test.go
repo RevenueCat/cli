@@ -94,6 +94,29 @@ func TestWriteJSONError_HintSurfacesForUnauthorized(t *testing.T) {
 	}
 }
 
+func TestWriteJSONError_StoreStatePlanFeatureGate(t *testing.T) {
+	var buf bytes.Buffer
+	writeJSONError(&buf, &api.APIError{
+		Status:           403,
+		Type:             "authorization_error",
+		Message:          "Product store state plans are currently a limited beta feature and are not available for this project.",
+		CredentialSource: "env",
+	})
+	var got struct {
+		Error struct {
+			Type     string `json:"type"`
+			ExitCode int    `json:"exit_code"`
+			Hint     string `json:"hint"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Error.Type != "authorization_error" || got.Error.ExitCode != 4 || !strings.Contains(got.Error.Hint, "store-state plan access") {
+		t.Errorf("unexpected feature-gate error: %+v", got.Error)
+	}
+}
+
 func TestWriteJSONError_RetryAfterPropagates(t *testing.T) {
 	var buf bytes.Buffer
 	writeJSONError(&buf, &api.APIError{

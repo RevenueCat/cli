@@ -124,7 +124,7 @@ preview` uses the app's public SDK key and exposes the v1 SDK response; a null
 `paywall_components` value indicates fallback content rather than a published
 dashboard paywall.
 
-### Product store-state plans (experimental)
+### Product store-state plans
 
 Manage your App Store / Google Play catalog as a reviewable plan: describe the
 desired state, review the computed diff, then apply it.
@@ -145,8 +145,7 @@ rc products store apply "$plan_id" --yes             # or: discard "$plan_id"
 ```
 
 CSV/JSON input is optional (`RC_STORE_STATE_FILE` can replace `--file`); the
-backend, not the local filesystem, is the durable handoff. This bulk import is
-experimental and may not be available on every account yet.
+backend, not the local filesystem, is the durable handoff.
 
 ### Store credential setup (experimental)
 
