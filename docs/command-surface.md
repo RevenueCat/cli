@@ -202,6 +202,7 @@ rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # exper
 rc experiments list [--status <status>]
 rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline
 rc experiments results <id> [--platform <p>] [--country <code>] [--exposure-status exposed|not_exposed] [--currency <code>]  # human totals and decision signals; unknown platforms warn before passing through
+# Enrollment is 1–100 in the development API and backend validator; the dashboard guide currently says 10% minimum.
 rc experiments create (--name <name> --control <offering-id> --treatment <offering-id> --enrollment <percent> | --config <json-file>)
 rc experiments duplicate <id> [--name <name>]          # copy configuration into a new draft; never copies results or status
 rc experiments update <id> --config <json-file>         # partial update; file or - for stdin
