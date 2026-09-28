@@ -82,7 +82,14 @@ func (e *APIError) Hint() string {
 		(e.CredentialSource == "flag" || e.CredentialSource == "env" || e.CredentialSource == "profile") &&
 		strings.Contains(msg, "product store state plans") &&
 		strings.Contains(msg, "not available for this project") {
-		return "This project needs store-state plan access enabled for API keys. Use `rc login` with OAuth or ask RevenueCat to enable access for this project."
+		switch e.CredentialSource {
+		case "flag":
+			return "Omit `--api-key` and run `rc login` with browser OAuth, or ask RevenueCat to enable store-state plan access for this project."
+		case "env":
+			return "Unset RC_API_KEY and run `rc login` with browser OAuth, or ask RevenueCat to enable store-state plan access for this project."
+		default:
+			return "Run `rc login` with browser OAuth, or ask RevenueCat to enable store-state plan access for this project."
+		}
 	}
 	switch e.Type {
 	case "unauthorized", "authentication_error":
