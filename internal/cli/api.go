@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/revenuecat/cli/internal/output"
 )
 
 func newAPICmd() *cobra.Command {
@@ -63,7 +65,7 @@ Exit code reflects the HTTP status: non-2xx responses exit non-zero.`,
 				return err
 			}
 			if len(data) > 0 {
-				if _, werr := cmd.OutOrStdout().Write(data); werr != nil {
+				if _, werr := cmd.OutOrStdout().Write(output.EscapeC1JSON(data)); werr != nil {
 					return werr
 				}
 				// Ensure trailing newline for shell friendliness.

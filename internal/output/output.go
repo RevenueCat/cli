@@ -11,6 +11,7 @@
 package output
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -149,9 +150,7 @@ func (r *Renderer) Render(v any) error {
 		if r.format != "" {
 			return r.renderJSONFiltered(env)
 		}
-		enc := json.NewEncoder(r.stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(env)
+		return encodeJSON(r.stdout, env)
 	}
 	if r.format != "" {
 		// --format without --json: warn on stderr, fall through to pretty.
@@ -166,9 +165,41 @@ func (r *Renderer) RenderJSON(v any) error {
 	if r.json {
 		return r.Render(v)
 	}
-	enc := json.NewEncoder(r.stdout)
+	return encodeJSON(r.stdout, v)
+}
+
+// encodeJSON writes v as indented JSON with C1 codepoints \u-escaped:
+// encoding/json escapes C0 controls but emits U+0080–U+009F as raw UTF-8
+// bytes, and JSON output frequently lands on a terminal.
+func encodeJSON(w io.Writer, v any) error {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
-	return enc.Encode(v)
+	if err := enc.Encode(v); err != nil {
+		return err
+	}
+	_, err := w.Write(EscapeC1JSON(buf.Bytes()))
+	return err
+}
+
+// EscapeC1JSON rewrites UTF-8-encoded C1 codepoints (0xC2 0x80–0x9F; in valid
+// UTF-8, 0xC2 only ever appears as that lead byte) as JSON \u escapes:
+// encoding/json escapes C0 on the wire but leaves C1 as raw bytes.
+func EscapeC1JSON(b []byte) []byte {
+	if bytes.IndexByte(b, 0xC2) < 0 {
+		return b
+	}
+	var out bytes.Buffer
+	out.Grow(len(b) + 16)
+	for i := 0; i < len(b); i++ {
+		if b[i] == 0xC2 && i+1 < len(b) && b[i+1] >= 0x80 && b[i+1] <= 0x9F {
+			fmt.Fprintf(&out, `\u%04x`, b[i+1])
+			i++
+			continue
+		}
+		out.WriteByte(b[i])
+	}
+	return out.Bytes()
 }
 
 // renderHuman is the human-mode fallback for structured results: aligned
@@ -182,7 +213,7 @@ func (r *Renderer) renderHuman(v any) error {
 	var m map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &m); err != nil {
 		// Not an object (array/scalar): print compactly.
-		fmt.Fprintln(r.stdout, humanValue(raw))
+		fmt.Fprintln(r.stdout, Sanitize(humanValue(raw)))
 		return nil
 	}
 	keys := humanKeyOrder(m)
@@ -193,7 +224,7 @@ func (r *Renderer) renderHuman(v any) error {
 		}
 	}
 	for _, k := range keys {
-		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(k, width)), humanFieldValue(k, m[k]))
+		fmt.Fprintf(r.stdout, "%s  %s\n", r.style(r.dim, padRight(SanitizeLine(k), width)), SanitizeLine(humanFieldValue(k, m[k])))
 	}
 	return nil
 }
@@ -290,7 +321,9 @@ func (r *Renderer) renderJSONFiltered(env any) error {
 		}
 		switch t := v.(type) {
 		case string:
-			fmt.Fprintln(r.stdout, t)
+			// Unmarshal decoded the API's \u escapes back into real control
+			// bytes; keep --format output to visible text like every other path.
+			fmt.Fprintln(r.stdout, Sanitize(t))
 		case nil:
 			// jq emits nil for `.missing`; skip rather than print "null".
 		default:
@@ -298,7 +331,7 @@ func (r *Renderer) renderJSONFiltered(env any) error {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(r.stdout, string(b))
+			fmt.Fprintln(r.stdout, string(EscapeC1JSON(b)))
 		}
 	}
 }
@@ -322,11 +355,18 @@ func (r *Renderer) RenderTable(t Table) error {
 		fmt.Fprintln(r.stderr, r.style(r.info, "• ")+"no results")
 		return nil
 	}
+	rows := make([][]string, len(t.Rows))
+	for ri, row := range t.Rows {
+		rows[ri] = make([]string, len(row))
+		for i, cell := range row {
+			rows[ri][i] = SanitizeLine(cell)
+		}
+	}
 	widths := make([]int, len(t.Columns))
 	for i, c := range t.Columns {
 		widths[i] = len(c)
 	}
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i >= len(widths) {
 				continue
@@ -344,7 +384,7 @@ func (r *Renderer) RenderTable(t Table) error {
 		fmt.Fprint(r.stdout, r.style(headerStyle, padRight(c, widths[i])))
 	}
 	fmt.Fprintln(r.stdout)
-	for _, row := range t.Rows {
+	for _, row := range rows {
 		for i, cell := range row {
 			if i > 0 {
 				fmt.Fprint(r.stdout, "  ")
@@ -374,31 +414,36 @@ func spaces(n int) string {
 	return string(b)
 }
 
+// Message methods sanitize their text: call sites routinely interpolate API
+// values, and stderr is still a terminal.
 func (r *Renderer) Success(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.success, "✓ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.success, "✓ ")+Sanitize(msg))
 }
 
 func (r *Renderer) Info(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.info, "· ")+Sanitize(msg))
 }
 
 // Hyperlink wraps styledLabel in an OSC 8 terminal hyperlink pointing at url.
 // Supporting terminals make it clickable; others render the label text. This is
 // the one place the OSC 8 escape lives.
 func Hyperlink(styledLabel, url string) string {
-	return "\x1b]8;;" + url + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
+	// A control character — including a newline — in url would terminate the
+	// OSC 8 sequence early and leave the rest to the terminal.
+	return "\x1b]8;;" + SanitizeLine(url) + "\x1b\\" + styledLabel + "\x1b]8;;\x1b\\"
 }
 
 // LinkText renders a clickable hyperlink (OSC 8) with a custom label instead of
 // the raw URL, so long auth URLs don't dominate the output. With color off it
 // falls back to "label (url)" so the URL stays copyable.
 func (r *Renderer) LinkText(label, url string) string {
+	label, url = SanitizeLine(label), SanitizeLine(url)
 	if r.noColor {
 		return label + " (" + url + ")"
 	}
@@ -430,7 +475,7 @@ func (r *Renderer) Hint(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.dim, "  "+msg))
+	fmt.Fprintln(r.stderr, r.style(r.dim, "  "+Sanitize(msg)))
 }
 
 // Title starts a visually distinct section: a brand-colored bar plus a bold
@@ -440,7 +485,7 @@ func (r *Renderer) Title(msg string) {
 		return
 	}
 	fmt.Fprintln(r.stderr)
-	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, msg))
+	fmt.Fprintln(r.stderr, r.style(r.accent, "▍ ")+r.style(StyleTitle, SanitizeLine(msg)))
 }
 
 // Lead is the orienting sentence(s) under a Title: what this flow is for
@@ -490,7 +535,7 @@ func (r *Renderer) Answer(key, value string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintf(r.stderr, "%s %s %s\n", r.style(r.success, "✓"), r.style(r.dim, padRight(key, 26)), value)
+	fmt.Fprintf(r.stderr, "%s %s %s\n", r.style(r.success, "✓"), r.style(r.dim, padRight(key, 26)), SanitizeLine(value))
 }
 
 // Plan renders the guided-command plan: a titled, numbered list of the
@@ -512,12 +557,15 @@ func (r *Renderer) Field(key, value string, note ...string) {
 	if r.json || r.quiet {
 		return
 	}
+	// Sanitize before composing: the note is styled below, and sanitizing the
+	// finished string would strip our own ANSI codes.
+	value = SanitizeLine(value)
 	if len(note) > 0 && note[0] != "" {
 		// Pad the value only when a note follows so notes column-align and
 		// bare values carry no trailing whitespace.
-		value = padRight(value, 15) + "  " + r.style(r.dim, "· "+note[0])
+		value = padRight(value, 15) + "  " + r.style(r.dim, "· "+SanitizeLine(note[0]))
 	}
-	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(key, 26)), value)
+	fmt.Fprintf(r.stderr, "  %s  %s\n", r.style(r.dim, padRight(SanitizeLine(key), 26)), value)
 }
 
 // Blank prints an empty separator line between logical sections.
@@ -532,7 +580,7 @@ func (r *Renderer) Warn(msg string) {
 	if r.json || r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+Sanitize(msg))
 }
 
 // AlwaysWarn writes a warning to stderr even in --json mode.
@@ -540,12 +588,12 @@ func (r *Renderer) AlwaysWarn(msg string) {
 	if r.quiet {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.warn, "! ")+Sanitize(msg))
 }
 
 func (r *Renderer) Error(msg string) {
 	if r.json {
 		return
 	}
-	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+msg)
+	fmt.Fprintln(r.stderr, r.style(r.errSty, "✗ ")+Sanitize(msg))
 }

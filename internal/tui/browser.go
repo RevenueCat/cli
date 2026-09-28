@@ -484,7 +484,7 @@ func (m *browser) View() string {
 	}
 	if m.loadErr != "" {
 		return m.renderHeader("Error") +
-			"\n  " + brErr.Render("Error: "+m.loadErr) +
+			"\n  " + brErr.Render("Error: "+output.Sanitize(m.loadErr)) +
 			"\n\n  Press any key to dismiss.\n"
 	}
 	f := m.top()
@@ -499,19 +499,21 @@ func (m *browser) View() string {
 	return ""
 }
 
+// renderHeader sanitizes every crumb and the current title itself: frame
+// titles and detail labels carry API values (project names, customer IDs).
 func (m *browser) renderHeader(current string) string {
 	var crumbs []string
 	for i := 0; i < len(m.stack)-1; i++ {
 		f := m.stack[i]
 		switch f.kind {
 		case kindList, kindTable:
-			crumbs = append(crumbs, f.title)
+			crumbs = append(crumbs, output.SanitizeLine(f.title))
 		case kindDetail:
 			lbl := f.item.ID
 			if lbl == "" {
 				lbl = f.item.Label
 			}
-			crumbs = append(crumbs, lbl)
+			crumbs = append(crumbs, output.SanitizeLine(lbl))
 		}
 	}
 	var sb strings.Builder
@@ -519,7 +521,7 @@ func (m *browser) renderHeader(current string) string {
 	if len(crumbs) > 0 {
 		sb.WriteString(brDim.Render(strings.Join(crumbs, " › ") + " › "))
 	}
-	sb.WriteString(brTitle.Render(current))
+	sb.WriteString(brTitle.Render(output.SanitizeLine(current)))
 	sb.WriteString("\n  ")
 	sb.WriteString(brDim.Render(strings.Repeat("─", brMax(m.width-4, 10))))
 	sb.WriteString("\n")
@@ -673,7 +675,7 @@ func (m *browser) viewTable(f *bframe) string {
 			if j > 0 {
 				row.WriteString("  ")
 			}
-			row.WriteString(brTrunc(brPadRight(cell, colW[j]), colW[j]))
+			row.WriteString(brPadRight(brTrunc(cell, colW[j]), colW[j]))
 		}
 		rowStr := row.String()
 		if i == f.cursor {
@@ -759,8 +761,8 @@ func (m *browser) viewDetail(f *bframe) string {
 		if field.Value == "" {
 			continue
 		}
-		k := brPadRight(field.Key, keyW)
-		sb.WriteString("  " + brDim.Render(k) + "  " + field.Value + "\n")
+		k := brPadRight(output.Sanitize(field.Key), keyW)
+		sb.WriteString("  " + brDim.Render(k) + "  " + output.Sanitize(field.Value) + "\n")
 	}
 
 	slotIdx := 0
@@ -780,7 +782,7 @@ func (m *browser) viewDetail(f *bframe) string {
 	if f.autoLoading {
 		sb.WriteString("\n  " + brDim.Render("Loading…") + "\n")
 	} else if f.autoErr != "" {
-		sb.WriteString("\n  " + brErr.Render("Error: "+f.autoErr) + "\n")
+		sb.WriteString("\n  " + brErr.Render("Error: "+output.Sanitize(f.autoErr)) + "\n")
 	} else {
 		for _, sec := range f.sections {
 			sb.WriteString("\n  " + brSection.Render(sec.Title) + "\n")
@@ -816,7 +818,7 @@ func (m *browser) viewDetail(f *bframe) string {
 					if i > 0 {
 						cells.WriteString("  ")
 					}
-					cells.WriteString(brTrunc(brPadRight(cell, colW[i]), colW[i]))
+					cells.WriteString(brPadRight(brTrunc(cell, colW[i]), colW[i]))
 				}
 				cellStr := cells.String()
 
@@ -866,7 +868,11 @@ var (
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+// brTrunc caps a display value at maxLen runes. Values pass through
+// output.SanitizeLine on the way: everything shown here came from the API and
+// must render as one line of visible characters.
 func brTrunc(s string, maxLen int) string {
+	s = output.SanitizeLine(s)
 	runes := []rune(s)
 	if maxLen <= 3 || len(runes) <= maxLen {
 		return s

@@ -216,7 +216,7 @@ func pickRicoConversation(ctx context.Context, rt *Runtime, client *rico.Client)
 	}
 	options := make([]huh.Option[string], len(items))
 	for i, item := range items {
-		options[i] = huh.NewOption(item.Label, item.ID)
+		options[i] = huh.NewOption(output.SanitizeLine(item.Label), item.ID)
 	}
 	var chosen string
 	selectField := huh.NewSelect[string]().
@@ -473,9 +473,9 @@ func (s *ricoSession) streamRun(ctx context.Context, input rico.RunAgentInput, r
 func (s *ricoSession) resolveInterrupts(interrupts []rico.Interrupt, result *ricoTurnResult, sink ricoSink) ([]rico.ResumeEntry, error) {
 	entries := make([]rico.ResumeEntry, 0, len(interrupts))
 	for _, interrupt := range interrupts {
-		label := interrupt.Message
+		label := output.SanitizeLine(interrupt.Message)
 		if label == "" {
-			label = interrupt.Reason
+			label = output.SanitizeLine(interrupt.Reason)
 		}
 		approved, err := sink.Approve(interrupt, label)
 		if err != nil {
@@ -507,7 +507,7 @@ func (s *ricoPlainSink) Delta(text string) {
 	if s.silent {
 		return
 	}
-	fmt.Print(text)
+	fmt.Print(output.Sanitize(text))
 	s.midLine = true
 }
 
@@ -611,7 +611,7 @@ scope to a single Project.`,
 				if text == "" {
 					continue
 				}
-				fmt.Printf("%s: %s\n", message.Role, text)
+				fmt.Printf("%s: %s\n", message.Role, output.Sanitize(text))
 			}
 			for _, interrupt := range snapshot.PendingInterrupts {
 				rt.Out.Warn("Pending approval: " + interrupt.Reason)
