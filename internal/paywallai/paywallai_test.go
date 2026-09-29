@@ -84,6 +84,9 @@ func TestStreamDecodesEvents(t *testing.T) {
 	if gotBody["message"] != "make it blue" {
 		t.Errorf("message = %v", gotBody["message"])
 	}
+	if gotBody["source"] != "cli" {
+		t.Errorf("source = %v", gotBody["source"])
+	}
 	if _, present := gotBody["__unstable_session_items"]; !present {
 		t.Error("__unstable_session_items missing")
 	}
@@ -128,6 +131,9 @@ func TestFeedbackAndRewind(t *testing.T) {
 		json.NewDecoder(r.Body).Decode(&body)
 		if body["session_id"] != "sess1" {
 			t.Errorf("session_id = %v", body["session_id"])
+		}
+		if r.URL.Path == "/editor/v1/feedback" && body["source"] != "cli" {
+			t.Errorf("feedback source = %v", body["source"])
 		}
 	}))
 	defer server.Close()

@@ -46,6 +46,9 @@ type InputAttachment struct {
 	DataBase64 string `json:"data_base64"`
 }
 
+// editorSource tags CLI traffic so the editor can report it.
+const editorSource = "cli"
+
 // EditorRequest is the POST /editor/v1/stream body. UIConfig, SessionItems,
 // and AppContext are opaque server round-trips.
 type EditorRequest struct {
@@ -61,6 +64,7 @@ type EditorRequest struct {
 	SessionItems             json.RawMessage   `json:"__unstable_session_items"`
 	AppContext               json.RawMessage   `json:"app_context,omitempty"`
 	IncludeResultScreenshots bool              `json:"include_result_screenshots,omitempty"`
+	Source                   string            `json:"source"`
 }
 
 type ToolActivity struct {
@@ -207,6 +211,7 @@ func errorMessage(body []byte) string {
 
 // Stream starts an editor run and returns the live event stream.
 func (c *Client) Stream(ctx context.Context, request EditorRequest) (*Stream, error) {
+	request.Source = editorSource
 	req, err := c.newRequest(ctx, "/editor/v1/stream", request)
 	if err != nil {
 		return nil, err
@@ -242,6 +247,7 @@ func (c *Client) Feedback(ctx context.Context, sessionID, traceID, rating string
 		"session_id": sessionID,
 		"trace_id":   traceID,
 		"rating":     rating,
+		"source":     editorSource,
 	})
 }
 
