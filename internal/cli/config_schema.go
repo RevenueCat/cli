@@ -17,7 +17,7 @@ func configFieldsFor(cmd *cobra.Command) map[string]any {
 }
 
 func targetingConfigFields(create bool) map[string]any {
-	schedule := map[string]any{"type": "object", "description": "UTC timestamps ending in Z; legacy rules require start_date when schedule is provided", "required_for_legacy": []string{"start_date"}, "properties": map[string]any{
+	schedule := map[string]any{"type": "object", "description": "UTC timestamps ending in Z. Legacy Offering rules require start_date; set state to active with a future start_date to serve later.", "required_for_legacy": []string{"start_date"}, "properties": map[string]any{
 		"start_date": configField("string", "Start time, for example 2026-05-25T10:00:00Z"),
 		"end_date":   configField("string", "Optional end time in the same format"),
 	}}
@@ -32,7 +32,7 @@ func targetingConfigFields(create bool) map[string]any {
 	}}
 	fields := map[string]any{
 		"position":     map[string]any{"type": "integer", "minimum": 1, "description": "One-based priority among rules in the same state; legacy rules only"},
-		"state":        configEnum("active or inactive for legacy; checkpoint also supports scheduled", "active", "inactive", "scheduled"),
+		"state":        configEnum("Legacy Offering rules use active or inactive; use active with a future schedule.start_date to serve later. The scheduled state is checkpoint-only.", "active", "inactive", "scheduled"),
 		"display_name": configField("string", "Rule name"),
 		"offering_id":  configField("string", "Offering ID served by a legacy rule"),
 		"audience_id":  map[string]any{"type": "string", "nullable": true, "description": "Audience ID; mutually exclusive with conditions. Set null when switching to conditions; set conditions to [] when switching to an audience."},

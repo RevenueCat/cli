@@ -59,7 +59,7 @@ func newTargetingListCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&state, "state", "", "filter by active, scheduled, or inactive")
+	cmd.Flags().StringVar(&state, "state", "", "filter by active, scheduled (checkpoint only), or inactive; future-scheduled Offering rules are active")
 	cmd.Flags().IntVar(&limit, "limit", 20, "maximum rules to return (1–100)")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "item ID to start after (pagination)")
 	return cmd
@@ -113,9 +113,10 @@ func newTargetingCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a targeting rule",
-		Long:  "Creates an inactive Offering rule by default. Without audience_id or conditions, a legacy rule matches everyone. Use --config for audience_id, conditions, schedule, placements, position, or a checkpoint rule with flow_id and checkpoints. Run rc schema targeting create for config fields and accepted values. Active or scheduled rules require confirmation.",
+		Long:  "Creates an inactive Offering rule by default. Without audience_id or conditions, a legacy rule matches everyone. Use --config for audience_id, conditions, schedule, placements, position, or a checkpoint rule with flow_id and checkpoints. To schedule an Offering rule, set state to active and schedule.start_date to a future UTC time; it will not match customers before then. The scheduled state is only for checkpoint rules. Run rc schema targeting create for config fields and accepted values. Active or scheduled rules require confirmation.",
 		Example: `  rc targeting create --name "Default paywall" --offering ofrng_default
   echo '{"rule_type":"legacy","display_name":"US paywall","offering_id":"ofrng_us","conditions":[{"field":"country","operator":"in","value":["US"]}]}' | rc targeting create --config - --no-input
+  echo '{"display_name":"Holiday paywall","offering_id":"ofrng_holiday","state":"active","schedule":{"start_date":"2030-12-01T00:00:00Z","end_date":"2030-12-31T23:59:59Z"}}' | rc targeting create --config - --yes --no-input
   echo '{"rule_type":"checkpoint","display_name":"After onboarding","audience_id":"aud_123","flow_id":"wf_123","checkpoints":[{"checkpoint_id":"chkpt_123"}]}' | rc targeting create --config - --no-input`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -157,6 +158,8 @@ func newTargetingCreateCmd() *cobra.Command {
 				prompt := "Activate targeting rule now?"
 				if body.State == "scheduled" {
 					prompt = "Schedule targeting rule now?"
+				} else if len(body.Schedule) > 0 {
+					prompt = "Create targeting rule with schedule now?"
 				}
 				if err := confirmOrAbort(rt, prompt); err != nil {
 					return err
@@ -280,7 +283,11 @@ func showTargetingCreatePlan(rt *Runtime, body api.TargetingRuleCreate) error {
 		}
 		rt.Out.Field("Schedule", schedule)
 	}
-	rt.Out.Plan([]string{"Create the rule and apply it to matching customers"})
+	step := "Create the rule and apply it to matching customers"
+	if len(body.Schedule) > 0 {
+		step = "Create the rule and match customers during its scheduled window"
+	}
+	rt.Out.Plan([]string{step})
 	return nil
 }
 
@@ -302,7 +309,7 @@ func newTargetingUpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "update [id]",
 		Short:   "Update an Offering targeting rule",
-		Long:    "Partially updates a legacy targeting rule from a JSON object with position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. Run rc schema targeting update for config fields and accepted values. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
+		Long:    "Partially updates a legacy targeting rule from a JSON object with position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. To schedule an Offering rule, set state to active and schedule.start_date to a future UTC time; it will not match customers before then. Run rc schema targeting update for config fields and accepted values. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
 		Example: `  echo '{"state":"active","position":1}' | rc targeting update trle_123 --config - --yes --no-input`,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

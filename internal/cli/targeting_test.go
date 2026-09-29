@@ -119,6 +119,38 @@ func TestTargetingActivationRequiresApproval(t *testing.T) {
 	}
 }
 
+func TestTargetingCreateScheduledOfferingRule(t *testing.T) {
+	var posted map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+				t.Error(err)
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"targeting_rule","id":"trle1","rule_type":"legacy","state":"active","display_name":"Holiday paywall","offering_id":"ofrng_holiday","schedule":{"start_date":"2030-12-01T00:00:00Z"}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	configPath := filepath.Join(t.TempDir(), "scheduled.json")
+	if err := os.WriteFile(configPath, []byte(`{"display_name":"Holiday paywall","offering_id":"ofrng_holiday","state":"active","schedule":{"start_date":"2030-12-01T00:00:00Z"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"targeting", "create", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	_, stderr, err := runAgentCmd(t, args...)
+	if err == nil || !strings.Contains(err.Error(), "--yes") || posted != nil || !strings.Contains(stderr, "scheduled window") {
+		t.Fatalf("scheduled create should show its plan and require approval: err=%v posted=%v stderr=%s", err, posted, stderr)
+	}
+	_, _, err = runAgentCmd(t, append(args, "--yes", "--json")...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schedule, ok := posted["schedule"].(map[string]any)
+	if !ok || posted["state"] != "active" || schedule["start_date"] != "2030-12-01T00:00:00Z" {
+		t.Fatalf("scheduled Offering rule was not sent to the API: %v", posted)
+	}
+}
+
 func TestTargetingActivationPreviewUsesReadableConditions(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
