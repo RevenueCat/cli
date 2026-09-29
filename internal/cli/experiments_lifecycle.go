@@ -175,7 +175,15 @@ func newExperimentsUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if current.Status != "draft" && current.Status != "running" {
+				return fmt.Errorf("experiment %s is %s; only drafts and running experiments can be updated", id, current.Status)
+			}
 			if current.Status == "running" {
+				for field := range body {
+					if field != "enrollment_percentage" {
+						return fmt.Errorf("running experiments accept only enrollment_percentage; remove %q", field)
+					}
+				}
 				showExperimentEnrollmentState(rt, current, "Review the current experiment before changing enrollment.")
 				showExperimentUpdateChanges(rt, body)
 				rt.Out.Notice("Changes to a running experiment may affect customers being enrolled now.")

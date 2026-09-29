@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -235,6 +236,39 @@ func TestRunningExperimentUpdateShowsChangesBeforeApproval(t *testing.T) {
 	_, stderr, err := runAgentCmd(t, "experiments", "update", "exp1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--no-input")
 	if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 || !strings.Contains(stderr, "Change enrollment percentage") || !strings.Contains(stderr, "80") {
 		t.Fatalf("expected reviewed approval before update; err=%v mutations=%d stderr=%q", err, mutations, stderr)
+	}
+}
+
+func TestExperimentUpdateRejectsFieldsAfterStart(t *testing.T) {
+	for _, tc := range []struct {
+		name, status, config, want string
+	}{
+		{"running name", "running", `{"display_name":"Changed"}`, "only enrollment_percentage"},
+		{"running mixed fields", "running", `{"enrollment_percentage":80,"notes":"Changed"}`, "only enrollment_percentage"},
+		{"paused enrollment", "paused", `{"enrollment_percentage":80}`, "only drafts and running experiments"},
+		{"stopped enrollment", "stopped", `{"enrollment_percentage":80}`, "only drafts and running experiments"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mutations := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				if r.Method == http.MethodPost {
+					mutations++
+				}
+				_, _ = fmt.Fprintf(w, `{"id":"exp1","display_name":"Original","status":%q,"enrollment_percentage":50}`, tc.status)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			configPath := filepath.Join(t.TempDir(), "changes.json")
+			if err := os.WriteFile(configPath, []byte(tc.config), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			_, _, err := runAgentCmd(t, "experiments", "update", "exp1", "--config", configPath,
+				"--project-id", "proj", "--api-key", "sk_test", "--yes", "--no-input")
+			if err == nil || !strings.Contains(err.Error(), tc.want) || mutations != 0 {
+				t.Fatalf("err=%v mutations=%d, want %q and no mutation", err, mutations, tc.want)
+			}
+		})
 	}
 }
 
