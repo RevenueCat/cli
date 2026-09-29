@@ -27,6 +27,11 @@ func TestTargetingConfigSummaryFormatsActivationPreview(t *testing.T) {
 	if err != nil || !strings.Contains(got, "onboarding") || !strings.Contains(got, "ofrng_us") || strings.ContainsAny(got, "{}[]\"") {
 		t.Fatalf("placements: got %q, err %v", got, err)
 	}
+	schedule := json.RawMessage(`{"start_date":"2030-12-01T00:00:00Z","end_date":"2030-12-31T23:59:59Z"}`)
+	got, err = targetingConfigSummary("schedule", schedule)
+	if err != nil || got != "start: 2030-12-01T00:00:00Z · end: 2030-12-31T23:59:59Z" {
+		t.Fatalf("schedule: got %q, err %v", got, err)
+	}
 }
 
 func TestTargetingAudienceAfterUpdateRequiresClearingOtherField(t *testing.T) {

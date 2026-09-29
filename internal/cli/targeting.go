@@ -239,7 +239,11 @@ func gatherTargetingCreateInput(cmd *cobra.Command, rt *Runtime, projectID strin
 
 func showTargetingCreatePlan(rt *Runtime, body api.TargetingRuleCreate) error {
 	rt.Out.Title("Targeting rule — " + body.DisplayName)
-	rt.Out.Lead("Apply this rule in priority order when it becomes active.")
+	if len(body.Schedule) > 0 {
+		rt.Out.Lead("Match customers during the scheduled window, in priority order.")
+	} else {
+		rt.Out.Lead("Apply this rule in priority order when it becomes active.")
+	}
 	rt.Out.Field("Type", body.RuleType)
 	rt.Out.Field("State", body.State)
 	if body.RuleType == "legacy" {
@@ -253,7 +257,11 @@ func showTargetingCreatePlan(rt *Runtime, body api.TargetingRuleCreate) error {
 			}
 			rt.Out.Field("Conditions", conditions)
 		} else {
-			rt.Out.Notice("This rule matches everyone. Active rules use the first match.")
+			if len(body.Schedule) > 0 {
+				rt.Out.Notice("During its scheduled window, this rule matches everyone. Active rules use the first match.")
+			} else {
+				rt.Out.Notice("This rule matches everyone. Active rules use the first match.")
+			}
 		}
 		if body.Position != nil {
 			rt.Out.Field("Position", fmt.Sprint(*body.Position))
