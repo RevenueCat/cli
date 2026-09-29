@@ -21,6 +21,26 @@ func targetingConfigSummary(key string, raw json.RawMessage) (string, error) {
 		}
 		return experimentConditionSummary(conditions), nil
 	}
+	if key == "schedule" {
+		if string(raw) == "null" {
+			return "None", nil
+		}
+		var schedule struct {
+			StartDate *string `json:"start_date"`
+			EndDate   *string `json:"end_date"`
+		}
+		if err := json.Unmarshal(raw, &schedule); err != nil {
+			return "", err
+		}
+		parts := make([]string, 0, 2)
+		if schedule.StartDate != nil {
+			parts = append(parts, "start: "+*schedule.StartDate)
+		}
+		if schedule.EndDate != nil {
+			parts = append(parts, "end: "+*schedule.EndDate)
+		}
+		return strings.Join(parts, " · "), nil
+	}
 	var value any
 	if err := json.Unmarshal(raw, &value); err != nil {
 		return "", err
