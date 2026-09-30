@@ -62,6 +62,7 @@ URL, get the user's approval, then rc paywalls publish.`,
 	cmd.AddCommand(
 		newPaywallsListCmd(),
 		newPaywallsShowCmd(),
+		newPaywallsScreensCmd(),
 		newPaywallsGenerateCmd(),
 		newPaywallsEditCmd(),
 		newPaywallsRewindCmd(),
@@ -411,6 +412,71 @@ builder URL instead — show returns metadata, not visuals.`,
 			return rt.Out.Render(p)
 		},
 	}
+}
+
+// newPaywallsScreensCmd lists a paywall's graph steps — the id shown here is
+// what --step-id on rc paywalls edit expects. Purchase-screen status comes
+// from the graph's paywall_step_id, never from a step's is_terminal (that
+// only means "no outgoing edges").
+func newPaywallsScreensCmd() *cobra.Command {
+	var version string
+	cmd := &cobra.Command{
+		Use:   "screens [paywall-id]",
+		Short: "List a Paywall's screens",
+		Long: `Lists the screens in a paywall's graph: id, name, position, and which one is
+the purchase screen. Pass a screen's id to rc paywalls edit --step-id to edit
+it instead of the default fallback screen.
+
+A standalone paywall (one with no screen graph) has no screens to list — it
+is edited as a single screen with rc paywalls edit.`,
+		Example: `  rc paywalls screens pw_abc
+  rc paywalls screens pw_abc --version published --json`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			paywallID, err := requireID(rt, argAt(args, 0), "paywall", func() ([]PickerItem, error) {
+				return paywallPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			graph, err := client.Paywalls.GetGraph(cmd.Context(), projectID, paywallID, version)
+			if err != nil {
+				return err
+			}
+			if graph.Graph == nil {
+				rt.Out.Info(fmt.Sprintf("Paywall %s is standalone — it has no screen graph; rc paywalls edit always edits its one screen.", paywallID))
+				return rt.Out.Render(graph)
+			}
+			rows := make([][]string, len(graph.Graph.Steps))
+			for i, step := range graph.Graph.Steps {
+				name := "—"
+				if step.Name != nil && *step.Name != "" {
+					name = *step.Name
+				}
+				purchase := "no"
+				if step.ID == graph.Graph.PaywallStepID {
+					purchase = "yes"
+				}
+				rows[i] = []string{fmt.Sprintf("%d", i+1), name, step.ID, purchase, step.Type}
+			}
+			return rt.Out.RenderTable(output.Table{
+				Columns: []string{"POSITION", "NAME", "ID", "PURCHASE SCREEN", "TYPE"},
+				Rows:    rows,
+				Raw:     graph,
+			})
+		},
+	}
+	cmd.Flags().StringVar(&version, "version", "draft", "graph version to inspect (draft or published)")
+	return cmd
 }
 
 func newPaywallsDeleteCmd() *cobra.Command {

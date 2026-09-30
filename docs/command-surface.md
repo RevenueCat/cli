@@ -180,8 +180,9 @@ rc products store screenshot <product-id>                # upload an App Review 
 rc paywalls                                              # help; under npx a TTY shows a generate/edit picker (npm launcher sets RC_GUIDED — paywalls-only for now)
 rc paywalls list
 rc paywalls show <id>
+rc paywalls screens <paywall-id>                         # list a paywall's screens (id, name, position, purchase screen) from its graph
 rc paywalls generate [--offering-id <id>] --prompt "..." # create a paywall; standalone unless --offering-id attaches it to an offering
-rc paywalls edit <paywall-id>|--session <file> --prompt  # AI-edit any paywall (draft components fetched via v2) or continue a session
+rc paywalls edit <paywall-id>|--session <file> --prompt [--step-id <id>] # AI-edit any paywall (draft components fetched via v2, or via the graph for --step-id) or continue a session
 rc paywalls rewind --session <file>                      # undo the last editor action
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes

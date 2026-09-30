@@ -110,6 +110,123 @@ func TestPaywallsSetOffering(t *testing.T) {
 	}
 }
 
+func TestPaywallsGetGraph(t *testing.T) {
+	tests := []struct {
+		name       string
+		fetch      func(client *api.Client) (*api.PaywallGraph, error)
+		wantQuery  string
+		response   string
+		wantGraph  bool
+		wantSteps  int
+		wantScreen bool // first step's Paywall content present
+	}{
+		{
+			name: "draft, no expand",
+			fetch: func(client *api.Client) (*api.PaywallGraph, error) {
+				return client.Paywalls.GetGraph(context.Background(), "proj", "pw", "draft")
+			},
+			wantQuery: "version=draft",
+			response:  `{"object":"paywall_graph","id":"pw","version":"draft","graph":{"revision":3,"initial_step_id":"step_1","paywall_step_id":"step_1","total_steps":1,"steps":[{"id":"step_1","name":"Purchase","type":"screen","screen_types":["paywall"],"is_terminal":true,"paywall_id":"pw","edges":[],"unwired_triggers":[]}]}}`,
+			wantGraph: true,
+			wantSteps: 1,
+		},
+		{
+			name: "published, expanded",
+			fetch: func(client *api.Client) (*api.PaywallGraph, error) {
+				return client.Paywalls.GetGraphWithScreenContent(context.Background(), "proj", "pw", "published")
+			},
+			wantQuery:  "version=published&expand=graph.steps.paywall",
+			response:   `{"object":"paywall_graph","id":"pw","version":"published","graph":{"revision":3,"initial_step_id":"step_1","paywall_step_id":"step_1","total_steps":1,"steps":[{"id":"step_1","name":"Purchase","type":"screen","screen_types":["paywall"],"is_terminal":true,"paywall_id":"pw","edges":[],"unwired_triggers":[],"paywall":{"id":"pw","revision":5,"components_config":{},"components_localizations":{},"default_locale":"en_US","state_declarations":{}}}]}}`,
+			wantGraph:  true,
+			wantSteps:  1,
+			wantScreen: true,
+		},
+		{
+			name: "standalone paywall has a null graph",
+			fetch: func(client *api.Client) (*api.PaywallGraph, error) {
+				return client.Paywalls.GetGraph(context.Background(), "proj", "pw", "draft")
+			},
+			wantQuery: "version=draft",
+			response:  `{"object":"paywall_graph","id":"pw","version":"draft","graph":null}`,
+			wantGraph: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotPath, gotQuery string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotPath, gotQuery = r.URL.Path, r.URL.RawQuery
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, tt.response)
+			}))
+			t.Cleanup(srv.Close)
+
+			client := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+			graph, err := tt.fetch(client)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if gotPath != "/projects/proj/paywalls/pw/graph" {
+				t.Fatalf("path = %s", gotPath)
+			}
+			if gotQuery != tt.wantQuery {
+				t.Fatalf("query = %s, want %s", gotQuery, tt.wantQuery)
+			}
+			if (graph.Graph != nil) != tt.wantGraph {
+				t.Fatalf("graph = %+v, want present=%v", graph.Graph, tt.wantGraph)
+			}
+			if !tt.wantGraph {
+				return
+			}
+			if len(graph.Graph.Steps) != tt.wantSteps {
+				t.Fatalf("steps = %d, want %d", len(graph.Graph.Steps), tt.wantSteps)
+			}
+			if (graph.Graph.Steps[0].Paywall != nil) != tt.wantScreen {
+				t.Fatalf("step content present = %v, want %v", graph.Graph.Steps[0].Paywall != nil, tt.wantScreen)
+			}
+		})
+	}
+}
+
+func TestPaywallsUpdateDraftStep(t *testing.T) {
+	var gotPath, gotQuery string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath, gotQuery = r.URL.Path, r.URL.RawQuery
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		// The response id is the sibling's own canonical id, deliberately
+		// different from the parent id in the path.
+		_, _ = io.WriteString(w, `{"id":"pw_sibling","created_at":1,"published_at":null,"object":"paywall"}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	client := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+	name := "should never be sent for a sibling"
+	updated, err := client.Paywalls.UpdateDraftStep(context.Background(), "proj", "pw_parent", "step_2", api.PaywallDraftUpdate{
+		Revision:                5,
+		ComponentsConfig:        json.RawMessage(`{}`),
+		ComponentsLocalizations: json.RawMessage(`{}`),
+		DefaultLocale:           "en_US",
+		Name:                    &name,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/projects/proj/paywalls/pw_parent" {
+		t.Fatalf("path = %s, want the parent's path, not the sibling's", gotPath)
+	}
+	if gotQuery != "step_id=step_2" {
+		t.Fatalf("query = %s, want step_id=step_2", gotQuery)
+	}
+	if _, present := gotBody["name"]; present {
+		t.Fatalf("body = %v, must never send name in selected mode", gotBody)
+	}
+	if updated.ID != "pw_sibling" {
+		t.Fatalf("response id = %s, want pw_sibling (callers must read it from the response, not assume it equals the path id)", updated.ID)
+	}
+}
+
 func TestPaywallsUnpublishPreservesDraftState(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/paywalls/pw/actions/unpublish" {
