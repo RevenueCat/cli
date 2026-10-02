@@ -190,6 +190,64 @@ type ExperimentResultsOptions struct {
 	Currency       string
 }
 
+type ExperimentCreate struct {
+	DisplayName                string          `json:"display_name"`
+	EnrollmentPercentage       int             `json:"enrollment_percentage"`
+	OfferingAID                string          `json:"offering_a_id"`
+	OfferingBID                string          `json:"offering_b_id"`
+	OfferingCID                *string         `json:"offering_c_id,omitempty"`
+	OfferingDID                *string         `json:"offering_d_id,omitempty"`
+	TargetingConditions        json.RawMessage `json:"targeting_conditions,omitempty"`
+	AudienceID                 *string         `json:"audience_id,omitempty"`
+	Placements                 json.RawMessage `json:"placements,omitempty"`
+	Notes                      *string         `json:"notes,omitempty"`
+	ExperimentType             *string         `json:"experiment_type,omitempty"`
+	PrimaryMetric              *string         `json:"primary_metric,omitempty"`
+	SecondaryMetrics           []string        `json:"secondary_metrics,omitempty"`
+	EnrollmentMode             *string         `json:"enrollment_mode,omitempty"`
+	ExperimentDurationSettings json.RawMessage `json:"experiment_duration_settings,omitempty"`
+}
+
+type ExperimentUpdate map[string]json.RawMessage
+
+func (s *ExperimentsService) Create(ctx context.Context, projectID string, body ExperimentCreate) (*Experiment, error) {
+	var out Experiment
+	err := s.c.do(ctx, http.MethodPost, pathExperiments(projectID), body, &out)
+	return &out, err
+}
+
+func (s *ExperimentsService) Update(ctx context.Context, projectID, id string, body ExperimentUpdate) (*Experiment, error) {
+	var out Experiment
+	err := s.c.do(ctx, http.MethodPost, pathExperiment(projectID, id), body, &out)
+	return &out, err
+}
+
+func (s *ExperimentsService) Delete(ctx context.Context, projectID, id string) error {
+	return s.c.do(ctx, http.MethodDelete, pathExperiment(projectID, id), nil, nil)
+}
+
+func (s *ExperimentsService) Start(ctx context.Context, projectID, id string) (*Experiment, error) {
+	return s.action(ctx, pathExperimentActionsStart(projectID, id))
+}
+
+func (s *ExperimentsService) Pause(ctx context.Context, projectID, id string) (*Experiment, error) {
+	return s.action(ctx, pathExperimentActionsPause(projectID, id))
+}
+
+func (s *ExperimentsService) Resume(ctx context.Context, projectID, id string) (*Experiment, error) {
+	return s.action(ctx, pathExperimentActionsResume(projectID, id))
+}
+
+func (s *ExperimentsService) Stop(ctx context.Context, projectID, id string) (*Experiment, error) {
+	return s.action(ctx, pathExperimentActionsStop(projectID, id))
+}
+
+func (s *ExperimentsService) action(ctx context.Context, path string) (*Experiment, error) {
+	var out Experiment
+	err := s.c.do(ctx, http.MethodPost, path, nil, &out)
+	return &out, err
+}
+
 func (s *ExperimentsService) Results(ctx context.Context, projectID, id string, opts ExperimentResultsOptions) (*ExperimentResults, error) {
 	q := url.Values{}
 	if opts.Platform != "" {

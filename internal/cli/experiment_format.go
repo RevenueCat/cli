@@ -108,15 +108,7 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 		{Heading: "Timeline", Lines: timeline},
 	}
 	if len(experiment.Conflicts) > 0 {
-		conflicts := make([]output.CardLine, 0, len(experiment.Conflicts))
-		for _, conflict := range experiment.Conflicts {
-			name := conflict.DisplayName
-			if name == "" {
-				name = conflict.ID
-			}
-			conflicts = append(conflicts, output.CardLine{Key: conflict.ID, Value: name})
-		}
-		sections = append(sections, output.CardSection{Heading: "Conflicts", Lines: conflicts})
+		sections = append(sections, output.CardSection{Heading: "Conflicts", Lines: []output.CardLine{{Key: "Experiments", Value: experimentConflictsSummary(experiment.Conflicts)}}})
 	}
 	if err := rt.Out.RenderCard(output.Card{
 		Title:    experiment.DisplayName,
@@ -233,6 +225,8 @@ func experimentConflictsSummary(conflicts []api.ExperimentConflict) string {
 		parts[i] = conflict.DisplayName
 		if parts[i] == "" {
 			parts[i] = conflict.ID
+		} else if conflict.ID != "" {
+			parts[i] += " (" + conflict.ID + ")"
 		}
 	}
 	return strings.Join(parts, ", ")

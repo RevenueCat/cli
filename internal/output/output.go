@@ -524,7 +524,7 @@ func (r *Renderer) Notice(lines ...string) {
 	fmt.Fprintln(r.stderr)
 	bar := lipgloss.NewStyle().Foreground(InfoBlue).Bold(true)
 	for _, line := range lines {
-		fmt.Fprintln(r.stderr, r.style(bar, "▐ ")+line)
+		fmt.Fprintln(r.stderr, r.style(bar, "▐ ")+SanitizeLine(line))
 	}
 	fmt.Fprintln(r.stderr)
 }
