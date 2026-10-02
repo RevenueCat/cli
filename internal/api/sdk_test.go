@@ -18,12 +18,22 @@ func TestSDKOfferingsUsesPublicKeyAndV1Path(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test_public" {
 			t.Fatalf("authorization = %q", r.Header.Get("Authorization"))
 		}
+		if got := r.Header.Get("User-Agent"); got != "override-ua" {
+			t.Errorf("User-Agent = %q", got)
+		}
+		if got := r.Header.Get("X-Trace"); got != "test-trace" {
+			t.Errorf("X-Trace = %q", got)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"current_offering_id":"default","offerings":[]}`))
 	}))
 	t.Cleanup(srv.Close)
 
-	service := api.NewSDKService(srv.URL+"/v2", nil, "test")
+	service := api.NewSDKService(api.SDKOptions{
+		BaseURL:      srv.URL + "/v2",
+		UserAgent:    "test",
+		ExtraHeaders: http.Header{"X-Trace": {"test-trace"}, "User-Agent": {"override-ua"}, "Authorization": {"Bearer override"}},
+	})
 	result, err := service.Offerings(context.Background(), "test_public", "user/one")
 	if err != nil {
 		t.Fatal(err)
@@ -48,12 +58,22 @@ func TestSDKSimulatePurchasePostsReceipt(t *testing.T) {
 		if body.FetchToken != "TEST_token" || body.AppUserID != "user" || body.ProductID != "monthly" || !body.SDKOriginated {
 			t.Fatalf("unexpected body: %+v", body)
 		}
+		if got := r.Header.Get("User-Agent"); got != "override-ua" {
+			t.Errorf("User-Agent = %q", got)
+		}
+		if got := r.Header.Get("X-Trace"); got != "test-trace" {
+			t.Errorf("X-Trace = %q", got)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"subscriber":{"entitlements":{"premium":{"expires_date":null}}}}`))
 	}))
 	t.Cleanup(srv.Close)
 
-	service := api.NewSDKService(srv.URL+"/v2", nil, "test")
+	service := api.NewSDKService(api.SDKOptions{
+		BaseURL:      srv.URL + "/v2",
+		UserAgent:    "test",
+		ExtraHeaders: http.Header{"X-Trace": {"test-trace"}, "User-Agent": {"override-ua"}, "Authorization": {"Bearer override"}},
+	})
 	result, err := service.SimulatePurchase(context.Background(), "test_public", api.SimulatedPurchase{
 		FetchToken: "TEST_token", AppUserID: "user", ProductID: "monthly", InitiationSource: "purchase", SDKOriginated: true,
 	})

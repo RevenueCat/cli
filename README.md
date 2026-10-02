@@ -310,16 +310,21 @@ One header per line; supplied headers override the CLI's defaults, except `Autho
 
 ## Usage analytics
 
-Every authenticated v2 API request carries a few headers so RevenueCat can see
-which commands are used and whether the CLI is driven by a human, an agent, or
-CI — derived from normal request logs, with no separate telemetry and no
-identifier of any kind:
+Every CLI-originated RevenueCat API request carries a few headers, including
+signup, OAuth token exchange/refresh, v1 SDK requests, Rico, and Paywall AI.
+RevenueCat can see which commands are used and the CLI invocation mode from
+normal request logs, with no separate telemetry or user/account identifiers:
 
 - `User-Agent` — `revenuecat-cli/<version> (<os> <arch>; go<goversion>)`.
 - `X-RC-CLI-Command` — the command path only (e.g. `paywalls.generate`), never
   arguments, flag values, IDs, emails, or prompts.
 - `X-RC-CLI-Mode` — `interactive`, `agent` (`--json` or `--no-input`), or `ci`
-  (when `$CI` is set).
+  (when `$CI` is nonempty, taking precedence over `agent`).
+
+`agent` describes the flags used, not a verified AI caller or a specific AI tool.
+Browser authorization requests use the browser's headers. Third-party requests
+(such as Apple and Google APIs or store screenshot uploads) do not receive these
+RevenueCat analytics headers.
 
 Set `DO_NOT_TRACK=1` (per [consoledonottrack.com](https://consoledonottrack.com))
 to drop the `X-RC-CLI-*` headers. Requests still go through, just unlabeled.

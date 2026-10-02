@@ -15,8 +15,20 @@ func TestOAuthSignupEndpoints(t *testing.T) {
 	var calls []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls = append(calls, r.Method+" "+r.URL.Path)
+		if got := r.Header.Get("User-Agent"); got != "rc-test/1" {
+			t.Errorf("%s User-Agent = %q", r.URL.Path, got)
+		}
+		if got := r.Header.Get("X-Trace"); got != "test-trace" {
+			t.Errorf("%s X-Trace = %q", r.URL.Path, got)
+		}
+		if r.URL.Path == "/v1/developers/provision-account" || r.URL.Path == "/v1/developers/login" || r.URL.Path == "/oauth2/token" {
+			if got := r.Header.Get("Authorization"); got != "" {
+				t.Errorf("%s unexpected Authorization = %q", r.URL.Path, got)
+			}
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		if r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
+		if r.URL.Path != "/oauth2/token" && r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
 			t.Errorf("%s missing required X-Requested-With header", r.URL.Path)
 		}
 		switch r.URL.Path {
@@ -44,6 +56,14 @@ func TestOAuthSignupEndpoints(t *testing.T) {
 			query.Set("state", r.URL.Query().Get("state"))
 			redirect.RawQuery = query.Encode()
 			_, _ = fmt.Fprintf(w, `{"redirect_uri":%q}`, redirect.String())
+		case "/oauth2/token":
+			if err := r.ParseForm(); err != nil {
+				t.Error(err)
+			}
+			if r.Form.Get("client_id") != "cli-client" {
+				t.Errorf("unexpected client_id: %q", r.Form.Get("client_id"))
+			}
+			_, _ = fmt.Fprint(w, `{"access_token":"access","refresh_token":"refresh","expires_in":3600}`)
 		case "/v1/developers/logout":
 			w.WriteHeader(http.StatusOK)
 		default:
@@ -52,7 +72,12 @@ func TestOAuthSignupEndpoints(t *testing.T) {
 	}))
 	t.Cleanup(server.Close)
 
-	service := NewOAuthService(server.URL, "cli-client")
+	service := NewOAuthService(OAuthOptions{
+		BaseURL:      server.URL,
+		ClientID:     "cli-client",
+		UserAgent:    "rc-test/1",
+		ExtraHeaders: http.Header{"X-Trace": {"test-trace"}, "Authorization": {"Bearer override"}},
+	})
 	ctx := context.Background()
 	if err := service.ProvisionAccount(ctx, ProvisionAccountRequest{
 		Email: "dev@example.com", Name: "Developer", Password: "generated", MarketingEmailEnabled: true,
@@ -74,11 +99,20 @@ func TestOAuthSignupEndpoints(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if _, err := service.ExchangeCode(ctx, code, "http://localhost:49152/callback", "verifier"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.Refresh(ctx, "refresh-token"); err != nil {
+		t.Fatal(err)
+	}
+
 	want := []string{
 		"POST /v1/developers/provision-account",
 		"POST /v1/developers/login",
 		"POST /v1/developers/me/oauth-authorize",
 		"POST /v1/developers/logout",
+		"POST /oauth2/token",
+		"POST /oauth2/token",
 	}
 	if fmt.Sprint(calls) != fmt.Sprint(want) {
 		t.Fatalf("calls = %v, want %v", calls, want)
@@ -92,7 +126,7 @@ func TestAuthorizeWithLoginTokenRejectsMismatchedRedirect(t *testing.T) {
 	}))
 	t.Cleanup(server.Close)
 
-	service := NewOAuthService(server.URL, "cli-client")
+	service := NewOAuthService(OAuthOptions{BaseURL: server.URL, ClientID: "cli-client"})
 	_, err := service.AuthorizeWithLoginToken(context.Background(), "token", "http://localhost:49152/callback", "challenge", "state")
 	if err == nil {
 		t.Fatal("expected mismatched redirect error")
