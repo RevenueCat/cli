@@ -13,6 +13,7 @@ package cli_test
 // internal/output/brand.go and are reviewed there.
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,6 +29,24 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/targeting_rules/trle_snap"):
+			io.WriteString(w, `{"object":"targeting_rule","id":"trle_snap","rule_type":"legacy","state":"active","display_name":"US annual paywall","offering_id":"ofrng_us","conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"fallback_offering_id":"ofrng_default","placement_offerings":[{"placement_identifier":"onboarding","offering_id":"ofrng_us"}]},"schedule":{"start_date":"2026-09-25T12:00:00Z","end_date":null}}`)
+		case strings.HasSuffix(r.URL.Path, "/targeting_rules"):
+			if r.Method == http.MethodPost {
+				var body struct {
+					DisplayName string `json:"display_name"`
+				}
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+					t.Error(err)
+				}
+				if body.DisplayName == "Holiday paywall" {
+					io.WriteString(w, `{"object":"targeting_rule","id":"trle_holiday","rule_type":"legacy","state":"active","display_name":"Holiday paywall","offering_id":"ofrng_holiday","schedule":{"start_date":"2030-12-01T00:00:00Z","end_date":"2030-12-31T23:59:59Z"}}`)
+				} else {
+					io.WriteString(w, `{"object":"targeting_rule","id":"trle_snap","rule_type":"legacy","state":"active","display_name":"Default paywall","offering_id":"ofrng_default"}`)
+				}
+			} else {
+				io.WriteString(w, `{"object":"list","items":[{"object":"targeting_rule","id":"trle_snap","rule_type":"legacy","state":"active","display_name":"US annual paywall","offering_id":"ofrng_us"}],"next_page":null,"url":"/projects/proj_snap/targeting_rules"}`)
+			}
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/actions/start"):
 			io.WriteString(w, `{"object":"experiment","id":"exp_snap","display_name":"New paywall","status":"running","created_at":1784297950368,"updated_at":1784297950368}`)
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap"):
@@ -67,6 +86,10 @@ func TestOutputSnapshots(t *testing.T) {
 		{"experiments-show", []string{"experiments", "show", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-results", []string{"experiments", "results", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-start", []string{"experiments", "start", "exp_snap", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"targeting-list", []string{"targeting", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"targeting-show", []string{"targeting", "show", "trle_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"targeting-create-active", []string{"targeting", "create", "--name", "Default paywall", "--offering", "ofrng_default", "--state", "active", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"targeting-create-scheduled", []string{"targeting", "create", "--config", "testdata/scheduled-targeting.json", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list", []string{"apps", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
 		{"error-not-found", []string{"offerings", "show", "ofrng_missing", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},

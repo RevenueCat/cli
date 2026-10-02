@@ -203,6 +203,18 @@ rc experiments pause <id>                              # pauses enrollment; conf
 rc experiments resume <id>                             # resumes enrollment; configuration review + confirmation/--yes
 rc experiments stop <id>                                # permanent; confirmation/--yes
 
+# Targeting rules — development v2 endpoints
+rc targeting list [--state <state>]
+rc targeting show <id>                                 # human detail view shows audience, placements, schedule, and checkpoints
+rc targeting create (--name <name> --offering <offering-id> [--state inactive|active] | --config <json-file>)  # initially inactive
+rc targeting update <id> --config <json-file>           # partial update
+rc targeting delete <id> [--force]                      # active or scheduled rules require --force; confirmation/--yes
+
+Legacy Offering rules use `state: "active"` with a future `schedule.start_date` to
+start serving later. The API reports their state as `active` before that date,
+but targeting skips them until the scheduled window. The `scheduled` state is
+only for checkpoint rules.
+
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)
 rc rico --continue                                       # continue the most recent conversation

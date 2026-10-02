@@ -244,6 +244,18 @@ endpoints:
   - method: GET
     path: /projects/{project_id}/experiments/{experiment_id}/results
 
+  # Targeting rules (development-status; provided by the beta overlay)
+  - method: GET
+    path: /projects/{project_id}/targeting_rules
+  - method: POST
+    path: /projects/{project_id}/targeting_rules
+  - method: GET
+    path: /projects/{project_id}/targeting_rules/{targeting_rule_id}
+  - method: POST
+    path: /projects/{project_id}/targeting_rules/{targeting_rule_id}
+  - method: DELETE
+    path: /projects/{project_id}/targeting_rules/{targeting_rule_id}
+
   # Audit
   - method: GET
     path: /projects/{project_id}/audit_logs

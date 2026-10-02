@@ -33,6 +33,7 @@ PATH_SUBSTRINGS = [
     "/products/{product_id}/prices",
     "/products/{product_id}/test_store_prices",
     "/experiments",
+    "/targeting_rules",
 ]
 
 REF_RE = re.compile(r"#/components/([A-Za-z0-9]+)/([A-Za-z0-9_.-]+)")
