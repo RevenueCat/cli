@@ -266,7 +266,9 @@ rc audit                                                 # /audit_logs with --li
    it reviewed; `discard` abandons it. `--file - --input-format csv|json` avoids
    any filesystem requirement. A future `.revenuecat` workspace may provide
    optional defaults, but is never a prerequisite and desired state is never
-   stored globally.
+   stored globally. These commands are in the default surface. Let the API
+   decide whether the active credential can use them; an API-key feature-gate
+   rejection gets a targeted hint only after the request fails.
 9. **Apple credential setup** — `apps apple check` validates App Store
    Connect login, trusted-device/SMS 2FA, team selection, and read-only key
    access. `apps apple setup` shows the app's current configuration, asks per

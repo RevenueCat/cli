@@ -54,3 +54,33 @@ func TestAPIError_UnauthorizedHintMentionsLogin(t *testing.T) {
 		t.Errorf("hint should mention rc login, got %q", hint)
 	}
 }
+
+func TestStoreStatePlanFeatureGateHint(t *testing.T) {
+	const gateMessage = "Product store state plans are currently a limited beta feature and are not available for this project."
+	for _, tc := range []struct {
+		name, source, message string
+		status                int
+		wantAction            string
+	}{
+		{"flag key gated", "flag", gateMessage, 403, "Omit `--api-key`"},
+		{"environment key gated", "env", gateMessage, 403, "Unset RC_API_KEY"},
+		{"profile key gated", "profile", gateMessage, 403, "Run `rc login`"},
+		{"OAuth gated", "oauth", gateMessage, 403, ""},
+		{"other authorization error", "env", "You do not have permission to perform this action.", 403, ""},
+		{"other status", "env", gateMessage, 400, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e := &api.APIError{Status: tc.status, Type: "authorization_error", Message: tc.message, CredentialSource: tc.source}
+			hint := e.Hint()
+			if tc.wantAction == "" && hint != "" {
+				t.Errorf("unexpected hint: %q", hint)
+			}
+			if tc.wantAction != "" && (!strings.Contains(hint, tc.wantAction) || !strings.Contains(hint, "store-state plan access")) {
+				t.Errorf("hint = %q, want action %q and store-state plan access", hint, tc.wantAction)
+			}
+			if tc.source == "flag" && !strings.Contains(hint, "unset RC_API_KEY if set") {
+				t.Errorf("flag hint should account for an environment override: %q", hint)
+			}
+		})
+	}
+}
