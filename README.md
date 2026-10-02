@@ -298,9 +298,10 @@ toolkit discovers every command with `rc commands --json` and
 
 ## Custom request headers
 
-`RC_HEADERS` sends extra HTTP headers on every RevenueCat request (v2 API, Rico,
-and the Paywall AI editor), as newline-separated `Name: Value` pairs. Use it to
-route or tag traffic without baking anything into the binary:
+`RC_HEADERS` sends extra HTTP headers on every CLI-originated RevenueCat request
+(v2 API, signup/OAuth, v1 SDK requests, Rico, and the Paywall AI editor), as
+newline-separated `Name: Value` pairs. Use it to route or tag traffic without
+baking anything into the binary:
 
 ```bash
 RC_HEADERS=$'X-Some-Header: value' rc offerings list
