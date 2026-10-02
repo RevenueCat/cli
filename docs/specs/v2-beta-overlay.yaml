@@ -919,6 +919,67 @@ paths:
       responses:
         '200':
           description: OK
+  /projects/{project_id}/experiments:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a list of experiments
+      operationId: list-experiments
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/{experiment_id}:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: experiment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get an experiment
+      operationId: get-experiment
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:experiments:read
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/experiments/{experiment_id}/results:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: experiment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get experiment results
+      operationId: get-experiment-results
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - charts_metrics:experiment_results:read
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     Currency:

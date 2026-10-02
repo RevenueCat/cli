@@ -54,6 +54,7 @@ type Client struct {
 	Customers       *CustomersService
 	Entitlements    *EntitlementsService
 	Offerings       *OfferingsService
+	Experiments     *ExperimentsService
 	Packages        *PackagesService
 	Products        *ProductsService
 	Subscriptions   *SubscriptionsService
@@ -69,7 +70,7 @@ type Client struct {
 	Apps            *AppsService
 	StoreStatePlans *StoreStatePlansService
 	StoreState      *StoreStateService
-	// add as we go: Discounts, Experiments, VirtualCurrencies catalog
+	// add as we go: Discounts, VirtualCurrencies catalog
 }
 
 func NewClient(opts Options) *Client {
@@ -97,6 +98,7 @@ func NewClient(opts Options) *Client {
 	c.Customers = &CustomersService{c: c}
 	c.Entitlements = &EntitlementsService{c: c}
 	c.Offerings = &OfferingsService{c: c}
+	c.Experiments = &ExperimentsService{c: c}
 	c.Packages = &PackagesService{c: c}
 	c.Products = &ProductsService{c: c}
 	c.Subscriptions = &SubscriptionsService{c: c}
