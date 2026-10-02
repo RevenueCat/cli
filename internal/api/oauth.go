@@ -12,25 +12,38 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/revenuecat/cli/internal/httpx"
 )
 
 const DefaultOAuthBaseURL = "https://api.revenuecat.com"
 const DefaultOAuthClientID = "cmV2ZW51ZWNhdC1jbGk="
 const DefaultOAuthScope = "*:*:read_write"
 
-// OAuthService handles the token endpoint only — the browser redirect and
-// callback server live in the CLI layer since they have user-facing side effects.
-type OAuthService struct {
-	baseURL    string
-	clientID   string
-	httpClient *http.Client
+type OAuthOptions struct {
+	BaseURL      string
+	ClientID     string
+	UserAgent    string
+	ExtraHeaders http.Header
 }
 
-func NewOAuthService(baseURL, clientID string) *OAuthService {
+// Browser redirects and the callback server live in the CLI layer because
+// they have user-facing side effects.
+type OAuthService struct {
+	baseURL      string
+	clientID     string
+	httpClient   *http.Client
+	userAgent    string
+	extraHeaders http.Header
+}
+
+func NewOAuthService(opts OAuthOptions) *OAuthService {
 	return &OAuthService{
-		baseURL:    strings.TrimRight(baseURL, "/"),
-		clientID:   clientID,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		baseURL:      strings.TrimRight(opts.BaseURL, "/"),
+		clientID:     opts.ClientID,
+		userAgent:    opts.UserAgent,
+		extraHeaders: opts.ExtraHeaders,
+		httpClient:   &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -171,6 +184,11 @@ func (s *OAuthService) postToken(ctx context.Context, body url.Values) (*TokenRe
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
+	if s.userAgent != "" {
+		req.Header.Set("User-Agent", s.userAgent)
+	}
+	httpx.Apply(req, s.extraHeaders)
+
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -211,6 +229,11 @@ func (s *OAuthService) postJSON(ctx context.Context, path, bearerToken string, b
 	if bearerToken != "" {
 		req.Header.Set("Authorization", "Bearer "+bearerToken)
 	}
+
+	if s.userAgent != "" {
+		req.Header.Set("User-Agent", s.userAgent)
+	}
+	httpx.Apply(req, s.extraHeaders)
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {

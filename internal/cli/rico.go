@@ -705,7 +705,7 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 		BaseURL:      baseURL,
 		Token:        agentAuthToken(rt),
 		UserAgent:    userAgent(rt.Globals.Version),
-		ExtraHeaders: customHeaders(),
+		ExtraHeaders: requestHeaders(rt.Globals),
 	}), nil
 }
 

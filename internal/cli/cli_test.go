@@ -55,12 +55,25 @@ func runCmdInConfigDir(t *testing.T, configDir string, args ...string) (stdout, 
 }
 
 func TestAuthSignup_AgentFlowStoresDurableOAuthWithoutLeakingTemporaryCredentials(t *testing.T) {
+	t.Setenv("CI", "")
+	t.Setenv("DO_NOT_TRACK", "")
+	t.Setenv("RC_HEADERS", "")
 	const temporaryToken = "temporary-login-token-must-not-leak"
 	var generatedPassword string
 	var requests []string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests = append(requests, r.Method+" "+r.URL.Path)
+		if got := r.Header.Get("User-Agent"); !strings.HasPrefix(got, "revenuecat-cli/test (") {
+			t.Errorf("%s User-Agent = %q", r.URL.Path, got)
+		}
+		if got := r.Header.Get("X-RC-CLI-Command"); got != "auth.signup" {
+			t.Errorf("%s command = %q, want auth.signup", r.URL.Path, got)
+		}
+		if got := r.Header.Get("X-RC-CLI-Mode"); got != "agent" {
+			t.Errorf("%s mode = %q, want agent", r.URL.Path, got)
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path != "/oauth2/token" && r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
 			t.Errorf("%s missing required X-Requested-With header", r.URL.Path)

@@ -10,6 +10,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/config"
+	"github.com/revenuecat/cli/internal/paywallai"
+	"github.com/revenuecat/cli/internal/rico"
 )
 
 func TestCommandPath(t *testing.T) {
@@ -178,5 +181,115 @@ func TestDoNotTrackStillSendsRequest(t *testing.T) {
 	}
 	if !strings.HasPrefix(gotUA, "revenuecat-cli/") {
 		t.Errorf("User-Agent must still be sent under DO_NOT_TRACK, got %q", gotUA)
+	}
+}
+
+func TestNonV2AnalyticsHeadersReachTheWire(t *testing.T) {
+	cases := []struct {
+		name        string
+		globals     Globals
+		ci          string
+		doNotTrack  string
+		custom      string
+		wantMode    string
+		wantCommand string
+		wantUA      string
+	}{
+		{name: "interactive", wantMode: "interactive", wantCommand: "auth.signup"},
+		{name: "json", globals: Globals{JSON: true}, wantMode: "agent", wantCommand: "auth.signup"},
+		{name: "no-input", globals: Globals{NoInput: true}, wantMode: "agent", wantCommand: "auth.signup"},
+		{name: "ci", globals: Globals{JSON: true}, ci: "true", wantMode: "ci", wantCommand: "auth.signup"},
+		{name: "do-not-track", doNotTrack: "1", custom: "X-Trace: keep-me"},
+		{name: "overrides", custom: "User-Agent: custom-ua\nX-RC-CLI-Command: custom.command\nX-RC-CLI-Mode: custom-mode\nAuthorization: Bearer override", wantMode: "custom-mode", wantCommand: "custom.command", wantUA: "custom-ua"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("CI", tc.ci)
+			t.Setenv("DO_NOT_TRACK", tc.doNotTrack)
+			t.Setenv("RC_HEADERS", tc.custom)
+			tc.globals.CommandPath = "auth.signup"
+			tc.globals.Version = "9.9.9"
+			wantUA := tc.wantUA
+			if wantUA == "" {
+				wantUA = userAgent(tc.globals.Version)
+			}
+			var paths []string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				paths = append(paths, r.URL.Path)
+				for header, want := range map[string]string{
+					"User-Agent":     wantUA,
+					headerCLICommand: tc.wantCommand,
+					headerCLIMode:    tc.wantMode,
+				} {
+					if got := r.Header.Get(header); got != want {
+						t.Errorf("%s %s = %q, want %q", r.URL.Path, header, got, want)
+					}
+				}
+				if tc.doNotTrack != "" && r.Header.Get("X-Trace") != "keep-me" {
+					t.Errorf("%s lost custom header", r.URL.Path)
+				}
+				wantAuth := "Bearer access"
+				if r.URL.Path == "/oauth2/token" {
+					wantAuth = ""
+				}
+				if r.URL.Path == "/v1/subscribers/user/offerings" || r.URL.Path == "/v1/receipts" {
+					wantAuth = "Bearer public-key"
+				}
+				if got := r.Header.Get("Authorization"); got != wantAuth {
+					t.Errorf("%s Authorization = %q, want %q", r.URL.Path, got, wantAuth)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				if r.URL.Path == "/oauth2/token" {
+					_, _ = w.Write([]byte(`{"access_token":"access","refresh_token":"refresh","expires_in":3600}`))
+				} else {
+					_, _ = w.Write([]byte(`{}`))
+				}
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_OAUTH_BASE_URL", srv.URL)
+			rt := &Runtime{Globals: &tc.globals, Config: &config.Config{AccessToken: "access", TokenType: "oauth"}}
+			ctx := context.Background()
+			if _, err := rt.oauthService().Refresh(ctx, "refresh"); err != nil {
+				t.Fatal(err)
+			}
+			sdk := api.NewSDKService(api.SDKOptions{BaseURL: srv.URL + "/v2", UserAgent: userAgent(rt.Globals.Version), ExtraHeaders: requestHeaders(rt.Globals)})
+			if _, err := sdk.Offerings(ctx, "public-key", "user"); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := sdk.SimulatePurchase(ctx, "public-key", api.SimulatedPurchase{}); err != nil {
+				t.Fatal(err)
+			}
+			rc, err := ricoClient(rt, srv.URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := rc.PostFeedback(ctx, rico.FeedbackRequest{}); err != nil {
+				t.Fatal(err)
+			}
+			rs, err := rc.Stream(ctx, rico.RunAgentInput{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := rs.Close(); err != nil {
+				t.Fatal(err)
+			}
+			pc, err := paywallAIClient(rt, srv.URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := pc.Feedback(ctx, "session", "trace", "positive"); err != nil {
+				t.Fatal(err)
+			}
+			ps, err := pc.Stream(ctx, paywallai.EditorRequest{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := ps.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if len(paths) != 7 {
+				t.Fatalf("requests = %v, want 7 requests", paths)
+			}
+		})
 	}
 }
