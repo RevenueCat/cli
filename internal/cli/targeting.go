@@ -320,10 +320,11 @@ func newTargetingUpdateCmd() *cobra.Command {
 	var config string
 	cmd := &cobra.Command{
 		Use:   "update [id]",
-		Short: "Update an Offering targeting rule",
-		Long:  "Partially updates a legacy targeting rule from a JSON object with position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. To schedule an Offering rule, set state to active and schedule.start_date to a future UTC time; it will not match customers before then. Run rc schema targeting update for config fields and accepted values. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
+		Short: "Update a targeting rule",
+		Long:  "Partially updates a targeting rule. Offering rules accept position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. To schedule an Offering rule, set state to active and schedule.start_date to a future UTC time; it will not match customers before then. Run rc schema targeting update for config fields and accepted values. Active or scheduled rules, and transitions into those states, require confirmation. Checkpoint rules accept state, display_name, audience_id, flow_id, checkpoints, and schedule.",
 		Example: `  echo '{"state":"active","position":1}' | rc targeting update trle_123 --config - --yes --no-input
-  echo '{"state":"active","schedule":{"start_date":"2030-12-01T00:00:00Z","end_date":"2030-12-31T23:59:59Z"}}' | rc targeting update trle_123 --config - --yes --no-input`,
+  echo '{"state":"active","schedule":{"start_date":"2030-12-01T00:00:00Z","end_date":"2030-12-31T23:59:59Z"}}' | rc targeting update trle_123 --config - --yes --no-input
+  echo '{"flow_id":"wf_new","checkpoints":[{"checkpoint_id":"chkpt_new"}]}' | rc targeting update chkptrule_123 --config - --yes --no-input`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if config == "" {
@@ -355,27 +356,30 @@ func newTargetingUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if current.RuleType == "checkpoint" {
-				return fmt.Errorf("checkpoint rule updates are not supported by this endpoint")
+			if err := validTargetingUpdateForRule(current.RuleType, body); err != nil {
+				return err
 			}
 			var newState string
 			if value, ok := body["state"]; ok {
-				if err := json.Unmarshal(value, &newState); err != nil {
-					return fmt.Errorf("state must be active or inactive")
-				}
-				if newState != "active" && newState != "inactive" {
-					return fmt.Errorf("state must be active or inactive")
+				if err := json.Unmarshal(value, &newState); err != nil || (newState != "active" && newState != "inactive" && !(current.RuleType == "checkpoint" && newState == "scheduled")) {
+					return fmt.Errorf("state must be active or inactive (checkpoint rules also support scheduled)")
 				}
 			}
 			resultingAudience, everyone, err := targetingAudienceAfterUpdate(current, body)
 			if err != nil {
 				return err
 			}
-			if current.State == "active" || newState == "active" {
+			if current.State != "inactive" || newState == "active" || newState == "scheduled" {
 				rt.Out.Title("Targeting rule — " + current.DisplayName)
-				rt.Out.Lead("Change the rule used to choose an Offering for matching customers.")
+				if current.RuleType == "checkpoint" {
+					rt.Out.Lead("Change the rule used to choose a Flow at a checkpoint.")
+					rt.Out.Field("Current flow", current.FlowID)
+				} else {
+					rt.Out.Lead("Change the rule used to choose an Offering for matching customers.")
+					rt.Out.Field("Current offering", current.OfferingID)
+				}
+				rt.Out.Field("ID", current.ID)
 				rt.Out.Field("Current state", current.State)
-				rt.Out.Field("Current offering", current.OfferingID)
 				if current.AudienceID != nil {
 					rt.Out.Field("Current audience", *current.AudienceID)
 				} else if len(current.Conditions) > 0 {
@@ -415,10 +419,33 @@ func validTargetingUpdate(body api.TargetingRuleUpdate) error {
 	if len(body) == 0 {
 		return fmt.Errorf("config must contain at least one field")
 	}
-	allowed := map[string]bool{"position": true, "state": true, "display_name": true, "offering_id": true, "audience_id": true, "conditions": true, "schedule": true, "placements": true}
+	allowed := map[string]bool{"position": true, "state": true, "display_name": true, "offering_id": true, "audience_id": true, "conditions": true, "schedule": true, "placements": true, "flow_id": true, "checkpoints": true}
 	for key := range body {
 		if !allowed[key] {
 			return fmt.Errorf("unknown targeting rule field %q", key)
+		}
+	}
+	return nil
+}
+
+func validTargetingUpdateForRule(ruleType string, body api.TargetingRuleUpdate) error {
+	if ruleType != "checkpoint" {
+		for _, field := range []string{"flow_id", "checkpoints"} {
+			if _, ok := body[field]; ok {
+				return fmt.Errorf("%s can only be set on checkpoint rules", field)
+			}
+		}
+		return nil
+	}
+	for _, field := range []string{"position", "offering_id", "conditions", "placements"} {
+		if _, ok := body[field]; ok {
+			return fmt.Errorf("%s cannot be set on checkpoint rules", field)
+		}
+	}
+	if value, ok := body["audience_id"]; ok {
+		var audience string
+		if err := json.Unmarshal(value, &audience); err != nil || audience == "" {
+			return fmt.Errorf("checkpoint audience_id must be a nonempty string")
 		}
 	}
 	return nil

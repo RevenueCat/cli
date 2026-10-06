@@ -1,0 +1,30 @@
+$ rc targeting update chkptrule_snap --config testdata/checkpoint-targeting-update.json --yes --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Targeting rule — Onboarding
+  Change the rule used to choose a Flow at a checkpoint.
+
+  Current flow                wf_original
+  ID                          chkptrule_snap
+  Current state               scheduled
+  Current audience            aud_original
+  Change audience id          aud_new
+  Change checkpoints          chkpt_new
+  Change flow id              wf_new
+  Change state                active
+  Resulting audience          aud_new
+
+▍ Plan
+· 1. Update the targeting rule
+✓ Updated targeting rule chkptrule_snap
+▍ Onboarding
+  chkptrule_snap · checkpoint · active
+
+Serves
+  Flow:  wf_new
+
+Audience
+  Audience:  aud_new
+
+Checkpoints
+  chkpt_new:  Position 0
+  Use --json for the complete API response.

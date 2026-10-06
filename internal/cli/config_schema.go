@@ -35,7 +35,7 @@ func targetingConfigFields(create bool) map[string]any {
 		"state":        configEnum("Legacy Offering rules use active or inactive; use active with a future schedule.start_date to serve later. The scheduled state is checkpoint-only.", "active", "inactive", "scheduled"),
 		"display_name": configField("string", "Rule name"),
 		"offering_id":  configField("string", "Offering ID served by a legacy rule"),
-		"audience_id":  map[string]any{"type": "string", "nullable": true, "description": "Audience ID; mutually exclusive with conditions. Set null when switching to conditions; set conditions to [] when switching to an audience."},
+		"audience_id":  map[string]any{"type": "string", "nullable": true, "description": "Audience ID; mutually exclusive with conditions. Set null when switching to conditions; set conditions to [] when switching to an audience. Checkpoint rules require a non-null audience ID."},
 		"conditions":   targetingConditionsSchema(),
 		"schedule":     schedule,
 		"placements":   placements,
@@ -53,8 +53,20 @@ func targetingConfigFields(create bool) map[string]any {
 		return map[string]any{"type": "object", "properties": fields, "description": "Legacy: display_name and offering_id required. Checkpoint: rule_type, display_name, audience_id, flow_id, checkpoints required."}
 	}
 	schedule["type"] = []string{"object", "null"}
-	schedule["description"] = "Omit to keep the current schedule. Set null to remove it, or provide UTC start_date and optional end_date timestamps. Use state active with a future start_date to serve later."
-	return map[string]any{"type": "object", "properties": fields, "description": "Partial update of a legacy rule. Checkpoint updates are unavailable."}
+	schedule["description"] = "Omit to keep the current schedule. Set null to remove it, or provide UTC timestamps. Offering rules require start_date and state active to serve later; checkpoint rules allow an omitted start_date unless state is scheduled."
+	fields["flow_id"] = configField("string", "Flow ID served by a checkpoint rule; checkpoint-only")
+	fields["checkpoints"] = map[string]any{
+		"type": "array", "minItems": 1, "maxItems": 1,
+		"description": "Move a checkpoint rule to exactly one checkpoint; appends after that checkpoint's existing rules. Position cannot be set here.",
+		"items": map[string]any{
+			"type": "object", "required": []string{"checkpoint_id"}, "additionalProperties": false,
+			"properties": map[string]any{"checkpoint_id": configField("string", "Checkpoint ID")},
+		},
+	}
+	return map[string]any{
+		"type": "object", "properties": fields,
+		"description": "Partial update. Active or scheduled rules require confirmation. Checkpoint rules accept state, display_name, audience_id (non-null), flow_id, checkpoints, and schedule; Offering fields and position are legacy-only.",
+	}
 }
 
 func configField(kind, description string) map[string]any {

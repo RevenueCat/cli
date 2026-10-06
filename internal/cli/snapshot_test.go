@@ -32,6 +32,12 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/targeting_rules/chkptrule_snap"):
+			if r.Method == http.MethodPost {
+				io.WriteString(w, `{"id":"chkptrule_snap","rule_type":"checkpoint","state":"active","display_name":"Onboarding","flow_id":"wf_new","audience_id":"aud_new","checkpoints":[{"checkpoint_id":"chkpt_new","position":0}]}`)
+			} else {
+				io.WriteString(w, `{"id":"chkptrule_snap","rule_type":"checkpoint","state":"scheduled","display_name":"Onboarding","flow_id":"wf_original","audience_id":"aud_original","checkpoints":[{"checkpoint_id":"chkpt_original","position":0}],"schedule":{"start_date":"2030-12-01T00:00:00Z"}}`)
+			}
 		case strings.HasSuffix(r.URL.Path, "/targeting_rules/trle_snap"):
 			io.WriteString(w, `{"object":"targeting_rule","id":"trle_snap","rule_type":"legacy","state":"active","display_name":"US annual paywall","offering_id":"ofrng_us","conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"fallback_offering_id":"ofrng_default","placement_offerings":[{"placement_identifier":"onboarding","offering_id":"ofrng_us"}]},"schedule":{"start_date":"2026-09-25T12:00:00Z","end_date":null}}`)
 		case strings.HasSuffix(r.URL.Path, "/targeting_rules"):
@@ -93,6 +99,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"experiments-show", []string{"experiments", "show", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-results", []string{"experiments", "results", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-start", []string{"experiments", "start", "exp_snap", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"targeting-update-checkpoint", []string{"targeting", "update", "chkptrule_snap", "--config", "testdata/checkpoint-targeting-update.json", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"targeting-list", []string{"targeting", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"targeting-show", []string{"targeting", "show", "trle_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"targeting-create-active", []string{"targeting", "create", "--name", "Default paywall", "--offering", "ofrng_default", "--state", "active", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},

@@ -1,0 +1,6 @@
+{
+  "state": "active",
+  "flow_id": "wf_new",
+  "audience_id": "aud_new",
+  "checkpoints": [{"checkpoint_id": "chkpt_new"}]
+}
