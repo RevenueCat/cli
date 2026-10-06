@@ -331,7 +331,7 @@ func TestExperimentStopAndDeleteRequireApproval(t *testing.T) {
 		t.Run(tc.command, func(t *testing.T) {
 			mutations := 0
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if tc.command == "delete" && r.Method == http.MethodGet && r.URL.Path == tc.path {
+				if r.Method == http.MethodGet && r.URL.Path == "/projects/proj/experiments/exp1" {
 					w.Header().Set("Content-Type", "application/json")
 					_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft"}`)
 					return
@@ -346,7 +346,10 @@ func TestExperimentStopAndDeleteRequireApproval(t *testing.T) {
 			t.Cleanup(srv.Close)
 			t.Setenv("RC_BASE_URL", srv.URL)
 			args := []string{"experiments", tc.command, "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
-			_, _, err := runAgentCmd(t, args...)
+			_, preview, err := runAgentCmd(t, args...)
+			if tc.command == "stop" && (!strings.Contains(preview, "Test") || !strings.Contains(preview, "Status") || !strings.Contains(preview, "draft")) {
+				t.Fatalf("missing stop preview: %s", preview)
+			}
 			if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 {
 				t.Fatalf("expected approval before mutation: err=%v mutations=%d", err, mutations)
 			}
@@ -580,5 +583,43 @@ func TestExperimentUpdateSchemaExplainsAudienceOmissionAndNull(t *testing.T) {
 	audience := envelope.Data.ConfigFields.Properties.Audience
 	if strings.Join(audience.Type, ",") != "string,null" || !strings.Contains(audience.Description, "Omit to keep") || !strings.Contains(audience.Description, "Set null to clear") {
 		t.Fatalf("audience schema does not explain both behaviors: %+v", audience)
+	}
+}
+
+func TestExperimentCreateAudienceWithEmptyConditions(t *testing.T) {
+	for _, conditions := range []string{"null", "[]", `[{"field":"country","operator":"in","value":["US"]}]`} {
+		t.Run(conditions, func(t *testing.T) {
+			posted := false
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				posted = true
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":"exp1","status":"draft"}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			path := filepath.Join(t.TempDir(), "create.json")
+			body := `{"display_name":"Test","offering_a_id":"a","offering_b_id":"b","enrollment_percentage":50,"audience_id":"aud1","targeting_conditions":` + conditions + `}`
+			if err := os.WriteFile(path, []byte(body), 0600); err != nil {
+				t.Fatal(err)
+			}
+			_, _, err := runAgentCmd(t, "experiments", "create", "--config", path, "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+			wantSuccess := conditions == "null" || conditions == "[]"
+			if (err == nil) != wantSuccess || posted != wantSuccess {
+				t.Fatalf("err=%v posted=%v wantSuccess=%v", err, posted, wantSuccess)
+			}
+		})
+	}
+}
+
+func TestExperimentDeleteSanitizesConfirmation(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test\u001b[31m\nforged","status":"draft"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, _, err := runAgentCmd(t, "experiments", "delete", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "Test") || !strings.Contains(err.Error(), "exp1") || strings.ContainsAny(err.Error(), "\x1b\n") {
+		t.Fatalf("unsafe confirmation: %v", err)
 	}
 }

@@ -111,7 +111,13 @@ func newExperimentsCreateCmd() *cobra.Command {
 				return fmt.Errorf("enrollment must be an integer from 1 to 100")
 			}
 			if body.AudienceID != nil && len(body.TargetingConditions) > 0 {
-				return fmt.Errorf("audience_id and targeting_conditions cannot both be set")
+				var conditions []json.RawMessage
+				if err := json.Unmarshal(body.TargetingConditions, &conditions); err != nil {
+					return fmt.Errorf("targeting_conditions must be an array or null")
+				}
+				if len(conditions) > 0 {
+					return fmt.Errorf("audience_id and targeting_conditions cannot both be set")
+				}
 			}
 			client, err := rt.API()
 			if err != nil {
@@ -414,7 +420,13 @@ func newExperimentsStopCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := confirmOrAbort(rt, "Permanently stop experiment "+id+"?"); err != nil {
+			current, err := client.Experiments.Get(cmd.Context(), projectID, id)
+			if err != nil {
+				return err
+			}
+			showExperimentEnrollmentState(rt, current, "Permanently stop the experiment.")
+			rt.Out.Plan([]string{"Stop the experiment permanently"})
+			if err := confirmOrAbort(rt, "Permanently stop experiment "+output.SanitizeLine(current.DisplayName)+" ("+output.SanitizeLine(id)+")?"); err != nil {
 				return err
 			}
 			experiment, err := client.Experiments.Stop(cmd.Context(), projectID, id)
@@ -456,7 +468,7 @@ func newExperimentsDeleteCmd() *cobra.Command {
 			if current.Status != "draft" {
 				return fmt.Errorf("experiment %s is %s; only draft experiments can be deleted", id, current.Status)
 			}
-			if err := confirmOrAbort(rt, "Delete draft experiment "+current.DisplayName+" ("+id+")?"); err != nil {
+			if err := confirmOrAbort(rt, "Delete draft experiment "+output.SanitizeLine(current.DisplayName)+" ("+output.SanitizeLine(id)+")?"); err != nil {
 				return err
 			}
 			if err := client.Experiments.Delete(cmd.Context(), projectID, id); err != nil {
