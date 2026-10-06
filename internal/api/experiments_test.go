@@ -39,6 +39,9 @@ func TestExperimentsReadRoutesAndFilters(t *testing.T) {
 	if _, err := client.Experiments.Get(ctx, "proj", "exp1"); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := client.Experiments.GetWithPaywalls(ctx, "proj", "exp1"); err != nil {
+		t.Fatal(err)
+	}
 	results, err := client.Experiments.Results(ctx, "proj", "exp1", api.ExperimentResultsOptions{Platform: "ios", Country: "US", ExposureStatus: "exposed", Currency: "EUR"})
 	if err != nil {
 		t.Fatal(err)
@@ -49,6 +52,7 @@ func TestExperimentsReadRoutesAndFilters(t *testing.T) {
 	want := []string{
 		"GET /projects/proj/experiments?limit=5&starting_after=exp0&status=running",
 		"GET /projects/proj/experiments/exp1",
+		"GET /projects/proj/experiments/exp1?expand=offering.paywall",
 		"GET /projects/proj/experiments/exp1/results?country=US&currency=EUR&exposure_status=exposed&platform=ios",
 	}
 	if fmt.Sprint(requests) != fmt.Sprint(want) {
