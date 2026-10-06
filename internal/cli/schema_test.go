@@ -198,3 +198,15 @@ func TestTargetingSchemaDocumentsNullableFields(t *testing.T) {
 		}
 	}
 }
+
+func TestTargetingConditionSchemaUsesStandardValueTypes(t *testing.T) {
+	value := targetingConditionsSchema()["items"].(map[string]any)["properties"].(map[string]any)["value"].(map[string]any)
+	types, ok := value["type"].([]string)
+	if !ok || len(types) != 3 || !contains(types, "string") || !contains(types, "integer") || !contains(types, "array") {
+		t.Fatalf("invalid value types: %v", value)
+	}
+	items := value["items"].(map[string]any)["type"].([]string)
+	if len(items) != 2 || !contains(items, "string") || !contains(items, "integer") {
+		t.Fatalf("invalid array item types: %v", items)
+	}
+}

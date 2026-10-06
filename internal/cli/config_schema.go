@@ -149,7 +149,7 @@ func targetingConditionsSchema() map[string]any {
 			"properties": map[string]any{
 				"field":    configEnum("Target field", "app_config", "app_version", "country", "custom_attribute", "platform", "sdk_version"),
 				"operator": configEnum("Use in/not in for arrays; =, !=, >, >=, <, <= for versions", "in", "not in", "=", "!=", ">", ">=", "<", "<="),
-				"value":    configField("string or array of strings", "Version string for app_version/sdk_version; array for other fields"),
+				"value":    map[string]any{"type": []string{"string", "integer", "array"}, "items": map[string]any{"type": []string{"string", "integer"}}, "description": "Version string for app_version/sdk_version; array for country/platform/app_config; strings or integers for custom attributes. See field_rules for each field."},
 				"context":  configField("string", "Required app ID for app_version; SDK flavor for sdk_version; attribute key for custom_attribute. Omit for other fields."),
 			},
 			"examples": []map[string]any{
