@@ -18,15 +18,15 @@ func configFieldsFor(cmd *cobra.Command) map[string]any {
 
 func targetingConfigFields(create bool) map[string]any {
 	schedule := map[string]any{"type": "object", "description": "UTC timestamps ending in Z. Legacy Offering rules require start_date; set state to active with a future start_date to serve later.", "required_for_legacy": []string{"start_date"}, "properties": map[string]any{
-		"start_date": configField("string", "Start time, for example 2026-05-25T10:00:00Z"),
-		"end_date":   configField("string", "Optional end time in the same format"),
+		"start_date": map[string]any{"type": []string{"string", "null"}, "description": "Start time in UTC, for example 2026-05-25T10:00:00Z. Null means no start date for a checkpoint rule; Offering schedules require a start date."},
+		"end_date":   map[string]any{"type": []string{"string", "null"}, "description": "End time in UTC; omit or set null for no end date."},
 	}}
-	placements := map[string]any{"type": "object", "description": "Legacy rules only; both fields are required when placements is provided", "required": []string{"fallback_offering_id", "placement_offerings"}, "properties": map[string]any{
-		"fallback_offering_id": configField("string", "Fallback Offering ID"),
+	placements := map[string]any{"type": []string{"object", "null"}, "description": "Legacy rules only. On update, omit to keep overrides or set null to remove them; both fields are required when providing an object.", "required": []string{"fallback_offering_id", "placement_offerings"}, "properties": map[string]any{
+		"fallback_offering_id": map[string]any{"type": []string{"string", "null"}, "description": "Fallback Offering ID; null means no fallback."},
 		"placement_offerings": map[string]any{"type": "array", "items": map[string]any{
 			"type": "object", "required": []string{"placement_identifier", "offering_id"}, "properties": map[string]any{
 				"placement_identifier": configField("string", "Placement identifier, such as onboarding"),
-				"offering_id":          configField("string", "Offering ID for this placement"),
+				"offering_id":          map[string]any{"type": []string{"string", "null"}, "description": "Offering ID for this placement; null means no Offering override."},
 			},
 		}},
 	}}
@@ -35,7 +35,7 @@ func targetingConfigFields(create bool) map[string]any {
 		"state":        configEnum("Legacy Offering rules use active or inactive; use active with a future schedule.start_date to serve later. The scheduled state is checkpoint-only.", "active", "inactive", "scheduled"),
 		"display_name": configField("string", "Rule name"),
 		"offering_id":  configField("string", "Offering ID served by a legacy rule"),
-		"audience_id":  map[string]any{"type": "string", "nullable": true, "description": "Audience ID; mutually exclusive with conditions. Set null when switching to conditions; set conditions to [] when switching to an audience. Checkpoint rules require a non-null audience ID."},
+		"audience_id":  map[string]any{"type": []string{"string", "null"}, "description": "Audience ID; mutually exclusive with conditions. Set null when switching to conditions; set conditions to [] when switching to an audience. Checkpoint rules require a non-null audience ID."},
 		"conditions":   targetingConditionsSchema(),
 		"schedule":     schedule,
 		"placements":   placements,
