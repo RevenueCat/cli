@@ -59,7 +59,7 @@ refund_rate, revenue, subscription_retention, subscription_status,
 trial_conversion_rate, trials, trials_movement, trials_new
 ```
 
-CLI surface: `rc charts <name>` should validate against this enum and offer
+CLI surface: `rc charts show <name>` should validate against this enum and offer
 shell completion. `rc charts list` is a static command that prints these
 names; there's no list endpoint.
 
@@ -70,6 +70,7 @@ names; there's no list endpoint.
 rc setup                                                 # one-shot agent-driven bootstrap; featured in --help/home/README, runs non-interactively for the prompt
 rc setup google [app-id]                                 # experimental (hidden from --help until the Google OAuth consent screen is verified): local Google sign-in, bootstrap the Play service-account credential, grant package-scoped access, upload to RC
 rc setup apple [app-id]                                  # interactive: App Store Connect sign-in + 2FA, create/upload IAP & ASC keys, vendor number (rc apps apple setup is a hidden alias)
+rc capital setup [app-id]                                # experimental: RevenueCat Capital onboarding — the same guided Apple credential flow under the product's name
 rc                                                       # bare rc -> getting-started help; --all reveals experimental commands
 
 # Auth / meta
@@ -79,6 +80,7 @@ rc auth logout                                           # clears credentials fr
 rc auth status                                           # show auth state plus cached account identity; auth whoami and root rc whoami are aliases
 rc commands                                              # agent discovery (tree)
 rc schema <cmd>                                          # agent discovery (flags)
+rc api <method> <path>                                   # raw v2 request escape hatch for endpoints the surface doesn't cover; --body for payloads
 rc skills install                                        # install the core skills globally for RC-supported agents without a picker; --agent overrides
 rc skills prompts                                        # show copy-ready starter prompts; --json returns prompts for agent UIs
 rc open [section] [id]                                   # open the dashboard deep-linked to the active project (uses existing browser session)
@@ -111,11 +113,11 @@ rc apps apple check [app-id]                             # validate Apple login,
 rc apps apple setup [app-id]                             # hidden alias of rc setup apple (kept for back-compat)
 
 # Customers — busiest noun
-rc customers show [id]                                    # embeds active_entitlements
+rc customers show <id>                                    # embeds active_entitlements
 rc customers list
 rc customers aliases <id>
 rc customers attributes <id>                              # GET all subscriber attributes
-rc customers set-attribute <id> <key> <value>            # set a single subscriber attribute
+rc customers set-attribute <id> --set <key>=<value>      # set subscriber attributes (--set is repeatable)
 rc customers grant <id> <entitlement> [--duration ...]
 rc customers revoke <id> <entitlement>
 rc customers transfer <from> --to <id>
@@ -149,6 +151,7 @@ rc offerings delete <id>
 rc offerings archive <id>
 rc offerings restore <id>
 rc offerings packages <offering-id>                      # nested resource
+rc packages list                                         # packages across offerings (first page per offering; large catalogs page via the API)
 rc packages show <package-id>
 rc packages create <offering-id>
 rc packages update <package-id>
@@ -247,7 +250,8 @@ rc audit                                                 # /audit_logs with --li
   deferred because its component schema needs a purpose-built editing UX.
 - **No plugin system.** YAGNI; oclif model is a Node bet, not a Go one.
 - **No `--account` flag.** Account is implicit in the API key.
-- **No bulk-import** until there's a concrete ask.
+- **No generic bulk-import** (customers, catalog CRUD) until there's a concrete
+  ask — store-state plans' CSV/JSON input is the one deliberate exception.
 
 ## Build order
 
