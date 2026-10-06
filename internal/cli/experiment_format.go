@@ -122,6 +122,13 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 	return nil
 }
 
+func experimentOfferingID(offering *api.ExperimentOffering) string {
+	if offering == nil {
+		return ""
+	}
+	return offering.ID
+}
+
 func experimentOfferingLabel(offering *api.ExperimentOffering) string {
 	label := offering.ID
 	if offering.DisplayName != "" {

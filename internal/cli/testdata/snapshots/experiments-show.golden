@@ -1,5 +1,4 @@
 $ rc experiments show exp_snap --no-input --project-id proj_snap --api-key sk_snap
-  Use --json for the complete API response.
 ▍ Price — paywall
   exp_snap · draft
 
@@ -27,3 +26,4 @@ Timeline
 
 Conflicts
   Experiments:  exp_other
+  Use --json for the complete API response.

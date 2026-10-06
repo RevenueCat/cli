@@ -23,8 +23,8 @@ $ rc experiments start exp_snap --yes --no-input --project-id proj_snap --api-ke
 · 1. Start the experiment and enroll eligible customers
 · Starting experiment…
 ✓ Started experiment exp_snap
-  rc experiments results exp_snap
 ▍ New paywall
 
   ID:      exp_snap
   Status:  running
+  rc experiments results exp_snap
