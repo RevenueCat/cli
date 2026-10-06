@@ -115,7 +115,7 @@ To add e.g. `offerings`:
 ## Conventions
 
 - **Module path**: `github.com/revenuecat/cli`
-- **Go version**: 1.25 (pinned via `mise.toml`; run `mise install` once)
+- **Go version**: 1.26.8 (pinned via `mise.toml`; run `mise install` once)
 - **Formatting**: `gofmt` / `go vet` clean. CI enforces.
 - **Output style**: use the semantic helpers on the renderer — `Success` (result), `Info` (progress, dim `·`), `Warn`, `Error`, `Hint` (dimmed next-step guidance), `Title` (brand-red section bar), `Blank` (breathing room), `Notice` (blue-bar callout for trust/safety statements at the moment they matter — never dim these). Colors come from `internal/output/brand.go` and follow the terminal color standard: ANSI semantics carry meaning (green ok, amber warn, deep red errors — red text is danger, regardless of brand), RC violet is the single interaction accent (focus, selection, cursors), and brand red appears only at landmarks (section `Title` bars, card titles, the chat header). Field labels and static text stay neutral. Voice: short, verb-first, say the outcome not the mechanism ("Saving to RevenueCat…" not "Uploading configuration to the v2 endpoint…"); next-step commands go in a `Hint`, not prose.
 - **Output snapshots**: human-mode output of representative commands is locked in `internal/cli/testdata/snapshots/*.golden` (TestOutputSnapshots). Any layout/copy change fails CI until regenerated with `UPDATE_SNAPSHOTS=1 go test ./internal/cli/ -run TestOutputSnapshots`; run `make preview` to render the goldens as SVGs in docs/previews/ and review them before committing both. Add a scenario when introducing a new output shape.
@@ -140,7 +140,7 @@ To add e.g. `offerings`:
 
 ```bash
 brew install mise            # only needed once
-mise install                 # installs Go 1.25 from mise.toml
+mise install                 # installs Go 1.26.8 from mise.toml
 go mod tidy
 go run ./cmd/rc --help
 go test ./...
