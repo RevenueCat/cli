@@ -37,7 +37,7 @@ func TestCalculateProofMatchesFastlaneSIRP(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Generated independently with pinned fastlane-sirp code to catch padding
-	// and proof differences. Source and reproduction: testdata/fastlane-sirp.md.
+	// and proof differences. Source and reproduction: testdata/srp-proof-fixture.md.
 	if m1 != "OL3tMhvYaZcmgV8KO40CG1UZ6Rgw4dDF1bSGsEN6c4s=" || m2 != "548X9ZQ5iGyqHhSBA3s2lDdzcZThics3GqSP20346T0=" {
 		t.Fatalf("proofs differ from fastlane-sirp: m1=%s m2=%s", m1, m2)
 	}
