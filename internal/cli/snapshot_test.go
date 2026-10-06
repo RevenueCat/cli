@@ -28,6 +28,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case r.URL.Path == "/projects/proj_snap/products/actions/submit_to_store":
+			io.WriteString(w, `{"object":"submit_products_to_store_response","submitted_count":1,"results":[{"object":"submit_product_to_store_result","product_id":"prod_snap1","status":"submitted","submission_id":"sub_snap1","message":null},{"object":"submit_product_to_store_result","product_id":"prod_snap2","status":"skipped","submission_id":null,"message":"App Store metadata is incomplete"}]}`)
 		case strings.HasSuffix(r.URL.Path, "/offerings/ofrng_snap"):
 			io.WriteString(w, `{"object":"offering","id":"ofrng_snap","lookup_key":"default","display_name":"Default","is_current":true,"created_at":1784297950368,"project_id":"proj_snap"}`)
 		case strings.HasSuffix(r.URL.Path, "/apps/app_snap1"):
@@ -62,6 +64,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
 		{"error-not-found", []string{"offerings", "show", "ofrng_missing", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-apple-setup", []string{"apps", "apple", "setup", "app_snap1", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"products-store-submit", []string{"products", "store", "submit", "prod_snap1", "prod_snap2", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 	}
 
 	for _, sc := range scenarios {
