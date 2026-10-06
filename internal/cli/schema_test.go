@@ -135,3 +135,27 @@ func hasRunnableDescendant(c *cobra.Command) bool {
 	}
 	return false
 }
+
+func TestSchemaUnknownCommandErrors(t *testing.T) {
+	root := NewRootCmd("test")
+	root.SetArgs([]string{"schema", "apps:bogus"})
+	root.SetOut(&strings.Builder{})
+	root.SetErr(&strings.Builder{})
+	if err := root.Execute(); err == nil {
+		t.Fatal("expected an error for an unknown command name, got nil")
+	}
+}
+
+func TestSchemaAcceptsColonCapabilityIDs(t *testing.T) {
+	root := NewRootCmd("test")
+	var out strings.Builder
+	root.SetArgs([]string{"schema", "apps:create"})
+	root.SetOut(&out)
+	root.SetErr(&strings.Builder{})
+	if err := root.Execute(); err != nil {
+		t.Fatalf("schema apps:create: %v", err)
+	}
+	if !strings.Contains(out.String(), `"name": "create"`) {
+		t.Fatalf("expected the apps create schema, got: %s", out.String())
+	}
+}
