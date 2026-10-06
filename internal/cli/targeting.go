@@ -29,6 +29,7 @@ func newTargetingListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Short:   "List targeting rules",
+		Long:    "Returns one page in API order. Active Offering rules are listed in evaluation order; the first match wins. The API does not return absolute rule positions. Use --state active and --cursor to inspect subsequent pages before reordering.",
 		Example: "  rc targeting list --state active\n  rc targeting list --json",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -54,6 +55,9 @@ func newTargetingListCmd() *cobra.Command {
 			}
 			if err := rt.Out.RenderTable(output.Table{Columns: []string{"ID", "NAME", "TYPE", "STATE", "SERVES"}, Rows: rows, Raw: page}); err != nil {
 				return err
+			}
+			if state == "" || state == "active" {
+				rt.Out.Info("Active Offering rules are listed in evaluation order; the first match wins.")
 			}
 			hintMoreResults(rt, page)
 			return nil
@@ -315,11 +319,12 @@ func validateTargetingCreate(body api.TargetingRuleCreate) error {
 func newTargetingUpdateCmd() *cobra.Command {
 	var config string
 	cmd := &cobra.Command{
-		Use:     "update [id]",
-		Short:   "Update an Offering targeting rule",
-		Long:    "Partially updates a legacy targeting rule from a JSON object with position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. To schedule an Offering rule, set state to active and schedule.start_date to a future UTC time; it will not match customers before then. Run rc schema targeting update for config fields and accepted values. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
-		Example: `  echo '{"state":"active","position":1}' | rc targeting update trle_123 --config - --yes --no-input`,
-		Args:    cobra.MaximumNArgs(1),
+		Use:   "update [id]",
+		Short: "Update an Offering targeting rule",
+		Long:  "Partially updates a legacy targeting rule from a JSON object with position, state, display_name, offering_id, audience_id, conditions, schedule, or placements. To schedule an Offering rule, set state to active and schedule.start_date to a future UTC time; it will not match customers before then. Run rc schema targeting update for config fields and accepted values. An active rule or an activation requires confirmation. Checkpoint rule updates are not exposed by this endpoint.",
+		Example: `  echo '{"state":"active","position":1}' | rc targeting update trle_123 --config - --yes --no-input
+  echo '{"state":"active","schedule":{"start_date":"2030-12-01T00:00:00Z","end_date":"2030-12-31T23:59:59Z"}}' | rc targeting update trle_123 --config - --yes --no-input`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if config == "" {
 				return fmt.Errorf("pass --config <file> or --config - for stdin")

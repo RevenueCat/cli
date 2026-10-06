@@ -235,3 +235,71 @@ func TestTargetingShowCheckpointDetailsAndJSON(t *testing.T) {
 		t.Fatalf("JSON lost checkpoint details: err=%v out=%s", err, out)
 	}
 }
+
+func TestTargetingListPreservesEvaluationOrder(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("state") != "active" {
+			t.Errorf("state=%s", r.URL.RawQuery)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"items":[{"id":"trle_z","display_name":"First match","rule_type":"legacy","state":"active","offering_id":"ofrng_z"},{"id":"trle_a","display_name":"Second match","rule_type":"legacy","state":"active","offering_id":"ofrng_a"}],"next_page":"/projects/proj/targeting_rules?state=active&starting_after=trle_a"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	args := []string{"targeting", "list", "--state", "active", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	out, stderr, err := runAgentCmd(t, args...)
+	first, second := strings.Index(out, "trle_z"), strings.Index(out, "trle_a")
+	if err != nil || first < 0 || second < 0 || first > second || !strings.Contains(stderr, "evaluation order") || !strings.Contains(stderr, "--cursor trle_a") {
+		t.Fatalf("order or pagination missing: err=%v stdout=%s stderr=%s", err, out, stderr)
+	}
+	out, stderr, err = runAgentCmd(t, append(args, "--json")...)
+	var envelope struct {
+		Data struct {
+			Items []struct {
+				ID string `json:"id"`
+			} `json:"items"`
+			NextPage string `json:"next_page"`
+		} `json:"data"`
+	}
+	if err != nil || stderr != "" {
+		t.Fatalf("JSON list failed: err=%v stderr=%s", err, stderr)
+	}
+	if err := json.Unmarshal([]byte(out), &envelope); err != nil {
+		t.Fatal(err)
+	}
+	if len(envelope.Data.Items) != 2 || envelope.Data.Items[0].ID != "trle_z" || envelope.Data.Items[1].ID != "trle_a" || envelope.Data.NextPage == "" {
+		t.Fatalf("JSON lost order or pagination: %s", out)
+	}
+}
+
+func TestTargetingUpdateScheduleRequiresApprovalAndPreservesBounds(t *testing.T) {
+	var posted map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+				t.Error(err)
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"id":"trle1","rule_type":"legacy","state":"inactive","display_name":"Holiday paywall","offering_id":"ofrng_holiday"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	configPath := filepath.Join(t.TempDir(), "schedule.json")
+	if err := os.WriteFile(configPath, []byte(`{"state":"active","schedule":{"start_date":"2030-12-01T00:00:00Z","end_date":"2030-12-31T23:59:59Z"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"targeting", "update", "trle1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+	_, stderr, err := runAgentCmd(t, args...)
+	if err == nil || !strings.Contains(err.Error(), "--yes") || posted != nil || !strings.Contains(stderr, "2030-12-01T00:00:00Z") || !strings.Contains(stderr, "2030-12-31T23:59:59Z") {
+		t.Fatalf("schedule was not reviewed before mutation: err=%v posted=%v stderr=%s", err, posted, stderr)
+	}
+	_, _, err = runAgentCmd(t, append(args, "--yes", "--json")...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schedule, ok := posted["schedule"].(map[string]any)
+	if !ok || posted["state"] != "active" || schedule["start_date"] != "2030-12-01T00:00:00Z" || schedule["end_date"] != "2030-12-31T23:59:59Z" {
+		t.Fatalf("schedule bounds missing from request: %v", posted)
+	}
+}
