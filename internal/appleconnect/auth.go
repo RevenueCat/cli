@@ -316,13 +316,61 @@ func phoneMatches(number, masked string) bool {
 }
 
 func (c *Client) authServiceKey(ctx context.Context) (string, error) {
+	key, redirectErr := c.authServiceKeyFromSignout(ctx)
+	if redirectErr == nil {
+		return key, nil
+	}
+	if ctx.Err() != nil {
+		return "", fmt.Errorf("get Apple auth service key: %w", ctx.Err())
+	}
+	key, olympusErr := c.authServiceKeyFromOlympus(ctx)
+	if olympusErr != nil {
+		return "", fmt.Errorf("get Apple auth service key: %w", errors.Join(redirectErr, olympusErr))
+	}
+	return key, nil
+}
+
+func (c *Client) authServiceKeyFromSignout(ctx context.Context) (string, error) {
+	// The redirect performs signout. Read only its Location, without sending
+	// or changing the session cookies, even when the caller supplied a client.
+	client := *c.httpClient
+	client.Jar = nil
+	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, c.ascBaseURL+"/logout", nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("read Apple signout redirect: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 300 || resp.StatusCode >= 400 {
+		return "", fmt.Errorf("read Apple signout redirect: status %d", resp.StatusCode)
+	}
+	location, err := resp.Location()
+	if err != nil {
+		return "", fmt.Errorf("read Apple signout redirect location: %w", err)
+	}
+	query, err := url.ParseQuery(location.RawQuery)
+	if err != nil {
+		return "", fmt.Errorf("read Apple signout redirect query: %w", err)
+	}
+	key := strings.TrimSpace(query.Get("widgetKey"))
+	if key == "" {
+		return "", errors.New("the Apple signout redirect has no widgetKey")
+	}
+	return key, nil
+}
+
+func (c *Client) authServiceKeyFromOlympus(ctx context.Context) (string, error) {
 	var payload struct {
 		AuthServiceKey string `json:"authServiceKey"`
 		ServiceKey     string `json:"serviceKey"`
 	}
 	endpoint := c.ascBaseURL + "/olympus/v1/app/config?hostname=itunesconnect.apple.com"
 	if err := c.doJSON(ctx, http.MethodGet, endpoint, nil, &payload, nil); err != nil {
-		return "", fmt.Errorf("get Apple auth service key: %w", err)
+		return "", fmt.Errorf("read Apple Olympus configuration: %w", err)
 	}
 	key := strings.TrimSpace(payload.AuthServiceKey)
 	if key == "" {
@@ -421,6 +469,7 @@ func (c *Client) performSRPLogin(ctx context.Context, email, password, serviceKe
 		return err
 	}
 	c.setAuthHeaders(req, serviceKey, "", "")
+	req.Header.Set("Accept", "application/json, text/javascript")
 	if hashcash != "" {
 		req.Header.Set("X-Apple-HC", hashcash)
 	}
@@ -432,6 +481,9 @@ func (c *Client) performSRPLogin(ctx context.Context, email, password, serviceKe
 	responseBody, _ := io.ReadAll(resp.Body)
 	switch resp.StatusCode {
 	case http.StatusOK:
+		if message := appleAuthErrorMessage(responseBody); message != "" {
+			return fmt.Errorf("the Apple sign-in failed: %s", message)
+		}
 		return nil
 	case http.StatusConflict:
 		return &twoFactorStateError{sessionID: resp.Header.Get("X-Apple-ID-Session-Id"), scnt: resp.Header.Get("scnt")}
@@ -462,6 +514,9 @@ func (c *Client) authJSON(ctx context.Context, method, path, serviceKey, session
 		return err
 	}
 	c.setAuthHeaders(req, serviceKey, sessionID, scnt)
+	if path == "/signin/init" {
+		req.Header.Set("Accept", "application/json, text/javascript")
+	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -470,6 +525,10 @@ func (c *Client) authJSON(ctx context.Context, method, path, serviceKey, session
 	responseBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("the Apple authentication request failed with status %d: %s", resp.StatusCode, appleErrorMessage(responseBody))
+	}
+	// Apple can report verification and SMS delivery errors in a 200 response.
+	if message := appleAuthErrorMessage(responseBody); message != "" {
+		return fmt.Errorf("the Apple authentication request failed: %s", message)
 	}
 	if out == nil || len(responseBody) == 0 {
 		return nil
@@ -551,15 +610,14 @@ func (c *Client) doJSON(ctx context.Context, method, endpoint string, body, out 
 }
 
 func appleErrorMessage(body []byte) string {
+	if message := appleAuthErrorMessage(body); message != "" {
+		return message
+	}
 	var payload struct {
 		Errors []struct {
 			Detail string `json:"detail"`
 			Title  string `json:"title"`
 		} `json:"errors"`
-		ServiceErrors []struct {
-			Message string `json:"message"`
-			Title   string `json:"title"`
-		} `json:"serviceErrors"`
 	}
 	if json.Unmarshal(body, &payload) == nil {
 		if len(payload.Errors) > 0 {
@@ -568,14 +626,46 @@ func appleErrorMessage(body []byte) string {
 			}
 			return payload.Errors[0].Title
 		}
-		if len(payload.ServiceErrors) > 0 {
-			if payload.ServiceErrors[0].Message != "" {
-				return payload.ServiceErrors[0].Message
-			}
-			return payload.ServiceErrors[0].Title
-		}
 	}
 	return "request rejected"
+}
+
+func appleAuthErrorMessage(body []byte) string {
+	type serviceError struct {
+		Code    json.RawMessage `json:"code"`
+		Message string          `json:"message"`
+		Title   string          `json:"title"`
+	}
+	var payload struct {
+		ServiceErrors    []serviceError `json:"serviceErrors"`
+		LegacyErrors     []serviceError `json:"service_errors"`
+		ValidationErrors []serviceError `json:"validationErrors"`
+		NoTrustedDevices bool           `json:"noTrustedDevices"`
+	}
+	if json.Unmarshal(body, &payload) != nil {
+		return ""
+	}
+	var messages []string
+	for _, item := range append(append(payload.ServiceErrors, payload.LegacyErrors...), payload.ValidationErrors...) {
+		message := item.Message
+		if message == "" {
+			message = item.Title
+		}
+		if code := strings.Trim(string(item.Code), `"`); code != "" && code != "null" {
+			message += " (" + code + ")"
+		}
+		if message == "" {
+			message = "request rejected"
+		}
+		messages = append(messages, message)
+	}
+	if len(messages) == 0 {
+		return ""
+	}
+	if payload.NoTrustedDevices {
+		messages = append(messages, "this Apple Account has no trusted devices; sign in on an Apple device to add one")
+	}
+	return strings.Join(messages, "; ")
 }
 
 func (c *Client) hashcash(ctx context.Context, serviceKey string) (string, error) {
@@ -638,6 +728,10 @@ func preparePassword(password, protocol string) ([]byte, error) {
 }
 
 func calculateProof(username string, a, A, n, g *big.Int, serverB, password, salt []byte) (string, string, error) {
+	B := new(big.Int).SetBytes(serverB)
+	if new(big.Int).Mod(B, n).Sign() == 0 {
+		return "", "", errors.New("invalid Apple SRP server public value")
+	}
 	bHex, saltHex, aHex := hex.EncodeToString(serverB), hex.EncodeToString(salt), numberHex(A)
 	xInner, err := shaHex("3a" + hex.EncodeToString(password))
 	if err != nil {
@@ -656,7 +750,6 @@ func calculateProof(username string, a, A, n, g *big.Int, serverB, password, sal
 	if err != nil || u.Sign() == 0 {
 		return "", "", errors.New("invalid Apple SRP scrambling parameter")
 	}
-	B := new(big.Int).SetBytes(serverB)
 	base := new(big.Int).Sub(B, new(big.Int).Mod(new(big.Int).Mul(k, new(big.Int).Exp(g, x, n)), n))
 	base.Mod(base, n)
 	exponent := new(big.Int).Add(a, new(big.Int).Mul(u, x))

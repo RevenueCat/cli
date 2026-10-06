@@ -913,7 +913,7 @@ func paywallAIClient(rt *Runtime, baseURL string) (*paywallai.Client, error) {
 		BaseURL:      baseURL,
 		Token:        agentAuthToken(rt),
 		UserAgent:    userAgent(rt.Globals.Version),
-		ExtraHeaders: customHeaders(),
+		ExtraHeaders: requestHeaders(rt.Globals),
 	}), nil
 }
 

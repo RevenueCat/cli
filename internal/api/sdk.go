@@ -9,14 +9,24 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/revenuecat/cli/internal/httpx"
 )
 
 const DefaultSDKBaseURL = "https://api.revenuecat.com/v1"
 
+type SDKOptions struct {
+	BaseURL      string
+	HTTPClient   *http.Client
+	UserAgent    string
+	ExtraHeaders http.Header
+}
+
 type SDKService struct {
-	baseURL   *url.URL
-	http      *http.Client
-	userAgent string
+	baseURL      *url.URL
+	http         *http.Client
+	userAgent    string
+	extraHeaders http.Header
 }
 
 type SimulatedPurchase struct {
@@ -27,8 +37,10 @@ type SimulatedPurchase struct {
 	SDKOriginated    bool   `json:"sdk_originated"`
 }
 
-func NewSDKService(v2BaseURL string, httpClient *http.Client, userAgent string) *SDKService {
-	base := v2BaseURL
+func NewSDKService(opts SDKOptions) *SDKService {
+	httpClient := opts.HTTPClient
+	userAgent := opts.UserAgent
+	base := opts.BaseURL
 	if base == "" || base == DefaultBaseURL {
 		base = DefaultSDKBaseURL
 	} else {
@@ -47,7 +59,7 @@ func NewSDKService(v2BaseURL string, httpClient *http.Client, userAgent string) 
 	if userAgent == "" {
 		userAgent = "revenuecat-cli/dev"
 	}
-	return &SDKService{baseURL: u, http: httpClient, userAgent: userAgent}
+	return &SDKService{baseURL: u, http: httpClient, userAgent: userAgent, extraHeaders: opts.ExtraHeaders}
 }
 
 func (s *SDKService) Offerings(ctx context.Context, publicAPIKey, appUserID string) (json.RawMessage, error) {
@@ -63,6 +75,7 @@ func (s *SDKService) Offerings(ctx context.Context, publicAPIKey, appUserID stri
 	req.Header.Set("Authorization", "Bearer "+publicAPIKey)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", s.userAgent)
+	httpx.Apply(req, s.extraHeaders)
 	resp, err := s.http.Do(req)
 	if err != nil {
 		return nil, err
@@ -93,6 +106,7 @@ func (s *SDKService) SimulatePurchase(ctx context.Context, publicAPIKey string, 
 	req.Header.Set("X-Platform", "iOS")
 	req.Header.Set("X-Version", "rc-cli")
 	req.Header.Set("X-Client-Bundle-Id", "com.revenuecat.cli")
+	httpx.Apply(req, s.extraHeaders)
 	resp, err := s.http.Do(req)
 	if err != nil {
 		return nil, err

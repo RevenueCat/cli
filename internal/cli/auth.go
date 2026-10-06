@@ -623,7 +623,7 @@ func loginWithOAuth(ctx context.Context, rt *Runtime) error {
 	port := listener.Addr().(*net.TCPAddr).Port
 	redirectURI := fmt.Sprintf("http://localhost:%d/callback", port)
 
-	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
+	svc := rt.oauthService()
 	authURL := svc.AuthorizeURL(redirectURI, challenge, state)
 
 	rt.Out.Info("Opening browser for authorization…")
@@ -731,7 +731,7 @@ func signupWithOAuth(ctx context.Context, rt *Runtime, email, name, password str
 	port := listener.Addr().(*net.TCPAddr).Port
 	redirectURI := fmt.Sprintf("http://localhost:%d/callback", port)
 
-	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
+	svc := rt.oauthService()
 	say("Creating your RevenueCat account…")
 	if err := svc.ProvisionAccount(ctx, api.ProvisionAccountRequest{
 		Email:                 email,

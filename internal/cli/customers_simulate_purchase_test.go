@@ -12,8 +12,21 @@ import (
 )
 
 func TestCustomerSimulatePurchaseUsesTestStoreReceiptFlow(t *testing.T) {
+	t.Setenv("CI", "")
+	t.Setenv("DO_NOT_TRACK", "")
+	t.Setenv("RC_HEADERS", "")
 	var receipt api.SimulatedPurchase
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("User-Agent"); !strings.HasPrefix(got, "revenuecat-cli/test (") {
+			t.Errorf("%s User-Agent = %q", r.URL.Path, got)
+		}
+		if got := r.Header.Get("X-RC-CLI-Command"); got != "customers.simulate-purchase" {
+			t.Errorf("%s command = %q, want customers.simulate-purchase", r.URL.Path, got)
+		}
+		if got := r.Header.Get("X-RC-CLI-Mode"); got != "agent" {
+			t.Errorf("%s mode = %q, want agent", r.URL.Path, got)
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/projects/proj/products":

@@ -172,7 +172,7 @@ func customHeaders() http.Header {
 // Not goroutine-safe: the CLI is single-threaded by design; do not call from
 // concurrent goroutines without adding a mutex to Runtime.
 func (r *Runtime) silentRefresh() {
-	svc := api.NewOAuthService(oauthBaseURL(), oauthClientID())
+	svc := r.oauthService()
 	tr, err := svc.Refresh(r.Ctx, r.Config.RefreshToken)
 	if err != nil {
 		return
@@ -181,6 +181,15 @@ func (r *Runtime) silentRefresh() {
 	r.Config.RefreshToken = tr.RefreshToken
 	r.Config.TokenExpiresAt = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
 	_ = config.Save(r.Globals.Profile, r.Config)
+}
+
+func (r *Runtime) oauthService() *api.OAuthService {
+	return api.NewOAuthService(api.OAuthOptions{
+		BaseURL:      oauthBaseURL(),
+		ClientID:     oauthClientID(),
+		UserAgent:    userAgent(r.Globals.Version),
+		ExtraHeaders: requestHeaders(r.Globals),
+	})
 }
 
 func oauthBaseURL() string {

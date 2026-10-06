@@ -49,7 +49,7 @@ func doNotTrack() bool {
 	return false
 }
 
-// requestHeaders assembles the extra headers sent on every v2 API request: the
+// requestHeaders assembles the extra headers sent on every RevenueCat API request: the
 // usage-analytics headers (dropped when DO_NOT_TRACK is set — the request still
 // goes through, just unlabeled) plus any user-supplied RC_HEADERS, which
 // override so operators keep the final say.
