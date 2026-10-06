@@ -57,3 +57,15 @@ func TestTargetingAudienceAfterUpdateRequiresClearingOtherField(t *testing.T) {
 		})
 	}
 }
+
+func TestTargetingAudiencePreviewPreservesCurrentConditions(t *testing.T) {
+	current := &api.TargetingRule{Conditions: []any{map[string]any{"field": "country", "operator": "in", "value": []any{"US"}}}}
+	got, _, err := targetingAudienceAfterUpdate(current, api.TargetingRuleUpdate{"conditions": json.RawMessage(`[{"field":"country","operator":"in","value":["CA"]}]`)})
+	if err != nil || got != "country in CA" {
+		t.Fatalf("result=%q err=%v", got, err)
+	}
+	original, err := targetingConditionsSummary(current.Conditions)
+	if err != nil || original != "country in US" {
+		t.Fatalf("current conditions changed: %q err=%v", original, err)
+	}
+}

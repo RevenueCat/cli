@@ -464,6 +464,7 @@ func targetingAudienceAfterUpdate(current *api.TargetingRule, body api.Targeting
 		}
 	}
 	if value, ok := body["conditions"]; ok {
+		conditions = nil
 		if err := json.Unmarshal(value, &conditions); err != nil {
 			return "", false, fmt.Errorf("conditions must be an array")
 		}

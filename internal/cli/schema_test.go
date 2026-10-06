@@ -212,3 +212,17 @@ func TestExperimentPlacementSchemaRequiresOverridesForFallbacks(t *testing.T) {
 		}
 	}
 }
+
+func TestTargetingSchemaDocumentsNullableFields(t *testing.T) {
+	fields := targetingConfigFields(false)["properties"].(map[string]any)
+	schedule := fields["schedule"].(map[string]any)["properties"].(map[string]any)
+	placements := fields["placements"].(map[string]any)
+	placementFields := placements["properties"].(map[string]any)
+	itemFields := placementFields["placement_offerings"].(map[string]any)["items"].(map[string]any)["properties"].(map[string]any)
+	for name, value := range map[string]any{"audience_id": fields["audience_id"], "schedule": fields["schedule"], "start_date": schedule["start_date"], "end_date": schedule["end_date"], "placements": placements, "fallback_offering_id": placementFields["fallback_offering_id"], "placement offering_id": itemFields["offering_id"]} {
+		types, ok := value.(map[string]any)["type"].([]string)
+		if !ok || !contains(types, "null") {
+			t.Errorf("%s does not expose null: %v", name, value)
+		}
+	}
+}
