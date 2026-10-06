@@ -431,6 +431,7 @@ func newExperimentsDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [id]",
 		Short: "Delete a draft experiment",
+		Long:  "Permanently deletes a draft experiment. Requires confirmation or --yes.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -455,7 +456,7 @@ func newExperimentsDeleteCmd() *cobra.Command {
 			if current.Status != "draft" {
 				return fmt.Errorf("experiment %s is %s; only draft experiments can be deleted", id, current.Status)
 			}
-			if err := confirmOrAbort(rt, "Delete draft experiment "+id+"?"); err != nil {
+			if err := confirmOrAbort(rt, "Delete draft experiment "+current.DisplayName+" ("+id+")?"); err != nil {
 				return err
 			}
 			if err := client.Experiments.Delete(cmd.Context(), projectID, id); err != nil {
