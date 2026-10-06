@@ -520,3 +520,65 @@ func TestExperimentResultsIncludesFourVariants(t *testing.T) {
 		}
 	}
 }
+
+func TestExperimentUpdatePreservesOmittedAndNullAudience(t *testing.T) {
+	for _, tc := range []struct {
+		name, config string
+		present      bool
+		value        any
+	}{
+		{"omitted", `{"notes":"Keep targeting"}`, false, nil},
+		{"cleared", `{"audience_id":null}`, true, nil},
+		{"replaced", `{"audience_id":"aud_new"}`, true, "aud_new"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var posted map[string]any
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodPost {
+					if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+						t.Error(err)
+					}
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"draft","audience_id":"aud_original"}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			configPath := filepath.Join(t.TempDir(), "update.json")
+			if err := os.WriteFile(configPath, []byte(tc.config), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			_, _, err := runAgentCmd(t, "experiments", "update", "exp1", "--config", configPath, "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+			value, present := posted["audience_id"]
+			if err != nil || posted == nil || present != tc.present || value != tc.value {
+				t.Fatalf("err=%v posted=%v; audience present=%v value=%v", err, posted, present, value)
+			}
+		})
+	}
+}
+
+func TestExperimentUpdateSchemaExplainsAudienceOmissionAndNull(t *testing.T) {
+	out, _, err := runCmd(t, "schema", "experiments", "update", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var envelope struct {
+		Data struct {
+			ConfigFields struct {
+				Properties struct {
+					Audience struct {
+						Type        []string `json:"type"`
+						Description string   `json:"description"`
+					} `json:"audience_id"`
+				} `json:"properties"`
+			} `json:"config_fields"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &envelope); err != nil {
+		t.Fatal(err)
+	}
+	audience := envelope.Data.ConfigFields.Properties.Audience
+	if strings.Join(audience.Type, ",") != "string,null" || !strings.Contains(audience.Description, "Omit to keep") || !strings.Contains(audience.Description, "Set null to clear") {
+		t.Fatalf("audience schema does not explain both behaviors: %+v", audience)
+	}
+}
