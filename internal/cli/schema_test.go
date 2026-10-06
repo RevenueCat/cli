@@ -43,6 +43,19 @@ func TestTargetingConfigSchemaExplainsConditionsAndRuleTypes(t *testing.T) {
 	}
 }
 
+func TestTargetingUpdateSchemaIncludesCheckpointFieldsAndLimits(t *testing.T) {
+	root := NewRootCmd("test")
+	config := commandSchema(findCommand(t, root, "targeting update"))["config_fields"].(map[string]any)
+	fields := config["properties"].(map[string]any)
+	if fields["flow_id"] == nil {
+		t.Fatal("checkpoint Flow field is missing")
+	}
+	checkpoints := fields["checkpoints"].(map[string]any)
+	if checkpoints["minItems"] != 1 || checkpoints["maxItems"] != 1 || !strings.Contains(config["description"].(string), "audience_id (non-null)") {
+		t.Fatalf("checkpoint update constraints are missing: %v", config)
+	}
+}
+
 func findCommand(t *testing.T, root *cobra.Command, path string) *cobra.Command {
 	t.Helper()
 	cur := root

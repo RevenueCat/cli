@@ -21,6 +21,19 @@ func targetingConfigSummary(key string, raw json.RawMessage) (string, error) {
 		}
 		return experimentConditionSummary(conditions), nil
 	}
+	if key == "checkpoints" {
+		var checkpoints []struct {
+			ID string `json:"checkpoint_id"`
+		}
+		if err := json.Unmarshal(raw, &checkpoints); err != nil {
+			return "", err
+		}
+		ids := make([]string, len(checkpoints))
+		for i, checkpoint := range checkpoints {
+			ids[i] = checkpoint.ID
+		}
+		return strings.Join(ids, ", "), nil
+	}
 	if key == "schedule" {
 		if string(raw) == "null" {
 			return "None", nil
