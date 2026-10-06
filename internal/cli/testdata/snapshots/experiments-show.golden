@@ -1,5 +1,4 @@
 $ rc experiments show exp_snap --no-input --project-id proj_snap --api-key sk_snap
-  Use --json for the complete API response.
 ▍ Price — paywall
   exp_snap · paused
 
@@ -21,3 +20,4 @@ Setup
 
 Timeline
   Running time:  23d 0h 43m
+  Use --json for the complete API response.

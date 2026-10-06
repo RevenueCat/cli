@@ -117,6 +117,13 @@ func (s *ExperimentsService) Get(ctx context.Context, projectID, id string) (*Ex
 	return &out, err
 }
 
+func (s *ExperimentsService) GetWithPaywalls(ctx context.Context, projectID, id string) (*Experiment, error) {
+	var out Experiment
+	path := pathExperiment(projectID, id) + "?expand=offering.paywall"
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
+	return &out, err
+}
+
 type ExperimentResults struct {
 	Object       string                      `json:"object"`
 	Sections     []ExperimentResultsSection  `json:"sections"`

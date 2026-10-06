@@ -16,10 +16,10 @@
 </text><text x="12.00px" y="94.20px" xml:space="preserve">  Currency                    USD
 </text><text x="12.00px" y="111.00px" xml:space="preserve">
 </text><text x="12.00px" y="127.80px" xml:space="preserve">▍ Conversion
-</text><text x="12.00px" y="144.60px" xml:space="preserve">
-</text><text x="12.00px" y="161.40px" xml:space="preserve">▍ Decision signals
-</text><text x="12.00px" y="178.20px" xml:space="preserve">METRIC                 CONTROL  TREATMENT  CHANGE   UNIT
-</text><text x="12.00px" y="195.00px" xml:space="preserve">trial_conversion_rate  12.5     15         +20.00%  %   
+</text><text x="12.00px" y="144.60px" xml:space="preserve">METRIC                 CONTROL  TREATMENT  CHANGE   UNIT
+</text><text x="12.00px" y="161.40px" xml:space="preserve">trial_conversion_rate  12.5     15         +20.00%  %   
+</text><text x="12.00px" y="178.20px" xml:space="preserve">
+</text><text x="12.00px" y="195.00px" xml:space="preserve">▍ Decision signals
 </text><text x="12.00px" y="211.80px" xml:space="preserve">METRIC                 VARIANT    CHANCE TO WIN  95% LIFT INTERVAL
 </text><text x="12.00px" y="228.60px" xml:space="preserve">trial_conversion_rate  Treatment  98.0%          -5.0% to +22.0%  
 </text>
