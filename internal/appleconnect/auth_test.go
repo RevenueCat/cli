@@ -36,8 +36,8 @@ func TestCalculateProofMatchesFastlaneSIRP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Generated with fastlane-sirp's calc_M and calc_H_AMK, rather than this
-	// implementation, to catch differences in padding and proof construction.
+	// Generated independently with pinned fastlane-sirp code to catch padding
+	// and proof differences. Source and reproduction: testdata/fastlane-sirp.md.
 	if m1 != "OL3tMhvYaZcmgV8KO40CG1UZ6Rgw4dDF1bSGsEN6c4s=" || m2 != "548X9ZQ5iGyqHhSBA3s2lDdzcZThics3GqSP20346T0=" {
 		t.Fatalf("proofs differ from fastlane-sirp: m1=%s m2=%s", m1, m2)
 	}
@@ -53,89 +53,126 @@ func TestCalculateProofRejectsZeroServerPublicValue(t *testing.T) {
 	}
 }
 
-func TestLoginFollowsFastlaneSRPFlow(t *testing.T) {
+func TestLoginSRPRequestContract(t *testing.T) {
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/logout":
+			w.Header().Set("Location", "/signout?widgetKey=widget")
+			w.WriteHeader(http.StatusFound)
+		case "/auth/signin/init":
+			if r.Header.Get("X-Apple-Widget-Key") != "widget" || r.Header.Get("Accept") != "application/json, text/javascript" || r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
+				t.Errorf("unexpected SRP init headers: %v", r.Header)
+			}
+			var payload struct {
+				A           string   `json:"a"`
+				AccountName string   `json:"accountName"`
+				Protocols   []string `json:"protocols"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Error(err)
+			}
+			if payload.A == "" || payload.AccountName != "dev@example.com" || strings.Join(payload.Protocols, ",") != "s2k,s2k_fo" {
+				t.Errorf("unexpected SRP init payload: %+v", payload)
+			}
+			http.SetCookie(w, &http.Cookie{Name: "DES-session", Value: "value/with/slashes", Path: "/"})
+			_, _ = io.WriteString(w, `{"iteration":1,"salt":"c2FsdA==","protocol":"s2k","b":"Ag==","c":"challenge"}`)
+		case "/auth/signin":
+			if r.Method != http.MethodGet || r.URL.Query().Get("widgetKey") != "widget" {
+				t.Errorf("unexpected hashcash request: %s %s", r.Method, r.URL)
+			}
+			w.Header().Set("X-Apple-HC-Bits", "1")
+			w.Header().Set("X-Apple-HC-Challenge", "challenge")
+		case "/auth/signin/complete":
+			if r.URL.Query().Get("isRememberMeEnabled") != "false" || r.Header.Get("X-Apple-Widget-Key") != "widget" || r.Header.Get("Accept") != "application/json, text/javascript" {
+				t.Errorf("unexpected SRP completion request: %s %v", r.URL, r.Header)
+			}
+			if !strings.Contains(r.Header.Get("Cookie"), `DES-session="value/with/slashes"`) {
+				t.Errorf("missing quoted DES cookie: %q", r.Header.Get("Cookie"))
+			}
+			hashcash := r.Header.Get("X-Apple-HC")
+			digest := sha1.Sum([]byte(hashcash))
+			if !strings.HasPrefix(hashcash, "1:1:") || !leadingZeroBits(digest[:], 1) {
+				t.Errorf("invalid hashcash: %q", hashcash)
+			}
+			var payload struct {
+				AccountName string `json:"accountName"`
+				Challenge   string `json:"c"`
+				M1          string `json:"m1"`
+				M2          string `json:"m2"`
+				RememberMe  bool   `json:"rememberMe"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Error(err)
+			}
+			if payload.AccountName != "dev@example.com" || payload.Challenge != "challenge" || payload.RememberMe {
+				t.Errorf("unexpected SRP completion payload: %+v", payload)
+			}
+			for _, proof := range []string{payload.M1, payload.M2} {
+				decoded, err := base64.StdEncoding.DecodeString(proof)
+				if err != nil || len(decoded) != 32 {
+					t.Errorf("invalid proof encoding: %q", proof)
+				}
+			}
+			_, _ = io.WriteString(w, `{}`)
+		case "/olympus/v1/session":
+			_, _ = io.WriteString(w, `{"provider":{"providerId":42,"publicProviderId":"issuer","name":"Example"}}`)
+		default:
+			t.Errorf("unexpected request: %s", r.URL)
+		}
+	}))
+	t.Cleanup(server.Close)
+	client, err := New(Options{HTTPClient: server.Client(), ASCBaseURL: server.URL, AuthBaseURL: server.URL + "/auth"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := client.Login(context.Background(), " dev@example.com ", "secret")
+	if err != nil || session == nil || session.Provider.ID != 42 {
+		t.Fatalf("session = %+v, error = %v", session, err)
+	}
+	want := "HEAD /logout\nPOST /auth/signin/init\nGET /auth/signin\nPOST /auth/signin/complete\nGET /olympus/v1/session"
+	if got := strings.Join(requests, "\n"); got != want {
+		t.Fatalf("requests:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestLoginHandlesSignInResponses(t *testing.T) {
 	cases := []struct {
-		name   string
-		status int
-		body   string
-		want   error
+		name        string
+		status      int
+		body        string
+		wantError   error
+		wantMessage string
+		twoFactor   bool
 	}{
-		{"signed in", http.StatusOK, `{}`, nil},
-		{"two factor", http.StatusConflict, `{}`, &TwoFactorRequiredError{}},
-		{"invalid credentials", http.StatusUnauthorized, `{}`, ErrInvalidCredentials},
-		{"forbidden", http.StatusForbidden, `{}`, ErrInvalidCredentials},
-		{"account action", http.StatusPreconditionFailed, `{}`, ErrAccountAction},
-		{"service error", http.StatusOK, `{"serviceErrors":[{"code":"-22421","message":"Try again later."}]}`, nil},
+		{name: "signed in", status: http.StatusOK, body: `{}`},
+		{name: "two factor", status: http.StatusConflict, body: `{}`, twoFactor: true},
+		{name: "invalid credentials", status: http.StatusUnauthorized, body: `{}`, wantError: ErrInvalidCredentials},
+		{name: "forbidden", status: http.StatusForbidden, body: `{}`, wantError: ErrInvalidCredentials},
+		{name: "account action", status: http.StatusPreconditionFailed, body: `{}`, wantError: ErrAccountAction},
+		{name: "service error", status: http.StatusOK, body: `{"serviceErrors":[{"code":"-22421","message":"Try again later."}]}`, wantMessage: "Try again later. (-22421)"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			var requests []string
+			var sessionRequests int
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				requests = append(requests, r.Method+" "+r.URL.Path)
-				w.Header().Set("Content-Type", "application/json")
 				switch r.URL.Path {
 				case "/logout":
 					w.Header().Set("Location", "/signout?widgetKey=widget")
 					w.WriteHeader(http.StatusFound)
 				case "/auth/signin/init":
-					if r.Header.Get("X-Apple-Widget-Key") != "widget" || r.Header.Get("Accept") != "application/json, text/javascript" || r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
-						t.Errorf("unexpected SRP init headers: %v", r.Header)
-					}
-					var payload struct {
-						A           string   `json:"a"`
-						AccountName string   `json:"accountName"`
-						Protocols   []string `json:"protocols"`
-					}
-					if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-						t.Error(err)
-					}
-					if payload.A == "" || payload.AccountName != "dev@example.com" || strings.Join(payload.Protocols, ",") != "s2k,s2k_fo" {
-						t.Errorf("unexpected SRP init payload: %+v", payload)
-					}
-					http.SetCookie(w, &http.Cookie{Name: "DES-session", Value: "value/with/slashes", Path: "/"})
 					_, _ = io.WriteString(w, `{"iteration":1,"salt":"c2FsdA==","protocol":"s2k","b":"Ag==","c":"challenge"}`)
 				case "/auth/signin":
-					if r.Method != http.MethodGet || r.URL.Query().Get("widgetKey") != "widget" {
-						t.Errorf("unexpected hashcash request: %s %s", r.Method, r.URL)
-					}
-					w.Header().Set("X-Apple-HC-Bits", "1")
-					w.Header().Set("X-Apple-HC-Challenge", "challenge")
+					w.WriteHeader(http.StatusOK)
 				case "/auth/signin/complete":
-					if r.URL.Query().Get("isRememberMeEnabled") != "false" || r.Header.Get("X-Apple-Widget-Key") != "widget" || r.Header.Get("Accept") != "application/json, text/javascript" {
-						t.Errorf("unexpected SRP completion request: %s %v", r.URL, r.Header)
-					}
-					if !strings.Contains(r.Header.Get("Cookie"), `DES-session="value/with/slashes"`) {
-						t.Errorf("missing quoted DES cookie: %q", r.Header.Get("Cookie"))
-					}
-					hashcash := r.Header.Get("X-Apple-HC")
-					digest := sha1.Sum([]byte(hashcash))
-					if !strings.HasPrefix(hashcash, "1:1:") || !leadingZeroBits(digest[:], 1) {
-						t.Errorf("invalid hashcash: %q", hashcash)
-					}
-					var payload struct {
-						AccountName string `json:"accountName"`
-						Challenge   string `json:"c"`
-						M1          string `json:"m1"`
-						M2          string `json:"m2"`
-						RememberMe  bool   `json:"rememberMe"`
-					}
-					if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-						t.Error(err)
-					}
-					if payload.AccountName != "dev@example.com" || payload.Challenge != "challenge" || payload.RememberMe {
-						t.Errorf("unexpected SRP completion payload: %+v", payload)
-					}
-					for _, proof := range []string{payload.M1, payload.M2} {
-						decoded, err := base64.StdEncoding.DecodeString(proof)
-						if err != nil || len(decoded) != 32 {
-							t.Errorf("invalid proof encoding: %q", proof)
-						}
-					}
 					w.Header().Set("X-Apple-ID-Session-Id", "session")
 					w.Header().Set("scnt", "continuation")
 					w.WriteHeader(tc.status)
 					_, _ = io.WriteString(w, tc.body)
 				case "/olympus/v1/session":
+					sessionRequests++
 					_, _ = io.WriteString(w, `{"provider":{"providerId":42,"publicProviderId":"issuer","name":"Example"}}`)
 				default:
 					t.Errorf("unexpected request: %s", r.URL)
@@ -146,32 +183,32 @@ func TestLoginFollowsFastlaneSRPFlow(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			session, err := client.Login(context.Background(), " dev@example.com ", "secret")
-			switch tc.name {
-			case "signed in":
-				if err != nil || session == nil || session.Provider.ID != 42 {
-					t.Fatalf("session = %+v, error = %v", session, err)
-				}
-			case "two factor":
+			session, err := client.Login(context.Background(), "dev@example.com", "secret")
+			switch {
+			case tc.twoFactor:
 				var twoFactor *TwoFactorRequiredError
 				if !errors.As(err, &twoFactor) || session == nil || session.AppleIDSessionID != "session" || session.SCNT != "continuation" {
 					t.Fatalf("missing two-factor continuation: session = %+v, error = %v", session, err)
 				}
-			case "service error":
-				if err == nil || !strings.Contains(err.Error(), "Try again later. (-22421)") {
-					t.Fatalf("expected sign-in service error, got %v", err)
+			case tc.wantMessage != "":
+				if err == nil || !strings.Contains(err.Error(), tc.wantMessage) {
+					t.Fatalf("error = %v, want message %q", err, tc.wantMessage)
+				}
+			case tc.wantError != nil:
+				if !errors.Is(err, tc.wantError) {
+					t.Fatalf("error = %v, want %v", err, tc.wantError)
 				}
 			default:
-				if !errors.Is(err, tc.want) {
-					t.Fatalf("error = %v, want %v", err, tc.want)
+				if err != nil || session == nil || session.Provider.ID != 42 {
+					t.Fatalf("session = %+v, error = %v", session, err)
 				}
 			}
-			want := "HEAD /logout\nPOST /auth/signin/init\nGET /auth/signin\nPOST /auth/signin/complete"
-			if tc.name == "signed in" {
-				want += "\nGET /olympus/v1/session"
+			wantSessionRequests := 0
+			if !tc.twoFactor && tc.wantError == nil && tc.wantMessage == "" {
+				wantSessionRequests = 1
 			}
-			if got := strings.Join(requests, "\n"); got != want {
-				t.Fatalf("requests:\n%s\nwant:\n%s", got, want)
+			if sessionRequests != wantSessionRequests {
+				t.Fatalf("session requests = %d, want %d", sessionRequests, wantSessionRequests)
 			}
 		})
 	}
