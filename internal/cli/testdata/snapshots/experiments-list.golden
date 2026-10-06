@@ -1,0 +1,3 @@
+$ rc experiments list --no-input --project-id proj_snap --api-key sk_snap
+ID        NAME           STATUS  CONTROL  TREATMENT  TREATMENT C  TREATMENT D
+exp_snap  Four variants  draft   ofrng_a  ofrng_b    ofrng_c      ofrng_d    

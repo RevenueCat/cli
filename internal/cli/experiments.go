@@ -32,7 +32,8 @@ func newExperimentsListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Short:   "List experiments",
-		Example: "  rc experiments list --status running\n  rc experiments list --json",
+		Long:    "Returns one page of experiments. Use --limit to set the page size and --cursor for the next page. JSON includes next_page.",
+		Example: "  rc experiments list --status running\n  rc experiments list --cursor exp123 --json",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -49,19 +50,32 @@ func newExperimentsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			hasC, hasD := false, false
+			for _, experiment := range page.Items {
+				hasC = hasC || experiment.OfferingC != nil
+				hasD = hasD || experiment.OfferingD != nil
+			}
+			columns := []string{"ID", "NAME", "STATUS", "CONTROL", "TREATMENT"}
+			if hasC {
+				columns = append(columns, "TREATMENT C")
+			}
+			if hasD {
+				columns = append(columns, "TREATMENT D")
+			}
 			rows := make([][]string, 0, len(page.Items))
 			for _, experiment := range page.Items {
-				control, treatment := "", ""
-				if experiment.OfferingA != nil {
-					control = experiment.OfferingA.ID
+				row := []string{experiment.ID, experiment.DisplayName, experiment.Status,
+					experimentOfferingID(experiment.OfferingA), experimentOfferingID(experiment.OfferingB)}
+				if hasC {
+					row = append(row, experimentOfferingID(experiment.OfferingC))
 				}
-				if experiment.OfferingB != nil {
-					treatment = experiment.OfferingB.ID
+				if hasD {
+					row = append(row, experimentOfferingID(experiment.OfferingD))
 				}
-				rows = append(rows, []string{experiment.ID, experiment.DisplayName, experiment.Status, control, treatment})
+				rows = append(rows, row)
 			}
 			if err := rt.Out.RenderTable(output.Table{
-				Columns: []string{"ID", "NAME", "STATUS", "CONTROL", "TREATMENT"},
+				Columns: columns,
 				Rows:    rows, Raw: page,
 			}); err != nil {
 				return err
@@ -77,15 +91,21 @@ func newExperimentsListCmd() *cobra.Command {
 }
 
 func experimentPickerItems(cmd *cobra.Command, client *api.Client, projectID string) ([]PickerItem, error) {
-	page, err := client.Experiments.List(cmd.Context(), projectID, api.ListExperimentsOptions{})
-	if err != nil {
-		return nil, err
+	items := []PickerItem{}
+	cursor := ""
+	for {
+		page, err := client.Experiments.List(cmd.Context(), projectID, api.ListExperimentsOptions{Limit: 100, StartingAfter: cursor})
+		if err != nil {
+			return nil, err
+		}
+		for _, experiment := range page.Items {
+			items = append(items, PickerItem{ID: experiment.ID, Label: fmt.Sprintf("%s  (%s)", experiment.DisplayName, experiment.Status)})
+		}
+		cursor = page.NextCursor()
+		if cursor == "" {
+			return items, nil
+		}
 	}
-	items := make([]PickerItem, len(page.Items))
-	for i, experiment := range page.Items {
-		items[i] = PickerItem{ID: experiment.ID, Label: fmt.Sprintf("%s  (%s)", experiment.DisplayName, experiment.Status)}
-	}
-	return items, nil
 }
 
 func newExperimentsShowCmd() *cobra.Command {
@@ -110,7 +130,7 @@ func newExperimentsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			experiment, err := client.Experiments.Get(cmd.Context(), projectID, id)
+			experiment, err := client.Experiments.GetWithPaywalls(cmd.Context(), projectID, id)
 			if err != nil {
 				return err
 			}
@@ -161,6 +181,16 @@ func newExperimentsResultsCmd() *cobra.Command {
 			}
 			if rt.Globals.JSON {
 				return rt.Out.Render(results)
+			}
+			rt.Out.Title("Experiment results")
+			if opts.Platform != "" {
+				rt.Out.Field("Platform", opts.Platform)
+			}
+			if opts.Country != "" {
+				rt.Out.Field("Country", opts.Country)
+			}
+			if opts.ExposureStatus != "" {
+				rt.Out.Field("Exposure", opts.ExposureStatus)
 			}
 			return renderExperimentResults(rt, results)
 		},
@@ -216,7 +246,6 @@ func experimentExposureStatus(value string) (string, error) {
 }
 
 func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error {
-	rt.Out.Title("Experiment results")
 	rt.Out.Field("Currency", results.Currency)
 	shownSections := 0
 	for _, section := range results.Sections {
@@ -317,7 +346,7 @@ func chanceToWinLabel(stat api.ExperimentResultVariantStatistic) string {
 
 func liftIntervalLabel(stat api.ExperimentResultVariantStatistic) string {
 	if stat.LiftCredibleIntervalLower != nil && stat.LiftCredibleIntervalUpper != nil {
-		return fmt.Sprintf("%+.1f%% to %+.1f%%", *stat.LiftCredibleIntervalLower*100, *stat.LiftCredibleIntervalUpper*100)
+		return fmt.Sprintf("%+.1f%% to %+.1f%%", *stat.LiftCredibleIntervalLower, *stat.LiftCredibleIntervalUpper)
 	}
 	if stat.LiftCredibleIntervalStatus == "insufficient_data" {
 		return "Need more data"

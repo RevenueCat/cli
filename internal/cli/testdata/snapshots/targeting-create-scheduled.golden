@@ -15,7 +15,6 @@ $ rc targeting create --config testdata/scheduled-targeting.json --yes --no-inpu
 ▍ Plan
 · 1. Create the rule and match customers during its scheduled window
 ✓ Created targeting rule trle_holiday
-  Use --json for the complete API response.
 ▍ Holiday paywall
   trle_holiday · legacy · active
 
@@ -31,3 +30,4 @@ Placements
 Schedule
   Start:  2030-12-01T00:00:00Z
   End:    2030-12-31T23:59:59Z
+  Use --json for the complete API response.

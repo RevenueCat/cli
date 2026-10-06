@@ -27,22 +27,22 @@
 </text><text x="12.00px" y="279.00px" xml:space="preserve">▍ Plan
 </text><text x="12.00px" y="295.80px" xml:space="preserve">· 1. Create the rule and match customers during its scheduled window
 </text><text x="12.00px" y="312.60px" xml:space="preserve">✓ Created targeting rule trle_holiday
-</text><text x="12.00px" y="329.40px" xml:space="preserve">  Use --json for the complete API response.
-</text><text x="12.00px" y="346.20px" xml:space="preserve">▍ Holiday paywall
-</text><text x="12.00px" y="363.00px" xml:space="preserve">  trle_holiday · legacy · active
-</text><text x="12.00px" y="379.80px" xml:space="preserve">
-</text><text x="12.00px" y="396.60px" xml:space="preserve">Serves
-</text><text x="12.00px" y="413.40px" xml:space="preserve">  Offering:  ofrng_holiday
-</text><text x="12.00px" y="430.20px" xml:space="preserve">
-</text><text x="12.00px" y="447.00px" xml:space="preserve">Audience
-</text><text x="12.00px" y="463.80px" xml:space="preserve">  Audience:  All eligible customers
-</text><text x="12.00px" y="480.60px" xml:space="preserve">
-</text><text x="12.00px" y="497.40px" xml:space="preserve">Placements
-</text><text x="12.00px" y="514.20px" xml:space="preserve">  No placement overrides
-</text><text x="12.00px" y="531.00px" xml:space="preserve">
-</text><text x="12.00px" y="547.80px" xml:space="preserve">Schedule
-</text><text x="12.00px" y="564.60px" xml:space="preserve">  Start:  2030-12-01T00:00:00Z
-</text><text x="12.00px" y="581.40px" xml:space="preserve">  End:    2030-12-31T23:59:59Z
+</text><text x="12.00px" y="329.40px" xml:space="preserve">▍ Holiday paywall
+</text><text x="12.00px" y="346.20px" xml:space="preserve">  trle_holiday · legacy · active
+</text><text x="12.00px" y="363.00px" xml:space="preserve">
+</text><text x="12.00px" y="379.80px" xml:space="preserve">Serves
+</text><text x="12.00px" y="396.60px" xml:space="preserve">  Offering:  ofrng_holiday
+</text><text x="12.00px" y="413.40px" xml:space="preserve">
+</text><text x="12.00px" y="430.20px" xml:space="preserve">Audience
+</text><text x="12.00px" y="447.00px" xml:space="preserve">  Audience:  All eligible customers
+</text><text x="12.00px" y="463.80px" xml:space="preserve">
+</text><text x="12.00px" y="480.60px" xml:space="preserve">Placements
+</text><text x="12.00px" y="497.40px" xml:space="preserve">  No placement overrides
+</text><text x="12.00px" y="514.20px" xml:space="preserve">
+</text><text x="12.00px" y="531.00px" xml:space="preserve">Schedule
+</text><text x="12.00px" y="547.80px" xml:space="preserve">  Start:  2030-12-01T00:00:00Z
+</text><text x="12.00px" y="564.60px" xml:space="preserve">  End:    2030-12-31T23:59:59Z
+</text><text x="12.00px" y="581.40px" xml:space="preserve">  Use --json for the complete API response.
 </text>
 </g>
 <svg x="0.00px" y="0.00px"><circle cx="13.50" cy="12.00" r="5.50" fill="#FF5A54"/><circle cx="32.50" cy="12.00" r="5.50" fill="#E6BF29"/><circle cx="51.50" cy="12.00" r="5.50" fill="#52C12B"/></svg></svg>

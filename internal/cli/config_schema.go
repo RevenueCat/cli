@@ -98,6 +98,10 @@ func experimentConfigFields(create bool) map[string]any {
 		"daily_enrolled_customers_is_override":   configField("boolean", "Daily enrolled count was manually overridden"),
 	}}
 	secondaryNames := append(append([]string{}, metricNames...), "exposed_customers")
+	audience := map[string]any{
+		"type":        []string{"string", "null"},
+		"description": "Audience ID; mutually exclusive with targeting_conditions. Omit or set null for all eligible customers when targeting_conditions is absent.",
+	}
 	fields := map[string]any{
 		"display_name":                 configField("string", "Experiment name"),
 		"enrollment_percentage":        map[string]any{"type": "integer", "minimum": 1, "maximum": 100, "description": "Percentage of eligible customers to enroll"},
@@ -105,7 +109,7 @@ func experimentConfigFields(create bool) map[string]any {
 		"offering_b_id":                configField("string", "Treatment Offering ID"),
 		"offering_c_id":                configField("string", "Optional third variant Offering ID"),
 		"offering_d_id":                configField("string", "Optional fourth variant Offering ID"),
-		"audience_id":                  configField("string", "Audience ID; mutually exclusive with targeting_conditions"),
+		"audience_id":                  audience,
 		"targeting_conditions":         targetingConditionsSchema(),
 		"placements":                   placements,
 		"notes":                        configField("string", "Experiment notes"),
@@ -118,6 +122,8 @@ func experimentConfigFields(create bool) map[string]any {
 	if create {
 		return map[string]any{"type": "object", "properties": fields, "required": []string{"display_name", "enrollment_percentage", "offering_a_id", "offering_b_id"}}
 	}
+	audience["description"] = "Omit to keep current targeting unless targeting_conditions is supplied. Set null to clear the audience and conditions, or supply targeting_conditions to replace them. A string selects an audience and cannot be combined with targeting_conditions."
+	audience["examples"] = []any{"aud_123", nil}
 	return map[string]any{"type": "object", "properties": fields, "description": "Partial update. Running experiments accept only enrollment_percentage; paused experiments cannot be edited."}
 }
 
