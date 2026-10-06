@@ -31,7 +31,7 @@ func targetingConfigFields(create bool) map[string]any {
 		}},
 	}}
 	fields := map[string]any{
-		"position":     map[string]any{"type": "integer", "minimum": 1, "description": "One-based priority among rules in the same state; legacy rules only"},
+		"position":     map[string]any{"type": "integer", "minimum": 1, "description": "One-based priority among rules in the same state; legacy rules only. List preserves evaluation order, but the API does not return absolute positions."},
 		"state":        configEnum("Legacy Offering rules use active or inactive; use active with a future schedule.start_date to serve later. The scheduled state is checkpoint-only.", "active", "inactive", "scheduled"),
 		"display_name": configField("string", "Rule name"),
 		"offering_id":  configField("string", "Offering ID served by a legacy rule"),
@@ -52,6 +52,8 @@ func targetingConfigFields(create bool) map[string]any {
 		}}
 		return map[string]any{"type": "object", "properties": fields, "description": "Legacy: display_name and offering_id required. Checkpoint: rule_type, display_name, audience_id, flow_id, checkpoints required."}
 	}
+	schedule["type"] = []string{"object", "null"}
+	schedule["description"] = "Omit to keep the current schedule. Set null to remove it, or provide UTC start_date and optional end_date timestamps. Use state active with a future start_date to serve later."
 	return map[string]any{"type": "object", "properties": fields, "description": "Partial update of a legacy rule. Checkpoint updates are unavailable."}
 }
 

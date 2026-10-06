@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg width="624.00" height="101.00" xmlns="http://www.w3.org/2000/svg">
+<svg width="674.00" height="118.00" xmlns="http://www.w3.org/2000/svg">
 <style>
 @font-face {
 	font-family: &apos;JetBrains Mono&apos;;
@@ -8,11 +8,12 @@
 	font-weight: normal;
 	font-style: normal;
 }
-</style><rect width="624.00" height="101.00" fill="#282a36" x="0.00px" y="0.00px"/>
+</style><rect width="674.00" height="118.00" fill="#282a36" x="0.00px" y="0.00px"/>
 <g font-family="JetBrains Mono" font-size="14.00px" fill="#f8f8f2" clip-path="url(#terminalMask)">
 <text x="12.00px" y="43.80px" xml:space="preserve">$ rc targeting list --no-input --project-id proj_snap --api-key sk_snap
 </text><text x="12.00px" y="60.60px" xml:space="preserve">ID         NAME               TYPE    STATE   SERVES  
 </text><text x="12.00px" y="77.40px" xml:space="preserve">trle_snap  US annual paywall  legacy  active  ofrng_us
+</text><text x="12.00px" y="94.20px" xml:space="preserve">· Active Offering rules are listed in evaluation order; the first match wins.
 </text>
 </g>
 <svg x="0.00px" y="0.00px"><circle cx="13.50" cy="12.00" r="5.50" fill="#FF5A54"/><circle cx="32.50" cy="12.00" r="5.50" fill="#E6BF29"/><circle cx="51.50" cy="12.00" r="5.50" fill="#52C12B"/></svg></svg>
