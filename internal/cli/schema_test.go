@@ -23,6 +23,39 @@ func TestExperimentConfigSchemaExplainsNestedFields(t *testing.T) {
 	}
 }
 
+func TestTargetingConfigSchemaExplainsConditionsAndRuleTypes(t *testing.T) {
+	root := NewRootCmd("test")
+	for _, path := range []string{"targeting create", "targeting update"} {
+		config := commandSchema(findCommand(t, root, path))["config_fields"].(map[string]any)
+		data, err := json.Marshal(config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{"conditions", "app_version", "context", "placement_offerings", "fallback_offering_id", "required_for_legacy", "start_date", "schedule", "position"} {
+			if !strings.Contains(string(data), want) {
+				t.Errorf("%s schema missing %q", path, want)
+			}
+		}
+		audience := config["properties"].(map[string]any)["audience_id"].(map[string]any)
+		if !contains(audience["type"].([]string), "null") || !strings.Contains(audience["description"].(string), "conditions to []") {
+			t.Errorf("%s schema must explain how to switch between audiences and conditions", path)
+		}
+	}
+}
+
+func TestTargetingUpdateSchemaIncludesCheckpointFieldsAndLimits(t *testing.T) {
+	root := NewRootCmd("test")
+	config := commandSchema(findCommand(t, root, "targeting update"))["config_fields"].(map[string]any)
+	fields := config["properties"].(map[string]any)
+	if fields["flow_id"] == nil {
+		t.Fatal("checkpoint Flow field is missing")
+	}
+	checkpoints := fields["checkpoints"].(map[string]any)
+	if checkpoints["minItems"] != 1 || checkpoints["maxItems"] != 1 || !strings.Contains(config["description"].(string), "audience_id (non-null)") {
+		t.Fatalf("checkpoint update constraints are missing: %v", config)
+	}
+}
+
 func findCommand(t *testing.T, root *cobra.Command, path string) *cobra.Command {
 	t.Helper()
 	cur := root
@@ -150,6 +183,20 @@ func hasRunnableDescendant(c *cobra.Command) bool {
 		}
 	}
 	return false
+}
+
+func TestTargetingSchemaDocumentsNullableFields(t *testing.T) {
+	fields := targetingConfigFields(false)["properties"].(map[string]any)
+	schedule := fields["schedule"].(map[string]any)["properties"].(map[string]any)
+	placements := fields["placements"].(map[string]any)
+	placementFields := placements["properties"].(map[string]any)
+	itemFields := placementFields["placement_offerings"].(map[string]any)["items"].(map[string]any)["properties"].(map[string]any)
+	for name, value := range map[string]any{"audience_id": fields["audience_id"], "schedule": fields["schedule"], "start_date": schedule["start_date"], "end_date": schedule["end_date"], "placements": placements, "fallback_offering_id": placementFields["fallback_offering_id"], "placement offering_id": itemFields["offering_id"]} {
+		types, ok := value.(map[string]any)["type"].([]string)
+		if !ok || !contains(types, "null") {
+			t.Errorf("%s does not expose null: %v", name, value)
+		}
+	}
 }
 
 func TestTargetingConditionSchemaUsesStandardValueTypes(t *testing.T) {
