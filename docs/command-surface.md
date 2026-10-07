@@ -189,6 +189,11 @@ rc paywalls attach <paywall-id> <offering-id>            # attach or move a payw
 rc paywalls detach <paywall-id>                          # make it standalone; unpublish a published paywall first
 rc paywalls delete <id> [--force]                        # attached/published paywalls refuse to delete without --force
 
+# Experiments — development v2 endpoints, normal discoverable CLI surface
+rc experiments list [--status <status>]
+rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline
+rc experiments results <id> [--platform <p>] [--country <code>] [--exposure-status exposed|not_exposed] [--currency <code>]  # human totals and decision signals; unknown platforms warn before passing through
+
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)
 rc rico --continue                                       # continue the most recent conversation
