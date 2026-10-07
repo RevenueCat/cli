@@ -1,11 +1,27 @@
 package cli
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 )
+
+func TestExperimentConfigSchemaExplainsNestedFields(t *testing.T) {
+	root := NewRootCmd("test")
+	for _, path := range []string{"experiments create", "experiments update"} {
+		data, err := json.Marshal(commandSchema(findCommand(t, root, path))["config_fields"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{"primary_metric", "new_and_existing", "experiment_duration_settings", "placement_offerings", "app_version", "context"} {
+			if !strings.Contains(string(data), want) {
+				t.Errorf("%s schema missing %q", path, want)
+			}
+		}
+	}
+}
 
 func findCommand(t *testing.T, root *cobra.Command, path string) *cobra.Command {
 	t.Helper()
@@ -134,4 +150,32 @@ func hasRunnableDescendant(c *cobra.Command) bool {
 		}
 	}
 	return false
+}
+
+func TestTargetingConditionSchemaUsesStandardValueTypes(t *testing.T) {
+	value := targetingConditionsSchema()["items"].(map[string]any)["properties"].(map[string]any)["value"].(map[string]any)
+	types, ok := value["type"].([]string)
+	if !ok || len(types) != 3 || !contains(types, "string") || !contains(types, "integer") || !contains(types, "array") {
+		t.Fatalf("invalid value types: %v", value)
+	}
+	items := value["items"].(map[string]any)["type"].([]string)
+	if len(items) != 2 || !contains(items, "string") || !contains(items, "integer") {
+		t.Fatalf("invalid array item types: %v", items)
+	}
+}
+
+func TestExperimentPlacementSchemaRequiresOverridesForFallbacks(t *testing.T) {
+	for _, create := range []bool{true, false} {
+		placements := experimentConfigFields(create)["properties"].(map[string]any)["placements"].(map[string]any)
+		cases := placements["if"].(map[string]any)["anyOf"].([]map[string]any)
+		if len(cases) != 4 {
+			t.Fatalf("missing fallback variants: %v", cases)
+		}
+		then := placements["then"].(map[string]any)
+		required := then["required"].([]string)
+		list := then["properties"].(map[string]any)["placement_offerings"].(map[string]any)
+		if !contains(required, "placement_offerings") || list["minItems"] != 1 {
+			t.Fatalf("missing nonempty placement requirement: %v", then)
+		}
+	}
 }

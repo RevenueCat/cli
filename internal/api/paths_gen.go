@@ -126,6 +126,22 @@ func pathExperiment(projectID string, experimentID string) string {
 	return encodePath("projects", projectID, "experiments", experimentID)
 }
 
+func pathExperimentActionsPause(projectID string, experimentID string) string {
+	return encodePath("projects", projectID, "experiments", experimentID, "actions", "pause")
+}
+
+func pathExperimentActionsResume(projectID string, experimentID string) string {
+	return encodePath("projects", projectID, "experiments", experimentID, "actions", "resume")
+}
+
+func pathExperimentActionsStart(projectID string, experimentID string) string {
+	return encodePath("projects", projectID, "experiments", experimentID, "actions", "start")
+}
+
+func pathExperimentActionsStop(projectID string, experimentID string) string {
+	return encodePath("projects", projectID, "experiments", experimentID, "actions", "stop")
+}
+
 func pathExperimentResults(projectID string, experimentID string) string {
 	return encodePath("projects", projectID, "experiments", experimentID, "results")
 }

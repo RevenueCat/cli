@@ -225,8 +225,22 @@ endpoints:
   # Experiments (development-status; provided by the beta overlay)
   - method: GET
     path: /projects/{project_id}/experiments
+  - method: POST
+    path: /projects/{project_id}/experiments
   - method: GET
     path: /projects/{project_id}/experiments/{experiment_id}
+  - method: POST
+    path: /projects/{project_id}/experiments/{experiment_id}
+  - method: DELETE
+    path: /projects/{project_id}/experiments/{experiment_id}
+  - method: POST
+    path: /projects/{project_id}/experiments/{experiment_id}/actions/start
+  - method: POST
+    path: /projects/{project_id}/experiments/{experiment_id}/actions/pause
+  - method: POST
+    path: /projects/{project_id}/experiments/{experiment_id}/actions/resume
+  - method: POST
+    path: /projects/{project_id}/experiments/{experiment_id}/actions/stop
   - method: GET
     path: /projects/{project_id}/experiments/{experiment_id}/results
 

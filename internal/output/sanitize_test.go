@@ -129,6 +129,16 @@ func TestField_SanitizesValueAndNoteSeparately(t *testing.T) {
 	}
 }
 
+func TestNoticeSanitizesLine(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	r := NewRenderer(&out, &errBuf, false, true, false, "")
+	r.Notice("Conflict \x1b]0;title\x07name\nnext")
+	s := errBuf.String()
+	if strings.ContainsAny(s, "\x1b\x07") || !strings.Contains(s, "Conflict ]0;titlename next") {
+		t.Errorf("notice output was not sanitized: %q", s)
+	}
+}
+
 func TestRenderFormat_EscapesControlBytes(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	r := NewRenderer(&out, &errBuf, true, true, false, ".data.items[]")
