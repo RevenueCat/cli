@@ -2,7 +2,9 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -131,6 +133,13 @@ func newExperimentsShowCmd() *cobra.Command {
 				return err
 			}
 			experiment, err := client.Experiments.GetWithPaywalls(cmd.Context(), projectID, id)
+			var apiErr *api.APIError
+			if errors.As(err, &apiErr) && apiErr.Status == http.StatusForbidden {
+				experiment, err = client.Experiments.Get(cmd.Context(), projectID, id)
+				if err == nil {
+					rt.Out.AlwaysWarn("Paywall details are unavailable; they require project_configuration:offerings:read permission.")
+				}
+			}
 			if err != nil {
 				return err
 			}
