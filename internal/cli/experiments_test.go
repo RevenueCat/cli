@@ -686,3 +686,38 @@ func TestExperimentShowFallsBackOnlyOnExpandedForbidden(t *testing.T) {
 		})
 	}
 }
+
+func TestExperimentPlacementsRejectIgnoredFallbacksBeforeMutation(t *testing.T) {
+	for _, command := range []string{"create", "update"} {
+		for _, placement := range []string{`{"fallback_offering_a_id":"a"}`, `{"fallback_offering_b_id":"b","placement_offerings":[]}`, `{"fallback_offering_c_id":"c","placement_offerings":null}`, `{"fallback_offering_d_id":"d","placement_offerings":[]}`} {
+			t.Run(command+placement, func(t *testing.T) {
+				mutations := 0
+				srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.Method != http.MethodGet {
+						mutations++
+					}
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = io.WriteString(w, `{"id":"exp1","status":"draft"}`)
+				}))
+				t.Cleanup(srv.Close)
+				t.Setenv("RC_BASE_URL", srv.URL)
+				config := `{"placements":` + placement + `}`
+				args := []string{"experiments", command}
+				if command == "create" {
+					args = append(args, "--name", "Test", "--control", "a", "--treatment", "b", "--enrollment", "50")
+				} else {
+					args = append(args, "exp1")
+				}
+				path := filepath.Join(t.TempDir(), "placements.json")
+				if err := os.WriteFile(path, []byte(config), 0600); err != nil {
+					t.Fatal(err)
+				}
+				args = append(args, "--config", path, "--project-id", "proj", "--api-key", "sk_test", "--no-input", "--yes")
+				_, _, err := runAgentCmd(t, args...)
+				if err == nil || !strings.Contains(err.Error(), "at least one placement_offerings") || mutations != 0 {
+					t.Fatalf("err=%v mutations=%d", err, mutations)
+				}
+			})
+		}
+	}
+}

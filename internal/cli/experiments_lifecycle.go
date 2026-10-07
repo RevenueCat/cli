@@ -123,6 +123,9 @@ func newExperimentsCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if err := validExperimentPlacements(body.Placements); err != nil {
+				return err
+			}
 			experiment, err := client.Experiments.Create(cmd.Context(), projectID, body)
 			if err != nil {
 				return err
@@ -495,12 +498,37 @@ func validExperimentUpdate(body api.ExperimentUpdate) error {
 		if !json.Valid(value) {
 			return fmt.Errorf("invalid JSON value for %q", key)
 		}
+		if key == "placements" {
+			if err := validExperimentPlacements(value); err != nil {
+				return err
+			}
+		}
 		if key == "enrollment_percentage" {
 			var percentage int
 			if err := json.Unmarshal(value, &percentage); err != nil || percentage < 1 || percentage > 100 {
 				return fmt.Errorf("enrollment must be an integer from 1 to 100")
 			}
 		}
+	}
+	return nil
+}
+
+func validExperimentPlacements(raw json.RawMessage) error {
+	if len(raw) == 0 {
+		return nil
+	}
+	var placements struct {
+		FallbackA *string           `json:"fallback_offering_a_id"`
+		FallbackB *string           `json:"fallback_offering_b_id"`
+		FallbackC *string           `json:"fallback_offering_c_id"`
+		FallbackD *string           `json:"fallback_offering_d_id"`
+		Offerings []json.RawMessage `json:"placement_offerings"`
+	}
+	if err := json.Unmarshal(raw, &placements); err != nil {
+		return fmt.Errorf("placements must be an object or null")
+	}
+	if len(placements.Offerings) == 0 && (placements.FallbackA != nil || placements.FallbackB != nil || placements.FallbackC != nil || placements.FallbackD != nil) {
+		return fmt.Errorf("placements with fallback Offering IDs require at least one placement_offerings entry; the API otherwise discards the fallbacks")
 	}
 	return nil
 }
