@@ -210,3 +210,19 @@ func TestTargetingConditionSchemaUsesStandardValueTypes(t *testing.T) {
 		t.Fatalf("invalid array item types: %v", items)
 	}
 }
+
+func TestExperimentPlacementSchemaRequiresOverridesForFallbacks(t *testing.T) {
+	for _, create := range []bool{true, false} {
+		placements := experimentConfigFields(create)["properties"].(map[string]any)["placements"].(map[string]any)
+		cases := placements["if"].(map[string]any)["anyOf"].([]map[string]any)
+		if len(cases) != 4 {
+			t.Fatalf("missing fallback variants: %v", cases)
+		}
+		then := placements["then"].(map[string]any)
+		required := then["required"].([]string)
+		list := then["properties"].(map[string]any)["placement_offerings"].(map[string]any)
+		if !contains(required, "placement_offerings") || list["minItems"] != 1 {
+			t.Fatalf("missing nonempty placement requirement: %v", then)
+		}
+	}
+}

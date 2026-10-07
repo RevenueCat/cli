@@ -623,3 +623,101 @@ func TestExperimentDeleteSanitizesConfirmation(t *testing.T) {
 		t.Fatalf("unsafe confirmation: %v", err)
 	}
 }
+
+func TestExperimentShowFallsBackOnlyOnExpandedForbidden(t *testing.T) {
+	for _, tc := range []struct {
+		name                                  string
+		expandedStatus, plainStatus, requests int
+		jsonMode, success                     bool
+	}{
+		{"human fallback", 403, 200, 2, false, true},
+		{"JSON fallback", 403, 200, 2, true, true},
+		{"fallback forbidden", 403, 403, 2, true, false},
+		{"not found", 404, 200, 1, true, false},
+		{"unauthorized", 401, 200, 1, true, false},
+		{"invalid request", 422, 200, 1, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			requests := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+				status := tc.expandedStatus
+				if requests == 1 {
+					if r.URL.Query().Get("expand") != "offering.paywall" {
+						t.Errorf("missing expansion: %s", r.URL.RawQuery)
+					}
+				} else {
+					if r.URL.Query().Has("expand") {
+						t.Errorf("fallback still expanded: %s", r.URL.RawQuery)
+					}
+					status = tc.plainStatus
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(status)
+				if status != http.StatusOK {
+					_, _ = io.WriteString(w, `{"type":"forbidden","message":"Denied"}`)
+					return
+				}
+				_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft","offering_a":{"id":"ofrng_a"}}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			args := []string{"experiments", "show", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+			if tc.jsonMode {
+				args = append(args, "--json")
+			}
+			out, stderr, err := runAgentCmd(t, args...)
+			if (err == nil) != tc.success || requests != tc.requests {
+				t.Fatalf("err=%v requests=%d want=%d", err, requests, tc.requests)
+			}
+			if tc.success {
+				if !strings.Contains(out, "exp1") || !strings.Contains(stderr, "project_configuration:offerings:read") {
+					t.Fatalf("missing experiment or warning: stdout=%s stderr=%s", out, stderr)
+				}
+				if tc.jsonMode {
+					var envelope map[string]any
+					if err := json.Unmarshal([]byte(out), &envelope); err != nil {
+						t.Fatalf("invalid JSON: %v", err)
+					}
+				}
+			} else if strings.Contains(stderr, "Paywall details are unavailable") {
+				t.Fatalf("warned despite failed fallback: %s", stderr)
+			}
+		})
+	}
+}
+
+func TestExperimentPlacementsRejectIgnoredFallbacksBeforeMutation(t *testing.T) {
+	for _, command := range []string{"create", "update"} {
+		for _, placement := range []string{`{"fallback_offering_a_id":"a"}`, `{"fallback_offering_b_id":"b","placement_offerings":[]}`, `{"fallback_offering_c_id":"c","placement_offerings":null}`, `{"fallback_offering_d_id":"d","placement_offerings":[]}`} {
+			t.Run(command+placement, func(t *testing.T) {
+				mutations := 0
+				srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.Method != http.MethodGet {
+						mutations++
+					}
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = io.WriteString(w, `{"id":"exp1","status":"draft"}`)
+				}))
+				t.Cleanup(srv.Close)
+				t.Setenv("RC_BASE_URL", srv.URL)
+				config := `{"placements":` + placement + `}`
+				args := []string{"experiments", command}
+				if command == "create" {
+					args = append(args, "--name", "Test", "--control", "a", "--treatment", "b", "--enrollment", "50")
+				} else {
+					args = append(args, "exp1")
+				}
+				path := filepath.Join(t.TempDir(), "placements.json")
+				if err := os.WriteFile(path, []byte(config), 0600); err != nil {
+					t.Fatal(err)
+				}
+				args = append(args, "--config", path, "--project-id", "proj", "--api-key", "sk_test", "--no-input", "--yes")
+				_, _, err := runAgentCmd(t, args...)
+				if err == nil || !strings.Contains(err.Error(), "at least one placement_offerings") || mutations != 0 {
+					t.Fatalf("err=%v mutations=%d", err, mutations)
+				}
+			})
+		}
+	}
+}

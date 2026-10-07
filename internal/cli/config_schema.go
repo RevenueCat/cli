@@ -103,6 +103,13 @@ func experimentConfigFields(create bool) map[string]any {
 			},
 		},
 	}
+	var fallbackFields []map[string]any
+	for _, field := range []string{"fallback_offering_a_id", "fallback_offering_b_id", "fallback_offering_c_id", "fallback_offering_d_id"} {
+		fallbackFields = append(fallbackFields, map[string]any{"required": []string{field}, "properties": map[string]any{field: map[string]any{"type": "string"}}})
+	}
+	placements["description"] = "Fallback Offerings require at least one placement_offerings entry; otherwise the API discards them. An empty placement list without fallbacks clears placement configuration."
+	placements["if"] = map[string]any{"anyOf": fallbackFields}
+	placements["then"] = map[string]any{"required": []string{"placement_offerings"}, "properties": map[string]any{"placement_offerings": map[string]any{"type": "array", "minItems": 1}}}
 	duration := map[string]any{"type": "object", "properties": map[string]any{
 		"conversion_rate_percentage":             configField("number", "Expected conversion rate, as a percentage"),
 		"daily_enrolled_customers":               configField("integer", "Estimated customers enrolled per day"),
