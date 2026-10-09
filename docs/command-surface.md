@@ -160,7 +160,7 @@ rc packages detach <package-id> <product-id> [...]
 # Products
 rc products list
 rc products show <id>
-rc products create                                        # --title supports required Test Store product titles
+rc products create                                        # --title supports required Test Store product titles; --price-id selects the Stripe price
 rc products update <id>
 rc products delete <id>
 rc products archive <id>
