@@ -17,6 +17,16 @@ func TestSanitize(t *testing.T) {
 		"unicode üñî remains":            "unicode üñî remains",
 		"\x00\x01\x02only-controls\x1f":  "only-controls",
 		"carriage\rreturn":               "carriagereturn",
+		// Bidi overrides and isolates are invisible but reverse the glyphs
+		// around them, so the rendered text reads differently from the value.
+		"Premium \u202eEVIL":    "Premium EVIL",
+		"\u2066admin\u2069":     "admin",
+		"\u202dltr\u202c":       "ltr",
+		"\u061cmark":            "mark",
+		"row1\u2028row2\u2029x": "row1row2x",
+		// Emoji sequences and script shaping need the rest of Cf intact.
+		"family 👨\u200d👩\u200d👧": "family 👨\u200d👩\u200d👧",
+		"zwnj \u200chere":        "zwnj \u200chere",
 	}
 	for in, want := range cases {
 		if got := Sanitize(in); got != want {
@@ -27,9 +37,12 @@ func TestSanitize(t *testing.T) {
 
 func TestSanitizeLine(t *testing.T) {
 	cases := map[string]string{
-		"one line":            "one line",
-		"two\nlines\tand tab": "two lines and tab",
-		"ctrl\x1b[2Jhere":     "ctrl[2Jhere",
+		"one line":              "one line",
+		"two\nlines\tand tab":   "two lines and tab",
+		"ctrl\x1b[2Jhere":       "ctrl[2Jhere",
+		"Premium \u202eEVIL":    "Premium EVIL",
+		"row1\u2028row2\u2029x": "row1 row2 x",
+		"family 👨\u200d👩":        "family 👨\u200d👩",
 	}
 	for in, want := range cases {
 		if got := SanitizeLine(in); got != want {
@@ -111,6 +124,26 @@ func TestHyperlink_URLCannotTerminateSequence(t *testing.T) {
 	got := Hyperlink("label", "https://example.com/\x1b\\x\x07a\nb")
 	if strings.Count(got, "\x1b]8;;") != 2 || strings.ContainsAny(got, "\x07\n") {
 		t.Errorf("hyperlink URL broke out of the OSC 8 sequence: %q", got)
+	}
+}
+
+// Link uses the URL as its own label, and Hyperlink can only sanitize the
+// target it wraps — so Link has to clean the URL before it becomes a label.
+func TestLink_LabelCannotCarryControlBytes(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	var out, errBuf bytes.Buffer
+	for _, noColor := range []bool{true, false} {
+		r := NewRenderer(&out, &errBuf, false, noColor, false, "")
+		got := r.Link("https://example.com/\x1b]52;c;cGF5bG9hZA==\x07x")
+		if strings.Contains(got, "\x07") {
+			t.Errorf("noColor=%v: link label carried a control byte: %q", noColor, got)
+		}
+		if noColor && strings.Contains(got, "\x1b") {
+			t.Errorf("no-color link emitted an escape: %q", got)
+		}
+		if !noColor && strings.Count(got, "\x1b]8;;") != 2 {
+			t.Errorf("link broke out of the OSC 8 sequence: %q", got)
+		}
 	}
 }
 

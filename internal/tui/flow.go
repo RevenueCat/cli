@@ -32,10 +32,28 @@ func NewFlow(w io.Writer, plain, noColor, quiet bool) *Flow {
 	return &Flow{w: w, plain: plain, noColor: noColor, quiet: quiet}
 }
 
+// railText keeps caller text to visible, single-line characters before it is
+// styled. Every line on the rail can carry a value this process didn't author —
+// an app name from the API, a provider name from Apple, an error string from a
+// server, a directory name from disk — and the rail writes straight to the
+// terminal. Sanitizing happens before styling because styling adds escapes of
+// its own; sanitizing the composed string would strip the styling instead of
+// the payload.
+func railText(s string) string { return output.SanitizeLine(s) }
+
+func railTexts(ss []string) []string {
+	out := make([]string, len(ss))
+	for i, s := range ss {
+		out[i] = railText(s)
+	}
+	return out
+}
+
 func (f *Flow) Intro(title string) {
 	if f.quiet {
 		return
 	}
+	title = railText(title)
 	if f.plain {
 		fmt.Fprintln(f.w, title)
 		return
@@ -48,6 +66,7 @@ func (f *Flow) Step(title string) {
 	if f.quiet {
 		return
 	}
+	title = railText(title)
 	if f.plain {
 		fmt.Fprintf(f.w, "\n%s\n", title)
 		return
@@ -56,15 +75,16 @@ func (f *Flow) Step(title string) {
 	fmt.Fprintln(f.w, prActiveSty.Render("◇")+"  "+prTitleSty.Render(title))
 }
 
-func (f *Flow) Say(line string) { f.body(prDimSty.Render(line)) }
+func (f *Flow) Say(line string) { f.body(prDimSty.Render(railText(line))) }
 
 func (f *Flow) Item(line string) {
-	f.body(prRailSty.Render("•") + " " + prDimSty.Render(line))
+	f.body(prRailSty.Render("•") + " " + prDimSty.Render(railText(line)))
 }
 
 // URL prints the raw URL, not a hyperlink label, so it stays selectable to copy
 // on terminals that don't support OSC 8.
 func (f *Flow) URL(url string) {
+	url = railText(url)
 	if f.plain || f.noColor {
 		f.body(url)
 		return
@@ -73,23 +93,24 @@ func (f *Flow) URL(url string) {
 }
 
 func (f *Flow) Receipt(key, value string) {
-	line := prOKSty.Render("✓") + " " + key
+	line := prOKSty.Render("✓") + " " + railText(key)
 	if value != "" {
-		line += "  " + prDimSty.Render(value)
+		line += "  " + prDimSty.Render(railText(value))
 	}
 	f.body(line)
 }
 
-func (f *Flow) Warn(line string) { f.body(prWarnSty.Render("! " + line)) }
+func (f *Flow) Warn(line string) { f.body(prWarnSty.Render("! " + railText(line))) }
 
 // Hint prints a dim guidance line on the rail (rail-native equivalent of
 // Renderer.Hint, so hints stay on the gutter mid-flow).
-func (f *Flow) Hint(line string) { f.body(prDimSty.Render("→ " + line)) }
+func (f *Flow) Hint(line string) { f.body(prDimSty.Render("→ " + railText(line))) }
 
 func (f *Flow) Outro(title string, extras ...string) {
 	if f.quiet {
 		return
 	}
+	title, extras = railText(title), railTexts(extras)
 	if f.plain {
 		fmt.Fprintln(f.w, title)
 		for _, e := range extras {

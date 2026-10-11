@@ -60,7 +60,7 @@ var (
 func NewLedger(w io.Writer, plain bool, labels ...string) *Ledger {
 	steps := make([]ledgerStep, len(labels))
 	for i, l := range labels {
-		steps[i] = ledgerStep{label: l}
+		steps[i] = ledgerStep{label: railText(l)}
 	}
 	return &Ledger{w: w, plain: plain, gutter: "  ", steps: steps}
 }
@@ -108,6 +108,7 @@ func (l *Ledger) set(i int, status ledgerStatus, note string) {
 	if i < 0 || i >= len(l.steps) {
 		return
 	}
+	note = railText(note)
 	if l.plain {
 		// Plain mode owns l.steps outright (no bubbletea goroutine).
 		l.steps[i].status = status

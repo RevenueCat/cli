@@ -46,7 +46,7 @@ func (f *Flow) Confirm(question string, def bool) (bool, error) {
 	if f.plain {
 		return def, nil
 	}
-	m, err := runRailPrompt(f.w, f.in, confirmModel{title: question, yes: def})
+	m, err := runRailPrompt(f.w, f.in, confirmModel{title: railText(question), yes: def})
 	if err != nil {
 		return false, err
 	}
@@ -64,7 +64,7 @@ func (f *Flow) Select(title string, opts []Option, desc ...string) (string, erro
 	if len(opts) == 0 {
 		return "", errors.New("no options to choose from")
 	}
-	m, err := runRailPrompt(f.w, f.in, selectModel{title: title, desc: desc, opts: opts})
+	m, err := runRailPrompt(f.w, f.in, selectModel{title: railText(title), desc: railTexts(desc), opts: opts})
 	if err != nil {
 		return "", err
 	}
@@ -81,9 +81,9 @@ func (f *Flow) Input(title, placeholder string, validate func(string) error, des
 		return "", errors.New("cannot prompt for input in non-interactive mode")
 	}
 	ti := textinput.New()
-	ti.Placeholder = placeholder
+	ti.Placeholder = railText(placeholder)
 	ti.Focus()
-	m, err := runRailPrompt(f.w, f.in, inputModel{title: title, desc: desc, ti: ti, validate: validate})
+	m, err := runRailPrompt(f.w, f.in, inputModel{title: railText(title), desc: railTexts(desc), ti: ti, validate: validate})
 	if err != nil {
 		return "", err
 	}
@@ -103,7 +103,7 @@ func (f *Flow) Password(title string, validate func(string) error, desc ...strin
 	ti := textinput.New()
 	ti.EchoMode = textinput.EchoPassword
 	ti.Focus()
-	m, err := runRailPrompt(f.w, f.in, inputModel{title: title, desc: desc, ti: ti, validate: validate, masked: true})
+	m, err := runRailPrompt(f.w, f.in, inputModel{title: railText(title), desc: railTexts(desc), ti: ti, validate: validate, masked: true})
 	if err != nil {
 		return "", err
 	}
@@ -258,7 +258,7 @@ func (m inputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			v := strings.TrimSpace(m.ti.Value())
 			if m.validate != nil {
 				if err := m.validate(v); err != nil {
-					m.errMsg = err.Error()
+					m.errMsg = railText(err.Error())
 					return m, nil
 				}
 			}

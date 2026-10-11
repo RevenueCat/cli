@@ -454,6 +454,9 @@ func (r *Renderer) LinkText(label, url string) string {
 // back to the plain URL when color is off (our proxy for a dumb/non-interactive
 // terminal), so nothing leaks escape codes into piped or --no-color output.
 func (r *Renderer) Link(url string) string {
+	// The URL is also the label here, and Hyperlink can only sanitize the
+	// target it wraps — the label reaches the terminal as given.
+	url = SanitizeLine(url)
 	if r.noColor {
 		return url
 	}
