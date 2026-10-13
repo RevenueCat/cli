@@ -52,6 +52,7 @@ type Client struct {
 
 	Projects        *ProjectsService
 	Customers       *CustomersService
+	Checkpoints     *CheckpointsService
 	Entitlements    *EntitlementsService
 	Offerings       *OfferingsService
 	Packages        *PackagesService
@@ -95,6 +96,7 @@ func NewClient(opts Options) *Client {
 	c := &Client{baseURL: u, apiKey: opts.APIKey, credentialSource: opts.CredentialSource, http: hc, userAgent: ua, extraHeaders: opts.ExtraHeaders}
 	c.Projects = &ProjectsService{c: c}
 	c.Customers = &CustomersService{c: c}
+	c.Checkpoints = &CheckpointsService{c: c}
 	c.Entitlements = &EntitlementsService{c: c}
 	c.Offerings = &OfferingsService{c: c}
 	c.Packages = &PackagesService{c: c}
