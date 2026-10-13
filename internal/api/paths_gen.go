@@ -18,6 +18,14 @@ func pathApps(projectID string) string {
 	return encodePath("projects", projectID, "apps")
 }
 
+func pathAudience(projectID string, audienceID string) string {
+	return encodePath("projects", projectID, "audiences", audienceID)
+}
+
+func pathAudiences(projectID string) string {
+	return encodePath("projects", projectID, "audiences")
+}
+
 func pathAuditLogs(projectID string) string {
 	return encodePath("projects", projectID, "audit_logs")
 }
