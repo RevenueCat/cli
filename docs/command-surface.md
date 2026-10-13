@@ -189,6 +189,9 @@ rc paywalls attach <paywall-id> <offering-id>            # attach or move a payw
 rc paywalls detach <paywall-id>                          # make it standalone; unpublish a published paywall first
 rc paywalls delete <id> [--force]                        # attached/published paywalls refuse to delete without --force
 
+# Flows (paywalls, web funnels, and multi-step experiences)
+rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # repeatable; shows type and publish state
+
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)
 rc rico --continue                                       # continue the most recent conversation
