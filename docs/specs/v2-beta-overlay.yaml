@@ -919,6 +919,23 @@ paths:
       responses:
         '200':
           description: OK
+  /projects/{project_id}/flows:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a list of Flows
+      operationId: list-flows
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     Currency:
