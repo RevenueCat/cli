@@ -38,6 +38,10 @@ func pathChartOptions(projectID string, chartName string) string {
 	return encodePath("projects", projectID, "charts", chartName, "options")
 }
 
+func pathCheckpoints(projectID string) string {
+	return encodePath("projects", projectID, "checkpoints")
+}
+
 func pathCustomer(projectID string, customerID string) string {
 	return encodePath("projects", projectID, "customers", customerID)
 }

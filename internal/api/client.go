@@ -53,6 +53,7 @@ type Client struct {
 	Projects        *ProjectsService
 	Customers       *CustomersService
 	Audiences       *AudiencesService
+	Checkpoints     *CheckpointsService
 	Entitlements    *EntitlementsService
 	Flows           *FlowsService
 	Offerings       *OfferingsService
@@ -98,6 +99,7 @@ func NewClient(opts Options) *Client {
 	c.Projects = &ProjectsService{c: c}
 	c.Customers = &CustomersService{c: c}
 	c.Audiences = &AudiencesService{c: c}
+	c.Checkpoints = &CheckpointsService{c: c}
 	c.Entitlements = &EntitlementsService{c: c}
 	c.Flows = &FlowsService{c: c}
 	c.Offerings = &OfferingsService{c: c}
