@@ -1,34 +1,50 @@
 package output
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 )
 
-// Sanitize strips control characters (C0 except \n and \t, DEL, and C1) from a
-// value before it is rendered as human output. API values are arbitrary text
-// and must render as visible characters only — they must never be able to move
-// the cursor or address the terminal.
+// Sanitize removes terminal controls, bidi controls, and Unicode line/paragraph
+// separators before styling human output. Other format characters are escaped
+// visibly, except emoji components and visible script marks needed for shaping.
+// Newlines and tabs remain available for multiline output.
 func Sanitize(s string) string {
-	return strings.Map(func(r rune) rune {
-		if unicode.IsControl(r) && r != '\n' && r != '\t' {
-			return -1
-		}
-		return r
-	}, s)
+	return sanitize(s, false)
 }
 
-// SanitizeLine is Sanitize for single-line contexts — table cells, labels,
-// breadcrumbs, chips — where a newline would fake extra rows and a tab would
-// shift columns; both collapse to a space.
+// SanitizeLine also collapses newlines, tabs, and Unicode line/paragraph
+// separators to spaces so untrusted values cannot fake rows or shift columns.
 func SanitizeLine(s string) string {
-	return strings.Map(func(r rune) rune {
+	return sanitize(s, true)
+}
+
+func sanitize(s string, singleLine bool) string {
+	var out strings.Builder
+	out.Grow(len(s))
+	for _, r := range s {
 		switch {
-		case r == '\n' || r == '\t':
-			return ' '
-		case unicode.IsControl(r):
-			return -1
+		case r == '\n' || r == '\t' || unicode.In(r, unicode.Zl, unicode.Zp):
+			if singleLine {
+				out.WriteByte(' ')
+			} else if r == '\n' || r == '\t' {
+				out.WriteRune(r)
+			}
+		case unicode.IsControl(r) || unicode.Is(unicode.Bidi_Control, r):
+			continue
+		case unicode.In(r, unicode.Join_Control, unicode.Prepended_Concatenation_Mark) || r >= 0xE0020 && r <= 0xE007F:
+			// Cf also includes visible script marks and emoji tag components.
+			out.WriteRune(r)
+		case unicode.Is(unicode.Cf, r):
+			if r <= 0xffff {
+				fmt.Fprintf(&out, `\u%04x`, r)
+			} else {
+				fmt.Fprintf(&out, `\U%08x`, r)
+			}
+		default:
+			out.WriteRune(r)
 		}
-		return r
-	}, s)
+	}
+	return out.String()
 }

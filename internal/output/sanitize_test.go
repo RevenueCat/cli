@@ -2,8 +2,12 @@ package output
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
+	"reflect"
 	"strings"
 	"testing"
+	"unicode"
 )
 
 func TestSanitize(t *testing.T) {
@@ -17,6 +21,23 @@ func TestSanitize(t *testing.T) {
 		"unicode üñî remains":            "unicode üñî remains",
 		"\x00\x01\x02only-controls\x1f":  "only-controls",
 		"carriage\rreturn":               "carriagereturn",
+		// Bidi overrides and isolates are invisible but reverse the glyphs
+		// around them, so the rendered text reads differently from the value.
+		"Premium \u202eEVIL":          "Premium EVIL",
+		"\u2066admin\u2069":           "admin",
+		"\u202dltr\u202c":             "ltr",
+		"\u061cmark":                  "mark",
+		"row1\u2028row2\u2029x":       "row1row2x",
+		"left\u200emiddle\u200fright": "leftmiddleright",
+		"ad\u200bmin":                 `ad\u200bmin`,
+		"no\u2060break":               `no\u2060break`,
+		"bom\ufeffhere":               `bom\ufeffhere`,
+		"soft\u00adhyphen":            `soft\u00adhyphen`,
+		"tag\U000e0001here":           `tag\U000e0001here`,
+		// Join controls and variation selectors preserve shaping and emoji.
+		"family 👨\u200d👩\u200d👧": "family 👨\u200d👩\u200d👧",
+		"zwnj \u200chere":        "zwnj \u200chere",
+		"می\u200cروم ❤\ufe0f":    "می\u200cروم ❤\ufe0f",
 	}
 	for in, want := range cases {
 		if got := Sanitize(in); got != want {
@@ -25,11 +46,112 @@ func TestSanitize(t *testing.T) {
 	}
 }
 
+// Real text fixtures catch over-filtering that category-only assertions miss.
+func TestSanitize_PreservesUnicodeText(t *testing.T) {
+	cases := map[string]string{
+		"England flag":                 "\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f",
+		"Scotland flag":                "\U0001f3f4\U000e0067\U000e0062\U000e0073\U000e0063\U000e0074\U000e007f",
+		"Wales flag":                   "\U0001f3f4\U000e0067\U000e0062\U000e0077\U000e006c\U000e0073\U000e007f",
+		"regional flag":                "\U0001f1fa\U0001f1f3",
+		"skin tone and ZWJ":            "\U0001f469\U0001f3fd\u200d\u2695\ufe0f",
+		"keycap":                       "1\ufe0f\u20e3",
+		"text presentation":            "\u2708\ufe0e",
+		"Persian non-joiner":           "می\u200cروم",
+		"Indic joiner":                 "\u0915\u094d\u200d\u0937",
+		"combining grapheme joiner":    "a\u034f\u0301",
+		"Mongolian variation selector": "\u1820\u180b",
+		"CJK variation selector":       "\u908a\U000e0100",
+		"Arabic year mark":             "\u0601\u0661\u0664\u0664\u0667",
+		"Syriac abbreviation mark":     "\u070f\u0710\u0712",
+		"Kaithi number sign":           "\U000110bd\u0967\u0968",
+	}
+	for name, text := range cases {
+		t.Run(name, func(t *testing.T) {
+			for _, sanitize := range []func(string) string{Sanitize, SanitizeLine} {
+				if got := sanitize(text); got != text {
+					t.Errorf("legitimate Unicode text changed: got %q, want %q", got, text)
+				}
+			}
+		})
+	}
+}
+
+func TestSanitize_AllBidiAndFormatCharacters(t *testing.T) {
+	var input strings.Builder
+	for r := rune(0); r <= unicode.MaxRune; r++ {
+		if unicode.Is(unicode.Cf, r) {
+			input.WriteRune(r)
+		}
+	}
+	for name, sanitize := range map[string]func(string) string{"multiline": Sanitize, "line": SanitizeLine} {
+		t.Run(name, func(t *testing.T) {
+			got := sanitize(input.String())
+			for _, r := range got {
+				preserved := unicode.In(r, unicode.Join_Control, unicode.Prepended_Concatenation_Mark) || r >= 0xE0020 && r <= 0xE007F
+				if unicode.Is(unicode.Bidi_Control, r) || unicode.Is(unicode.Cf, r) && !preserved {
+					t.Errorf("unsafe format character U+%04X survived", r)
+				}
+			}
+			if !strings.ContainsRune(got, '\u200c') || !strings.ContainsRune(got, '\u200d') {
+				t.Fatal("join controls required for shaping were lost")
+			}
+			for _, r := range []rune{'\u061c', '\u200e', '\u200f', '\u202e', '\u2066', '\u2069'} {
+				if text := sanitize("left" + string(r) + "right"); text != "leftright" {
+					t.Errorf("bidi control U+%04X was not removed: %q", r, text)
+				}
+			}
+			if again := sanitize(got); again != got {
+				t.Fatal("sanitizing visible escapes twice changed the text")
+			}
+		})
+	}
+}
+
+func TestEscapeJSON_PreservesUnicodeValues(t *testing.T) {
+	const value = "a\u0085\u202e\u200e\u200f\u200b\u2060\ufeff\u2028\u2029\U000e0001👨\u200d👩می\u200cروم❤\ufe0f" +
+		"\u0601\u0661\u0664\u0664\u0667\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f"
+	want := map[string]string{value: value, "literal": `\u202e`}
+	raw, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := EscapeJSON(raw)
+	for _, r := range string(got) {
+		if r >= 0x80 && r <= 0x9f || unicode.In(r, unicode.Cf, unicode.Zl, unicode.Zp) {
+			t.Errorf("JSON emitted raw U+%04X", r)
+		}
+	}
+	if !bytes.Contains(got, []byte(`\udb40\udc01`)) {
+		t.Fatal("supplementary format character must use a JSON surrogate pair")
+	}
+	var decoded map[string]string
+	if err := json.Unmarshal(got, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(decoded, want) {
+		t.Fatalf("JSON round trip changed values: %q", decoded)
+	}
+	if !bytes.Equal(got, EscapeJSON(got)) {
+		t.Fatal("escaping JSON twice changed it")
+	}
+
+	// Raw API responses can contain separators that encoding/json escapes.
+	raw = []byte(fmt.Sprintf("{\"value\":\"%s\"}", value))
+	if err := json.Unmarshal(EscapeJSON(raw), &decoded); err != nil || decoded["value"] != value {
+		t.Fatalf("raw API JSON did not round trip: decoded=%q err=%v", decoded, err)
+	}
+}
+
 func TestSanitizeLine(t *testing.T) {
 	cases := map[string]string{
-		"one line":            "one line",
-		"two\nlines\tand tab": "two lines and tab",
-		"ctrl\x1b[2Jhere":     "ctrl[2Jhere",
+		"one line":                  "one line",
+		"two\nlines\tand tab":       "two lines and tab",
+		"ctrl\x1b[2Jhere":           "ctrl[2Jhere",
+		"Premium \u202eEVIL":        "Premium EVIL",
+		"row1\u2028row2\u2029x":     "row1 row2 x",
+		"family 👨\u200d👩":           "family 👨\u200d👩",
+		"ad\u200bmin no\u2060break": `ad\u200bmin no\u2060break`,
+		"left\u200eright\u200f":     "leftright",
 	}
 	for in, want := range cases {
 		if got := SanitizeLine(in); got != want {
@@ -111,6 +233,26 @@ func TestHyperlink_URLCannotTerminateSequence(t *testing.T) {
 	got := Hyperlink("label", "https://example.com/\x1b\\x\x07a\nb")
 	if strings.Count(got, "\x1b]8;;") != 2 || strings.ContainsAny(got, "\x07\n") {
 		t.Errorf("hyperlink URL broke out of the OSC 8 sequence: %q", got)
+	}
+}
+
+// Link uses the URL as its own label, and Hyperlink can only sanitize the
+// target it wraps — so Link has to clean the URL before it becomes a label.
+func TestLink_LabelCannotCarryControlBytes(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	var out, errBuf bytes.Buffer
+	for _, noColor := range []bool{true, false} {
+		r := NewRenderer(&out, &errBuf, false, noColor, false, "")
+		got := r.Link("https://example.com/\x1b]52;c;cGF5bG9hZA==\x07x")
+		if strings.Contains(got, "\x07") {
+			t.Errorf("noColor=%v: link label carried a control byte: %q", noColor, got)
+		}
+		if noColor && strings.Contains(got, "\x1b") {
+			t.Errorf("no-color link emitted an escape: %q", got)
+		}
+		if !noColor && strings.Count(got, "\x1b]8;;") != 2 {
+			t.Errorf("link broke out of the OSC 8 sequence: %q", got)
+		}
 	}
 }
 
