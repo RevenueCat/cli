@@ -20,6 +20,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/itchyny/gojq"
@@ -168,9 +171,8 @@ func (r *Renderer) RenderJSON(v any) error {
 	return encodeJSON(r.stdout, v)
 }
 
-// encodeJSON writes v as indented JSON with C1 codepoints \u-escaped:
-// encoding/json escapes C0 controls but emits U+0080–U+009F as raw UTF-8
-// bytes, and JSON output frequently lands on a terminal.
+// JSON output frequently lands on a terminal. encoding/json leaves C1 and
+// format characters raw, so escape those without changing decoded values.
 func encodeJSON(w io.Writer, v any) error {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
@@ -178,26 +180,29 @@ func encodeJSON(w io.Writer, v any) error {
 	if err := enc.Encode(v); err != nil {
 		return err
 	}
-	_, err := w.Write(EscapeC1JSON(buf.Bytes()))
+	_, err := w.Write(EscapeJSON(buf.Bytes()))
 	return err
 }
 
-// EscapeC1JSON rewrites UTF-8-encoded C1 codepoints (0xC2 0x80–0x9F; in valid
-// UTF-8, 0xC2 only ever appears as that lead byte) as JSON \u escapes:
-// encoding/json escapes C0 on the wire but leaves C1 as raw bytes.
-func EscapeC1JSON(b []byte) []byte {
-	if bytes.IndexByte(b, 0xC2) < 0 {
-		return b
-	}
+// EscapeJSON makes C1, format characters, and Unicode line/paragraph separators
+// visible in JSON text while preserving keys and values on decoding. It also
+// handles raw API responses, which may not have passed through encoding/json.
+func EscapeJSON(b []byte) []byte {
 	var out bytes.Buffer
-	out.Grow(len(b) + 16)
-	for i := 0; i < len(b); i++ {
-		if b[i] == 0xC2 && i+1 < len(b) && b[i+1] >= 0x80 && b[i+1] <= 0x9F {
-			fmt.Fprintf(&out, `\u%04x`, b[i+1])
-			i++
-			continue
+	out.Grow(len(b))
+	for len(b) > 0 {
+		r, size := utf8.DecodeRune(b)
+		if r >= 0x80 && r <= 0x9f || unicode.In(r, unicode.Cf, unicode.Zl, unicode.Zp) {
+			if r <= 0xffff {
+				fmt.Fprintf(&out, `\u%04x`, r)
+			} else {
+				hi, lo := utf16.EncodeRune(r)
+				fmt.Fprintf(&out, `\u%04x\u%04x`, hi, lo)
+			}
+		} else {
+			out.Write(b[:size])
 		}
-		out.WriteByte(b[i])
+		b = b[size:]
 	}
 	return out.Bytes()
 }
@@ -331,7 +336,7 @@ func (r *Renderer) renderJSONFiltered(env any) error {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(r.stdout, string(EscapeC1JSON(b)))
+			fmt.Fprintln(r.stdout, string(EscapeJSON(b)))
 		}
 	}
 }

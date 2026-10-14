@@ -2,8 +2,10 @@ package tui
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
+	"unicode"
 )
 
 // The Flow rail renders values this process didn't author — app names and
@@ -107,5 +109,61 @@ func TestLedgerRendersNotesAsVisibleText(t *testing.T) {
 	l.Fail(0, "RevenueCat didn't accept it: \x1b]0;t\x07")
 	if out := buf.String(); strings.ContainsAny(out, "\x1b\x07") {
 		t.Errorf("ledger emitted raw control bytes: %q", out)
+	}
+}
+
+func TestFlowWritersHandleUnicode(t *testing.T) {
+	asciiProfile(t)
+	const bad = "a\u200e\u200f\u202e\u2066\u2069\u200bb\u2060c\u2028d\u2029e\nf\tg"
+	const want = `a\u200bb\u2060c d e f g`
+	writers := map[string]func(*Flow){
+		"intro":         func(f *Flow) { f.Intro(bad) },
+		"step":          func(f *Flow) { f.Step(bad) },
+		"say":           func(f *Flow) { f.Say(bad) },
+		"item":          func(f *Flow) { f.Item(bad) },
+		"url":           func(f *Flow) { f.URL(bad) },
+		"receipt key":   func(f *Flow) { f.Receipt(bad, "value") },
+		"receipt value": func(f *Flow) { f.Receipt("key", bad) },
+		"warn":          func(f *Flow) { f.Warn(bad) },
+		"hint":          func(f *Flow) { f.Hint(bad) },
+		"outro":         func(f *Flow) { f.Outro(bad) },
+		"outro extra":   func(f *Flow) { f.Outro("done", bad) },
+		"ledger label":  func(f *Flow) { f.Ledger(bad).Done(0, "") },
+		"ledger note":   func(f *Flow) { f.Ledger("step").Fail(0, bad) },
+	}
+	for name, write := range writers {
+		for _, plain := range []bool{true, false} {
+			if strings.HasPrefix(name, "ledger") && !plain {
+				continue
+			}
+			t.Run(fmt.Sprintf("%s/plain=%v", name, plain), func(t *testing.T) {
+				var buf bytes.Buffer
+				f := NewFlow(&buf, plain, true, false)
+				write(f)
+				got := buf.String()
+				if !strings.Contains(got, want) {
+					t.Fatalf("visible Unicode output missing: %q", got)
+				}
+				for _, r := range got {
+					if unicode.In(r, unicode.Cf, unicode.Zl, unicode.Zp) {
+						t.Errorf("raw U+%04X survived: %q", r, got)
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestRailSelectLabelsStayOnOneLine(t *testing.T) {
+	asciiProfile(t)
+	for _, done := range []bool{false, true} {
+		m := selectModel{opts: []Option{{Label: "a\nb\tc\u2028d\u2029e\u200bf\u200eg", Value: "unchanged\u202e"}}, done: done}
+		got := m.View()
+		if !strings.Contains(got, `a b c d e\u200bfg`) {
+			t.Fatalf("unsafe select label: %q", got)
+		}
+		if m.opts[0].Value != "unchanged\u202e" {
+			t.Fatal("display sanitization changed the selected value")
+		}
 	}
 }

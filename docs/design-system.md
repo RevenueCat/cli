@@ -44,6 +44,14 @@ semantic styles (`StyleTitle`, `StyleSuccess`, `StyleError`, `StyleDim`, …).
 | `Render(v)` | humanized fields | any API object (JSON only under `--json`) |
 | `RenderTable` / `RenderCard` | | lists / result summaries |
 
+Untrusted text is sanitized before styling, including Flow and Ledger output.
+Human output removes C0/C1 and Unicode `Bidi_Control` characters. Other format
+characters (`Cf`) appear as visible Unicode escapes, except ZWJ/ZWNJ, which
+preserve emoji sequences and script shaping. Variation selectors remain intact.
+Single-line contexts collapse newlines, tabs, and Unicode line/paragraph
+separators to spaces. JSON escapes C1, format characters, and Unicode separators
+losslessly, including in keys and raw API responses.
+
 ### Interaction (`internal/tui`)
 
 - `tui.Form(...)` and `tui.Confirm*` are the only ways to prompt. They apply

@@ -2,8 +2,12 @@ package output
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
+	"reflect"
 	"strings"
 	"testing"
+	"unicode"
 )
 
 func TestSanitize(t *testing.T) {
@@ -19,14 +23,21 @@ func TestSanitize(t *testing.T) {
 		"carriage\rreturn":               "carriagereturn",
 		// Bidi overrides and isolates are invisible but reverse the glyphs
 		// around them, so the rendered text reads differently from the value.
-		"Premium \u202eEVIL":    "Premium EVIL",
-		"\u2066admin\u2069":     "admin",
-		"\u202dltr\u202c":       "ltr",
-		"\u061cmark":            "mark",
-		"row1\u2028row2\u2029x": "row1row2x",
-		// Emoji sequences and script shaping need the rest of Cf intact.
+		"Premium \u202eEVIL":          "Premium EVIL",
+		"\u2066admin\u2069":           "admin",
+		"\u202dltr\u202c":             "ltr",
+		"\u061cmark":                  "mark",
+		"row1\u2028row2\u2029x":       "row1row2x",
+		"left\u200emiddle\u200fright": "leftmiddleright",
+		"ad\u200bmin":                 `ad\u200bmin`,
+		"no\u2060break":               `no\u2060break`,
+		"bom\ufeffhere":               `bom\ufeffhere`,
+		"soft\u00adhyphen":            `soft\u00adhyphen`,
+		"tag\U000e0001here":           `tag\U000e0001here`,
+		// Join controls and variation selectors preserve shaping and emoji.
 		"family 👨\u200d👩\u200d👧": "family 👨\u200d👩\u200d👧",
 		"zwnj \u200chere":        "zwnj \u200chere",
+		"می\u200cروم ❤\ufe0f":    "می\u200cروم ❤\ufe0f",
 	}
 	for in, want := range cases {
 		if got := Sanitize(in); got != want {
@@ -35,14 +46,80 @@ func TestSanitize(t *testing.T) {
 	}
 }
 
+func TestSanitize_AllBidiAndFormatCharacters(t *testing.T) {
+	var input strings.Builder
+	for r := rune(0); r <= unicode.MaxRune; r++ {
+		if unicode.Is(unicode.Cf, r) {
+			input.WriteRune(r)
+		}
+	}
+	for name, sanitize := range map[string]func(string) string{"multiline": Sanitize, "line": SanitizeLine} {
+		t.Run(name, func(t *testing.T) {
+			got := sanitize(input.String())
+			for _, r := range got {
+				if unicode.Is(unicode.Bidi_Control, r) || unicode.Is(unicode.Cf, r) && !unicode.Is(unicode.Join_Control, r) {
+					t.Errorf("unsafe format character U+%04X survived", r)
+				}
+			}
+			if !strings.ContainsRune(got, '\u200c') || !strings.ContainsRune(got, '\u200d') {
+				t.Fatal("join controls required for shaping were lost")
+			}
+			for _, r := range []rune{'\u061c', '\u200e', '\u200f', '\u202e', '\u2066', '\u2069'} {
+				if text := sanitize("left" + string(r) + "right"); text != "leftright" {
+					t.Errorf("bidi control U+%04X was not removed: %q", r, text)
+				}
+			}
+			if again := sanitize(got); again != got {
+				t.Fatal("sanitizing visible escapes twice changed the text")
+			}
+		})
+	}
+}
+
+func TestEscapeJSON_PreservesUnicodeValues(t *testing.T) {
+	const value = "a\u0085\u202e\u200e\u200f\u200b\u2060\ufeff\u2028\u2029\U000e0001👨\u200d👩می\u200cروم❤\ufe0f"
+	want := map[string]string{value: value, "literal": `\u202e`}
+	raw, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := EscapeJSON(raw)
+	for _, r := range string(got) {
+		if r >= 0x80 && r <= 0x9f || unicode.In(r, unicode.Cf, unicode.Zl, unicode.Zp) {
+			t.Errorf("JSON emitted raw U+%04X", r)
+		}
+	}
+	if !bytes.Contains(got, []byte(`\udb40\udc01`)) {
+		t.Fatal("supplementary format character must use a JSON surrogate pair")
+	}
+	var decoded map[string]string
+	if err := json.Unmarshal(got, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(decoded, want) {
+		t.Fatalf("JSON round trip changed values: %q", decoded)
+	}
+	if !bytes.Equal(got, EscapeJSON(got)) {
+		t.Fatal("escaping JSON twice changed it")
+	}
+
+	// Raw API responses can contain separators that encoding/json escapes.
+	raw = []byte(fmt.Sprintf("{\"value\":\"%s\"}", value))
+	if err := json.Unmarshal(EscapeJSON(raw), &decoded); err != nil || decoded["value"] != value {
+		t.Fatalf("raw API JSON did not round trip: decoded=%q err=%v", decoded, err)
+	}
+}
+
 func TestSanitizeLine(t *testing.T) {
 	cases := map[string]string{
-		"one line":              "one line",
-		"two\nlines\tand tab":   "two lines and tab",
-		"ctrl\x1b[2Jhere":       "ctrl[2Jhere",
-		"Premium \u202eEVIL":    "Premium EVIL",
-		"row1\u2028row2\u2029x": "row1 row2 x",
-		"family 👨\u200d👩":        "family 👨\u200d👩",
+		"one line":                  "one line",
+		"two\nlines\tand tab":       "two lines and tab",
+		"ctrl\x1b[2Jhere":           "ctrl[2Jhere",
+		"Premium \u202eEVIL":        "Premium EVIL",
+		"row1\u2028row2\u2029x":     "row1 row2 x",
+		"family 👨\u200d👩":           "family 👨\u200d👩",
+		"ad\u200bmin no\u2060break": `ad\u200bmin no\u2060break`,
+		"left\u200eright\u200f":     "leftright",
 	}
 	for in, want := range cases {
 		if got := SanitizeLine(in); got != want {
