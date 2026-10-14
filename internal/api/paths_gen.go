@@ -126,6 +126,10 @@ func pathEntitlements(projectID string) string {
 	return encodePath("projects", projectID, "entitlements")
 }
 
+func pathFlows(projectID string) string {
+	return encodePath("projects", projectID, "flows")
+}
+
 func pathIntegrationsWebhook(projectID string, webhookIntegrationID string) string {
 	return encodePath("projects", projectID, "integrations", "webhooks", webhookIntegrationID)
 }

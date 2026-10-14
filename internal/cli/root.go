@@ -161,6 +161,7 @@ Agent-friendly entrypoints:
 		{newInvoicesCmd(), "revenue"},
 		{newWebhooksCmd(), "integrations"},
 		{newPaywallsCmd(), "design"},
+		{newFlowsCmd(), "design"},
 		{newMediaAssetsCmd(), "design"},
 		{newFontsCmd(), "design"},
 		{newRicoCmd(), "ai"},
