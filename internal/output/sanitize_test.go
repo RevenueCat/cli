@@ -46,6 +46,36 @@ func TestSanitize(t *testing.T) {
 	}
 }
 
+// Real text fixtures catch over-filtering that category-only assertions miss.
+func TestSanitize_PreservesUnicodeText(t *testing.T) {
+	cases := map[string]string{
+		"England flag":                 "\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f",
+		"Scotland flag":                "\U0001f3f4\U000e0067\U000e0062\U000e0073\U000e0063\U000e0074\U000e007f",
+		"Wales flag":                   "\U0001f3f4\U000e0067\U000e0062\U000e0077\U000e006c\U000e0073\U000e007f",
+		"regional flag":                "\U0001f1fa\U0001f1f3",
+		"skin tone and ZWJ":            "\U0001f469\U0001f3fd\u200d\u2695\ufe0f",
+		"keycap":                       "1\ufe0f\u20e3",
+		"text presentation":            "\u2708\ufe0e",
+		"Persian non-joiner":           "می\u200cروم",
+		"Indic joiner":                 "\u0915\u094d\u200d\u0937",
+		"combining grapheme joiner":    "a\u034f\u0301",
+		"Mongolian variation selector": "\u1820\u180b",
+		"CJK variation selector":       "\u908a\U000e0100",
+		"Arabic year mark":             "\u0601\u0661\u0664\u0664\u0667",
+		"Syriac abbreviation mark":     "\u070f\u0710\u0712",
+		"Kaithi number sign":           "\U000110bd\u0967\u0968",
+	}
+	for name, text := range cases {
+		t.Run(name, func(t *testing.T) {
+			for _, sanitize := range []func(string) string{Sanitize, SanitizeLine} {
+				if got := sanitize(text); got != text {
+					t.Errorf("legitimate Unicode text changed: got %q, want %q", got, text)
+				}
+			}
+		})
+	}
+}
+
 func TestSanitize_AllBidiAndFormatCharacters(t *testing.T) {
 	var input strings.Builder
 	for r := rune(0); r <= unicode.MaxRune; r++ {
@@ -57,7 +87,8 @@ func TestSanitize_AllBidiAndFormatCharacters(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := sanitize(input.String())
 			for _, r := range got {
-				if unicode.Is(unicode.Bidi_Control, r) || unicode.Is(unicode.Cf, r) && !unicode.Is(unicode.Join_Control, r) {
+				preserved := unicode.In(r, unicode.Join_Control, unicode.Prepended_Concatenation_Mark) || r >= 0xE0020 && r <= 0xE007F
+				if unicode.Is(unicode.Bidi_Control, r) || unicode.Is(unicode.Cf, r) && !preserved {
 					t.Errorf("unsafe format character U+%04X survived", r)
 				}
 			}
@@ -77,7 +108,8 @@ func TestSanitize_AllBidiAndFormatCharacters(t *testing.T) {
 }
 
 func TestEscapeJSON_PreservesUnicodeValues(t *testing.T) {
-	const value = "a\u0085\u202e\u200e\u200f\u200b\u2060\ufeff\u2028\u2029\U000e0001👨\u200d👩می\u200cروم❤\ufe0f"
+	const value = "a\u0085\u202e\u200e\u200f\u200b\u2060\ufeff\u2028\u2029\U000e0001👨\u200d👩می\u200cروم❤\ufe0f" +
+		"\u0601\u0661\u0664\u0664\u0667\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f"
 	want := map[string]string{value: value, "literal": `\u202e`}
 	raw, err := json.Marshal(want)
 	if err != nil {

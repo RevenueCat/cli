@@ -8,7 +8,7 @@ import (
 
 // Sanitize removes terminal controls, bidi controls, and Unicode line/paragraph
 // separators before styling human output. Other format characters are escaped
-// visibly, except join controls needed for emoji sequences and script shaping.
+// visibly, except emoji components and visible script marks needed for shaping.
 // Newlines and tabs remain available for multiline output.
 func Sanitize(s string) string {
 	return sanitize(s, false)
@@ -33,7 +33,10 @@ func sanitize(s string, singleLine bool) string {
 			}
 		case unicode.IsControl(r) || unicode.Is(unicode.Bidi_Control, r):
 			continue
-		case unicode.Is(unicode.Cf, r) && !unicode.Is(unicode.Join_Control, r):
+		case unicode.In(r, unicode.Join_Control, unicode.Prepended_Concatenation_Mark) || r >= 0xE0020 && r <= 0xE007F:
+			// Cf also includes visible script marks and emoji tag components.
+			out.WriteRune(r)
+		case unicode.Is(unicode.Cf, r):
 			if r <= 0xffff {
 				fmt.Fprintf(&out, `\u%04x`, r)
 			} else {
