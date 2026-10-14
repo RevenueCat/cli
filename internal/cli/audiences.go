@@ -231,21 +231,17 @@ func audienceDashboardURL(projectID string, a api.Audience) string {
 	return dashboardURL(projectID, "customer-lists", a.CustomerListID)
 }
 
-// The browser table prints Label, Meta, and Row cells verbatim, so API text is
-// sanitized here before it can reach the terminal.
 func audienceToItem(projectID string, a api.Audience) tui.BrowserItem {
-	id := output.SanitizeLine(a.ID)
-	name := output.SanitizeLine(a.Name)
-	rules := output.SanitizeLine(audienceRulesSummary(a.Rules))
+	rules := audienceRulesSummary(a.Rules)
 	return tui.BrowserItem{
 		ID:     a.ID,
-		Label:  name,
+		Label:  a.Name,
 		Meta:   rules,
-		Row:    []string{id, name, rules},
+		Row:    []string{a.ID, a.Name, rules},
 		WebURL: audienceDashboardURL(projectID, a),
 		Fields: []tui.BrowserField{
-			{Key: "ID", Value: id},
-			{Key: "Name", Value: name},
+			{Key: "ID", Value: a.ID},
+			{Key: "Name", Value: a.Name},
 			{Key: "Rules", Value: rules},
 			{Key: "Created", Value: formatMillis(int64(a.CreatedAt))},
 		},
