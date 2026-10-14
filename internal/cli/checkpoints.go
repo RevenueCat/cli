@@ -11,7 +11,9 @@ func newCheckpointsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "checkpoints",
 		Aliases: []string{"checkpoint"},
-		Short:   "View Checkpoints",
+		// Hidden from --help until Checkpoint rules roll out.
+		Annotations: map[string]string{annotationSurface: surfaceExperimental},
+		Short:       "View Checkpoints",
 		Long: `A Checkpoint is a point in your app, such as app open or after onboarding,
 where Checkpoint rules decide which Flow a customer sees.`,
 		Example: `  rc checkpoints list`,
