@@ -176,6 +176,9 @@ rc products store apply <plan-id>                        # apply that same revie
 rc products store discard <plan-id>                      # discard without applying; requires confirmation/--yes
 rc products store screenshot <product-id>                # upload an App Review screenshot to App Store Connect for a product
 
+# Checkpoints (points in the app where Checkpoint rules choose which Flow to show)
+rc checkpoints list                                      # experimental (hidden from --help until Checkpoint rules roll out)
+
 # Paywalls
 rc paywalls                                              # help; under npx a TTY shows a generate/edit picker (npm launcher sets RC_GUIDED — paywalls-only for now)
 rc paywalls list

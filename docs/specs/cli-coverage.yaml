@@ -226,6 +226,10 @@ endpoints:
   - method: GET
     path: /projects/{project_id}/flows
 
+  # Checkpoints (development-status; provided by the beta overlay)
+  - method: GET
+    path: /projects/{project_id}/checkpoints
+
   # Audit
   - method: GET
     path: /projects/{project_id}/audit_logs

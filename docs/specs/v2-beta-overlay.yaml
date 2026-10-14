@@ -936,6 +936,23 @@ paths:
       responses:
         '200':
           description: OK
+  /projects/{project_id}/checkpoints:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a list of Checkpoints
+      operationId: list-checkpoints
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:targeting_rules:read
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     Currency:
