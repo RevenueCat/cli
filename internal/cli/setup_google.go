@@ -196,12 +196,8 @@ func newSetupGoogleCmd() *cobra.Command {
 				if !rt.CanPrompt() {
 					return errors.New("--developer-id is required under --no-input (Google exposes no API to discover it; find it in your Play Console URL)")
 				}
-				desc := []string{
-					"Google has no API for this — copy it from your Play Console URL.",
-					rt.Out.LinkText("Open Play Console ↗", "https://play.google.com/console/"),
-					"Your ID is the number after /developers/ in the URL.",
-				}
-				raw, err := fl.Input("Play developer account", "…/developers/1234567890123456789/…", tui.Required("developer account ID"), desc...)
+				showPlayDeveloperAccountInstructions(fl)
+				raw, err := fl.Input("Play developer account", "…/developers/1234567890123456789/…", tui.Required("developer account ID"))
 				if err != nil {
 					return err
 				}
@@ -352,17 +348,7 @@ func newSetupGoogleCmd() *cobra.Command {
 				return rt.Out.Render(result)
 			}
 			uploadURL := dashboardURL(rcProject, "apps", chosenApp.ID)
-			if result.CredentialUploaded {
-				fl.Outro("Google Play connected 🎉",
-					rt.Out.LinkText("Open your app in RevenueCat ↗", uploadURL),
-				)
-			} else {
-				fl.Outro("Almost there",
-					"Upload the credential to finish:",
-					rt.Out.LinkText("Upload "+keyOut+" ↗", uploadURL),
-					keyOut+" is a private key — delete it once uploaded.",
-				)
-			}
+			renderGoogleSetupResult(fl, result, uploadURL)
 			return nil
 		},
 	}
@@ -376,6 +362,24 @@ func newSetupGoogleCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "don't open a browser automatically; print the sign-in URL to open manually")
 	cmd.Flags().BoolVar(&keepOldKeys, "keep-old-keys", false, "keep existing keys on the RevenueCat service account instead of replacing them (each run otherwise removes old keys before creating a fresh one)")
 	return cmd
+}
+
+func showPlayDeveloperAccountInstructions(fl *tui.Flow) {
+	fl.Say("Google has no API for your developer account ID. Copy it from Play Console:")
+	fl.URL("https://play.google.com/console/")
+	fl.Say("Your ID is the number after /developers/ in the URL.")
+}
+
+func renderGoogleSetupResult(fl *tui.Flow, result googleSetupResult, appURL string) {
+	if result.CredentialUploaded {
+		fl.Say("Open your app in RevenueCat:")
+		fl.URL(appURL)
+		fl.Outro("Google Play connected 🎉")
+		return
+	}
+	fl.Say("Upload " + result.KeyPath + " to finish:")
+	fl.URL(appURL)
+	fl.Outro("Almost there", result.KeyPath+" is a private key. Delete it once uploaded.")
 }
 
 // enableAPIsWithToS enables the required APIs, and when Google reports the

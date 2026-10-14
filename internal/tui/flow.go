@@ -32,13 +32,8 @@ func NewFlow(w io.Writer, plain, noColor, quiet bool) *Flow {
 	return &Flow{w: w, plain: plain, noColor: noColor, quiet: quiet}
 }
 
-// railText keeps caller text to visible, single-line characters before it is
-// styled. Every line on the rail can carry a value this process didn't author —
-// an app name from the API, a provider name from Apple, an error string from a
-// server, a directory name from disk — and the rail writes straight to the
-// terminal. Sanitizing happens before styling because styling adds escapes of
-// its own; sanitizing the composed string would strip the styling instead of
-// the payload.
+// Rail arguments can contain remote names and errors. Apply the shared Unicode
+// policy before styling, because sanitizing formatted text breaks its escapes.
 func railText(s string) string { return output.SanitizeLine(s) }
 
 func railTexts(ss []string) []string {
@@ -81,8 +76,8 @@ func (f *Flow) Item(line string) {
 	f.body(prRailSty.Render("•") + " " + prDimSty.Render(railText(line)))
 }
 
-// URL prints the raw URL, not a hyperlink label, so it stays selectable to copy
-// on terminals that don't support OSC 8.
+// URL keeps the sanitized URL as its label so it stays selectable to copy on
+// terminals that don't support OSC 8.
 func (f *Flow) URL(url string) {
 	url = railText(url)
 	if f.plain || f.noColor {

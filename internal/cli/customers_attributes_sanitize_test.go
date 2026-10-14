@@ -47,6 +47,7 @@ func TestCustomerAttributes_UnicodeDisplaySafety(t *testing.T) {
 				}
 			}
 			if mode == "human" {
+				// Long attribute arrays are summarized; short ones are displayed.
 				if !strings.Contains(out, "(1 items)") || strings.Contains(out, "Pro") {
 					t.Fatalf("human mode should summarize the attribute count: %q", out)
 				}
@@ -84,6 +85,39 @@ func TestCustomerAttributes_UnicodeDisplaySafety(t *testing.T) {
 			}
 			if got != value {
 				t.Fatalf("%s changed attribute value: got %q, want %q", mode, got, value)
+			}
+		})
+	}
+}
+
+func TestCustomerAttributes_ShortHumanValuesAreSanitized(t *testing.T) {
+	for _, test := range []struct {
+		name, value, want string
+	}{
+		{"bidi override", "Pro\u202eEVIL", "ProEVIL"},
+		{"bidi marks", "a\u200eb\u200fc", "abc"},
+		{"zero-width space", "ad\u200bmin", `ad\u200bmin`},
+		{"word joiner", "no\u2060break", `no\u2060break`},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/projects/proj/customers/customer/attributes" {
+					t.Errorf("unexpected path: %s", r.URL.Path)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"object": "list", "items": []any{map[string]string{"name": "$note", "value": test.value}},
+				})
+			}))
+			t.Cleanup(server.Close)
+			out, _, err := runProjectSetupCommand(t, server.URL, "customers", "attributes", "customer", "--no-color", "--no-input")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(out, test.want) || strings.Contains(out, "(1 items)") {
+				t.Fatalf("short attribute value should be displayed safely: %q", out)
 			}
 		})
 	}

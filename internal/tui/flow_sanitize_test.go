@@ -3,17 +3,17 @@ package tui
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"unicode"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
-// The Flow rail renders values this process didn't author — app names and
-// error strings from the API, team and account names from Apple and Google,
-// the working directory's base name. A raw escape in any of them would address
-// the operator's terminal (set the window title, write the clipboard with
-// OSC 52, clear the screen), so every rail writer keeps its text to visible
-// characters, exactly like the renderer and the browser do.
+// Remote values must not inject terminal escapes even when a writer adds its
+// own styling or hyperlink sequences.
 func TestFlowWritersRenderValuesAsVisibleText(t *testing.T) {
 	const (
 		osc52 = "\x1b]52;c;cGF5bG9hZA==\x07" // clipboard write
@@ -45,6 +45,48 @@ func TestFlowWritersRenderValuesAsVisibleText(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestFlowSanitizesBeforeStyling(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	profile := lipgloss.ColorProfile()
+	t.Cleanup(func() { lipgloss.SetColorProfile(profile) })
+	lipgloss.SetColorProfile(termenv.TrueColor)
+	sgr := regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+	t.Run("text", func(t *testing.T) {
+		var buf bytes.Buffer
+		fl := NewFlow(&buf, false, false, false)
+		fl.Say("safe\x1b[2Jad\u200bmin\u202e")
+		const want = `safe[2Jad\u200bmin`
+		styled := prDimSty.Render(want)
+		if styled == want {
+			t.Fatal("color profile did not enable styling")
+		}
+		if !strings.Contains(buf.String(), styled) {
+			t.Fatalf("Flow removed its own styling: %q", buf.String())
+		}
+		if got := sgr.ReplaceAllString(buf.String(), ""); strings.ContainsAny(got, "\x1b\x07\u202e\u200b") {
+			t.Fatalf("text retained injected controls: %q", got)
+		}
+	})
+
+	t.Run("hyperlink", func(t *testing.T) {
+		var buf bytes.Buffer
+		fl := NewFlow(&buf, false, false, false)
+		fl.URL("https://example.com/a\x1b]52;c;payload\x07b\u202ec\u200bd\nx")
+		const want = `https://example.com/a]52;c;payloadbc\u200bd x`
+		open, close := "\x1b]8;;"+want+"\x1b\\", "\x1b]8;;\x1b\\"
+		got := buf.String()
+		if strings.Count(got, open) != 1 || strings.Count(got, close) != 1 {
+			t.Fatalf("Flow corrupted its own hyperlink: %q", got)
+		}
+		got = strings.ReplaceAll(strings.ReplaceAll(got, open, ""), close, "")
+		got = sgr.ReplaceAllString(got, "")
+		if strings.ContainsAny(got, "\x1b\x07\u202e\u200b") || !strings.Contains(got, want) {
+			t.Fatalf("unsafe hyperlink label: %q", got)
+		}
+	})
 }
 
 // URL is the one writer that emits an escape of its own (OSC 8). The URL is
