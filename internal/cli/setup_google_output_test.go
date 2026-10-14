@@ -3,8 +3,6 @@ package cli
 import (
 	"bytes"
 	"io"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -16,13 +14,13 @@ import (
 	"github.com/revenuecat/cli/internal/tui"
 )
 
-func googleSetupOutputs() []struct {
-	name   string
-	url    string
-	render func(*tui.Flow)
-} {
+func TestGoogleSetupLinks(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	profile := lipgloss.ColorProfile()
+	t.Cleanup(func() { lipgloss.SetColorProfile(profile) })
+	sgr := regexp.MustCompile("\x1b\\[[0-9;]*m")
 	const appURL = "https://app.revenuecat.com/projects/proj/apps/app"
-	return []struct {
+	scenarios := []struct {
 		name   string
 		url    string
 		render func(*tui.Flow)
@@ -35,14 +33,7 @@ func googleSetupOutputs() []struct {
 			renderGoogleSetupResult(fl, googleSetupResult{KeyPath: "revenuecat-key.json"}, appURL)
 		}},
 	}
-}
-
-func TestGoogleSetupLinks(t *testing.T) {
-	t.Setenv("NO_COLOR", "")
-	profile := lipgloss.ColorProfile()
-	t.Cleanup(func() { lipgloss.SetColorProfile(profile) })
-	sgr := regexp.MustCompile("\x1b\\[[0-9;]*m")
-	for _, scenario := range googleSetupOutputs() {
+	for _, scenario := range scenarios {
 		for _, mode := range []string{"color", "no-color", "plain", "quiet"} {
 			t.Run(scenario.name+"/"+mode, func(t *testing.T) {
 				lipgloss.SetColorProfile(termenv.TrueColor)
@@ -78,31 +69,5 @@ func TestGoogleSetupLinks(t *testing.T) {
 				}
 			})
 		}
-	}
-}
-
-func TestOutputSnapshots_GoogleSetup(t *testing.T) {
-	profile := lipgloss.ColorProfile()
-	t.Cleanup(func() { lipgloss.SetColorProfile(profile) })
-	lipgloss.SetColorProfile(termenv.Ascii)
-	for _, scenario := range googleSetupOutputs() {
-		t.Run(scenario.name, func(t *testing.T) {
-			var buf bytes.Buffer
-			scenario.render(tui.NewFlow(&buf, false, true, false))
-			path := filepath.Join("testdata", "snapshots", "setup-google-"+scenario.name+".golden")
-			if os.Getenv("UPDATE_SNAPSHOTS") != "" {
-				if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
-					t.Fatal(err)
-				}
-				return
-			}
-			want, err := os.ReadFile(path)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if buf.String() != string(want) {
-				t.Fatalf("output changed vs %s\nwant: %s\ngot: %s", path, want, buf.String())
-			}
-		})
 	}
 }

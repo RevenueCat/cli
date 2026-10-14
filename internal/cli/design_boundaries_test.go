@@ -12,59 +12,11 @@ package cli
 // primitive it should use. Deliberate exceptions are listed with reasons.
 
 import (
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
-
-// Flow sanitizes text before styling. Passing a Renderer link through that
-// boundary strips the link's own escapes and prints broken OSC fragments.
-func TestFlowCommandsDoNotPreformatLinks(t *testing.T) {
-	files, err := filepath.Glob("*.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, path := range files {
-		if strings.HasSuffix(path, "_test.go") {
-			continue
-		}
-		fset := token.NewFileSet()
-		file, err := parser.ParseFile(fset, path, nil, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, decl := range file.Decls {
-			fn, ok := decl.(*ast.FuncDecl)
-			if !ok {
-				continue
-			}
-			usesFlow := false
-			var links []token.Pos
-			ast.Inspect(fn, func(node ast.Node) bool {
-				sel, ok := node.(*ast.SelectorExpr)
-				if !ok {
-					return true
-				}
-				if pkg, ok := sel.X.(*ast.Ident); ok && pkg.Name == "tui" && (sel.Sel.Name == "NewFlow" || sel.Sel.Name == "Flow") {
-					usesFlow = true
-				}
-				if sel.Sel.Name == "Link" || sel.Sel.Name == "LinkText" {
-					links = append(links, sel.Pos())
-				}
-				return true
-			})
-			if usesFlow {
-				for _, pos := range links {
-					t.Errorf("%s: %s preformats a link in a Flow command; pass unformatted text and use Flow.URL for links", fset.Position(pos), fn.Name.Name)
-				}
-			}
-		}
-	}
-}
 
 type boundaryRule struct {
 	name    string

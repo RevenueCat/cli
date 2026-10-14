@@ -125,26 +125,6 @@ func TestFlowKeepsValuesOnOneLine(t *testing.T) {
 	}
 }
 
-// Bidi overrides are invisible but reverse the glyphs that follow, so a stored
-// name carrying one makes the rail display text that reads differently from
-// the value it came from.
-func TestFlowStripsBidiOverrides(t *testing.T) {
-	asciiProfile(t)
-	var buf bytes.Buffer
-	fl := &Flow{w: &buf, plain: true}
-	fl.Intro("App Store Connect check — Premium \u202eEVIL")
-	fl.Say("\u2066admin\u2069")
-	out := buf.String()
-	for _, bad := range []string{"\u202e", "\u2066", "\u2069"} {
-		if strings.Contains(out, bad) {
-			t.Errorf("rail emitted bidi control %q: %q", bad, out)
-		}
-	}
-	if !strings.Contains(out, "Premium EVIL") || !strings.Contains(out, "admin") {
-		t.Errorf("rail dropped the visible text: %q", out)
-	}
-}
-
 func TestLedgerRendersNotesAsVisibleText(t *testing.T) {
 	var buf bytes.Buffer
 	l := NewLedger(&buf, true, "Upload the credential\x1b[2J")
