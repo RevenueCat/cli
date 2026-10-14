@@ -11,7 +11,9 @@ func newFlowsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "flows",
 		Aliases: []string{"flow"},
-		Short:   "View Flows (paywalls, web funnels, and multi-step experiences)",
+		// Hidden from --help until Checkpoint rules roll out.
+		Annotations: map[string]string{annotationSurface: surfaceExperimental},
+		Short:       "View Flows (paywalls, web funnels, and multi-step experiences)",
 		Long: `A Flow is a paywall, web funnel, or other multi-step experience built in the
 RevenueCat dashboard. Checkpoint rules decide which Flow a customer sees.`,
 		Example: `  rc flows list

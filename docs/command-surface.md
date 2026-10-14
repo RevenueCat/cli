@@ -190,7 +190,7 @@ rc paywalls detach <paywall-id>                          # make it standalone; u
 rc paywalls delete <id> [--force]                        # attached/published paywalls refuse to delete without --force
 
 # Flows (paywalls, web funnels, and multi-step experiences)
-rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # repeatable; shows type and publish state
+rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # experimental (hidden from --help until Checkpoint rules roll out); repeatable; shows type and publish state
 
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)
