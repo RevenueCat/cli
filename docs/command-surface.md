@@ -125,6 +125,10 @@ rc customers restore-google <id> --token <t>
 rc customers simulate-purchase                            # Test Store only; --app-id/--product/--app-user-id + confirmation/--yes
 rc customers wallet <id>                                  # virtual_currencies per-customer
 
+# Audiences (saved customer segments used by targeting and experiments)
+rc audiences list
+rc audiences show [id] [--stats] [--sample] [--usage]     # membership rules; flags expand size/revenue, a customer sample, and what uses it
+
 # Entitlements (project catalog)
 rc entitlements list
 rc entitlements show <id>

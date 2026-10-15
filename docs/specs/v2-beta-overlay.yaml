@@ -953,6 +953,43 @@ paths:
       responses:
         '200':
           description: OK
+  /projects/{project_id}/audiences:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a list of Audiences
+      operationId: list-audiences
+      x-release-status: public
+      x-scopes:
+      - audiences:audiences:read
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/audiences/{audience_id}:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: audience_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get an Audience
+      operationId: get-audience
+      x-release-status: public
+      x-scopes:
+      - audiences:audiences:read
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     Currency:

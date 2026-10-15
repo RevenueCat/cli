@@ -230,6 +230,12 @@ endpoints:
   - method: GET
     path: /projects/{project_id}/checkpoints
 
+  # Audiences (provided by the beta overlay until the published spec includes them)
+  - method: GET
+    path: /projects/{project_id}/audiences
+  - method: GET
+    path: /projects/{project_id}/audiences/{audience_id}
+
   # Audit
   - method: GET
     path: /projects/{project_id}/audit_logs
