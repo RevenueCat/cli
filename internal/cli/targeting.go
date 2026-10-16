@@ -206,8 +206,18 @@ func gatherTargetingCreateInput(cmd *cobra.Command, rt *Runtime, projectID strin
 		if body.FlowID == "" {
 			missing = append(missing, "flow_id")
 		}
-		if len(body.Checkpoints) == 0 {
+		var checkpoints []struct {
+			ID string `json:"checkpoint_id"`
+		}
+		if len(body.Checkpoints) > 0 {
+			if err := json.Unmarshal(body.Checkpoints, &checkpoints); err != nil {
+				return fmt.Errorf("checkpoints must be an array containing exactly one checkpoint")
+			}
+		}
+		if len(checkpoints) == 0 {
 			missing = append(missing, "checkpoints")
+		} else if len(checkpoints) != 1 || checkpoints[0].ID == "" {
+			return fmt.Errorf("checkpoints must contain exactly one checkpoint with a nonempty checkpoint_id")
 		}
 		if len(missing) > 0 {
 			return fmt.Errorf("checkpoint rule requires %s in --config", strings.Join(missing, ", "))

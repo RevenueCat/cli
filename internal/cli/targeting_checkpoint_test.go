@@ -54,6 +54,30 @@ func TestCheckpointTargetingCreatePreservesPositionAfterApproval(t *testing.T) {
 	}
 }
 
+func TestCheckpointTargetingCreateRejectsInvalidCheckpointsBeforeMutation(t *testing.T) {
+	for _, checkpoints := range []string{`[]`, `null`, `{}`, `[{"checkpoint_id":""}]`, `[{}]`, `[{"checkpoint_id":"a"},{"checkpoint_id":"b"}]`} {
+		t.Run(checkpoints, func(t *testing.T) {
+			requests := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":"chkptrule1","rule_type":"checkpoint"}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			config := `{"rule_type":"checkpoint","state":"active","display_name":"Onboarding","audience_id":"aud1","flow_id":"wf1","checkpoints":` + checkpoints + `}`
+			path := filepath.Join(t.TempDir(), "create.json")
+			if err := os.WriteFile(path, []byte(config), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			_, _, err := runAgentCmd(t, "targeting", "create", "--config", path, "--project-id", "proj", "--api-key", "sk_test", "--no-input", "--yes")
+			if err == nil || !strings.Contains(err.Error(), "checkpoint") || requests != 0 {
+				t.Fatalf("err=%v requests=%d; expected validation before mutation", err, requests)
+			}
+		})
+	}
+}
+
 func TestCheckpointTargetingUpdateGuardsLiveAndScheduledChanges(t *testing.T) {
 	for _, tc := range []struct {
 		name, currentState, newState string

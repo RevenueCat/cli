@@ -44,7 +44,7 @@ func targetingConfigFields(create bool) map[string]any {
 		fields["rule_type"] = configEnum("Rule type; defaults to legacy", "legacy", "checkpoint")
 		fields["id"] = configField("string", "Optional custom ID for a legacy rule")
 		fields["flow_id"] = configField("string", "Flow ID served by a checkpoint rule")
-		fields["checkpoints"] = map[string]any{"type": "array", "description": "Exactly one checkpoint for a checkpoint rule", "items": map[string]any{
+		fields["checkpoints"] = map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "description": "Exactly one checkpoint for a checkpoint rule", "items": map[string]any{
 			"type": "object", "required": []string{"checkpoint_id"}, "properties": map[string]any{
 				"checkpoint_id": configField("string", "Checkpoint ID"),
 				"position":      map[string]any{"type": "integer", "minimum": 0, "description": "Priority within the checkpoint"},

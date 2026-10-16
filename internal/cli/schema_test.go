@@ -56,6 +56,14 @@ func TestTargetingUpdateSchemaIncludesCheckpointFieldsAndLimits(t *testing.T) {
 	}
 }
 
+func TestTargetingCreateSchemaRequiresExactlyOneCheckpoint(t *testing.T) {
+	fields := targetingConfigFields(true)["properties"].(map[string]any)
+	checkpoints := fields["checkpoints"].(map[string]any)
+	if checkpoints["minItems"] != 1 || checkpoints["maxItems"] != 1 {
+		t.Fatalf("checkpoint create constraints are missing: %v", checkpoints)
+	}
+}
+
 func findCommand(t *testing.T, root *cobra.Command, path string) *cobra.Command {
 	t.Helper()
 	cur := root
