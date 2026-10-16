@@ -27,6 +27,7 @@ that exact plan. Files are optional; pass --file - to read CSV or JSON stdin.`,
 		newProductsStorePlanCmd(),
 		newProductsStoreShowCmd(),
 		newProductsStoreApplyCmd(),
+		newProductsStoreSubmitCmd(),
 		newProductsStoreDiscardCmd(),
 		newProductsStoreScreenshotCmd(),
 		newProductsStoreListCmd(),
@@ -272,6 +273,125 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 	}
 	cmd.Flags().DurationVar(&timeout, "timeout", 5*time.Minute, "maximum time to wait for apply")
 	return cmd
+}
+
+func newProductsStoreSubmitCmd() *cobra.Command {
+	var store string
+	cmd := &cobra.Command{
+		Use:   "submit <product-id> [product-id...]",
+		Short: "Submit App Store products for Apple review",
+		Long: `Starts Apple review for the named App Store products. Applying a
+store-state plan pushes configuration to App Store Connect but never submits
+anything for review. Apple must review and approve products after submission
+before they can be purchased.
+
+Only the products passed as arguments are submitted, and they must all belong
+to the same app. A product is submittable only once it exists in App Store
+Connect; one that isn't ready comes back skipped with a reason instead of
+failing the whole run. App Store only — Apple is the sole store that accepts
+review submissions through this command.
+
+The first product of each In-App Purchase type must be reviewed with a new app
+version. Add it on the app's version page in App Store Connect and submit that
+version. Later products of that type can be submitted separately after the
+first is approved and the app has an approved version.
+
+The result lists each product as submitted or skipped with a reason. If every
+product is skipped, the command exits nonzero; partial submissions exit zero.
+
+Reversibility: starts Apple review — manage the submission in App Store Connect.
+
+Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
+		Example: `  rc products store submit prod_abc prod_def --yes
+  rc products store submit prod_abc --yes --json --no-input`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			if store != "app_store" {
+				return fmt.Errorf("only App Store products can be submitted for review; --store %q is not supported", store)
+			}
+			productIDs, err := cleanSubmitProductIDs(args)
+			if err != nil {
+				return err
+			}
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			rt.Out.Title("Submit products for Apple review")
+			rt.Out.Lead("Send these App Store products to Apple for review.")
+			rt.Out.Field("Project", projectID)
+			for i, id := range productIDs {
+				rt.Out.Field(fmt.Sprintf("Product %d", i+1), id)
+			}
+			rt.Out.Plan([]string{fmt.Sprintf("Submit %s for Apple review", pluralize(len(productIDs), "product"))})
+			if err := confirmOrAbort(rt, fmt.Sprintf("Submit %s for Apple review?", pluralize(len(productIDs), "App Store product")),
+				"nothing was submitted"); err != nil {
+				return err
+			}
+			resp, err := client.StoreState.SubmitToStore(cmd.Context(), projectID, store, productIDs)
+			if err != nil {
+				return err
+			}
+			return renderStoreSubmitResult(rt, resp)
+		},
+	}
+	cmd.Flags().StringVar(&store, "store", "app_store", "store to submit to (only app_store is supported)")
+	return cmd
+}
+
+func cleanSubmitProductIDs(args []string) ([]string, error) {
+	ids := make([]string, 0, len(args))
+	for _, arg := range args {
+		id := strings.TrimSpace(arg)
+		if id == "" {
+			return nil, fmt.Errorf("product IDs cannot be empty")
+		}
+		ids = append(ids, id)
+	}
+	if len(ids) > 200 {
+		return nil, fmt.Errorf("cannot submit more than 200 products at once; got %d", len(ids))
+	}
+	return ids, nil
+}
+
+func renderStoreSubmitResult(rt *Runtime, resp *api.SubmitProductsToStoreResponse) error {
+	rows := make([][]string, 0, len(resp.Results))
+	for _, result := range resp.Results {
+		detail := ""
+		switch result.Status {
+		case "submitted":
+			detail = optionalString(result.SubmissionID, "")
+		default:
+			detail = optionalString(result.Message, "")
+		}
+		rows = append(rows, []string{result.ProductID, result.Status, detail})
+	}
+	rt.Out.Info(fmt.Sprintf("Submitted %d of %s for review", resp.SubmittedCount, pluralize(len(resp.Results), "product")))
+	if err := rt.Out.RenderTable(output.Table{
+		Columns: []string{"PRODUCT", "STATUS", "DETAIL"},
+		Rows:    rows,
+		Raw:     resp,
+	}); err != nil {
+		return err
+	}
+	if resp.SubmittedCount < len(resp.Results) {
+		skipped := len(resp.Results) - resp.SubmittedCount
+		verb := "were"
+		if skipped == 1 {
+			verb = "was"
+		}
+		rt.Out.Hint(fmt.Sprintf("%s %s not submitted. Check each reason in DETAIL; resolve it before retrying.", pluralize(skipped, "product"), verb))
+	}
+	if resp.SubmittedCount == 0 {
+		rt.Out.Warn("No products were submitted for review")
+		return &SilentExitError{Code: 1}
+	}
+	return nil
 }
 
 func newProductsStoreDiscardCmd() *cobra.Command {

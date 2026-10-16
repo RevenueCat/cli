@@ -7,6 +7,62 @@ info:
   title: RevenueCat v2 — beta overlay
   version: overlay
 paths:
+  /projects/{project_id}/products/actions/submit_to_store:
+    post:
+      summary: Submit products to store
+      description: "Submits App Store products for Apple review and returns a per-product\
+        \ outcome. Products that are not yet ready for submission are skipped with a\
+        \ reason rather than failing the whole request. All products must belong to\
+        \ the same app.\n This endpoint requires the following permission(s): <code>project_configuration:products:read_write</code>.\
+        \ This endpoint belongs to the <strong>Project Configuration</strong> domain,\
+        \ which has a default rate limit of <strong>60 requests per minute</strong>."
+      operationId: submit-products-to-store
+      x-revenuecat-rate-limiting-domain: project_configuration
+      x-scopes:
+      - project_configuration:products:read_write
+      x-release-status: development
+      x-revenuecat-mcp-include: false
+      x-revenuecat-release-gatekeeping: false
+      tags:
+      - Product
+      parameters:
+      - name: project_id
+        description: ID of the project
+        required: true
+        in: path
+        schema:
+          type: string
+          maxLength: 255
+          example: proj1ab2c3d4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - store
+              - product_ids
+              properties:
+                store:
+                  description: The target store for this operation.
+                  type: string
+                  enum:
+                  - app_store
+                  example: app_store
+                product_ids:
+                  description: Product IDs to attempt to submit to store.
+                  type: array
+                  minItems: 1
+                  maxItems: 200
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 255
+                    example: prod1a2b3c4d5e
+      responses:
+        '200':
+          description: OK
   /projects/{project_id}/products/{product_id}/test_store_prices:
     get:
       summary: 'List product prices (deprecated: use /prices instead)'
