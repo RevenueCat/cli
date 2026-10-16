@@ -229,6 +229,29 @@ func TestProductsStoreSubmit_ReportsPerProductOutcomes(t *testing.T) {
 	}
 }
 
+func TestProductsStoreSubmit_RequiresConsentBeforeSubmission(t *testing.T) {
+	for _, mode := range [][]string{nil, {"--no-input"}, {"--json", "--no-input"}} {
+		t.Run(strings.Join(mode, " "), func(t *testing.T) {
+			requests := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"submitted_count":1,"results":[{"product_id":"prod_abc","status":"submitted"}]}`)
+			}))
+			t.Cleanup(server.Close)
+			args := append([]string{"products", "store", "submit", "prod_abc"}, mode...)
+			_, _, err := runStoreLifecycleCommand(t, server.URL, "", args...)
+			if err == nil || !strings.Contains(err.Error(), "pass --yes") || requests != 0 {
+				t.Fatalf("want consent error before submission: err=%v requests=%d", err, requests)
+			}
+			_, _, err = runStoreLifecycleCommand(t, server.URL, "", append(args, "--yes")...)
+			if err != nil || requests != 1 {
+				t.Fatalf("want one approved submission: err=%v requests=%d", err, requests)
+			}
+		})
+	}
+}
+
 func TestProductsStoreSubmit_RejectsNonAppStore(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "must not reach the API for a rejected store", http.StatusInternalServerError)

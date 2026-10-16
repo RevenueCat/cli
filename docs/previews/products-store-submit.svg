@@ -22,10 +22,10 @@
 </text><text x="12.00px" y="195.00px" xml:space="preserve">▍ Plan
 </text><text x="12.00px" y="211.80px" xml:space="preserve">· 1. Submit 2 products for Apple review
 </text><text x="12.00px" y="228.60px" xml:space="preserve">· Submitted 1 of 2 products for review
-</text><text x="12.00px" y="245.40px" xml:space="preserve">  1 product was not submitted. Check each reason in DETAIL; resolve it before retrying.
-</text><text x="12.00px" y="262.20px" xml:space="preserve">PRODUCT     STATUS     DETAIL                          
-</text><text x="12.00px" y="279.00px" xml:space="preserve">prod_snap1  submitted  sub_snap1                       
-</text><text x="12.00px" y="295.80px" xml:space="preserve">prod_snap2  skipped    App Store metadata is incomplete
+</text><text x="12.00px" y="245.40px" xml:space="preserve">PRODUCT     STATUS     DETAIL                          
+</text><text x="12.00px" y="262.20px" xml:space="preserve">prod_snap1  submitted  sub_snap1                       
+</text><text x="12.00px" y="279.00px" xml:space="preserve">prod_snap2  skipped    App Store metadata is incomplete
+</text><text x="12.00px" y="295.80px" xml:space="preserve">  1 product was not submitted. Check each reason in DETAIL; resolve it before retrying.
 </text>
 </g>
 <svg x="0.00px" y="0.00px"><circle cx="13.50" cy="12.00" r="5.50" fill="#FF5A54"/><circle cx="32.50" cy="12.00" r="5.50" fill="#E6BF29"/><circle cx="51.50" cy="12.00" r="5.50" fill="#52C12B"/></svg></svg>
