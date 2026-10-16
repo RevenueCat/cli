@@ -210,17 +210,19 @@ screenshots via --image, audience via --context.`,
 			if opts.offeringID != "" {
 				offeringID = &opts.offeringID
 			}
+			automaticallyScaleFontSize := true
 			session := &paywallAISession{
 				Version:   1,
 				ProjectID: projectID,
 				PaywallID: paywall.ID,
 				Revision:  &revision,
 				Paywall: paywallai.PaywallData{
-					DefaultLocale:           "en_US",
-					OfferingID:              offeringID,
-					ComponentsConfig:        json.RawMessage(minimalComponentsConfig),
-					ComponentsLocalizations: json.RawMessage(`{"en_US": {}}`),
-					StateDeclarations:       json.RawMessage(`{}`),
+					DefaultLocale:              "en_US",
+					OfferingID:                 offeringID,
+					ComponentsConfig:           json.RawMessage(minimalComponentsConfig),
+					ComponentsLocalizations:    json.RawMessage(`{"en_US": {}}`),
+					StateDeclarations:          json.RawMessage(`{}`),
+					AutomaticallyScaleFontSize: &automaticallyScaleFontSize,
 				},
 				UIConfig:         json.RawMessage(minimalUIConfig),
 				ProductVariables: map[string]string{},
@@ -367,6 +369,7 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *paywall
 	}
 	if *version.Revision == *session.Revision {
 		hydrateStateDeclarations(session, version)
+		hydrateAutomaticallyScaleFontSize(session, version)
 		return session, nil
 	}
 	rt.Out.Warn(fmt.Sprintf("The draft for %s changed outside this session — the dashboard, its AI editor, or the API wrote revision %d, the session has %d.", session.PaywallID, *version.Revision, *session.Revision))
@@ -395,6 +398,7 @@ func resumeOrSeedSession(ctx context.Context, rt *Runtime, projectID, paywallID,
 	}
 	if stored.Revision != nil && *version.Revision == *stored.Revision {
 		hydrateStateDeclarations(stored, version)
+		hydrateAutomaticallyScaleFontSize(stored, version)
 		return stored, nil
 	}
 	return seedSessionFromServer(ctx, rt, projectID, paywallID)
@@ -445,11 +449,12 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 		PaywallID: paywall.ID,
 		Revision:  &revision,
 		Paywall: paywallai.PaywallData{
-			DefaultLocale:           locale,
-			OfferingID:              offeringID,
-			ComponentsConfig:        version.ComponentsConfig,
-			ComponentsLocalizations: localizations,
-			StateDeclarations:       serverStateDeclarations(version),
+			DefaultLocale:              locale,
+			OfferingID:                 offeringID,
+			ComponentsConfig:           version.ComponentsConfig,
+			ComponentsLocalizations:    localizations,
+			StateDeclarations:          serverStateDeclarations(version),
+			AutomaticallyScaleFontSize: serverAutomaticallyScaleFontSize(version),
 		},
 		UIConfig:         json.RawMessage(minimalUIConfig),
 		ProductVariables: map[string]string{},
@@ -629,6 +634,23 @@ func serverStateDeclarations(version *api.PaywallComponentsVersion) json.RawMess
 	return json.RawMessage(`{}`)
 }
 
+// hydrateAutomaticallyScaleFontSize refills the setting from the server when
+// the session lacks it: written by an older CLI, or cleared by an editor that
+// doesn't echo it (so its PATCH left the stored value alone).
+func hydrateAutomaticallyScaleFontSize(session *paywallAISession, version *api.PaywallComponentsVersion) {
+	if session.Paywall.AutomaticallyScaleFontSize == nil {
+		session.Paywall.AutomaticallyScaleFontSize = serverAutomaticallyScaleFontSize(version)
+	}
+}
+
+func serverAutomaticallyScaleFontSize(version *api.PaywallComponentsVersion) *bool {
+	if version.AutomaticallyScaleFontSize != nil {
+		return version.AutomaticallyScaleFontSize
+	}
+	automaticallyScaleFontSize := true
+	return &automaticallyScaleFontSize
+}
+
 // presentJSON normalizes absent-or-null JSON to nil so it marshals as an
 // omitted field: the server clears stored state on an explicit null.
 func presentJSON(raw json.RawMessage) json.RawMessage {
@@ -760,10 +782,11 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *paywallAISe
 		return err
 	}
 	update := api.PaywallDraftUpdate{
-		ComponentsConfig:        session.Paywall.ComponentsConfig,
-		ComponentsLocalizations: session.Paywall.ComponentsLocalizations,
-		StateDeclarations:       presentJSON(session.Paywall.StateDeclarations),
-		DefaultLocale:           session.Paywall.DefaultLocale,
+		ComponentsConfig:           session.Paywall.ComponentsConfig,
+		ComponentsLocalizations:    session.Paywall.ComponentsLocalizations,
+		StateDeclarations:          presentJSON(session.Paywall.StateDeclarations),
+		DefaultLocale:              session.Paywall.DefaultLocale,
+		AutomaticallyScaleFontSize: session.Paywall.AutomaticallyScaleFontSize,
 	}
 	// Always the session's own revision — refetching a fresh one here would
 	// sail past the conflict guard and clobber out-of-band changes.

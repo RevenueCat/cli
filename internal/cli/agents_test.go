@@ -360,6 +360,9 @@ func TestPaywallsGenerate_CreatesDraftStreamsAndSavesSession(t *testing.T) {
 	if decls, ok := input["paywall"].(map[string]any)["state_declarations"].(map[string]any); !ok || len(decls) != 0 {
 		t.Fatalf("generate editor request paywall.state_declarations = %v, want {}", input["paywall"])
 	}
+	if got := input["paywall"].(map[string]any)["automatically_scale_font_size"]; got != true {
+		t.Fatalf("generate editor request paywall.automatically_scale_font_size = %v, want true", got)
+	}
 
 	// Session file round-trips the completed paywall + opaque blobs.
 	payload, err := os.ReadFile(sessionPath)
