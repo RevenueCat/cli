@@ -25,9 +25,16 @@ import (
 // the full paywall plus the opaque session blobs every turn, so the CLI
 // persists them here (the dashboard holds the same data in builder state).
 type paywallAISession struct {
-	Version          int                   `json:"version"`
-	ProjectID        string                `json:"project_id"`
-	PaywallID        string                `json:"paywall_id"`
+	Version   int    `json:"version"`
+	ProjectID string `json:"project_id"`
+	PaywallID string `json:"paywall_id"`
+	// StepID selects a screen from PaywallID's graph; nil edits the draft
+	// fallback/purchase screen, matching pre-selection behavior exactly.
+	StepID *string `json:"step_id,omitempty"`
+	// TargetID is the id the last successful save's PATCH response returned —
+	// the selected screen's own canonical id, which can differ from
+	// PaywallID once StepID selects a sibling. Never assume it equals PaywallID.
+	TargetID         string                `json:"target_id,omitempty"`
 	SessionID        string                `json:"session_id,omitempty"`
 	TraceID          string                `json:"trace_id,omitempty"`
 	Revision         *int                  `json:"revision"`
@@ -47,7 +54,10 @@ func screenshotBase(sessionPath string) string {
 	return strings.TrimSuffix(sessionPath, filepath.Ext(sessionPath))
 }
 
-func defaultPaywallSessionPath(projectID, paywallID string) (string, error) {
+// defaultPaywallSessionPath namespaces the session file by stepID so editing
+// two different screens of the same paywall never share (and clobber) one
+// session file.
+func defaultPaywallSessionPath(projectID, paywallID, stepID string) (string, error) {
 	dir, err := config.Dir()
 	if err != nil {
 		return "", err
@@ -56,7 +66,11 @@ func defaultPaywallSessionPath(projectID, paywallID string) (string, error) {
 	if err := os.MkdirAll(sessionDir, 0o700); err != nil {
 		return "", err
 	}
-	return filepath.Join(sessionDir, "session"+paywallSessionSuffix), nil
+	name := "session" + paywallSessionSuffix
+	if stepID != "" {
+		name = "session." + stepID + paywallSessionSuffix
+	}
+	return filepath.Join(sessionDir, name), nil
 }
 
 func pickOfferingOrStandalone(ctx context.Context, rt *Runtime, client *api.Client, projectID string) (string, error) {
@@ -103,6 +117,7 @@ type paywallAIOptions struct {
 	offeringID   string
 	name         string
 	sessionPath  string
+	stepID       string
 	images       []string
 	baseURL      string
 	timeout      time.Duration
@@ -227,7 +242,7 @@ screenshots via --image, audience via --context.`,
 				SessionItems:     json.RawMessage(`{}`),
 			}
 			if opts.sessionPath == "" {
-				opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywall.ID)
+				opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywall.ID, "")
 				if err != nil {
 					return err
 				}
@@ -308,6 +323,9 @@ Using it well:
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if opts.stepID != "" && opts.sessionPath != "" {
+				return fmt.Errorf("--step-id cannot be combined with --session; the session file already selects a screen")
+			}
 			var session *paywallAISession
 			var err error
 			switch {
@@ -331,9 +349,9 @@ Using it well:
 				if perr != nil {
 					return perr
 				}
-				opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywallID)
+				opts.sessionPath, err = defaultPaywallSessionPath(projectID, paywallID, opts.stepID)
 				if err == nil {
-					session, err = resumeOrSeedSession(cmd.Context(), rt, projectID, paywallID, opts.sessionPath)
+					session, err = resumeOrSeedSession(cmd.Context(), rt, projectID, paywallID, opts.stepID, opts.sessionPath)
 				}
 			default:
 				return fmt.Errorf("pass a paywall ID or --session <file>")
@@ -348,6 +366,7 @@ Using it well:
 		},
 	}
 	addPaywallAIFlags(cmd, &opts)
+	cmd.Flags().StringVar(&opts.stepID, "step-id", "", "screen to edit, from rc paywalls screens <paywall-id> — default edits the fallback/purchase screen")
 	return cmd
 }
 
@@ -361,43 +380,178 @@ func preflightSessionRevision(ctx context.Context, rt *Runtime, session *paywall
 	if err != nil {
 		return nil, err
 	}
-	version, err := currentDraftVersion(ctx, client, session.ProjectID, session.PaywallID)
+	target, err := fetchTargetState(ctx, client, session)
 	if err != nil {
 		return nil, err
 	}
-	if *version.Revision == *session.Revision {
-		hydrateStateDeclarations(session, version)
+	if target.revision == *session.Revision {
+		hydrateStateDeclarations(session, target.stateDeclarations)
 		return session, nil
 	}
-	rt.Out.Warn(fmt.Sprintf("The draft for %s changed outside this session — the dashboard, its AI editor, or the API wrote revision %d, the session has %d.", session.PaywallID, *version.Revision, *session.Revision))
+	rt.Out.Warn(fmt.Sprintf("The draft for %s changed outside this session — the dashboard, its AI editor, or the API wrote revision %d, the session has %d.", session.PaywallID, target.revision, *session.Revision))
 	rt.Out.Info("A session can't continue against diverged state. Continuing starts fresh from the server's current draft; the conversation context in this session file is lost.")
 	if err := confirmOrAbort(rt, "Start fresh from the server's current draft?",
-		"run rc paywalls edit "+session.PaywallID+" to start fresh deliberately"); err != nil {
+		"run rc paywalls edit "+session.PaywallID+stepIDFlagSuffix(session.StepID)+" to start fresh deliberately"); err != nil {
 		return nil, err
 	}
-	return seedSessionFromServer(ctx, rt, session.ProjectID, session.PaywallID)
+	return seedSession(ctx, rt, session.ProjectID, session.PaywallID, stepIDValue(session.StepID))
 }
 
 // resumeOrSeedSession reuses the default-path session for an `edit` turn without
-// an explicit --session when it still matches the server's draft, else seeds fresh.
-func resumeOrSeedSession(ctx context.Context, rt *Runtime, projectID, paywallID, sessionPath string) (*paywallAISession, error) {
+// an explicit --session when it still matches the server's draft and selects the
+// same screen, else seeds fresh.
+func resumeOrSeedSession(ctx context.Context, rt *Runtime, projectID, paywallID, stepID, sessionPath string) (*paywallAISession, error) {
 	stored, err := loadPaywallAISession(rt, sessionPath)
-	if err != nil {
-		return seedSessionFromServer(ctx, rt, projectID, paywallID)
+	if err != nil || !stepIDMatches(stored.StepID, stepID) {
+		return seedSession(ctx, rt, projectID, paywallID, stepID)
 	}
 	client, err := rt.API()
 	if err != nil {
 		return nil, err
 	}
-	version, err := currentDraftVersion(ctx, client, projectID, paywallID)
+	target, err := fetchTargetState(ctx, client, stored)
 	if err != nil {
 		return nil, err
 	}
-	if stored.Revision != nil && *version.Revision == *stored.Revision {
-		hydrateStateDeclarations(stored, version)
+	if stored.Revision != nil && target.revision == *stored.Revision {
+		hydrateStateDeclarations(stored, target.stateDeclarations)
 		return stored, nil
 	}
+	return seedSession(ctx, rt, projectID, paywallID, stepID)
+}
+
+// seedSession seeds from stepID's screen when set, otherwise the draft
+// fallback — the single dispatch point every reseed path shares.
+func seedSession(ctx context.Context, rt *Runtime, projectID, paywallID, stepID string) (*paywallAISession, error) {
+	if stepID != "" {
+		return seedSessionFromServerForStep(ctx, rt, projectID, paywallID, stepID)
+	}
 	return seedSessionFromServer(ctx, rt, projectID, paywallID)
+}
+
+// stepIDMatches reports whether a stored session's selection matches the
+// requested one; "" (no --step-id) only matches an unselected session.
+func stepIDMatches(stored *string, requested string) bool {
+	if requested == "" {
+		return stored == nil
+	}
+	return stored != nil && *stored == requested
+}
+
+func stepIDValue(stepID *string) string {
+	if stepID == nil {
+		return ""
+	}
+	return *stepID
+}
+
+func stepIDFlagSuffix(stepID *string) string {
+	if stepID == nil {
+		return ""
+	}
+	return " --step-id " + *stepID
+}
+
+// targetState is the live revision (and state declarations, for hydration)
+// of whatever a session currently targets.
+type targetState struct {
+	revision          int
+	stateDeclarations json.RawMessage
+}
+
+// fetchTargetState reads the live state a session's next save would be
+// guarded against: the selected sibling's own content row via the graph, or
+// the parent draft/published version.
+func fetchTargetState(ctx context.Context, client *api.Client, session *paywallAISession) (*targetState, error) {
+	if session.StepID != nil {
+		step, err := fetchEditableGraphStep(ctx, client, session.ProjectID, session.PaywallID, *session.StepID)
+		if err != nil {
+			return nil, err
+		}
+		return &targetState{revision: step.Paywall.Revision, stateDeclarations: step.Paywall.StateDeclarations}, nil
+	}
+	version, err := currentDraftVersion(ctx, client, session.ProjectID, session.PaywallID)
+	if err != nil {
+		return nil, err
+	}
+	return &targetState{revision: *version.Revision, stateDeclarations: version.StateDeclarations}, nil
+}
+
+// fetchEditableGraphStep resolves stepID against paywallID's draft graph and
+// returns it with content loaded, or a clear error — never a silent fallback
+// to the purchase/default screen. Explicit selection either finds exactly
+// what was asked for or fails.
+func fetchEditableGraphStep(ctx context.Context, client *api.Client, projectID, paywallID, stepID string) (*api.GraphStep, error) {
+	graph, err := client.Paywalls.GetGraphWithScreenContent(ctx, projectID, paywallID, "draft")
+	if err != nil {
+		return nil, err
+	}
+	if graph.Graph == nil {
+		return nil, fmt.Errorf("paywall %s is standalone (it has no screen graph) — --step-id is not supported for it", paywallID)
+	}
+	for i := range graph.Graph.Steps {
+		step := &graph.Graph.Steps[i]
+		if step.ID != stepID {
+			continue
+		}
+		if step.Type != "screen" || step.PaywallID == nil || step.Paywall == nil {
+			return nil, fmt.Errorf("screen %s has no editable content — pick an editable screen with rc paywalls screens %s", stepID, paywallID)
+		}
+		return step, nil
+	}
+	return nil, fmt.Errorf("paywall %s has no screen %s — list its screens with rc paywalls screens %s", paywallID, stepID, paywallID)
+}
+
+// seedSessionFromServerForStep starts an editor session from one screen's
+// content, read from the graph — the plain paywall GET can only ever return
+// the fallback screen's own version, never a sibling's.
+func seedSessionFromServerForStep(ctx context.Context, rt *Runtime, projectID, paywallID, stepID string) (*paywallAISession, error) {
+	client, err := rt.API()
+	if err != nil {
+		return nil, err
+	}
+	step, err := fetchEditableGraphStep(ctx, client, projectID, paywallID, stepID)
+	if err != nil {
+		return nil, err
+	}
+	content := step.Paywall
+	locale := content.DefaultLocale
+	if locale == "" {
+		locale = "en_US"
+	}
+	localizations := content.ComponentsLocalizations
+	if len(localizations) == 0 {
+		localizations = json.RawMessage(`{"` + locale + `": {}}`)
+	}
+	revision := content.Revision
+	// The offering lives on the parent and drives the editor's product context;
+	// every screen in the graph designs against the same one.
+	parent, err := client.Paywalls.Get(ctx, projectID, paywallID)
+	if err != nil {
+		return nil, err
+	}
+	var offeringID *string
+	if parent.OfferingID != "" {
+		offeringID = &parent.OfferingID
+	}
+	return &paywallAISession{
+		Version:   1,
+		ProjectID: projectID,
+		PaywallID: paywallID,
+		StepID:    &stepID,
+		TargetID:  content.ID,
+		Revision:  &revision,
+		Paywall: paywallai.PaywallData{
+			DefaultLocale:           locale,
+			OfferingID:              offeringID,
+			ComponentsConfig:        content.ComponentsConfig,
+			ComponentsLocalizations: localizations,
+			StateDeclarations:       serverStateDeclarations(content.StateDeclarations),
+		},
+		UIConfig:         json.RawMessage(minimalUIConfig),
+		ProductVariables: map[string]string{},
+		SessionItems:     json.RawMessage(`{}`),
+	}, nil
 }
 
 // seedSessionFromServer starts an editor session from the paywall's current
@@ -449,7 +603,7 @@ func seedSessionFromServer(ctx context.Context, rt *Runtime, projectID string, p
 			OfferingID:              offeringID,
 			ComponentsConfig:        version.ComponentsConfig,
 			ComponentsLocalizations: localizations,
-			StateDeclarations:       serverStateDeclarations(version),
+			StateDeclarations:       serverStateDeclarations(version.StateDeclarations),
 		},
 		UIConfig:         json.RawMessage(minimalUIConfig),
 		ProductVariables: map[string]string{},
@@ -533,6 +687,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	stream, err := client.Stream(ctx, paywallai.EditorRequest{
 		ProjectID:        session.ProjectID,
 		PaywallID:        session.PaywallID,
+		StepID:           session.StepID,
 		Revision:         session.Revision,
 		SessionID:        session.SessionID,
 		Paywall:          session.Paywall,
@@ -616,14 +771,14 @@ func applySessionEvent(session *paywallAISession, event *paywallai.Event) {
 // CLI from before they existed, so the editor can round-trip them again. The
 // server's value, not {}: the stored draft may hold dashboard-authored
 // declarations that an empty replacement would wipe.
-func hydrateStateDeclarations(session *paywallAISession, version *api.PaywallComponentsVersion) {
+func hydrateStateDeclarations(session *paywallAISession, serverValue json.RawMessage) {
 	if presentJSON(session.Paywall.StateDeclarations) == nil {
-		session.Paywall.StateDeclarations = serverStateDeclarations(version)
+		session.Paywall.StateDeclarations = serverStateDeclarations(serverValue)
 	}
 }
 
-func serverStateDeclarations(version *api.PaywallComponentsVersion) json.RawMessage {
-	if declarations := presentJSON(version.StateDeclarations); declarations != nil {
+func serverStateDeclarations(raw json.RawMessage) json.RawMessage {
+	if declarations := presentJSON(raw); declarations != nil {
 		return declarations
 	}
 	return json.RawMessage(`{}`)
@@ -670,10 +825,17 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	saved := false
 	if err := persistPaywallDesign(ctx, rt, session); err != nil {
 		var apiErr *api.APIError
-		if errors.As(err, &apiErr) && apiErr.Status == 409 {
+		switch {
+		case errors.As(err, &apiErr) && apiErr.Status == 409:
 			rt.Out.Warn("Could not save the design: the draft changed during the run (dashboard, its AI editor, or API), and this session can't be saved over it.")
-			rt.Out.Hint("Start fresh from the current draft:  rc paywalls edit " + session.PaywallID)
-		} else {
+			rt.Out.Hint("Start fresh from the current draft:  rc paywalls edit " + session.PaywallID + stepIDFlagSuffix(session.StepID))
+		case errors.As(err, &apiErr) && apiErr.Status == 422 && session.StepID != nil:
+			rt.Out.Warn("Could not save the design: screen " + *session.StepID + " is no longer editable.")
+			rt.Out.Hint("Pick an editable screen:  rc paywalls screens " + session.PaywallID)
+		case errors.As(err, &apiErr) && apiErr.Status == 404:
+			rt.Out.Warn("Could not save the design: paywall " + session.PaywallID + " no longer exists.")
+			rt.Out.Hint("The design is safe in " + opts.sessionPath + ", but this save can't be retried against a paywall that's gone.")
+		default:
 			rt.Out.Warn("Could not save the design to RevenueCat: " + err.Error())
 			rt.Out.Hint("The design is safe in " + opts.sessionPath + " — re-run rc paywalls edit to retry saving.")
 		}
@@ -684,7 +846,11 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		if err := savePaywallAISession(opts.sessionPath, session); err != nil {
 			return err
 		}
-		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
+		if session.StepID != nil {
+			rt.Out.Success(fmt.Sprintf("Design saved to screen %s on paywall %s", session.TargetID, session.PaywallID))
+		} else {
+			rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
+		}
 		if errored := countErroredActivity(event.Activity); errored > 0 {
 			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywalls AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
 		}
@@ -697,15 +863,18 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		}
 		rt.Out.Field("View it", paywallBuilderURL(session.ProjectID, session.PaywallID))
 		rt.Out.Field("Keep designing", "rc paywalls edit --session "+opts.sessionPath)
-		if session.Paywall.OfferingID == nil {
-			rt.Out.Field("Attach it", "rc paywalls attach "+session.PaywallID+" <offering-id>")
-		} else {
-			rt.Out.Field("Publish when ready", "rc paywalls publish "+session.PaywallID)
+		if session.StepID == nil {
+			if session.Paywall.OfferingID == nil {
+				rt.Out.Field("Attach it", "rc paywalls attach "+session.PaywallID+" <offering-id>")
+			} else {
+				rt.Out.Field("Publish when ready", "rc paywalls publish "+session.PaywallID)
+			}
 		}
 	}
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(map[string]any{
 			"paywall_id":       session.PaywallID,
+			"target_id":        session.TargetID,
 			"dashboard_url":    paywallBuilderURL(session.ProjectID, session.PaywallID),
 			"session_id":       session.SessionID,
 			"trace_id":         session.TraceID,
@@ -752,8 +921,9 @@ func paywallBuilderURL(projectID, paywallID string) string {
 }
 
 // persistPaywallDesign PATCHes the designed components onto the RevenueCat
-// paywall draft, guarded by the session's own revision: a draft that changed
-// outside the session comes back as a 409 instead of being overwritten.
+// paywall draft (or, when StepID is set, onto that selected screen), guarded
+// by the session's own revision: a draft that changed outside the session
+// comes back as a 409 instead of being overwritten.
 func persistPaywallDesign(ctx context.Context, rt *Runtime, session *paywallAISession) error {
 	client, err := rt.API()
 	if err != nil {
@@ -768,20 +938,33 @@ func persistPaywallDesign(ctx context.Context, rt *Runtime, session *paywallAISe
 	// Always the session's own revision — refetching a fresh one here would
 	// sail past the conflict guard and clobber out-of-band changes.
 	update.Revision = *session.Revision
-	updated, err := client.Paywalls.UpdateDraft(ctx, session.ProjectID, session.PaywallID, update)
+	var updated *api.Paywall
+	if session.StepID != nil {
+		updated, err = client.Paywalls.UpdateDraftStep(ctx, session.ProjectID, session.PaywallID, *session.StepID, update)
+	} else {
+		updated, err = client.Paywalls.UpdateDraft(ctx, session.ProjectID, session.PaywallID, update)
+	}
 	if err != nil {
 		return err
 	}
+	// The response id is the saved screen's own canonical id — for a selected
+	// sibling it differs from session.PaywallID (the parent), so it must come
+	// from here, never be assumed to equal the pre-edit input id.
+	session.TargetID = updated.ID
 	if updated.Components != nil && updated.Components.Draft != nil && updated.Components.Draft.Revision != nil {
 		session.Revision = updated.Components.Draft.Revision
 	}
-	// Offering attachment can change out-of-band (dashboard); the PATCH
-	// response carries current server truth, so refresh it — it drives
-	// the attach/publish hint and the editor's product context next turn.
-	if updated.OfferingID != "" {
-		session.Paywall.OfferingID = &updated.OfferingID
-	} else {
-		session.Paywall.OfferingID = nil
+	if session.StepID == nil {
+		// Offering attachment can change out-of-band (dashboard); the PATCH
+		// response carries current server truth, so refresh it — it drives
+		// the attach/publish hint and the editor's product context next turn.
+		// A sibling screen has no offering of its own, so this stays untouched
+		// in selected mode rather than being cleared by an empty response field.
+		if updated.OfferingID != "" {
+			session.Paywall.OfferingID = &updated.OfferingID
+		} else {
+			session.Paywall.OfferingID = nil
+		}
 	}
 	return nil
 }
