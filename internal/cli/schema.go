@@ -40,10 +40,8 @@ Use this from an agent rather than scraping the human --help output.`,
 			if err != nil {
 				return err
 			}
-			// Find never fails on unknown names; it stops at the deepest match
-			// and returns the leftovers, which for a pure command path means
-			// the name didn't resolve. Without this check an unknown name
-			// silently yields the root schema.
+			// Find can return unresolved tokens without an error. Returning the
+			// matched command's schema would misdescribe the requested path.
 			if len(rest) > 0 {
 				return fmt.Errorf("unknown command %q — run `rc commands` to list valid names", strings.Join(args, " "))
 			}
