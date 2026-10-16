@@ -52,6 +52,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 				}
 				if body.DisplayName == "Holiday paywall" {
 					io.WriteString(w, `{"object":"targeting_rule","id":"trle_holiday","rule_type":"legacy","state":"active","display_name":"Holiday paywall","offering_id":"ofrng_holiday","schedule":{"start_date":"2030-12-01T00:00:00Z","end_date":"2030-12-31T23:59:59Z"}}`)
+				} else if body.DisplayName == "Onboarding" {
+					io.WriteString(w, `{"id":"chkptrule_snap","rule_type":"checkpoint","state":"active","display_name":"Onboarding","flow_id":"wf_new","audience_id":"aud_new","checkpoints":[{"checkpoint_id":"chkpt_new","position":3}]}`)
 				} else {
 					io.WriteString(w, `{"object":"targeting_rule","id":"trle_snap","rule_type":"legacy","state":"active","display_name":"Default paywall","offering_id":"ofrng_default"}`)
 				}
@@ -106,6 +108,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"targeting-list", []string{"targeting", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"targeting-show", []string{"targeting", "show", "trle_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"targeting-create-active", []string{"targeting", "create", "--name", "Default paywall", "--offering", "ofrng_default", "--state", "active", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"targeting-create-checkpoint", []string{"targeting", "create", "--config", "testdata/checkpoint-targeting-create.json", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"targeting-create-scheduled", []string{"targeting", "create", "--config", "testdata/scheduled-targeting.json", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list", []string{"apps", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},

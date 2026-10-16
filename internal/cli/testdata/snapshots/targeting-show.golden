@@ -1,5 +1,4 @@
 $ rc targeting show trle_snap --no-input --project-id proj_snap --api-key sk_snap
-  Use --json for the complete API response.
 ▍ US annual paywall
   trle_snap · legacy · active
 
@@ -15,3 +14,4 @@ Placements
 
 Schedule
   Start:  2026-09-25T12:00:00Z
+  Use --json for the complete API response.

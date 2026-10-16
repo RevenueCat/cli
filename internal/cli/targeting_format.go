@@ -23,7 +23,8 @@ func targetingConfigSummary(key string, raw json.RawMessage) (string, error) {
 	}
 	if key == "checkpoints" {
 		var checkpoints []struct {
-			ID string `json:"checkpoint_id"`
+			ID       string `json:"checkpoint_id"`
+			Position *int   `json:"position"`
 		}
 		if err := json.Unmarshal(raw, &checkpoints); err != nil {
 			return "", err
@@ -31,6 +32,9 @@ func targetingConfigSummary(key string, raw json.RawMessage) (string, error) {
 		ids := make([]string, len(checkpoints))
 		for i, checkpoint := range checkpoints {
 			ids[i] = checkpoint.ID
+			if checkpoint.Position != nil {
+				ids[i] += fmt.Sprintf(" (position %d)", *checkpoint.Position)
+			}
 		}
 		return strings.Join(ids, ", "), nil
 	}

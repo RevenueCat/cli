@@ -1,0 +1,26 @@
+$ rc targeting create --config testdata/checkpoint-targeting-create.json --yes --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Targeting rule — Onboarding
+  Apply this rule in priority order when it becomes active.
+
+  Type                        checkpoint
+  State                       active
+  Flow                        wf_new
+  Audience                    aud_new
+  Checkpoints                 chkpt_new (position 3)
+
+▍ Plan
+· 1. Create the rule and apply it to matching customers
+✓ Created targeting rule chkptrule_snap
+▍ Onboarding
+  chkptrule_snap · checkpoint · active
+
+Serves
+  Flow:  wf_new
+
+Audience
+  Audience:  aud_new
+
+Checkpoints
+  chkpt_new:  Position 3
+  Use --json for the complete API response.

@@ -34,6 +34,13 @@ func TestTargetingConfigSummaryFormatsActivationPreview(t *testing.T) {
 	}
 }
 
+func TestTargetingCheckpointPreviewIncludesExplicitPositions(t *testing.T) {
+	got, err := targetingConfigSummary("checkpoints", json.RawMessage(`[{"checkpoint_id":"chkpt_first","position":0},{"checkpoint_id":"chkpt_later","position":3},{"checkpoint_id":"chkpt_append"}]`))
+	if err != nil || got != "chkpt_first (position 0), chkpt_later (position 3), chkpt_append" {
+		t.Fatalf("checkpoint preview: got %q, err %v", got, err)
+	}
+}
+
 func TestTargetingAudienceAfterUpdateRequiresClearingOtherField(t *testing.T) {
 	audience := "aud_us"
 	conditions := []any{map[string]any{"field": "country", "operator": "in", "value": []any{"US"}}}

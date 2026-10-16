@@ -3,6 +3,7 @@ package cli_test
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,6 +11,48 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestCheckpointTargetingCreatePreservesPositionAfterApproval(t *testing.T) {
+	for _, position := range []int{0, 3} {
+		t.Run(fmt.Sprint(position), func(t *testing.T) {
+			var posted struct {
+				Checkpoints []struct {
+					ID       string `json:"checkpoint_id"`
+					Position *int   `json:"position"`
+				} `json:"checkpoints"`
+			}
+			mutations := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				mutations++
+				if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+					t.Error(err)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, `{"id":"chkptrule1","rule_type":"checkpoint","state":"active","display_name":"Onboarding"}`)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			config := fmt.Sprintf(`{"rule_type":"checkpoint","state":"active","display_name":"Onboarding","audience_id":"aud1","flow_id":"wf1","checkpoints":[{"checkpoint_id":"chkpt1","position":%d}]}`, position)
+			path := filepath.Join(t.TempDir(), "create.json")
+			if err := os.WriteFile(path, []byte(config), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			args := []string{"targeting", "create", "--config", path, "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+			_, preview, err := runAgentCmd(t, args...)
+			if err == nil || !strings.Contains(err.Error(), "--yes") || mutations != 0 || !strings.Contains(preview, fmt.Sprintf("chkpt1 (position %d)", position)) {
+				t.Fatalf("approval preview: err=%v mutations=%d preview=%s", err, mutations, preview)
+			}
+			_, _, err = runAgentCmd(t, append(args, "--yes", "--json")...)
+			if err != nil || mutations != 1 || len(posted.Checkpoints) != 1 {
+				t.Fatalf("create: err=%v mutations=%d body=%+v", err, mutations, posted)
+			}
+			checkpoint := posted.Checkpoints[0]
+			if checkpoint.ID != "chkpt1" || checkpoint.Position == nil || *checkpoint.Position != position {
+				t.Fatalf("checkpoint position changed: %+v", checkpoint)
+			}
+		})
+	}
+}
 
 func TestCheckpointTargetingUpdateGuardsLiveAndScheduledChanges(t *testing.T) {
 	for _, tc := range []struct {

@@ -37,7 +37,7 @@ func TestTargetingConfigSchemaExplainsConditionsAndRuleTypes(t *testing.T) {
 			}
 		}
 		audience := config["properties"].(map[string]any)["audience_id"].(map[string]any)
-		if audience["nullable"] != true || !strings.Contains(audience["description"].(string), "conditions to []") {
+		if !contains(audience["type"].([]string), "null") || !strings.Contains(audience["description"].(string), "conditions to []") {
 			t.Errorf("%s schema must explain how to switch between audiences and conditions", path)
 		}
 	}
