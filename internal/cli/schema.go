@@ -135,6 +135,9 @@ func commandSchema(c *cobra.Command) map[string]any {
 	if isExperimental(c) {
 		schema["experimental"] = true
 	}
+	if fields := configFieldsFor(c); fields != nil {
+		schema["config_fields"] = fields
+	}
 	addHumanRequirement(schema, c)
 	return schema
 }

@@ -1,0 +1,111 @@
+package cli
+
+import "github.com/spf13/cobra"
+
+func configFieldsFor(cmd *cobra.Command) map[string]any {
+	switch commandPath(cmd) {
+	case "rc experiments create":
+		return experimentConfigFields(true)
+	case "rc experiments update":
+		return experimentConfigFields(false)
+	}
+	return nil
+}
+
+func configField(kind, description string) map[string]any {
+	return map[string]any{"type": kind, "description": description}
+}
+
+func configEnum(description string, values ...string) map[string]any {
+	return map[string]any{"type": "string", "description": description, "enum": values}
+}
+
+func experimentConfigFields(create bool) map[string]any {
+	metricNames := []string{
+		"initial_conversions", "initial_conversion_rate", "trials_started", "trials_completed",
+		"trials_converted", "trial_conversion_rate", "paid_customers", "conversion_to_paying",
+		"active_subscribers", "churned_subscribers", "refunded_customers", "realized_ltv_revenue",
+		"realized_ltv_per_customer", "realized_ltv_per_paying_customer", "total_mrr",
+		"mrr_per_customer", "mrr_per_paying_customer",
+	}
+	placements := map[string]any{
+		"type": "object", "description": "Fallback Offerings and per-placement overrides",
+		"properties": map[string]any{
+			"fallback_offering_a_id": configField("string", "Control Offering ID"),
+			"fallback_offering_b_id": configField("string", "Treatment Offering ID"),
+			"fallback_offering_c_id": configField("string", "Variant C Offering ID"),
+			"fallback_offering_d_id": configField("string", "Variant D Offering ID"),
+			"placement_offerings": map[string]any{
+				"type": "array", "items": map[string]any{"type": "object", "required": []string{"placement_identifier"}, "properties": map[string]any{
+					"placement_identifier": configField("string", "Placement identifier, such as onboarding"),
+					"offering_a_id":        configField("string", "Control Offering ID for this placement"),
+					"offering_b_id":        configField("string", "Treatment Offering ID for this placement"),
+					"offering_c_id":        configField("string", "Variant C Offering ID for this placement"),
+					"offering_d_id":        configField("string", "Variant D Offering ID for this placement"),
+				}},
+			},
+		},
+	}
+	var fallbackFields []map[string]any
+	for _, field := range []string{"fallback_offering_a_id", "fallback_offering_b_id", "fallback_offering_c_id", "fallback_offering_d_id"} {
+		fallbackFields = append(fallbackFields, map[string]any{"required": []string{field}, "properties": map[string]any{field: map[string]any{"type": "string"}}})
+	}
+	placements["description"] = "Fallback Offerings require at least one placement_offerings entry; otherwise the API discards them. An empty placement list without fallbacks clears placement configuration."
+	placements["if"] = map[string]any{"anyOf": fallbackFields}
+	placements["then"] = map[string]any{"required": []string{"placement_offerings"}, "properties": map[string]any{"placement_offerings": map[string]any{"type": "array", "minItems": 1}}}
+	duration := map[string]any{"type": "object", "properties": map[string]any{
+		"conversion_rate_percentage":             configField("number", "Expected conversion rate, as a percentage"),
+		"daily_enrolled_customers":               configField("integer", "Estimated customers enrolled per day"),
+		"minimum_detectable_effect_percentage":   configField("integer", "Minimum detectable effect, as a percentage"),
+		"chance_to_win_percentage":               configField("integer", "Required confidence level, as a percentage"),
+		"conversion_rate_percentage_is_override": configField("boolean", "Conversion rate was manually overridden"),
+		"daily_enrolled_customers_is_override":   configField("boolean", "Daily enrolled count was manually overridden"),
+	}}
+	secondaryNames := append(append([]string{}, metricNames...), "exposed_customers")
+	audience := map[string]any{
+		"type":        []string{"string", "null"},
+		"description": "Audience ID; mutually exclusive with targeting_conditions. Omit or set null for all eligible customers when targeting_conditions is absent.",
+	}
+	fields := map[string]any{
+		"display_name":                 configField("string", "Experiment name"),
+		"enrollment_percentage":        map[string]any{"type": "integer", "minimum": 1, "maximum": 100, "description": "Percentage of eligible customers to enroll"},
+		"offering_a_id":                configField("string", "Control Offering ID"),
+		"offering_b_id":                configField("string", "Treatment Offering ID"),
+		"offering_c_id":                configField("string", "Optional third variant Offering ID"),
+		"offering_d_id":                configField("string", "Optional fourth variant Offering ID"),
+		"audience_id":                  audience,
+		"targeting_conditions":         targetingConditionsSchema(),
+		"placements":                   placements,
+		"notes":                        configField("string", "Experiment notes"),
+		"experiment_type":              configEnum("Experiment type", "introductory_offer", "free_trial_offer", "paywall_design", "price_point", "subscription_duration", "subscription_ordering", "other"),
+		"primary_metric":               configEnum("Primary metric", metricNames...),
+		"secondary_metrics":            map[string]any{"type": "array", "items": configEnum("Secondary metric", secondaryNames...)},
+		"enrollment_mode":              configEnum("Enrollment mode", "only_new", "new_and_existing"),
+		"experiment_duration_settings": duration,
+	}
+	if create {
+		return map[string]any{"type": "object", "properties": fields, "required": []string{"display_name", "enrollment_percentage", "offering_a_id", "offering_b_id"}}
+	}
+	audience["description"] = "Omit to keep current targeting unless targeting_conditions is supplied. Set null to clear the audience and conditions, or supply targeting_conditions to replace them. A string selects an audience and cannot be combined with targeting_conditions."
+	audience["examples"] = []any{"aud_123", nil}
+	return map[string]any{"type": "object", "properties": fields, "description": "Partial update. Running experiments accept only enrollment_percentage; paused experiments cannot be edited."}
+}
+
+func targetingConditionsSchema() map[string]any {
+	return map[string]any{
+		"type": "array", "description": "Mutually exclusive with audience_id. Conditions are combined as an audience filter.",
+		"items": map[string]any{
+			"type": "object", "required": []string{"field", "operator", "value"},
+			"properties": map[string]any{
+				"field":    configEnum("Target field", "app_config", "app_version", "country", "custom_attribute", "platform", "sdk_version"),
+				"operator": configEnum("Use in/not in for arrays; =, !=, >, >=, <, <= for versions", "in", "not in", "=", "!=", ">", ">=", "<", "<="),
+				"value":    map[string]any{"type": []string{"string", "integer", "array"}, "items": map[string]any{"type": []string{"string", "integer"}}, "description": "Version string for app_version/sdk_version; array for country/platform/app_config; strings or integers for custom attributes. See field_rules for each field."},
+				"context":  configField("string", "Required app ID for app_version; SDK flavor for sdk_version; attribute key for custom_attribute. Omit for other fields."),
+			},
+			"examples": []map[string]any{
+				{"field": "platform", "operator": "in", "value": []string{"ios"}},
+				{"field": "app_version", "operator": ">=", "value": "1.2.0", "context": "app1a2b3c4"},
+			},
+		},
+	}
+}
