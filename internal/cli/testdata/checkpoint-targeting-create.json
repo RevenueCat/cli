@@ -1,0 +1,8 @@
+{
+  "rule_type": "checkpoint",
+  "state": "active",
+  "display_name": "Onboarding",
+  "flow_id": "wf_new",
+  "audience_id": "aud_new",
+  "checkpoints": [{"checkpoint_id": "chkpt_new", "position": 3}]
+}

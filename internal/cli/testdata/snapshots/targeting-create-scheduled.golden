@@ -1,0 +1,33 @@
+$ rc targeting create --config testdata/scheduled-targeting.json --yes --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Targeting rule — Holiday paywall
+  Match customers during the scheduled window, in priority order.
+
+  Type                        legacy
+  State                       active
+  Offering                    ofrng_holiday
+
+▐ During its scheduled window, this rule matches everyone. Active rules use the first match.
+
+  Position                    Append to the end
+  Schedule                    start: 2030-12-01T00:00:00Z · end: 2030-12-31T23:59:59Z
+
+▍ Plan
+· 1. Create the rule and match customers during its scheduled window
+✓ Created targeting rule trle_holiday
+▍ Holiday paywall
+  trle_holiday · legacy · active
+
+Serves
+  Offering:  ofrng_holiday
+
+Audience
+  Audience:  All eligible customers
+
+Placements
+  No placement overrides
+
+Schedule
+  Start:  2030-12-01T00:00:00Z
+  End:    2030-12-31T23:59:59Z
+  Use --json for the complete API response.

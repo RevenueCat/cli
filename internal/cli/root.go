@@ -157,6 +157,7 @@ Agent-friendly entrypoints:
 		{newOfferingsCmd(), "catalog"},
 		{newCheckpointsCmd(), "catalog"},
 		{newExperimentsCmd(), "revenue"},
+		{newTargetingCmd(), "catalog"},
 		{newProductsCmd(), "catalog"},
 		{newSubscriptionsCmd(), "revenue"},
 		{newPurchasesCmd(), "revenue"},
