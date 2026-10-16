@@ -112,18 +112,22 @@ func TestRunPaywallAI_EmptyRunStartedKeepsStoredSessionID(t *testing.T) {
 }
 
 type rcPaywallMock struct {
-	mu                sync.Mutex
-	revision          int
-	stateDeclarations string // raw JSON served on the draft; omitted when empty
-	patched           []map[string]any
+	mu                         sync.Mutex
+	revision                   int
+	stateDeclarations          string // raw JSON served on the draft; omitted when empty
+	automaticallyScaleFontSize string // raw JSON served on the draft; omitted when empty
+	patched                    []map[string]any
 }
 
 func (m *rcPaywallMock) paywallJSON(rev int) string {
-	declarations := ""
+	optional := ""
 	if m.stateDeclarations != "" {
-		declarations = `,"state_declarations":` + m.stateDeclarations
+		optional = `,"state_declarations":` + m.stateDeclarations
 	}
-	return fmt.Sprintf(`{"id":"pw_test","offering_id":"","created_at":1,"components":{"published":null,"draft":{"revision":%d,"components_config":{"base":{}},"components_localizations":{"en_US":{}},"default_locale":"en_US"%s}}}`, rev, declarations)
+	if m.automaticallyScaleFontSize != "" {
+		optional += `,"automatically_scale_font_size":` + m.automaticallyScaleFontSize
+	}
+	return fmt.Sprintf(`{"id":"pw_test","offering_id":"","created_at":1,"components":{"published":null,"draft":{"revision":%d,"components_config":{"base":{}},"components_localizations":{"en_US":{}},"default_locale":"en_US"%s}}}`, rev, optional)
 }
 
 func (m *rcPaywallMock) server(t *testing.T) *httptest.Server {
@@ -163,11 +167,13 @@ func (m *rcPaywallMock) lastPatched(t *testing.T) map[string]any {
 }
 
 type echoEditorServer struct {
-	mu                   sync.Mutex
-	received             []string
-	receivedDeclarations []string
-	declarations         string // raw JSON echoed on the result paywall; omitted when empty
-	minted               int
+	mu                                 sync.Mutex
+	received                           []string
+	receivedDeclarations               []string
+	receivedAutomaticallyScaleFontSize []string
+	declarations                       string // raw JSON echoed on the result paywall; omitted when empty
+	automaticallyScaleFontSize         string // raw JSON echoed on the result paywall; omitted when empty
+	minted                             int
 }
 
 func (s *echoEditorServer) server(t *testing.T) *httptest.Server {
@@ -176,13 +182,15 @@ func (s *echoEditorServer) server(t *testing.T) *httptest.Server {
 		var body struct {
 			SessionID string `json:"session_id"`
 			Paywall   struct {
-				StateDeclarations json.RawMessage `json:"state_declarations"`
+				StateDeclarations          json.RawMessage `json:"state_declarations"`
+				AutomaticallyScaleFontSize json.RawMessage `json:"automatically_scale_font_size"`
 			} `json:"paywall"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		s.mu.Lock()
 		s.received = append(s.received, body.SessionID)
 		s.receivedDeclarations = append(s.receivedDeclarations, string(body.Paywall.StateDeclarations))
+		s.receivedAutomaticallyScaleFontSize = append(s.receivedAutomaticallyScaleFontSize, string(body.Paywall.AutomaticallyScaleFontSize))
 		sid := body.SessionID
 		if sid == "" {
 			s.minted++
@@ -191,11 +199,14 @@ func (s *echoEditorServer) server(t *testing.T) *httptest.Server {
 		s.mu.Unlock()
 
 		w.Header().Set("Content-Type", "text/event-stream")
-		declarations := ""
+		optional := ""
 		if s.declarations != "" {
-			declarations = `,"state_declarations":` + s.declarations
+			optional = `,"state_declarations":` + s.declarations
 		}
-		paywall := `{"default_locale":"en_US","offering_id":null,"components_config":{"designed":true},"components_localizations":{"en_US":{}}` + declarations + `}`
+		if s.automaticallyScaleFontSize != "" {
+			optional += `,"automatically_scale_font_size":` + s.automaticallyScaleFontSize
+		}
+		paywall := `{"default_locale":"en_US","offering_id":null,"components_config":{"designed":true},"components_localizations":{"en_US":{}}` + optional + `}`
 		fmt.Fprintf(w, "data: {\"type\":\"run.started\",\"session_id\":%q}\n\n", sid)
 		fmt.Fprintf(w, "data: {\"type\":\"turn.snapshot\",\"session_id\":%q,\"turn_index\":0,\"paywall\":%s,\"activity\":[]}\n\n", sid, paywall)
 		fmt.Fprintf(w, "data: {\"type\":\"run.completed\",\"session_id\":%q,\"trace_id\":\"tr1\",\"paywall\":%s,\"activity\":[]}\n\n", sid, paywall)
@@ -372,5 +383,83 @@ func TestPaywallsEdit_NeverPatchesNullStateDeclarations(t *testing.T) {
 	got, ok := rc.lastPatched(t)["state_declarations"]
 	if !ok || !reflect.DeepEqual(got, map[string]any{}) {
 		t.Fatalf("PATCH state_declarations = %v (present: %v), want {}", got, ok)
+	}
+}
+
+func TestPaywallsEdit_RoundTripsAutomaticallyScaleFontSize(t *testing.T) {
+	rc := &rcPaywallMock{automaticallyScaleFontSize: "false"}
+	rcServer := rc.server(t)
+	defer rcServer.Close()
+	editor := &echoEditorServer{automaticallyScaleFontSize: "true"}
+	editorServer := editor.server(t)
+	defer editorServer.Close()
+
+	runEditTurn(t, t.TempDir(), editorServer.URL, rcServer.URL, "pw_test")
+
+	editor.mu.Lock()
+	sent := append([]string(nil), editor.receivedAutomaticallyScaleFontSize...)
+	editor.mu.Unlock()
+	if len(sent) != 1 || sent[0] != "false" {
+		t.Fatalf("editor request automatically_scale_font_size = %v, want false", sent)
+	}
+	if got := rc.lastPatched(t)["automatically_scale_font_size"]; got != true {
+		t.Fatalf("PATCH automatically_scale_font_size = %v, want true", got)
+	}
+}
+
+// An editor that predates the setting never echoes it; the PATCH must then
+// omit it so the stored value is kept.
+func TestPaywallsEdit_OmitsAutomaticallyScaleFontSizeTheEditorDidNotReturn(t *testing.T) {
+	rc := &rcPaywallMock{}
+	rcServer := rc.server(t)
+	defer rcServer.Close()
+	editor := &echoEditorServer{}
+	editorServer := editor.server(t)
+	defer editorServer.Close()
+
+	runEditTurn(t, t.TempDir(), editorServer.URL, rcServer.URL, "pw_test")
+
+	editor.mu.Lock()
+	sent := append([]string(nil), editor.receivedAutomaticallyScaleFontSize...)
+	editor.mu.Unlock()
+	if len(sent) != 1 || sent[0] != "true" {
+		t.Fatalf("editor request automatically_scale_font_size = %v, want true (the default for an unset draft)", sent)
+	}
+	if got, ok := rc.lastPatched(t)["automatically_scale_font_size"]; ok {
+		t.Fatalf("PATCH automatically_scale_font_size = %v, want it omitted", got)
+	}
+}
+
+func TestPaywallsEdit_SessionAdoptsServerAutomaticallyScaleFontSize(t *testing.T) {
+	rc := &rcPaywallMock{automaticallyScaleFontSize: "false"}
+	rcServer := rc.server(t)
+	defer rcServer.Close()
+	editor := &echoEditorServer{}
+	editorServer := editor.server(t)
+	defer editorServer.Close()
+
+	dir := t.TempDir()
+	sessionPath := filepath.Join(dir, "legacy"+paywallSessionSuffix)
+	if err := savePaywallAISession(sessionPath, newTestSession()); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	t.Setenv("RC_PAYWALL_AI_BASE_URL", editorServer.URL)
+	cmd := newPaywallsEditCmd()
+	rt := newSessionTestRuntime(rcServer.URL)
+	cmd.SetContext(WithRuntime(context.Background(), rt))
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"--session", sessionPath, "--prompt", "tweak it"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("edit with --session failed: %v", err)
+	}
+
+	editor.mu.Lock()
+	sent := append([]string(nil), editor.receivedAutomaticallyScaleFontSize...)
+	editor.mu.Unlock()
+	if len(sent) != 1 || sent[0] != "false" {
+		t.Fatalf("editor request automatically_scale_font_size = %v, want false", sent)
 	}
 }

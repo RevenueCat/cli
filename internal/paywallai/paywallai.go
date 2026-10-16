@@ -37,6 +37,8 @@ type PaywallData struct {
 	// Sending StateDeclarations (even empty) tells the editor the client can
 	// round-trip declarations, which lets it wire up new paywall state.
 	StateDeclarations json.RawMessage `json:"state_declarations,omitempty"`
+	// Sending AutomaticallyScaleFontSize opts in to the editor changing it.
+	AutomaticallyScaleFontSize *bool `json:"automatically_scale_font_size,omitempty"`
 }
 
 type InputAttachment struct {
