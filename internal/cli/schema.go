@@ -36,6 +36,9 @@ Use this from an agent rather than scraping the human --help output.`,
 			for _, a := range args {
 				tokens = append(tokens, strings.Split(a, ":")...)
 			}
+			if len(tokens) > 0 && tokens[0] == root.Name() {
+				tokens = tokens[1:]
+			}
 			target, rest, err := root.Find(tokens)
 			if err != nil {
 				return err
