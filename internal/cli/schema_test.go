@@ -236,12 +236,18 @@ func TestTargetingSchemaDocumentsNullableFields(t *testing.T) {
 }
 
 func TestSchemaUnknownCommandErrors(t *testing.T) {
-	root := NewRootCmd("test")
-	root.SetArgs([]string{"schema", "apps:bogus"})
-	root.SetOut(&strings.Builder{})
-	root.SetErr(&strings.Builder{})
-	if err := root.Execute(); err == nil {
-		t.Fatal("expected an error for an unknown command name, got nil")
+	for _, path := range [][]string{{"bogus"}, {"apps", "bogus"}, {"apps:bogus"}, {"apps:create:bogus"}} {
+		t.Run(strings.Join(path, " "), func(t *testing.T) {
+			root := NewRootCmd("test")
+			root.SetArgs(append([]string{"schema"}, path...))
+			var out strings.Builder
+			root.SetOut(&out)
+			root.SetErr(&strings.Builder{})
+			err := root.Execute()
+			if err == nil || !strings.Contains(err.Error(), "unknown command") || ExitCodeFor(err) != 2 || out.Len() != 0 {
+				t.Fatalf("expected usage error without schema output: err=%v stdout=%s", err, out.String())
+			}
+		})
 	}
 }
 
