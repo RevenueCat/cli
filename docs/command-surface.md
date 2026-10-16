@@ -198,6 +198,10 @@ rc paywalls delete <id> [--force]                        # attached/published pa
 
 # Flows (paywalls, web funnels, and multi-step experiences)
 rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # experimental (hidden from --help until Checkpoint rules roll out); repeatable; shows type and publish state
+# Experiments — development v2 endpoints, normal discoverable CLI surface
+rc experiments list [--status <status>]
+rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline
+rc experiments results <id> [--platform <p>] [--country <code>] [--exposure-status exposed|not_exposed] [--currency <code>]  # human totals and decision signals; unknown platforms warn before passing through
 
 # Rico (AI assistant)
 rc rico [message]                                        # streaming chat window in a TTY (--plain for a line loop)

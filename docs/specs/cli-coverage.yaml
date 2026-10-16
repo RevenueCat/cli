@@ -235,6 +235,13 @@ endpoints:
     path: /projects/{project_id}/audiences
   - method: GET
     path: /projects/{project_id}/audiences/{audience_id}
+  # Experiments (development-status; provided by the beta overlay)
+  - method: GET
+    path: /projects/{project_id}/experiments
+  - method: GET
+    path: /projects/{project_id}/experiments/{experiment_id}
+  - method: GET
+    path: /projects/{project_id}/experiments/{experiment_id}/results
 
   # Audit
   - method: GET
