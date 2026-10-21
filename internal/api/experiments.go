@@ -125,11 +125,12 @@ func (s *ExperimentsService) GetWithPaywalls(ctx context.Context, projectID, id 
 }
 
 type ExperimentResults struct {
-	Object       string                      `json:"object"`
-	Sections     []ExperimentResultsSection  `json:"sections"`
-	Currency     string                      `json:"currency"`
-	Statistics   []ExperimentResultStatistic `json:"statistics"`
-	PredictedLTV *ExperimentPredictedLTV     `json:"predicted_ltv"`
+	ControlVariant string                      `json:"control_variant,omitempty"`
+	Object         string                      `json:"object"`
+	Sections       []ExperimentResultsSection  `json:"sections"`
+	Currency       string                      `json:"currency"`
+	Statistics     []ExperimentResultStatistic `json:"statistics"`
+	PredictedLTV   *ExperimentPredictedLTV     `json:"predicted_ltv"`
 }
 
 type ExperimentResultsSection struct {

@@ -1,0 +1,120 @@
+{
+  "object": "experiment_results",
+  "currency": "USD",
+  "control_variant": "e",
+  "sections": [
+    {
+      "object": "experiment_results_section",
+      "section": "Conversion",
+      "metrics": [
+        {
+          "name": "trial_conversion_rate",
+          "unit": "%"
+        },
+        {
+          "name": "paid_conversion_rate",
+          "unit": "%"
+        }
+      ],
+      "segments": [
+        {
+          "id": "all",
+          "is_total": true
+        },
+        {
+          "id": "product",
+          "is_total": false
+        }
+      ],
+      "values": [
+        {
+          "metric": 0,
+          "segment": 0,
+          "variant": "z",
+          "value": 13,
+          "change": 30
+        },
+        {
+          "metric": 0,
+          "segment": 0,
+          "variant": "e",
+          "value": 10,
+          "change": null
+        },
+        {
+          "metric": 0,
+          "segment": 0,
+          "variant": "f",
+          "value": 12,
+          "change": 20
+        },
+        {
+          "metric": 0,
+          "segment": 0,
+          "variant": "F",
+          "value": 14,
+          "change": 40
+        },
+        {
+          "metric": 1,
+          "segment": 0,
+          "variant": "e",
+          "value": 5,
+          "change": null
+        },
+        {
+          "metric": 1,
+          "segment": 0,
+          "variant": "f",
+          "value": null,
+          "change": null
+        },
+        {
+          "metric": 0,
+          "segment": 1,
+          "variant": "segment-only",
+          "value": 999,
+          "change": 999
+        },
+        {
+          "metric": 4,
+          "segment": 0,
+          "variant": "invalid-metric",
+          "value": 999,
+          "change": 999
+        },
+        {
+          "metric": 0,
+          "segment": 4,
+          "variant": "invalid-segment",
+          "value": 999,
+          "change": 999
+        }
+      ]
+    }
+  ],
+  "statistics": [
+    {
+      "metric_name": "trial_conversion_rate",
+      "variants": [
+        {
+          "name": "e",
+          "chance_to_win": 0.1
+        },
+        {
+          "name": "f",
+          "chance_to_win": 0.9
+        },
+        {
+          "name": "F",
+          "chance_to_win": null,
+          "chance_to_win_status": "insufficient_data"
+        }
+      ]
+    }
+  ],
+  "predicted_ltv": {
+    "predicted_winner_variant": "f",
+    "confidence": 85
+  }
+}

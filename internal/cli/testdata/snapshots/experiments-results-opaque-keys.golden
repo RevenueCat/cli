@@ -1,0 +1,16 @@
+$ rc experiments results exp_opaque --no-input --project-id proj_snap --api-key sk_snap
+
+▍ Experiment results
+  Currency                    USD
+
+▍ Conversion
+METRIC                 CONTROL (e)  VARIANT F  CHANGE F  VARIANT f  CHANGE f  VARIANT z  CHANGE z  UNIT
+trial_conversion_rate  10           14         +40.00%   12         +20.00%   13         +30.00%   %   
+paid_conversion_rate   5            —          —         —          —         —          —         %   
+
+▍ Decision signals
+METRIC                 VARIANT    CHANCE TO WIN   95% LIFT INTERVAL
+trial_conversion_rate  Variant f  90.0%           —                
+trial_conversion_rate  Variant F  Need more data  —                
+  Predicted winner            Variant f
+  Confidence                  85%

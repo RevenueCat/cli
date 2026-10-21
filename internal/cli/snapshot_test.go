@@ -67,6 +67,14 @@ func snapshotServer(t *testing.T) *httptest.Server {
 			io.WriteString(w, `{"items":[{"id":"exp_snap","display_name":"Four variants","status":"draft","offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"},"offering_c":{"id":"ofrng_c"},"offering_d":{"id":"ofrng_d"}}],"next_page":null}`)
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap"):
 			io.WriteString(w, `{"object":"experiment","id":"exp_snap","display_name":"Price — paywall","status":"draft","created_at":1784297950368,"updated_at":1784297950368,"total_running_time_seconds":1989824,"enrollment_percentage":50,"offering_a":{"id":"ofrng_control","display_name":"Control","paywall_id":"pw_control"},"offering_b":{"id":"ofrng_treatment","display_name":"Treatment","paywall_id":"pw_treatment"},"offering_c":{"id":"ofrng_extra"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_control"},"offering_b":{"id":"ofrng_treatment"}}]},"experiment_type":"paywall_design","primary_metric":"initial_conversion_rate","secondary_metrics":["realized_ltv_per_customer","trial_conversion_rate"],"enrollment_mode":"only_new","experiment_duration_settings":{"chance_to_win_percentage":95},"conflicts":[{"id":"exp_other"}]}`)
+		case strings.HasSuffix(r.URL.Path, "/experiments/exp_opaque/results"):
+			fixture, err := os.ReadFile("testdata/experiment-results-opaque-keys.json")
+			if err != nil {
+				t.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			_, _ = w.Write(fixture)
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/results"):
 			io.WriteString(w, `{"object":"experiment_results","currency":"USD","sections":[{"object":"experiment_results_section","section":"Conversion","metrics":[{"name":"trial_conversion_rate","unit":"%"}],"segments":[{"object":"experiment_results_segment","id":"total","display_name":"Total","is_total":true}],"values":[{"object":"experiment_results_value","metric":0,"segment":0,"variant":"Control","value":12.5,"change":null,"credible_interval":null,"lift_credible_interval":null},{"object":"experiment_results_value","metric":0,"segment":0,"variant":"Treatment","value":15.0,"change":20,"credible_interval":null,"lift_credible_interval":null}]}],"statistics":[{"object":"experiment_results_statistic","metric_name":"trial_conversion_rate","variants":[{"object":"experiment_results_variant_statistic","name":"Control","chance_to_win":null,"chance_to_win_status":"unavailable","credible_interval_lower":0.1,"credible_interval_upper":0.15,"credible_interval_status":"ok","lift_credible_interval_lower":null,"lift_credible_interval_upper":null,"lift_credible_interval_status":"unavailable"},{"object":"experiment_results_variant_statistic","name":"Treatment","chance_to_win":0.98,"chance_to_win_status":"ok","credible_interval_lower":0.11,"credible_interval_upper":0.18,"credible_interval_status":"ok","lift_credible_interval_lower":-5,"lift_credible_interval_upper":22,"lift_credible_interval_status":"ok"}]}],"predicted_ltv":null}`)
 		case strings.HasSuffix(r.URL.Path, "/offerings/ofrng_snap"):
@@ -102,6 +110,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"experiments-list", []string{"experiments", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-show", []string{"experiments", "show", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-results", []string{"experiments", "results", "exp_snap", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"experiments-results-opaque-keys", []string{"experiments", "results", "exp_opaque", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-stop", []string{"experiments", "stop", "exp_snap", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"experiments-start", []string{"experiments", "start", "exp_snap", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"targeting-update-checkpoint", []string{"targeting", "update", "chkptrule_snap", "--config", "testdata/checkpoint-targeting-update.json", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
