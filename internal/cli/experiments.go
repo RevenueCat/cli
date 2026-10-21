@@ -258,6 +258,7 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 	rt.Out.Field("Currency", results.Currency)
 	control := experimentResultVariantKey(results.ControlVariant)
 	if control == "" {
+		// Legacy responses omit control_variant and always use A as control.
 		control = "a"
 	}
 	shownSections := 0
@@ -351,6 +352,8 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 	return nil
 }
 
+// Older results use labels; new results use keys. Keep this compatibility
+// mapping in the renderer so JSON output preserves the API representation.
 func experimentResultVariantKey(variant string) string {
 	switch variant {
 	case "Control":

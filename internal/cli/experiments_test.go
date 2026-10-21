@@ -252,7 +252,7 @@ func TestExperimentResultsVariantFormats(t *testing.T) {
 					"segments": []any{map[string]any{"is_total": true}}, "values": values,
 				}},
 				"statistics":    []any{map[string]any{"metric_name": "trial_conversion_rate", "variants": variants}},
-				"predicted_ltv": map[string]any{"predicted_winner_variant": tc.variants[2], "confidence": 85},
+				"predicted_ltv": map[string]any{"predicted_winner_variant": "c", "confidence": 85},
 			}
 			if tc.control != "" {
 				payload["control_variant"] = tc.control
@@ -308,7 +308,7 @@ func TestExperimentResultsVariantFormats(t *testing.T) {
 					t.Fatalf("variant data changed in JSON: %s", out)
 				}
 			}
-			if envelope.Data["predicted_ltv"].(map[string]any)["predicted_winner_variant"] != tc.variants[2] {
+			if envelope.Data["predicted_ltv"].(map[string]any)["predicted_winner_variant"] != "c" {
 				t.Fatalf("predicted winner changed in JSON: %s", out)
 			}
 		})

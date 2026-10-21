@@ -280,6 +280,17 @@ rc charts options <name>                                # GET /charts/{name}/opt
 rc audit                                                 # /audit_logs with --limit, --since
 ```
 
+Experiment results accept both the legacy labels (`Control`, `Treatment`,
+`TreatmentC`, `TreatmentD`) and the planned keys (`a`, `b`, `c`, `d`) in
+`sections[].values[].variant` and `statistics[].variants[].name`. Human output
+uses `control_variant` to identify the control, defaulting to `a` when that
+field is absent in legacy responses. `predicted_ltv.predicted_winner_variant`
+already uses keys in both API formats. JSON preserves variant values as
+returned by the API and includes `control_variant` when provided. This is CLI
+compatibility support; the API rollout and support for older CLI releases are
+separate decisions.
+
+
 ## What's intentionally NOT here
 
 - **No `update` on `projects`** — API doesn't expose it. Paywall draft update is
