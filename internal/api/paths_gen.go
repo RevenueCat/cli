@@ -278,6 +278,10 @@ func pathProducts(projectID string) string {
 	return encodePath("projects", projectID, "products")
 }
 
+func pathProductsActionsSubmitToStore(projectID string) string {
+	return encodePath("projects", projectID, "products", "actions", "submit_to_store")
+}
+
 func pathProjects() string {
 	return encodePath("projects")
 }
