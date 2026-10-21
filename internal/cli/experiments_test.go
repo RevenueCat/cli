@@ -226,6 +226,95 @@ func TestExperimentResultsIncludesFourVariants(t *testing.T) {
 	}
 }
 
+func TestExperimentResultsVariantFormats(t *testing.T) {
+	for _, tc := range []struct {
+		name, control   string
+		variants        []string
+		wantRow, winner string
+	}{
+		{"legacy", "", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
+		{"keys without control", "", []string{"a", "b", "c", "d"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
+		{"keys with control A", "a", []string{"a", "b", "c", "d"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
+		{"keys with control B", "b", []string{"a", "b", "c", "d"}, "trial_conversion_rate 11 10 +0.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
+		{"keys with control C", "c", []string{"a", "b", "c", "d"}, "trial_conversion_rate 12 10 +0.00% 11 +10.00% 13 +30.00% %", "Control"},
+		{"keys with control D", "d", []string{"a", "b", "c", "d"}, "trial_conversion_rate 13 10 +0.00% 11 +10.00% 12 +20.00% %", "Treatment C"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			values, variants := []any{}, []any{}
+			for i, variant := range tc.variants {
+				values = append(values, map[string]any{"metric": 0, "segment": 0, "variant": variant, "value": 10 + i, "change": i * 10})
+				variants = append(variants, map[string]any{"name": variant, "chance_to_win": float64(i+1) / 10})
+			}
+			payload := map[string]any{
+				"currency": "USD",
+				"sections": []any{map[string]any{
+					"section": "Conversion", "metrics": []any{map[string]any{"name": "trial_conversion_rate", "unit": "%"}},
+					"segments": []any{map[string]any{"is_total": true}}, "values": values,
+				}},
+				"statistics":    []any{map[string]any{"metric_name": "trial_conversion_rate", "variants": variants}},
+				"predicted_ltv": map[string]any{"predicted_winner_variant": tc.variants[2], "confidence": 85},
+			}
+			if tc.control != "" {
+				payload["control_variant"] = tc.control
+			}
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(payload)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			args := []string{"experiments", "results", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+			out, stderr, err := runAgentCmd(t, args...)
+			if err != nil {
+				t.Fatal(err)
+			}
+			normalized := strings.Join(strings.Fields(out+stderr), " ")
+			if !strings.Contains(normalized, tc.wantRow) || !strings.Contains(normalized, "Predicted winner "+tc.winner) {
+				t.Fatalf("incorrect metrics or predicted winner: %s", out)
+			}
+			control := tc.control
+			if control == "" {
+				control = "a"
+			}
+			for i, key := range []string{"a", "b", "c", "d"} {
+				signal := fmt.Sprintf("%.1f%%", float64(i+1)*10)
+				if strings.Contains(out, signal) != (key != control) {
+					t.Fatalf("incorrect decision signal %s for control %s: %s", signal, control, out)
+				}
+			}
+			if control != "a" && !strings.Contains(normalized, "CONTROL ("+strings.ToUpper(control)+")") {
+				t.Fatalf("missing control identity: %s", out)
+			}
+			out, stderr, err = runAgentCmd(t, append(args, "--json")...)
+			if err != nil || stderr != "" {
+				t.Fatalf("err=%v stderr=%s", err, stderr)
+			}
+			var envelope struct {
+				Data          map[string]any `json:"data"`
+				SchemaVersion int            `json:"schema_version"`
+			}
+			if err := json.Unmarshal([]byte(out), &envelope); err != nil {
+				t.Fatal(err)
+			}
+			if envelope.SchemaVersion != 1 || envelope.Data["control_variant"] != payload["control_variant"] {
+				t.Fatalf("unexpected JSON envelope: %s", out)
+			}
+			section := envelope.Data["sections"].([]any)[0].(map[string]any)
+			statistic := envelope.Data["statistics"].([]any)[0].(map[string]any)
+			for i, variant := range tc.variants {
+				value := section["values"].([]any)[i].(map[string]any)
+				stat := statistic["variants"].([]any)[i].(map[string]any)
+				if value["variant"] != variant || value["value"] != float64(10+i) || stat["name"] != variant {
+					t.Fatalf("variant data changed in JSON: %s", out)
+				}
+			}
+			if envelope.Data["predicted_ltv"].(map[string]any)["predicted_winner_variant"] != tc.variants[2] {
+				t.Fatalf("predicted winner changed in JSON: %s", out)
+			}
+		})
+	}
+}
+
 func TestExperimentShowFallsBackOnlyOnExpandedForbidden(t *testing.T) {
 	for _, tc := range []struct {
 		name                                  string

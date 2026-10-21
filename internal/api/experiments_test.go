@@ -113,3 +113,27 @@ func TestExperimentsReadRoutesAndFilters(t *testing.T) {
 		t.Fatalf("requests = %v, want %v", requests, want)
 	}
 }
+
+func TestExperimentResultsPreservesControlVariant(t *testing.T) {
+	for _, control := range []string{"", "a", "b", "c", "d"} {
+		t.Run("control="+control, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				if control == "" {
+					fmt.Fprint(w, `{"currency":"USD"}`)
+					return
+				}
+				fmt.Fprintf(w, `{"currency":"USD","control_variant":%q}`, control)
+			}))
+			t.Cleanup(srv.Close)
+			client := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+			results, err := client.Experiments.Results(context.Background(), "proj", "exp1", api.ExperimentResultsOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if results.ControlVariant != control {
+				t.Fatalf("control_variant = %q, want %q", results.ControlVariant, control)
+			}
+		})
+	}
+}

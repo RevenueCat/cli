@@ -256,10 +256,14 @@ func experimentExposureStatus(value string) (string, error) {
 
 func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error {
 	rt.Out.Field("Currency", results.Currency)
+	control := experimentResultVariantKey(results.ControlVariant)
+	if control == "" {
+		control = "a"
+	}
 	shownSections := 0
 	for _, section := range results.Sections {
 		valuesByMetric := make(map[int]map[string]api.ExperimentResultValue)
-		hasTreatmentC, hasTreatmentD := false, false
+		present := make(map[string]bool)
 		for _, value := range section.Values {
 			if value.Metric < 0 || value.Metric >= len(section.Metrics) || value.Segment < 0 || value.Segment >= len(section.Segments) || !section.Segments[value.Segment].IsTotal {
 				continue
@@ -267,19 +271,29 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 			if valuesByMetric[value.Metric] == nil {
 				valuesByMetric[value.Metric] = make(map[string]api.ExperimentResultValue)
 			}
-			valuesByMetric[value.Metric][value.Variant] = value
-			hasTreatmentC = hasTreatmentC || value.Variant == "TreatmentC"
-			hasTreatmentD = hasTreatmentD || value.Variant == "TreatmentD"
+			key := experimentResultVariantKey(value.Variant)
+			valuesByMetric[value.Metric][key] = value
+			present[key] = true
 		}
 		if len(valuesByMetric) == 0 {
 			continue
 		}
-		columns := []string{"METRIC", "CONTROL", "TREATMENT", "CHANGE"}
-		if hasTreatmentC {
-			columns = append(columns, "TREATMENT C", "CHANGE C")
+		controlLabel := "CONTROL"
+		if control != "a" {
+			controlLabel += " (" + strings.ToUpper(control) + ")"
 		}
-		if hasTreatmentD {
-			columns = append(columns, "TREATMENT D", "CHANGE D")
+		columns := []string{"METRIC", controlLabel}
+		treatments := []string{}
+		for _, key := range []string{"a", "b", "c", "d"} {
+			if key == control || (!present[key] && key != "a" && key != "b") {
+				continue
+			}
+			treatments = append(treatments, key)
+			changeLabel := "CHANGE"
+			if key != "b" {
+				changeLabel += " " + strings.ToUpper(key)
+			}
+			columns = append(columns, strings.ToUpper(experimentResultVariantLabel(key, control)), changeLabel)
 		}
 		columns = append(columns, "UNIT")
 		rows := make([][]string, 0, len(valuesByMetric))
@@ -288,12 +302,9 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 			if len(values) == 0 {
 				continue
 			}
-			row := []string{metric.Name, resultValue(values["Control"]), resultValue(values["Treatment"]), resultChange(values["Treatment"])}
-			if hasTreatmentC {
-				row = append(row, resultValue(values["TreatmentC"]), resultChange(values["TreatmentC"]))
-			}
-			if hasTreatmentD {
-				row = append(row, resultValue(values["TreatmentD"]), resultChange(values["TreatmentD"]))
+			row := []string{metric.Name, resultValue(values[control])}
+			for _, key := range treatments {
+				row = append(row, resultValue(values[key]), resultChange(values[key]))
 			}
 			row = append(row, metric.Unit)
 			rows = append(rows, row)
@@ -315,12 +326,12 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 			if err := json.Unmarshal(raw, &variant); err != nil {
 				return err
 			}
-			if variant.Name == "Control" {
+			if experimentResultVariantKey(variant.Name) == control {
 				continue
 			}
 			statistics = append(statistics, []string{
 				metric.MetricName,
-				variant.Name,
+				experimentResultVariantLabel(variant.Name, control),
 				chanceToWinLabel(variant),
 				liftIntervalLabel(variant),
 			})
@@ -333,14 +344,45 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 		}
 	}
 	if results.PredictedLTV != nil {
-		winner := map[string]string{"a": "Control", "b": "Treatment", "c": "Treatment C", "d": "Treatment D"}[results.PredictedLTV.PredictedWinnerVariant]
-		if winner == "" {
-			winner = results.PredictedLTV.PredictedWinnerVariant
-		}
+		winner := experimentResultVariantLabel(results.PredictedLTV.PredictedWinnerVariant, control)
 		rt.Out.Field("Predicted winner", winner)
 		rt.Out.Field("Confidence", fmt.Sprintf("%d%%", results.PredictedLTV.Confidence))
 	}
 	return nil
+}
+
+func experimentResultVariantKey(variant string) string {
+	switch variant {
+	case "Control":
+		return "a"
+	case "Treatment":
+		return "b"
+	case "TreatmentC":
+		return "c"
+	case "TreatmentD":
+		return "d"
+	default:
+		return variant
+	}
+}
+
+func experimentResultVariantLabel(variant, control string) string {
+	key := experimentResultVariantKey(variant)
+	if key == control {
+		return "Control"
+	}
+	switch key {
+	case "a":
+		return "Treatment A"
+	case "b":
+		return "Treatment"
+	case "c":
+		return "Treatment C"
+	case "d":
+		return "Treatment D"
+	default:
+		return variant
+	}
 }
 
 func chanceToWinLabel(stat api.ExperimentResultVariantStatistic) string {
