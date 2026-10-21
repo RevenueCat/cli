@@ -290,6 +290,12 @@ returned by the API and includes `control_variant` when provided. This is CLI
 compatibility support; the API rollout and support for older CLI releases are
 separate decisions.
 
+Human result tables discover variant keys from total-segment values rather than
+assuming a fixed A–D set. Keys are opaque and retain their case. The control
+column comes first; other columns sort lexicographically by key for a stable
+presentation. This is display order, not experiment iteration order. Labels
+include the key (`CONTROL (a)`, `VARIANT b`), so a key has no implied role beyond
+`control_variant`. The legacy label mapping remains only for compatibility.
 
 ## What's intentionally NOT here
 

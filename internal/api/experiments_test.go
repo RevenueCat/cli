@@ -115,7 +115,7 @@ func TestExperimentsReadRoutesAndFilters(t *testing.T) {
 }
 
 func TestExperimentResultsPreservesControlVariant(t *testing.T) {
-	for _, control := range []string{"", "a", "b", "c", "d"} {
+	for _, control := range []string{"", "a", "b", "c", "d", "e", "F"} {
 		t.Run("control="+control, func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")

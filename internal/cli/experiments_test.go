@@ -119,7 +119,7 @@ func TestExperimentResultsHumanExplainsMissingTotals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"No total-segment metrics available", "Use --json", "Predicted winner", "Treatment"} {
+	for _, want := range []string{"No total-segment metrics available", "Use --json", "Predicted winner", "Variant b"} {
 		if !strings.Contains(out+stderr, want) {
 			t.Fatalf("missing %q in output: stdout=%s stderr=%s", want, out, stderr)
 		}
@@ -219,7 +219,7 @@ func TestExperimentResultsIncludesFourVariants(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"TREATMENT C", "TREATMENT D", "+10.00%", "+20.00%", "+30.00%"} {
+	for _, want := range []string{"VARIANT c", "VARIANT d", "+10.00%", "+20.00%", "+30.00%"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q: %s", want, out)
 		}
@@ -232,14 +232,14 @@ func TestExperimentResultsVariantFormats(t *testing.T) {
 		variants        []string
 		wantRow, winner string
 	}{
-		{"legacy", "", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
-		{"legacy with control A", "a", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
-		{"legacy with control C", "c", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 12 10 +0.00% 11 +10.00% 13 +30.00% %", "Control"},
-		{"keys without control", "", []string{"a", "b", "c", "d"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
-		{"keys with control A", "a", []string{"a", "b", "c", "d"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
-		{"keys with control B", "b", []string{"a", "b", "c", "d"}, "trial_conversion_rate 11 10 +0.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
-		{"keys with control C", "c", []string{"a", "b", "c", "d"}, "trial_conversion_rate 12 10 +0.00% 11 +10.00% 13 +30.00% %", "Control"},
-		{"keys with control D", "d", []string{"a", "b", "c", "d"}, "trial_conversion_rate 13 10 +0.00% 11 +10.00% 12 +20.00% %", "Treatment C"},
+		{"legacy", "", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Variant c"},
+		{"legacy with control A", "a", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Variant c"},
+		{"legacy with control C", "c", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 12 10 +0.00% 11 +10.00% 13 +30.00% %", "Control (c)"},
+		{"keys without control", "", []string{"a", "b", "c", "d"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Variant c"},
+		{"keys with control A", "a", []string{"a", "b", "c", "d"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Variant c"},
+		{"keys with control B", "b", []string{"a", "b", "c", "d"}, "trial_conversion_rate 11 10 +0.00% 12 +20.00% 13 +30.00% %", "Variant c"},
+		{"keys with control C", "c", []string{"a", "b", "c", "d"}, "trial_conversion_rate 12 10 +0.00% 11 +10.00% 13 +30.00% %", "Control (c)"},
+		{"keys with control D", "d", []string{"a", "b", "c", "d"}, "trial_conversion_rate 13 10 +0.00% 11 +10.00% 12 +20.00% %", "Variant c"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			values, variants := []any{}, []any{}
@@ -284,7 +284,7 @@ func TestExperimentResultsVariantFormats(t *testing.T) {
 					t.Fatalf("incorrect decision signal %s for control %s: %s", signal, control, out)
 				}
 			}
-			if control != "a" && !strings.Contains(normalized, "CONTROL ("+strings.ToUpper(control)+")") {
+			if !strings.Contains(normalized, "CONTROL ("+control+")") {
 				t.Fatalf("missing control identity: %s", out)
 			}
 			out, stderr, err = runAgentCmd(t, append(args, "--json")...)
@@ -314,6 +314,96 @@ func TestExperimentResultsVariantFormats(t *testing.T) {
 				t.Fatalf("predicted winner changed in JSON: %s", out)
 			}
 		})
+	}
+}
+
+func TestExperimentResultsOpaqueVariantKeys(t *testing.T) {
+	fixture, err := os.ReadFile("testdata/experiment-results-opaque-keys.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ winner, label string }{
+		{"f", "Variant f"},
+		{"e", "Control (e)"},
+	} {
+		t.Run(tc.winner, func(t *testing.T) {
+			payload := strings.Replace(string(fixture), `"predicted_winner_variant": "f"`, `"predicted_winner_variant": "`+tc.winner+`"`, 1)
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, payload)
+			}))
+			t.Cleanup(srv.Close)
+			t.Setenv("RC_BASE_URL", srv.URL)
+			args := []string{"experiments", "results", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--no-input"}
+			out, stderr, err := runAgentCmd(t, args...)
+			if err != nil {
+				t.Fatal(err)
+			}
+			normalized := strings.Join(strings.Fields(out+stderr), " ")
+			for _, want := range []string{
+				"METRIC CONTROL (e) VARIANT F CHANGE F VARIANT f CHANGE f VARIANT z CHANGE z UNIT",
+				"trial_conversion_rate 10 14 +40.00% 12 +20.00% 13 +30.00% %",
+				"paid_conversion_rate 5 — — — — — — %",
+				"trial_conversion_rate Variant f 90.0%",
+				"trial_conversion_rate Variant F Need more data",
+				"Predicted winner " + tc.label,
+			} {
+				if !strings.Contains(normalized, want) {
+					t.Fatalf("missing %q: %s", want, normalized)
+				}
+			}
+			for _, unwanted := range []string{"10.0%", "segment-only", "invalid-metric", "invalid-segment", "VARIANT a", "VARIANT b"} {
+				if strings.Contains(normalized, unwanted) {
+					t.Fatalf("unexpected %q: %s", unwanted, normalized)
+				}
+			}
+			out, stderr, err = runAgentCmd(t, append(args, "--json")...)
+			if err != nil || stderr != "" {
+				t.Fatalf("err=%v stderr=%s", err, stderr)
+			}
+			var envelope struct {
+				Data json.RawMessage `json:"data"`
+			}
+			if err := json.Unmarshal([]byte(out), &envelope); err != nil {
+				t.Fatal(err)
+			}
+			// Typed response encoding adds optional null fields; verify every fixture
+			// field recursively while allowing those existing additions.
+			var want, got any
+			if err := json.Unmarshal([]byte(payload), &want); err != nil {
+				t.Fatal(err)
+			}
+			if err := json.Unmarshal(envelope.Data, &got); err != nil {
+				t.Fatal(err)
+			}
+			assertExperimentResultJSON(t, want, got)
+		})
+	}
+}
+
+func assertExperimentResultJSON(t *testing.T, want, got any) {
+	t.Helper()
+	switch expected := want.(type) {
+	case map[string]any:
+		actual, ok := got.(map[string]any)
+		if !ok {
+			t.Fatalf("expected object, got %v", got)
+		}
+		for key, value := range expected {
+			assertExperimentResultJSON(t, value, actual[key])
+		}
+	case []any:
+		actual, ok := got.([]any)
+		if !ok || len(actual) != len(expected) {
+			t.Fatalf("array mismatch: want=%v got=%v", want, got)
+		}
+		for i, value := range expected {
+			assertExperimentResultJSON(t, value, actual[i])
+		}
+	default:
+		if want != got {
+			t.Fatalf("JSON value changed: want=%v got=%v", want, got)
+		}
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -279,22 +280,17 @@ func renderExperimentResults(rt *Runtime, results *api.ExperimentResults) error 
 		if len(valuesByMetric) == 0 {
 			continue
 		}
-		controlLabel := "CONTROL"
-		if control != "a" {
-			controlLabel += " (" + strings.ToUpper(control) + ")"
+		columns := []string{"METRIC", "CONTROL (" + control + ")"}
+		treatments := make([]string, 0, len(present))
+		for key := range present {
+			if key != control {
+				treatments = append(treatments, key)
+			}
 		}
-		columns := []string{"METRIC", controlLabel}
-		treatments := []string{}
-		for _, key := range []string{"a", "b", "c", "d"} {
-			if key == control || (!present[key] && key != "a" && key != "b") {
-				continue
-			}
-			treatments = append(treatments, key)
-			changeLabel := "CHANGE"
-			if key != "b" {
-				changeLabel += " " + strings.ToUpper(key)
-			}
-			columns = append(columns, strings.ToUpper(experimentResultVariantLabel(key, control)), changeLabel)
+		// The API does not provide iteration order. Sort only for stable display.
+		sort.Strings(treatments)
+		for _, key := range treatments {
+			columns = append(columns, "VARIANT "+key, "CHANGE "+key)
 		}
 		columns = append(columns, "UNIT")
 		rows := make([][]string, 0, len(valuesByMetric))
@@ -372,20 +368,9 @@ func experimentResultVariantKey(variant string) string {
 func experimentResultVariantLabel(variant, control string) string {
 	key := experimentResultVariantKey(variant)
 	if key == control {
-		return "Control"
+		return "Control (" + key + ")"
 	}
-	switch key {
-	case "a":
-		return "Treatment A"
-	case "b":
-		return "Treatment"
-	case "c":
-		return "Treatment C"
-	case "d":
-		return "Treatment D"
-	default:
-		return variant
-	}
+	return "Variant " + key
 }
 
 func chanceToWinLabel(stat api.ExperimentResultVariantStatistic) string {
