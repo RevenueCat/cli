@@ -233,6 +233,8 @@ func TestExperimentResultsVariantFormats(t *testing.T) {
 		wantRow, winner string
 	}{
 		{"legacy", "", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
+		{"legacy with control A", "a", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
+		{"legacy with control C", "c", []string{"Control", "Treatment", "TreatmentC", "TreatmentD"}, "trial_conversion_rate 12 10 +0.00% 11 +10.00% 13 +30.00% %", "Control"},
 		{"keys without control", "", []string{"a", "b", "c", "d"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
 		{"keys with control A", "a", []string{"a", "b", "c", "d"}, "trial_conversion_rate 10 11 +10.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
 		{"keys with control B", "b", []string{"a", "b", "c", "d"}, "trial_conversion_rate 11 10 +0.00% 12 +20.00% 13 +30.00% %", "Treatment C"},
