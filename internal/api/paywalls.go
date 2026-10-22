@@ -32,7 +32,7 @@ type PaywallComponentsVersion struct {
 	ComponentsLocalizations    json.RawMessage `json:"components_localizations"`
 	StateDeclarations          json.RawMessage `json:"state_declarations,omitempty"`
 	DefaultLocale              string          `json:"default_locale"`
-	AutomaticallyScaleFontSize bool            `json:"automatically_scale_font_size"`
+	AutomaticallyScaleFontSize *bool           `json:"automatically_scale_font_size"`
 }
 
 // PaywallDraftUpdate is the PATCH body that saves component state onto a
@@ -44,9 +44,10 @@ type PaywallDraftUpdate struct {
 	ComponentsLocalizations json.RawMessage `json:"components_localizations"`
 	// Unset must marshal as an omitted field, never as null: the server keeps
 	// stored declarations when the field is absent but clears them on explicit null.
-	StateDeclarations json.RawMessage `json:"state_declarations,omitempty"`
-	DefaultLocale     string          `json:"default_locale"`
-	Name              *string         `json:"name,omitempty"`
+	StateDeclarations          json.RawMessage `json:"state_declarations,omitempty"`
+	DefaultLocale              string          `json:"default_locale"`
+	Name                       *string         `json:"name,omitempty"`
+	AutomaticallyScaleFontSize *bool           `json:"automatically_scale_font_size,omitempty"`
 }
 
 func (s *PaywallsService) List(ctx context.Context, projectID string) (*Page[Paywall], error) {
