@@ -47,7 +47,7 @@ func newProfilesListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			active := config.ProfileName("")
+			active := config.ProfileName(rt.Globals.Profile)
 			rows := make([][]string, 0, len(names))
 			for _, n := range names {
 				marker := " "
@@ -107,7 +107,7 @@ func newProfilesShowCmd() *cobra.Command {
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			name := ""
+			name := rt.Globals.Profile
 			if len(args) == 1 {
 				name = args[0]
 			}
