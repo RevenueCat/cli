@@ -11,6 +11,10 @@ import (
 const maxExperimentConfigBytes = 1 << 20
 
 func readJSONConfig(path string, out any) error {
+	return readJSONConfigWithLimit(path, out, maxExperimentConfigBytes)
+}
+
+func readJSONConfigWithLimit(path string, out any, maxBytes int64) error {
 	var reader io.Reader
 	if path == "-" {
 		reader = os.Stdin
@@ -22,12 +26,12 @@ func readJSONConfig(path string, out any) error {
 		defer file.Close()
 		reader = file
 	}
-	data, err := io.ReadAll(io.LimitReader(reader, maxExperimentConfigBytes+1))
+	data, err := io.ReadAll(io.LimitReader(reader, maxBytes+1))
 	if err != nil {
 		return err
 	}
-	if len(data) > maxExperimentConfigBytes {
-		return fmt.Errorf("config exceeds 1 MiB")
+	if int64(len(data)) > maxBytes {
+		return fmt.Errorf("config exceeds %d MiB", maxBytes>>20)
 	}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()

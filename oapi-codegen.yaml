@@ -29,3 +29,18 @@ output-options:
     - App
     - AppType
     - AppObject
+    - ListFlows
+    - Flow
+    - CreateFlow
+    - FlowStep
+    - FlowScreen
+    - DuplicateFlow
+    - PublishFlow
+    - ValidateFlow
+    - FlowValidation
+    - FlowValidationIssue
+    - PaywallValidationIssueKey
+    - FlowValidationIssueKey
+    - FlowValidationError
+    - FlowDraft
+    - UpdateFlowDraft
