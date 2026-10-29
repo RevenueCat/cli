@@ -225,15 +225,14 @@ func saveEditedSteps(ctx context.Context, client *api.Client, projectID string, 
 	}
 	updated := map[string]json.RawMessage{}
 	for stepID, paywall := range edited {
-		raw, ok := draft.Steps[stepID]
-		if !ok {
+		if _, ok := draft.Steps[stepID]; !ok {
 			return nil, fmt.Errorf("the editor returned step %q, which is not in flow %s", stepID, draft.ID)
 		}
-		merged, err := mergeStepPaywall(raw, paywall)
+		patch, err := editedStepPatch(paywall)
 		if err != nil {
 			return nil, err
 		}
-		updated[stepID] = merged
+		updated[stepID] = patch
 	}
 	if _, err := client.Flows.UpdateDraft(ctx, projectID, draft.ID, api.UpdateFlowDraft{
 		Revision:     draft.Revision,
@@ -249,43 +248,21 @@ func saveEditedSteps(ctx context.Context, client *api.Client, projectID string, 
 	return ids, nil
 }
 
-// mergeStepPaywall replaces the editable paywall fields of a draft step and
-// keeps everything else on the step untouched, offering included.
-func mergeStepPaywall(step json.RawMessage, paywall paywallai.PaywallData) (json.RawMessage, error) {
-	fields := map[string]json.RawMessage{}
-	if err := json.Unmarshal(step, &fields); err != nil {
-		return nil, fmt.Errorf("decoding flow step: %w", err)
+// editedStepPatch is the updated_steps entry for an edited screen: only the
+// editable paywall fields, which the server merges onto the stored step.
+func editedStepPatch(paywall paywallai.PaywallData) (json.RawMessage, error) {
+	pw := map[string]any{
+		"default_locale":           paywall.DefaultLocale,
+		"components_config":        paywall.ComponentsConfig,
+		"components_localizations": paywall.ComponentsLocalizations,
 	}
-	pw := map[string]json.RawMessage{}
-	if len(fields["paywall"]) > 0 {
-		if err := json.Unmarshal(fields["paywall"], &pw); err != nil {
-			return nil, fmt.Errorf("decoding flow step paywall: %w", err)
-		}
-	}
-	set := func(key string, value any) error {
-		raw, err := json.Marshal(value)
-		pw[key] = raw
-		return err
-	}
-	if err := set("default_locale", paywall.DefaultLocale); err != nil {
-		return nil, err
-	}
-	pw["components_config"] = paywall.ComponentsConfig
-	pw["components_localizations"] = paywall.ComponentsLocalizations
 	if raw := presentJSON(paywall.StateDeclarations); raw != nil {
 		pw["state_declarations"] = raw
 	}
 	if paywall.AutomaticallyScaleFontSize != nil {
-		if err := set("automatically_scale_font_size", *paywall.AutomaticallyScaleFontSize); err != nil {
-			return nil, err
-		}
+		pw["automatically_scale_font_size"] = *paywall.AutomaticallyScaleFontSize
 	}
-	paywallRaw, err := json.Marshal(pw)
-	if err != nil {
-		return nil, err
-	}
-	fields["paywall"] = paywallRaw
-	return json.Marshal(fields)
+	return json.Marshal(map[string]any{"paywall": pw})
 }
 
 func requireScreenStep(draft *api.FlowDraft, stepID string) error {

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -15,8 +16,11 @@ const flowDraftJSON = `{"id":"wf_1","object":"flow_draft","revision":4,"type":"p
 	`"auth":{"type":"auth"}}}`
 
 const (
-	streamStarted = "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n"
-	streamEdited  = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"new\":true},\"components_localizations\":{\"en_US\":{}}}}}\n\n"
+	streamStarted    = "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n"
+	streamEdited     = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"new\":true},\"components_localizations\":{\"en_US\":{}}}}}\n\n"
+	streamEditedFull = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{" +
+		"\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{\"a\":1},\"components_localizations\":{},\"state_declarations\":{\"x\":1},\"automatically_scale_font_size\":false}," +
+		"\"other\":{\"default_locale\":\"fr_FR\",\"state_declarations\":null,\"components_config\":{\"b\":2},\"components_localizations\":{}}}}\n\n"
 	streamNoEdits = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{}}\n\n"
 	streamFailed  = "data: {\"type\":\"run.failed\",\"session_id\":\"sess1\",\"error\":{\"code\":\"internal\",\"message\":\"boom\"},\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{\"partial\":true},\"components_localizations\":{}}}}\n\n"
 )
@@ -31,6 +35,7 @@ func TestPaywallsEditStepID(t *testing.T) {
 		wantStream  bool
 		wantPatches int
 		wantOut     string
+		wantPatch   string
 	}{
 		{
 			name:        "saves the edited step against the draft revision",
@@ -40,6 +45,19 @@ func TestPaywallsEditStepID(t *testing.T) {
 			wantStream:  true,
 			wantPatches: 1,
 			wantOut:     "saved_to_draft",
+			wantPatch:   `{"revision":4,"updated_steps":{"screen":{"paywall":{"default_locale":"en_US","components_config":{"new":true},"components_localizations":{"en_US":{}}}}}}`,
+		},
+		{
+			name:        "every edited step sends only its paywall",
+			args:        []string{"wf_1", "--step-id", "screen"},
+			stream:      streamStarted + streamEditedFull,
+			saveStatus:  http.StatusOK,
+			wantStream:  true,
+			wantPatches: 1,
+			wantOut:     "saved_to_draft",
+			wantPatch: `{"revision":4,"updated_steps":{` +
+				`"screen":{"paywall":{"default_locale":"en_US","components_config":{"a":1},"components_localizations":{},"state_declarations":{"x":1},"automatically_scale_font_size":false}},` +
+				`"other":{"paywall":{"default_locale":"fr_FR","components_config":{"b":2},"components_localizations":{}}}}}`,
 		},
 		{
 			name:        "no edits means no save",
@@ -90,7 +108,8 @@ func TestPaywallsEditStepID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var streamed bool
-			var patches []map[string]json.RawMessage
+			var patchBody []byte
+			var patches int
 			var streamBody map[string]any
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch {
@@ -101,9 +120,8 @@ func TestPaywallsEditStepID(t *testing.T) {
 					_ = json.NewDecoder(r.Body).Decode(&streamBody)
 					_, _ = io.WriteString(w, tt.stream)
 				case r.Method == http.MethodPatch && r.URL.Path == "/projects/proj/flows/wf_1/draft":
-					var body map[string]json.RawMessage
-					_ = json.NewDecoder(r.Body).Decode(&body)
-					patches = append(patches, body)
+					patchBody, _ = io.ReadAll(r.Body)
+					patches++
 					w.WriteHeader(tt.saveStatus)
 					_, _ = io.WriteString(w, `{"id":"wf_1","revision":5}`)
 				default:
@@ -126,8 +144,8 @@ func TestPaywallsEditStepID(t *testing.T) {
 			if streamed != tt.wantStream {
 				t.Fatalf("streamed = %v, want %v", streamed, tt.wantStream)
 			}
-			if len(patches) != tt.wantPatches {
-				t.Fatalf("patches = %d, want %d", len(patches), tt.wantPatches)
+			if patches != tt.wantPatches {
+				t.Fatalf("patches = %d, want %d", patches, tt.wantPatches)
 			}
 			if tt.wantOut != "" && !strings.Contains(out, tt.wantOut) {
 				t.Fatalf("output missing %q: %s", tt.wantOut, out)
@@ -140,28 +158,16 @@ func TestPaywallsEditStepID(t *testing.T) {
 					t.Fatal("v3 request carried a paywall")
 				}
 			}
-			if len(patches) == 1 {
-				patch := patches[0]
-				if string(patch["revision"]) != "4" {
-					t.Fatalf("revision = %s, want the draft revision read before the run", patch["revision"])
-				}
-				var updated map[string]map[string]json.RawMessage
-				if err := json.Unmarshal(patch["updated_steps"], &updated); err != nil {
+			if tt.wantPatch != "" {
+				var want, got any
+				if err := json.Unmarshal([]byte(tt.wantPatch), &want); err != nil {
 					t.Fatal(err)
 				}
-				if len(updated) != 1 {
-					t.Fatalf("updated steps = %v, want only the edited step", updated)
-				}
-				step := updated["screen"]
-				var paywall map[string]json.RawMessage
-				if err := json.Unmarshal(step["paywall"], &paywall); err != nil {
+				if err := json.Unmarshal(patchBody, &got); err != nil {
 					t.Fatal(err)
 				}
-				if string(step["name"]) != `"Main"` || string(paywall["offering_id"]) != `"ofrng1"` || string(paywall["haptics_enabled"]) != "false" {
-					t.Fatalf("untouched fields lost: %s", step)
-				}
-				if string(paywall["components_config"]) != `{"new":true}` {
-					t.Fatalf("components_config = %s", paywall["components_config"])
+				if !reflect.DeepEqual(got, want) {
+					t.Fatalf("PATCH body = %s\nwant %s", patchBody, tt.wantPatch)
 				}
 			}
 		})
