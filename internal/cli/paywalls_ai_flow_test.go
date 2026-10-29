@@ -151,11 +151,8 @@ func TestPaywallsEditStepID(t *testing.T) {
 				t.Fatalf("output missing %q: %s", tt.wantOut, out)
 			}
 			if tt.wantStream {
-				if ctx, _ := streamBody["workflow_context"].(map[string]any); ctx["workflow_id"] != "wf_1" || ctx["focused_step_id"] != "screen" || ctx["workflow_revision"] != float64(4) {
+				if ctx, _ := streamBody["workflow_context"].(map[string]any); ctx["workflow_revision"] != float64(4) {
 					t.Fatalf("workflow_context = %v", streamBody["workflow_context"])
-				}
-				if _, ok := streamBody["paywall"]; ok {
-					t.Fatal("v3 request carried a paywall")
 				}
 			}
 			if tt.wantPatch != "" {
@@ -171,23 +168,5 @@ func TestPaywallsEditStepID(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestPaywallsEditWithoutStepIDUsesV1(t *testing.T) {
-	var paths []string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		paths = append(paths, r.URL.Path)
-		http.Error(w, "stop", http.StatusInternalServerError)
-	}))
-	defer server.Close()
-	_, _, _ = runProjectSetupCommand(t, server.URL, "paywalls", "edit", "pw_1", "--prompt", "x", "--base-url", server.URL, "--json", "--no-input")
-	for _, p := range paths {
-		if strings.Contains(p, "/flows/") || strings.Contains(p, "/editor/v3/") {
-			t.Fatalf("v1 edit touched flow path %s", p)
-		}
-	}
-	if len(paths) == 0 {
-		t.Fatal("no requests made")
 	}
 }

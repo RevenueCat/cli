@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,10 +18,6 @@ import (
 // paywallAIFlowSession is the conversation memory for one Flow step. Astra
 // reads the step's content from the Flow itself, so no paywall is stored.
 type paywallAIFlowSession struct {
-	Version          int               `json:"version"`
-	ProjectID        string            `json:"project_id"`
-	FlowID           string            `json:"flow_id"`
-	StepID           string            `json:"step_id"`
 	SessionID        string            `json:"session_id,omitempty"`
 	TraceID          string            `json:"trace_id,omitempty"`
 	UIConfig         json.RawMessage   `json:"ui_config"`
@@ -37,34 +34,23 @@ func defaultFlowSessionPath(projectID, flowID, stepID string) (string, error) {
 	return filepath.Join(filepath.Dir(base), "session."+stepID+paywallSessionSuffix), nil
 }
 
-func loadFlowSession(path, projectID, flowID, stepID string) *paywallAIFlowSession {
-	fresh := &paywallAIFlowSession{
-		Version:          2,
-		ProjectID:        projectID,
-		FlowID:           flowID,
-		StepID:           stepID,
-		UIConfig:         json.RawMessage(minimalUIConfig),
-		ProductVariables: map[string]string{},
-		SessionItems:     json.RawMessage(`{}`),
-	}
+func loadFlowSession(path string) (*paywallAIFlowSession, error) {
 	payload, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return &paywallAIFlowSession{
+			UIConfig:         json.RawMessage(minimalUIConfig),
+			ProductVariables: map[string]string{},
+			SessionItems:     json.RawMessage(`{}`),
+		}, nil
+	}
 	if err != nil {
-		return fresh
+		return nil, fmt.Errorf("reading session file: %w", err)
 	}
-	var stored paywallAIFlowSession
-	if json.Unmarshal(payload, &stored) != nil || stored.Version != 2 ||
-		stored.ProjectID != projectID || stored.FlowID != flowID || stored.StepID != stepID {
-		return fresh
+	var session paywallAIFlowSession
+	if err := json.Unmarshal(payload, &session); err != nil {
+		return nil, fmt.Errorf("parsing session file %s: %w", path, err)
 	}
-	return &stored
-}
-
-func saveFlowSession(path string, session *paywallAIFlowSession) error {
-	payload, err := json.MarshalIndent(session, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, append(payload, '\n'), 0o600)
+	return &session, nil
 }
 
 func applyFlowEvent(session *paywallAIFlowSession, event *paywallai.Event) {
@@ -109,7 +95,10 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 	if opts.sessionPath, err = defaultFlowSessionPath(projectID, flowID, stepID); err != nil {
 		return err
 	}
-	session := loadFlowSession(opts.sessionPath, projectID, flowID, stepID)
+	session, err := loadFlowSession(opts.sessionPath)
+	if err != nil {
+		return err
+	}
 
 	astra, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
@@ -155,47 +144,47 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 		switch event.Type {
 		case paywallai.EventRunStarted, paywallai.EventTurnSnapshot:
 			applyFlowEvent(session, event)
-			_ = saveFlowSession(opts.sessionPath, session)
+			_ = savePaywallAISession(opts.sessionPath, session)
 			reportedActivity = reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 		case paywallai.EventRunFailed:
 			// Nothing is saved on a failed run, even if it carries partial edits.
 			if event.SessionID != "" {
 				session.SessionID = event.SessionID
-				_ = saveFlowSession(opts.sessionPath, session)
+				_ = savePaywallAISession(opts.sessionPath, session)
 			}
 			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), "Nothing was saved. Re-run the command to try again.")
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			applyFlowEvent(session, event)
-			if err := saveFlowSession(opts.sessionPath, session); err != nil {
+			if err := savePaywallAISession(opts.sessionPath, session); err != nil {
 				return err
 			}
-			return finishFlowEdit(ctx, rt, opts, client, draft, session, event)
+			return finishFlowEdit(ctx, rt, opts, client, projectID, draft, stepID, session, event)
 		}
 	}
 }
 
-func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, draft *api.FlowDraft, session *paywallAIFlowSession, event *paywallai.Event) error {
+func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.FlowDraft, stepID string, session *paywallAIFlowSession, event *paywallai.Event) error {
 	screenshots := savePaywallScreenshots(rt, opts.sessionPath, event.ResultScreenshots)
-	saved, err := saveEditedSteps(ctx, client, session.ProjectID, draft, event.EditedPaywallsByStepID)
+	saved, err := saveEditedSteps(ctx, client, projectID, draft, event.EditedPaywallsByStepID)
 	switch {
 	case err == nil && len(saved) == 0:
 		rt.Out.Info("The editor made no changes to the flow.")
 	case err == nil:
-		rt.Out.Success(fmt.Sprintf("Design saved to flow draft %s (%s)", session.FlowID, strings.Join(saved, ", ")))
+		rt.Out.Success(fmt.Sprintf("Design saved to flow draft %s (%s)", draft.ID, strings.Join(saved, ", ")))
 		if path, ok := screenshots["light"]; ok {
 			rt.Out.Field("Preview", path)
 		}
 		if path, ok := screenshots["dark"]; ok {
 			rt.Out.Field("Preview (dark)", path)
 		}
-		rt.Out.Field("Keep designing", fmt.Sprintf("rc paywalls edit %s --step-id %s", session.FlowID, session.StepID))
+		rt.Out.Field("Keep designing", fmt.Sprintf("rc paywalls edit %s --step-id %s", draft.ID, stepID))
 	default:
 		var apiErr *api.APIError
 		if errors.As(err, &apiErr) && apiErr.Status == 409 {
 			// The edits were made against a stale revision, so they are never replayed automatically.
 			rt.Out.Warn("Nothing was saved: the flow changed during the run (dashboard or another client).")
-			rt.Out.Hint(fmt.Sprintf("Re-run against the current draft:  rc paywalls edit %s --step-id %s", session.FlowID, session.StepID))
+			rt.Out.Hint(fmt.Sprintf("Re-run against the current draft:  rc paywalls edit %s --step-id %s", draft.ID, stepID))
 		} else {
 			rt.Out.Warn("Could not save the design to RevenueCat: " + err.Error())
 			rt.Out.Hint("Nothing was saved. Re-run the command to try again.")
@@ -203,8 +192,8 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 	}
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(map[string]any{
-			"flow_id":          session.FlowID,
-			"step_id":          session.StepID,
+			"flow_id":          draft.ID,
+			"step_id":          stepID,
 			"saved_steps":      saved,
 			"saved_to_draft":   len(saved) > 0,
 			"session_id":       session.SessionID,
