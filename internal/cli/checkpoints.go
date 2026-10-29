@@ -1,10 +1,15 @@
 package cli
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/output"
+	"github.com/revenuecat/cli/internal/tui"
 )
 
 func newCheckpointsCmd() *cobra.Command {
@@ -13,12 +18,56 @@ func newCheckpointsCmd() *cobra.Command {
 		Aliases: []string{"checkpoint"},
 		// Hidden from --help until Checkpoint rules roll out.
 		Annotations: map[string]string{annotationSurface: surfaceExperimental},
-		Short:       "View Checkpoints",
+		Short:       "Manage Checkpoints",
 		Long: `A Checkpoint is a point in your app, such as app open or after onboarding,
 where Checkpoint rules decide which Flow a customer sees.`,
 		Example: `  rc checkpoints list`,
 	}
-	cmd.AddCommand(newCheckpointsListCmd())
+	cmd.AddCommand(newCheckpointsListCmd(), newCheckpointsCreateCmd())
+	return cmd
+}
+
+func newCheckpointsCreateCmd() *cobra.Command {
+	var identifier string
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a Checkpoint",
+		Long: `Registers the identifier your app will use before the SDK encounters it.
+Requires Checkpoint access for the project. Creating a Checkpoint does not
+attach or activate a Flow; use targeting rules to choose what it shows.`,
+		Example: `  rc checkpoints create --identifier after_onboarding
+  rc checkpoints create --identifier after_onboarding --json --no-input`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			validate := func(value string) error {
+				if strings.TrimSpace(value) == "" {
+					return fmt.Errorf("--identifier is required")
+				}
+				return nil
+			}
+			if err := tui.Form(rt.Globals.NoInput).
+				Field(huh.NewInput().Title("Identifier").Value(&identifier).Validate(validate)).
+				Run(); err != nil {
+				return err
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			checkpoint, err := client.Checkpoints.Create(cmd.Context(), projectID, api.CreateCheckpointRequest{Identifier: identifier})
+			if err != nil {
+				return err
+			}
+			rt.Out.Success(fmt.Sprintf("Created checkpoint %s", checkpoint.ID))
+			return rt.Out.Render(checkpoint)
+		},
+	}
+	cmd.Flags().StringVar(&identifier, "identifier", "", "identifier your app uses for the Checkpoint (required)")
 	return cmd
 }
 

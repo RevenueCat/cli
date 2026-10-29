@@ -12,6 +12,28 @@ import (
 	"testing"
 )
 
+func TestCheckpointTargetingListFilters(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/projects/proj/targeting_rules" {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		for key, want := range map[string]string{
+			"checkpoint_id": "chkpt1", "flow_id": "wf1", "state": "inactive", "limit": "3", "starting_after": "chkptrule0",
+		} {
+			if got := r.URL.Query().Get(key); got != want {
+				t.Errorf("%s=%q, want %q", key, got, want)
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"object":"list","items":[{"id":"chkptrule1","rule_type":"checkpoint","flow_id":"wf1","state":"inactive","display_name":"Onboarding"}],"next_page":null}`)
+	}))
+	t.Cleanup(server.Close)
+	out, _, err := runProjectSetupCommand(t, server.URL, "targeting", "list", "--checkpoint-id", "chkpt1", "--flow-id", "wf1", "--state", "inactive", "--limit", "3", "--cursor", "chkptrule0", "--json", "--no-input")
+	if err != nil || !strings.Contains(out, "chkptrule1") {
+		t.Fatalf("out=%s err=%v", out, err)
+	}
+}
+
 func TestCheckpointTargetingCreatePreservesPositionAfterApproval(t *testing.T) {
 	for _, position := range []int{0, 3} {
 		t.Run(fmt.Sprint(position), func(t *testing.T) {
