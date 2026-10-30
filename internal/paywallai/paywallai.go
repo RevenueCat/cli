@@ -69,6 +69,30 @@ type EditorRequest struct {
 	Source                   string            `json:"source"`
 }
 
+// WorkflowContext scopes a v3 run to one step of a Flow.
+type WorkflowContext struct {
+	Version          int    `json:"version"`
+	WorkflowID       string `json:"workflow_id"`
+	FocusedStepID    string `json:"focused_step_id"`
+	WorkflowRevision int    `json:"workflow_revision"`
+}
+
+// EditorRequestV3 is the POST /editor/v3/stream body. Astra reads the Flow
+// itself, so no paywall is sent.
+type EditorRequestV3 struct {
+	ProjectID                string            `json:"project_id"`
+	SessionID                string            `json:"session_id,omitempty"`
+	UIConfig                 json.RawMessage   `json:"ui_config"`
+	ProductVariables         map[string]string `json:"product_variables"`
+	Message                  string            `json:"message"`
+	InputAttachments         []InputAttachment `json:"input_attachments,omitempty"`
+	SessionItems             json.RawMessage   `json:"__unstable_session_items"`
+	AppContext               json.RawMessage   `json:"app_context,omitempty"`
+	WorkflowContext          WorkflowContext   `json:"workflow_context"`
+	IncludeResultScreenshots bool              `json:"include_result_screenshots,omitempty"`
+	Source                   string            `json:"source"`
+}
+
 type ToolActivity struct {
 	ID         string `json:"id"`
 	Type       string `json:"type"` // "tool" | "assistant_message"
@@ -106,6 +130,8 @@ type Event struct {
 	SessionItems      json.RawMessage    `json:"__unstable_session_items,omitempty"`
 	AppContext        json.RawMessage    `json:"app_context,omitempty"`
 	ResultScreenshots []ResultScreenshot `json:"result_screenshots,omitempty"`
+	// v3 only: every step the run edited, keyed by step id.
+	EditedPaywallsByStepID map[string]PaywallData `json:"edited_paywalls_by_step_id,omitempty"`
 }
 
 func (e *Event) Terminal() bool {
@@ -214,7 +240,17 @@ func errorMessage(body []byte) string {
 // Stream starts an editor run and returns the live event stream.
 func (c *Client) Stream(ctx context.Context, request EditorRequest) (*Stream, error) {
 	request.Source = editorSource
-	req, err := c.newRequest(ctx, "/editor/v1/stream", request)
+	return c.openStream(ctx, "/editor/v1/stream", request)
+}
+
+// StreamV3 starts a Flow-step editor run and returns the live event stream.
+func (c *Client) StreamV3(ctx context.Context, request EditorRequestV3) (*Stream, error) {
+	request.Source = editorSource
+	return c.openStream(ctx, "/editor/v3/stream", request)
+}
+
+func (c *Client) openStream(ctx context.Context, path string, body any) (*Stream, error) {
+	req, err := c.newRequest(ctx, path, body)
 	if err != nil {
 		return nil, err
 	}

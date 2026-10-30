@@ -882,7 +882,7 @@ func loadPaywallAISession(rt *Runtime, path string) (*paywallAISession, error) {
 	return &session, nil
 }
 
-func savePaywallAISession(path string, session *paywallAISession) error {
+func savePaywallAISession(path string, session any) error {
 	payload, err := json.MarshalIndent(session, "", "  ")
 	if err != nil {
 		return err
