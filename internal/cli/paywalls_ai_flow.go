@@ -131,7 +131,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 	if err != nil {
 		return err
 	}
-	draft, err := client.Flows.GetDraft(ctx, projectID, flowID)
+	draft, err := client.Flows.Get(ctx, projectID, flowID, api.FlowExpandSteps)
 	if err != nil {
 		if api.IsNotFound(err) {
 			return WithHint(err, "Pass the flow id: rc flows list --type paywall")
@@ -216,7 +216,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 	}
 }
 
-func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.FlowDraft, stepID string, session *paywallAIFlowSession, event *paywallai.Event) error {
+func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.Flow, stepID string, session *paywallAIFlowSession, event *paywallai.Event) error {
 	screenshots := savePaywallScreenshots(rt, opts.sessionPath, event.ResultScreenshots)
 	saved, err := saveEditedSteps(ctx, client, projectID, draft, event.EditedPaywallsByStepID)
 	switch {
@@ -260,7 +260,7 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 
 // saveEditedSteps writes every step the run edited back in one draft update,
 // guarded by the revision the run started from.
-func saveEditedSteps(ctx context.Context, client *api.Client, projectID string, draft *api.FlowDraft, edited map[string]paywallai.PaywallData) ([]string, error) {
+func saveEditedSteps(ctx context.Context, client *api.Client, projectID string, draft *api.Flow, edited map[string]paywallai.PaywallData) ([]string, error) {
 	if len(edited) == 0 {
 		return nil, nil
 	}
@@ -275,7 +275,7 @@ func saveEditedSteps(ctx context.Context, client *api.Client, projectID string, 
 		}
 		updated[stepID] = patch
 	}
-	if _, err := client.Flows.UpdateDraft(ctx, projectID, draft.ID, api.UpdateFlowDraft{
+	if _, err := client.Flows.Update(ctx, projectID, draft.ID, api.UpdateFlow{
 		Revision:     draft.Revision,
 		UpdatedSteps: updated,
 	}); err != nil {
@@ -306,7 +306,7 @@ func editedStepPatch(paywall paywallai.PaywallData) (json.RawMessage, error) {
 	return json.Marshal(map[string]any{"paywall": pw})
 }
 
-func requireScreenStep(draft *api.FlowDraft, stepID string) error {
+func requireScreenStep(draft *api.Flow, stepID string) error {
 	raw, ok := draft.Steps[stepID]
 	if !ok {
 		return WithHint(fmt.Errorf("flow %s has no step %q", draft.ID, stepID), "List the flow's steps with: rc flows show "+draft.ID)

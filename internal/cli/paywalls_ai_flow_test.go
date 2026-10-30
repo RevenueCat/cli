@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-const flowDraftJSON = `{"id":"wf_1","object":"flow_draft","revision":4,"type":"paywall","steps":{` +
+const flowDraftJSON = `{"id":"wf_1","object":"flow","revision":4,"type":"paywall","steps":{` +
 	`"screen":{"type":"screen","name":"Main","paywall":{"offering_id":"ofrng1","components_config":{"old":true},"components_localizations":{},"haptics_enabled":false}},` +
 	`"other":{"type":"screen","paywall":{"components_config":{"keep":true}}},` +
 	`"auth":{"type":"auth"}}}`
@@ -118,13 +118,13 @@ func TestFlowsEdit(t *testing.T) {
 			var streamBody map[string]any
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch {
-				case r.Method == http.MethodGet && r.URL.Path == "/projects/proj/flows/wf_1/draft":
+				case r.Method == http.MethodGet && r.URL.Path == "/projects/proj/flows/wf_1":
 					_, _ = io.WriteString(w, flowDraftJSON)
 				case r.Method == http.MethodPost && r.URL.Path == "/editor/v3/stream":
 					streamed = true
 					_ = json.NewDecoder(r.Body).Decode(&streamBody)
 					_, _ = io.WriteString(w, tt.stream)
-				case r.Method == http.MethodPatch && r.URL.Path == "/projects/proj/flows/wf_1/draft":
+				case r.Method == http.MethodPatch && r.URL.Path == "/projects/proj/flows/wf_1":
 					patchBody, _ = io.ReadAll(r.Body)
 					patches++
 					w.WriteHeader(tt.saveStatus)
