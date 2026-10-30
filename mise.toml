@@ -3,3 +3,7 @@ go = "1.26.10"
 # Provisioned so `mise exec -- make check` (the lefthook pre-commit) runs lint —
 # without it the forbidigo bans only fire in CI. Pinned to the CI version.
 golangci-lint = "2.12.2"
+
+[settings]
+idiomatic_version_file_enable_tools = ["node"]
+minimum_release_age = "1d"
