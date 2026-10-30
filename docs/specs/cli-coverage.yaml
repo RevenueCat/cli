@@ -295,8 +295,6 @@ endpoints:
   # Flow authoring (development API)
   - method: POST
     path: /projects/{project_id}/flows
-  - method: GET
-    path: /projects/{project_id}/flows/{flow_id}
   - method: POST
     path: /projects/{project_id}/flows/{flow_id}/actions/duplicate
   - method: POST

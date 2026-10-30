@@ -55,19 +55,6 @@ type CreateFlow struct {
 	Steps map[string]json.RawMessage `json:"steps,omitempty"`
 }
 
-type DuplicateFlow struct {
-	DisplayName   string `json:"display_name,omitempty"`
-	SourceVersion string `json:"source_version,omitempty"`
-}
-
-type ValidateFlow struct {
-	Revision int `json:"revision,omitempty"`
-}
-
-type PublishFlow struct {
-	Revision int `json:"revision"`
-}
-
 type FlowValidationIssue struct {
 	Key            string  `json:"key"`
 	Message        string  `json:"message"`
@@ -78,15 +65,6 @@ type FlowValidationIssue struct {
 	LocalizationID *string `json:"localization_id,omitempty"`
 	Path           *string `json:"path,omitempty"`
 	Action         *string `json:"action,omitempty"`
-}
-
-type FlowValidation struct {
-	ID             string                           `json:"id"`
-	Object         string                           `json:"object"`
-	Revision       *int                             `json:"revision"`
-	Valid          bool                             `json:"valid"`
-	StepIssues     map[string][]FlowValidationIssue `json:"step_issues"`
-	WorkflowErrors []FlowValidationIssue            `json:"workflow_errors"`
 }
 
 // FlowListOptions filters by Flow type. Type and ExcludeType can't be combined.
@@ -124,12 +102,6 @@ func (s *FlowsService) List(ctx context.Context, projectID string, opts FlowList
 	return &out, nil
 }
 
-func (s *FlowsService) Get(ctx context.Context, projectID, id string) (*Flow, error) {
-	var out Flow
-	err := s.c.do(ctx, http.MethodGet, pathFlow(projectID, id), nil, &out)
-	return &out, err
-}
-
 func (s *FlowsService) GetDraft(ctx context.Context, projectID, id string) (*FlowDraft, error) {
 	var out FlowDraft
 	err := s.c.do(ctx, http.MethodGet, pathFlowDraft(projectID, id), nil, &out)
@@ -156,14 +128,18 @@ func (s *FlowsService) Duplicate(ctx context.Context, projectID, id string, body
 
 func (s *FlowsService) Validate(ctx context.Context, projectID, id string, revision int) (*FlowValidation, error) {
 	var out FlowValidation
-	body := ValidateFlow{Revision: revision}
+	var body ValidateFlow
+	if revision > 0 {
+		r := int64(revision)
+		body.Revision = &r
+	}
 	err := s.c.do(ctx, http.MethodPost, pathFlowActionsValidate(projectID, id), body, &out)
 	return &out, err
 }
 
 func (s *FlowsService) Publish(ctx context.Context, projectID, id string, revision int) (*Flow, error) {
 	var out Flow
-	body := PublishFlow{Revision: revision}
+	body := PublishFlow{Revision: int64(revision)}
 	err := s.c.do(ctx, http.MethodPost, pathFlowActionsPublish(projectID, id), body, &out)
 	return &out, err
 }

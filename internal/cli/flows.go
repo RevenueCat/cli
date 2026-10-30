@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -80,4 +83,16 @@ func flowPublishState(f api.Flow) string {
 	default:
 		return formatMillis(int64(*f.PublishedAt))
 	}
+}
+
+func flowPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
+	page, err := client.Flows.List(ctx, projectID, api.FlowListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PickerItem, len(page.Items))
+	for i, f := range page.Items {
+		items[i] = PickerItem{ID: f.ID, Label: fmt.Sprintf("%s  (%s)", f.Name, f.Type)}
+	}
+	return items, nil
 }

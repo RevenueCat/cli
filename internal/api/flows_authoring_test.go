@@ -14,11 +14,11 @@ import (
 )
 
 func TestFlowAuthoringRoutes(t *testing.T) {
+	published := api.DuplicateFlowSourceVersionPublished
 	for _, tc := range []struct {
 		name, method, suffix, body string
 		call                       func(*api.Client) error
 	}{
-		{"get", "GET", "", "", func(c *api.Client) error { _, err := c.Flows.Get(context.Background(), "proj", "wf_1"); return err }},
 		{"draft", "GET", "/draft", "", func(c *api.Client) error {
 			_, err := c.Flows.GetDraft(context.Background(), "proj", "wf_1")
 			return err
@@ -28,7 +28,7 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 			return err
 		}},
 		{"duplicate", "POST", "/actions/duplicate", `{"source_version":"published"}`, func(c *api.Client) error {
-			_, err := c.Flows.Duplicate(context.Background(), "proj", "wf_1", api.DuplicateFlow{SourceVersion: "published"})
+			_, err := c.Flows.Duplicate(context.Background(), "proj", "wf_1", api.DuplicateFlow{SourceVersion: &published})
 			return err
 		}},
 		{"validate latest", "POST", "/actions/validate", `{}`, func(c *api.Client) error {

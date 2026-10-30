@@ -63,7 +63,7 @@ func TestCheckpointsCreateRequiresIdentifierBeforeRequest(t *testing.T) {
 			}))
 			t.Cleanup(server.Close)
 			_, _, err := runProjectSetupCommand(t, server.URL, "checkpoints", "create", "--identifier", identifier, "--no-input")
-			if err == nil || !strings.Contains(err.Error(), "--identifier") || requests != 0 {
+			if err == nil || !strings.Contains(err.Error(), "identifier") || requests != 0 {
 				t.Fatalf("err=%v requests=%d", err, requests)
 			}
 		})

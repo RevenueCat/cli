@@ -162,10 +162,6 @@ func pathExperiments(projectID string) string {
 	return encodePath("projects", projectID, "experiments")
 }
 
-func pathFlow(projectID string, flowID string) string {
-	return encodePath("projects", projectID, "flows", flowID)
-}
-
 func pathFlowActionsDuplicate(projectID string, flowID string) string {
 	return encodePath("projects", projectID, "flows", flowID, "actions", "duplicate")
 }

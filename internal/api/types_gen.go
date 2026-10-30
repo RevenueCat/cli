@@ -1975,6 +1975,24 @@ func (e DeletedObjectObject) Valid() bool {
 	}
 }
 
+// Defines values for DuplicateFlowSourceVersion.
+const (
+	DuplicateFlowSourceVersionDraft     DuplicateFlowSourceVersion = "draft"
+	DuplicateFlowSourceVersionPublished DuplicateFlowSourceVersion = "published"
+)
+
+// Valid indicates whether the value is a known member of the DuplicateFlowSourceVersion enum.
+func (e DuplicateFlowSourceVersion) Valid() bool {
+	switch e {
+	case DuplicateFlowSourceVersionDraft:
+		return true
+	case DuplicateFlowSourceVersionPublished:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Duration.
 const (
 	P1M Duration = "P1M"
@@ -2149,6 +2167,90 @@ func (e ExtendSubscriptionUntilDateExtendReasonCode) Valid() bool {
 	case ExtendSubscriptionUntilDateExtendReasonCodeServiceIssueOrOutage:
 		return true
 	case ExtendSubscriptionUntilDateExtendReasonCodeUndeclared:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FlowValidationObject.
+const (
+	FlowValidationObjectFlowValidation FlowValidationObject = "flow_validation"
+)
+
+// Valid indicates whether the value is a known member of the FlowValidationObject enum.
+func (e FlowValidationObject) Valid() bool {
+	switch e {
+	case FlowValidationObjectFlowValidation:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FlowValidationErrorKey.
+const (
+	WorkflowCheckoutNoSuccessStep              FlowValidationErrorKey = "Workflow_CheckoutNoSuccessStep"
+	WorkflowCheckoutNotReachable               FlowValidationErrorKey = "Workflow_CheckoutNotReachable"
+	WorkflowCookieConsentNoPrivacyPolicy       FlowValidationErrorKey = "Workflow_CookieConsentNoPrivacyPolicy"
+	WorkflowExclusiveRuleMixedOutcome          FlowValidationErrorKey = "Workflow_ExclusiveRuleMixedOutcome"
+	WorkflowExperimentPotentialCombosOverLimit FlowValidationErrorKey = "Workflow_ExperimentPotentialCombosOverLimit"
+	WorkflowExperimentRunningCombosOverLimit   FlowValidationErrorKey = "Workflow_ExperimentRunningCombosOverLimit"
+	WorkflowInitialStepNotFound                FlowValidationErrorKey = "Workflow_InitialStepNotFound"
+	WorkflowNoCheckoutStep                     FlowValidationErrorKey = "Workflow_NoCheckoutStep"
+	WorkflowNoInitialStep                      FlowValidationErrorKey = "Workflow_NoInitialStep"
+	WorkflowNoPaywallScreen                    FlowValidationErrorKey = "Workflow_NoPaywallScreen"
+	WorkflowNoWebConfig                        FlowValidationErrorKey = "Workflow_NoWebConfig"
+	WorkflowNoWebProducts                      FlowValidationErrorKey = "Workflow_NoWebProducts"
+	WorkflowRestoreButtonNotOnFinalScreen      FlowValidationErrorKey = "Workflow_RestoreButtonNotOnFinalScreen"
+)
+
+// Valid indicates whether the value is a known member of the FlowValidationErrorKey enum.
+func (e FlowValidationErrorKey) Valid() bool {
+	switch e {
+	case WorkflowCheckoutNoSuccessStep:
+		return true
+	case WorkflowCheckoutNotReachable:
+		return true
+	case WorkflowCookieConsentNoPrivacyPolicy:
+		return true
+	case WorkflowExclusiveRuleMixedOutcome:
+		return true
+	case WorkflowExperimentPotentialCombosOverLimit:
+		return true
+	case WorkflowExperimentRunningCombosOverLimit:
+		return true
+	case WorkflowInitialStepNotFound:
+		return true
+	case WorkflowNoCheckoutStep:
+		return true
+	case WorkflowNoInitialStep:
+		return true
+	case WorkflowNoPaywallScreen:
+		return true
+	case WorkflowNoWebConfig:
+		return true
+	case WorkflowNoWebProducts:
+		return true
+	case WorkflowRestoreButtonNotOnFinalScreen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FlowValidationErrorSeverity.
+const (
+	FlowValidationErrorSeverityError   FlowValidationErrorSeverity = "error"
+	FlowValidationErrorSeverityWarning FlowValidationErrorSeverity = "warning"
+)
+
+// Valid indicates whether the value is a known member of the FlowValidationErrorSeverity enum.
+func (e FlowValidationErrorSeverity) Valid() bool {
+	switch e {
+	case FlowValidationErrorSeverityError:
+		return true
+	case FlowValidationErrorSeverityWarning:
 		return true
 	default:
 		return false
@@ -35690,6 +35792,24 @@ type DeletedObject struct {
 // DeletedObjectObject The type of the deleted object
 type DeletedObjectObject string
 
+// DuplicateFlow defines model for DuplicateFlow.
+type DuplicateFlow struct {
+	// DisplayName Name of the duplicate.
+	//
+	// Example: Onboarding Copy
+	DisplayName *string `json:"display_name,omitempty"`
+
+	// SourceVersion Which source version to copy. The copy is always unpublished.
+	//
+	// Example: draft
+	SourceVersion *DuplicateFlowSourceVersion `json:"source_version,omitempty"`
+}
+
+// DuplicateFlowSourceVersion Which source version to copy. The copy is always unpublished.
+//
+// Example: draft
+type DuplicateFlowSourceVersion string
+
 // Duration The duration of the product subscription. This field is only supported for the test store and it is ignored for other stores.
 //
 // Example: P1W
@@ -35833,6 +35953,79 @@ type ExtendSubscriptionUntilDate struct {
 //
 // Example: customer_satisfaction
 type ExtendSubscriptionUntilDateExtendReasonCode string
+
+// FlowValidation defines model for FlowValidation.
+type FlowValidation struct {
+	// ID Flow ID.
+	//
+	// Example: wf_123456789a
+	ID string `json:"id"`
+
+	// Object Type of this object.
+	//
+	// Example: flow_validation
+	Object FlowValidationObject `json:"object"`
+
+	// Revision Current draft revision. Saves must supply this value to reject stale writes.
+	//
+	// Example: 1
+	Revision *int64 `json:"revision"`
+
+	// StepIssues Issues keyed by step ID.
+	//
+	// Example: {}
+	StepIssues map[string][]FlowValidationIssue `json:"step_issues"`
+
+	// Valid Whether the draft can be published. Warnings do not prevent publication.
+	//
+	// Example: false
+	Valid bool `json:"valid"`
+
+	// WorkflowErrors Issues affecting the entire flow.
+	//
+	// Example: []
+	WorkflowErrors       []FlowValidationError  `json:"workflow_errors"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// FlowValidationObject Type of this object.
+//
+// Example: flow_validation
+type FlowValidationObject string
+
+// FlowValidationError defines model for FlowValidationError.
+type FlowValidationError struct {
+	// Action Suggested action to resolve the issue.
+	//
+	// Example: add_screen
+	Action *string `json:"action,omitempty"`
+
+	// Key Workflow validation error key.
+	//
+	// Example: Workflow_ExperimentRunningCombosOverLimit
+	Key FlowValidationErrorKey `json:"key"`
+
+	// Message A human-readable description of the issue.
+	//
+	// Example: Add a name to your paywall.
+	Message string `json:"message"`
+
+	// Severity The severity of the validation issue.
+	//
+	// Example: error
+	Severity             FlowValidationErrorSeverity `json:"severity"`
+	AdditionalProperties map[string]interface{}      `json:"-"`
+}
+
+// FlowValidationErrorKey Workflow validation error key.
+//
+// Example: Workflow_ExperimentRunningCombosOverLimit
+type FlowValidationErrorKey string
+
+// FlowValidationErrorSeverity The severity of the validation issue.
+//
+// Example: error
+type FlowValidationErrorSeverity string
 
 // IndicativePrice An indicative price for a product, in the default currency/country (USD / US). Uses the same price source as the get-offering-prices endpoint.
 type IndicativePrice struct {
@@ -37222,6 +37415,14 @@ type PublicAPIKeyEnvironment string
 // PublicAPIKeyObject String representing the object's type. Objects of the same type share the same value.
 type PublicAPIKeyObject string
 
+// PublishFlow defines model for PublishFlow.
+type PublishFlow struct {
+	// Revision Current draft revision. Saves must supply this value to reject stale writes.
+	//
+	// Example: 1
+	Revision int64 `json:"revision"`
+}
+
 // Purchase defines model for Purchase.
 type Purchase struct {
 	// Country The country that the object is associated with, in ISO alpha 2 code
@@ -38120,6 +38321,14 @@ type UpdateWebhookIntegrationInput struct {
 
 // UpdateWebhookIntegrationInputEnvironment The environment the webhook integration is configured for
 type UpdateWebhookIntegrationInputEnvironment string
+
+// ValidateFlow defines model for ValidateFlow.
+type ValidateFlow struct {
+	// Revision Current draft revision. Saves must supply this value to reject stale writes.
+	//
+	// Example: 1
+	Revision *int64 `json:"revision,omitempty"`
+}
 
 // VirtualCurrency defines model for VirtualCurrency.
 type VirtualCurrency struct {
@@ -46575,6 +46784,248 @@ func (a ChartSeries) MarshalJSON() ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'unit': %w", err)
 		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for FlowValidation. Returns the specified
+// element and whether it was found
+func (a FlowValidation) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for FlowValidation
+func (a *FlowValidation) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for FlowValidation to handle AdditionalProperties
+func (a *FlowValidation) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["revision"]; found {
+		err = json.Unmarshal(raw, &a.Revision)
+		if err != nil {
+			return fmt.Errorf("error reading 'revision': %w", err)
+		}
+		delete(object, "revision")
+	}
+
+	if raw, found := object["step_issues"]; found {
+		err = json.Unmarshal(raw, &a.StepIssues)
+		if err != nil {
+			return fmt.Errorf("error reading 'step_issues': %w", err)
+		}
+		delete(object, "step_issues")
+	}
+
+	if raw, found := object["valid"]; found {
+		err = json.Unmarshal(raw, &a.Valid)
+		if err != nil {
+			return fmt.Errorf("error reading 'valid': %w", err)
+		}
+		delete(object, "valid")
+	}
+
+	if raw, found := object["workflow_errors"]; found {
+		err = json.Unmarshal(raw, &a.WorkflowErrors)
+		if err != nil {
+			return fmt.Errorf("error reading 'workflow_errors': %w", err)
+		}
+		delete(object, "workflow_errors")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for FlowValidation to handle AdditionalProperties
+func (a FlowValidation) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["revision"], err = json.Marshal(a.Revision)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'revision': %w", err)
+	}
+
+	if a.StepIssues != nil {
+		object["step_issues"], err = json.Marshal(a.StepIssues)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'step_issues': %w", err)
+		}
+	}
+
+	object["valid"], err = json.Marshal(a.Valid)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'valid': %w", err)
+	}
+
+	if a.WorkflowErrors != nil {
+		object["workflow_errors"], err = json.Marshal(a.WorkflowErrors)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'workflow_errors': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for FlowValidationError. Returns the specified
+// element and whether it was found
+func (a FlowValidationError) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for FlowValidationError
+func (a *FlowValidationError) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for FlowValidationError to handle AdditionalProperties
+func (a *FlowValidationError) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["action"]; found {
+		err = json.Unmarshal(raw, &a.Action)
+		if err != nil {
+			return fmt.Errorf("error reading 'action': %w", err)
+		}
+		delete(object, "action")
+	}
+
+	if raw, found := object["key"]; found {
+		err = json.Unmarshal(raw, &a.Key)
+		if err != nil {
+			return fmt.Errorf("error reading 'key': %w", err)
+		}
+		delete(object, "key")
+	}
+
+	if raw, found := object["message"]; found {
+		err = json.Unmarshal(raw, &a.Message)
+		if err != nil {
+			return fmt.Errorf("error reading 'message': %w", err)
+		}
+		delete(object, "message")
+	}
+
+	if raw, found := object["severity"]; found {
+		err = json.Unmarshal(raw, &a.Severity)
+		if err != nil {
+			return fmt.Errorf("error reading 'severity': %w", err)
+		}
+		delete(object, "severity")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for FlowValidationError to handle AdditionalProperties
+func (a FlowValidationError) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Action != nil {
+		object["action"], err = json.Marshal(a.Action)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'action': %w", err)
+		}
+	}
+
+	object["key"], err = json.Marshal(a.Key)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'key': %w", err)
+	}
+
+	object["message"], err = json.Marshal(a.Message)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'message': %w", err)
+	}
+
+	object["severity"], err = json.Marshal(a.Severity)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'severity': %w", err)
 	}
 
 	for fieldName, field := range a.AdditionalProperties {

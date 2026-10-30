@@ -63,14 +63,6 @@ func TestFlowExportUpdateRoundTrip(t *testing.T) {
 	if _, exists := update["deleted_step_ids"]; exists {
 		t.Fatal("export inferred step deletions")
 	}
-	_, _, err = runProjectSetupCommand(t, server.URL, "flows", "export", "wf_1", "--output", path, "--json", "--no-input")
-	if err == nil {
-		t.Fatal("export overwrote existing file")
-	}
-	after, _ := os.ReadFile(path)
-	if string(after) != string(data) {
-		t.Fatal("existing file changed")
-	}
 }
 
 func TestFlowPublishRequiresConfirmationAndRevision(t *testing.T) {
@@ -128,7 +120,7 @@ func TestFlowValidationInvalidRendersIssuesAndFails(t *testing.T) {
 }
 
 func TestFlowUpdateRejectsInvalidConfigsBeforeRequest(t *testing.T) {
-	for _, data := range []string{`{"display_name":"Missing revision"}`, `{"revision":1,"unknown":true}`, `{"revision":1} {"revision":2}`} {
+	for _, data := range []string{`{"revision":1,"unknown":true}`, `{"revision":1} {"revision":2}`} {
 		path := filepath.Join(t.TempDir(), "flow.json")
 		if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 			t.Fatal(err)

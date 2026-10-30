@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -44,14 +43,8 @@ attach or activate a Flow; use targeting rules to choose what it shows.`,
 			if err != nil {
 				return err
 			}
-			validate := func(value string) error {
-				if strings.TrimSpace(value) == "" {
-					return fmt.Errorf("--identifier is required")
-				}
-				return nil
-			}
 			if err := tui.Form(rt.Globals.NoInput).
-				Field(huh.NewInput().Title("Identifier").Value(&identifier).Validate(validate)).
+				Field(huh.NewInput().Title("Identifier").Value(&identifier).Validate(tui.Required("identifier"))).
 				Run(); err != nil {
 				return err
 			}
