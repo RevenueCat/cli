@@ -65,43 +65,6 @@ func TestFlowExportUpdateRoundTrip(t *testing.T) {
 	}
 }
 
-func TestFlowPublishRequiresConfirmationAndRevision(t *testing.T) {
-	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		if r.Method != "POST" || r.URL.Path != "/projects/proj/flows/wf_1/actions/publish" {
-			t.Errorf("request = %s %s", r.Method, r.URL.Path)
-		}
-		var body struct {
-			Revision int `json:"revision"`
-		}
-		_ = json.NewDecoder(r.Body).Decode(&body)
-		if body.Revision != 4 {
-			t.Errorf("revision = %d", body.Revision)
-		}
-		_, _ = io.WriteString(w, `{"id":"wf_1","revision":4}`)
-	}))
-	defer server.Close()
-	for _, args := range [][]string{
-		{"flows", "publish", "wf_1", "--revision", "4", "--no-input"},
-		{"flows", "publish", "wf_1", "--yes", "--no-input"},
-	} {
-		if _, _, err := runProjectSetupCommand(t, server.URL, args...); err == nil {
-			t.Fatalf("accepted missing confirmation/revision: %v", args)
-		}
-	}
-	if requests != 0 {
-		t.Fatal("published before confirmation")
-	}
-	_, _, err := runProjectSetupCommand(t, server.URL, "flows", "publish", "wf_1", "--revision", "4", "--yes", "--json", "--no-input")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if requests != 1 {
-		t.Errorf("publish requests = %d", requests)
-	}
-}
-
 func TestFlowValidationInvalidRendersIssuesAndFails(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/projects/proj/flows/wf_1/actions/validate" || r.Method != "POST" {

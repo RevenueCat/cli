@@ -136,10 +136,3 @@ func (s *FlowsService) Validate(ctx context.Context, projectID, id string, revis
 	err := s.c.do(ctx, http.MethodPost, pathFlowActionsValidate(projectID, id), body, &out)
 	return &out, err
 }
-
-func (s *FlowsService) Publish(ctx context.Context, projectID, id string, revision int) (*Flow, error) {
-	var out Flow
-	body := PublishFlow{Revision: int64(revision)}
-	err := s.c.do(ctx, http.MethodPost, pathFlowActionsPublish(projectID, id), body, &out)
-	return &out, err
-}

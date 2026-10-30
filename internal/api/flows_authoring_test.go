@@ -39,10 +39,6 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", 3)
 			return err
 		}},
-		{"publish", "POST", "/actions/publish", `{"revision":3}`, func(c *api.Client) error {
-			_, err := c.Flows.Publish(context.Background(), "proj", "wf_1", 3)
-			return err
-		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

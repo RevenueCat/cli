@@ -298,8 +298,6 @@ endpoints:
   - method: POST
     path: /projects/{project_id}/flows/{flow_id}/actions/duplicate
   - method: POST
-    path: /projects/{project_id}/flows/{flow_id}/actions/publish
-  - method: POST
     path: /projects/{project_id}/flows/{flow_id}/actions/validate
   - method: GET
     path: /projects/{project_id}/flows/{flow_id}/draft

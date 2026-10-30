@@ -205,7 +205,6 @@ rc flows update [id] --config <path|->                   # save the exported JSO
 rc flows create --config <path|->                       # create an unpublished paywall, web-funnel, or general flow
 rc flows duplicate [id] [--name <name>] [--source-version draft|published] # create an unpublished copy
 rc flows validate [id] [--revision <revision>]           # return saved-draft validation issues
-rc flows publish [id] --revision <revision>             # validate and publish that revision; confirmation/--yes
 # Experiments — development v2 endpoints, normal discoverable CLI surface
 rc experiments list [--status <status>]
 rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline
