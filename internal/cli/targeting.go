@@ -24,7 +24,7 @@ func newTargetingCmd() *cobra.Command {
 }
 
 func newTargetingListCmd() *cobra.Command {
-	var state, cursor, checkpointID, flowID string
+	var state, cursor string
 	var limit int
 	cmd := &cobra.Command{
 		Use:     "list",
@@ -41,9 +41,7 @@ func newTargetingListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			page, err := client.TargetingRules.List(cmd.Context(), projectID, api.ListTargetingRulesOptions{
-				State: state, Limit: limit, StartingAfter: cursor, CheckpointID: checkpointID, FlowID: flowID,
-			})
+			page, err := client.TargetingRules.List(cmd.Context(), projectID, api.ListTargetingRulesOptions{State: state, Limit: limit, StartingAfter: cursor})
 			if err != nil {
 				return err
 			}
@@ -68,8 +66,6 @@ func newTargetingListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&state, "state", "", "filter by active, scheduled (checkpoint only), or inactive; future-scheduled Offering rules are active")
 	cmd.Flags().IntVar(&limit, "limit", 20, "maximum rules to return (1–100)")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "item ID to start after (pagination)")
-	cmd.Flags().StringVar(&checkpointID, "checkpoint-id", "", "filter rules by Checkpoint ID")
-	cmd.Flags().StringVar(&flowID, "flow-id", "", "filter rules by Flow ID")
 	return cmd
 }
 

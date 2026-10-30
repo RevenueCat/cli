@@ -26,11 +26,3 @@ func (s *CheckpointsService) List(ctx context.Context, projectID string, opts *L
 	}
 	return &out, nil
 }
-
-func (s *CheckpointsService) Create(ctx context.Context, projectID string, body CreateCheckpointRequest) (*Checkpoint, error) {
-	var out Checkpoint
-	if err := s.c.do(ctx, http.MethodPost, pathCheckpoints(projectID), body, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}

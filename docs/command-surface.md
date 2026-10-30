@@ -182,7 +182,6 @@ rc products store screenshot <product-id>                # upload an App Review 
 
 # Checkpoints (points in the app where Checkpoint rules choose which Flow to show)
 rc checkpoints list                                      # experimental (hidden from --help until Checkpoint rules roll out)
-rc checkpoints create --identifier <identifier>           # register a checkpoint before the SDK encounters it; does not attach or activate a Flow
 
 # Paywalls
 rc paywalls                                              # help; under npx a TTY shows a generate/edit picker (npm launcher sets RC_GUIDED — paywalls-only for now)
@@ -220,7 +219,7 @@ rc experiments resume <id>                             # resumes enrollment; con
 rc experiments stop <id>                                # permanent; confirmation/--yes
 
 # Targeting rules — development v2 endpoints
-rc targeting list [--state <state>] [--checkpoint-id <id>] [--flow-id <id>]
+rc targeting list [--state <state>]
 rc targeting show <id>                                 # human detail view shows audience, placements, schedule, and checkpoints
 rc targeting create (--name <name> --offering <offering-id> [--state inactive|active] | --config <json-file>)  # initially inactive
 rc targeting update <id> --config <json-file>           # partial update of an Offering or checkpoint rule

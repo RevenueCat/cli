@@ -1066,26 +1066,6 @@ paths:
       responses:
         '200':
           description: OK
-    post:
-      summary: Create a Checkpoint
-      operationId: create-checkpoint
-      x-release-status: development
-      x-revenuecat-release-gatekeeping: false
-      x-scopes:
-      - project_configuration:targeting_rules:read_write
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateCheckpointRequest'
-      responses:
-        '201':
-          description: The Checkpoint was created
-        '403':
-          description: Checkpoint access or the required scope is missing
-        '409':
-          description: A Checkpoint with this identifier already exists
   /projects/{project_id}/audiences:
     parameters:
     - name: project_id
@@ -1373,15 +1353,6 @@ paths:
           description: OK
 components:
   schemas:
-    CreateCheckpointRequest:
-      type: object
-      required: [identifier]
-      additionalProperties: false
-      properties:
-        identifier:
-          type: string
-          minLength: 1
-          maxLength: 255
     Currency:
       type: string
       description: ISO 4217 currency code

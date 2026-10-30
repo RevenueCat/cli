@@ -35528,11 +35528,6 @@ type CreateAppStoreConnectSubscriptionInput struct {
 // CreateAppStoreConnectSubscriptionInputDuration The subscription duration period
 type CreateAppStoreConnectSubscriptionInputDuration string
 
-// CreateCheckpointRequest defines model for CreateCheckpointRequest.
-type CreateCheckpointRequest struct {
-	Identifier string `json:"identifier"`
-}
-
 // CreateWebhookIntegrationInput defines model for CreateWebhookIntegrationInput.
 type CreateWebhookIntegrationInput struct {
 	// AppID The ID of the app the webhook integration is scoped to
@@ -45622,9 +45617,6 @@ type CreateAppJSONRequestBody = AppCreate
 
 // UpdateAppJSONRequestBody defines body for UpdateApp for application/json ContentType.
 type UpdateAppJSONRequestBody UpdateAppJSONBody
-
-// CreateCheckpointJSONRequestBody defines body for CreateCheckpoint for application/json ContentType.
-type CreateCheckpointJSONRequestBody = CreateCheckpointRequest
 
 // CreateCustomerJSONRequestBody defines body for CreateCustomer for application/json ContentType.
 type CreateCustomerJSONRequestBody CreateCustomerJSONBody

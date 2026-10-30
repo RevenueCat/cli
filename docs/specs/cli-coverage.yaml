@@ -229,8 +229,6 @@ endpoints:
   # Checkpoints (development-status; provided by the beta overlay)
   - method: GET
     path: /projects/{project_id}/checkpoints
-  - method: POST
-    path: /projects/{project_id}/checkpoints
 
   # Audiences (provided by the beta overlay until the published spec includes them)
   - method: GET
