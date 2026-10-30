@@ -202,7 +202,7 @@ rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # exper
 rc flows show [id]                                      # editable draft, including steps and screen content
 rc flows export [id] --output <path>                     # save an update request containing the current revision and all steps
 rc flows update [id] --config <path|->                   # save the exported JSON or a partial update; only deleted_step_ids removes steps
-rc flows create --config <path|->                       # create an unpublished paywall, web-funnel, or general flow
+rc flows create --config <path|->                       # create an unpublished web-funnel or general flow (type paywall is rejected)
 rc flows duplicate [id] [--name <name>] [--source-version draft|published] # create an unpublished copy
 rc flows validate [id] [--revision <revision>]           # return saved-draft validation issues
 # Experiments — development v2 endpoints, normal discoverable CLI surface

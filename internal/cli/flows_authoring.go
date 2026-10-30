@@ -133,13 +133,16 @@ func newFlowsCreateCmd() *cobra.Command {
 	var config string
 	cmd := &cobra.Command{
 		Use: "create", Short: "Create an unpublished Flow from JSON", Args: cobra.NoArgs,
-		Long: "Creates a draft with display_name, type (paywall, web-funnel, or general), optional settings, and steps keyed by step ID. Type defaults to general. Does not publish or attach a checkpoint rule.",
+		Long: "Creates a draft with display_name, type (web-funnel or general), optional settings, and steps keyed by step ID. Type defaults to general. Does not publish or attach a checkpoint rule.",
 		Example: `  rc flows create --config flow.json
   cat flow.json | rc flows create --config -`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			var body api.CreateFlow
 			if err := readJSONConfigWithLimit(config, &body, maxFlowConfigBytes); err != nil {
 				return err
+			}
+			if body.Type != "" && body.Type != "general" && body.Type != "web-funnel" {
+				return fmt.Errorf("unsupported flow type %q: create supports web-funnel or general", body.Type)
 			}
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)

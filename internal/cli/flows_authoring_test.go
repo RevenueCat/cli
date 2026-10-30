@@ -105,7 +105,7 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 		var body map[string]json.RawMessage
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		if r.URL.Path == "/projects/proj/flows" {
-			if string(body["type"]) != `"paywall"` || !strings.Contains(string(body["steps"]), `"screen"`) {
+			if string(body["type"]) != `"web-funnel"` || !strings.Contains(string(body["steps"]), `"screen"`) {
 				t.Errorf("create body = %s", body)
 			}
 		} else if r.URL.Path == "/projects/proj/flows/wf_1/actions/duplicate" {
@@ -119,7 +119,7 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 	}))
 	defer server.Close()
 	path := filepath.Join(t.TempDir(), "flow.json")
-	if err := os.WriteFile(path, []byte(`{"display_name":"Original","type":"paywall","steps":{"screen":{"type":"screen"}}}`), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(`{"display_name":"Original","type":"web-funnel","steps":{"screen":{"type":"screen"}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	for _, args := range [][]string{
@@ -132,5 +132,16 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 	}
 	if len(paths) != 2 {
 		t.Fatalf("requests = %v", paths)
+	}
+}
+
+func TestFlowCreateRejectsPaywallType(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "flow.json")
+	if err := os.WriteFile(path, []byte(`{"display_name":"P","type":"paywall"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err := runProjectSetupCommand(t, "http://127.0.0.1:0", "flows", "create", "--config", path, "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "unsupported flow type") {
+		t.Fatalf("paywall type not rejected before HTTP: %v", err)
 	}
 }
