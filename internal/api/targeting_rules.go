@@ -29,6 +29,8 @@ type ListTargetingRulesOptions struct {
 	State         string
 	Limit         int
 	StartingAfter string
+	CheckpointID  string
+	FlowID        string
 }
 
 func (s *TargetingRulesService) List(ctx context.Context, projectID string, opts ListTargetingRulesOptions) (*Page[TargetingRule], error) {
@@ -41,6 +43,12 @@ func (s *TargetingRulesService) List(ctx context.Context, projectID string, opts
 	}
 	if opts.StartingAfter != "" {
 		q.Set("starting_after", opts.StartingAfter)
+	}
+	if opts.CheckpointID != "" {
+		q.Set("checkpoint_id", opts.CheckpointID)
+	}
+	if opts.FlowID != "" {
+		q.Set("flow_id", opts.FlowID)
 	}
 	path := pathTargetingRules(projectID)
 	if len(q) > 0 {
