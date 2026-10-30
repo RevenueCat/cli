@@ -33,7 +33,7 @@ func newFlowsShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			draft, err := client.Flows.GetDraft(cmd.Context(), projectID, flowID)
+			draft, err := client.Flows.Get(cmd.Context(), projectID, flowID, api.FlowExpandSteps)
 			if err != nil {
 				return err
 			}
@@ -65,11 +65,11 @@ func newFlowsExportCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			draft, err := client.Flows.GetDraft(cmd.Context(), projectID, flowID)
+			draft, err := client.Flows.Get(cmd.Context(), projectID, flowID, api.FlowExpandSteps)
 			if err != nil {
 				return err
 			}
-			body := api.UpdateFlowDraft{FlowSettings: draft.FlowSettings, Revision: draft.Revision, UpdatedSteps: draft.Steps}
+			body := api.UpdateFlow{FlowSettings: draft.FlowSettings, Revision: draft.Revision, UpdatedSteps: draft.Steps}
 			data, err := json.MarshalIndent(body, "", "  ")
 			if err != nil {
 				return err
@@ -97,7 +97,7 @@ func newFlowsUpdateCmd() *cobra.Command {
 		Example: `  rc flows update wf_abc --config flow.json
   cat flow.json | rc flows update wf_abc --config -`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var body api.UpdateFlowDraft
+			var body api.UpdateFlow
 			if err := readJSONConfigWithLimit(config, &body, maxFlowConfigBytes); err != nil {
 				return err
 			}
@@ -116,7 +116,7 @@ func newFlowsUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			flow, err := client.Flows.UpdateDraft(cmd.Context(), projectID, flowID, body)
+			flow, err := client.Flows.Update(cmd.Context(), projectID, flowID, body)
 			if err != nil {
 				return err
 			}

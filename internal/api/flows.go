@@ -11,7 +11,9 @@ import (
 // FlowsService wraps /flows. Feedback surveys are not returned by the API.
 type FlowsService struct{ c *Client }
 
+// Flow carries the settings and Steps only when fetched with FlowExpandSteps.
 type Flow struct {
+	FlowSettings
 	ID                    string  `json:"id"`
 	Object                string  `json:"object,omitempty"`
 	Name                  string  `json:"name"`
@@ -21,6 +23,8 @@ type Flow struct {
 	PublishedAt           *Millis `json:"published_at"`
 	HasUnpublishedChanges bool    `json:"has_unpublished_changes"`
 	Revision              int     `json:"revision"`
+
+	Steps map[string]json.RawMessage `json:"steps,omitempty"`
 }
 
 type FlowSettings struct {
@@ -33,16 +37,7 @@ type FlowSettings struct {
 	ContentMaxWidth               json.RawMessage `json:"content_max_width,omitempty"`
 }
 
-type FlowDraft struct {
-	FlowSettings
-	ID       string                     `json:"id"`
-	Object   string                     `json:"object"`
-	Type     string                     `json:"type"`
-	Revision int                        `json:"revision"`
-	Steps    map[string]json.RawMessage `json:"steps"`
-}
-
-type UpdateFlowDraft struct {
+type UpdateFlow struct {
 	FlowSettings
 	Revision       int                        `json:"revision"`
 	UpdatedSteps   map[string]json.RawMessage `json:"updated_steps,omitempty"`
@@ -102,15 +97,29 @@ func (s *FlowsService) List(ctx context.Context, projectID string, opts FlowList
 	return &out, nil
 }
 
-func (s *FlowsService) GetDraft(ctx context.Context, projectID, id string) (*FlowDraft, error) {
-	var out FlowDraft
-	err := s.c.do(ctx, http.MethodGet, pathFlowDraft(projectID, id), nil, &out)
+// FlowExpand names the optional sections get-flow can embed.
+type FlowExpand string
+
+// FlowExpandSteps adds the draft steps, settings and revision.
+const FlowExpandSteps FlowExpand = "steps"
+
+func (s *FlowsService) Get(ctx context.Context, projectID, id string, expand ...FlowExpand) (*Flow, error) {
+	path := pathFlow(projectID, id)
+	if len(expand) > 0 {
+		query := url.Values{}
+		for _, e := range expand {
+			query.Add("expand", string(e))
+		}
+		path += "?" + query.Encode()
+	}
+	var out Flow
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
 	return &out, err
 }
 
-func (s *FlowsService) UpdateDraft(ctx context.Context, projectID, id string, body UpdateFlowDraft) (*Flow, error) {
+func (s *FlowsService) Update(ctx context.Context, projectID, id string, body UpdateFlow) (*Flow, error) {
 	var out Flow
-	err := s.c.do(ctx, http.MethodPatch, pathFlowDraft(projectID, id), body, &out)
+	err := s.c.do(ctx, http.MethodPatch, pathFlow(projectID, id), body, &out)
 	return &out, err
 }
 

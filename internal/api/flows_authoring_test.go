@@ -17,12 +17,12 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 		name, method, suffix, body string
 		call                       func(*api.Client) error
 	}{
-		{"draft", "GET", "/draft", "", func(c *api.Client) error {
-			_, err := c.Flows.GetDraft(context.Background(), "proj", "wf_1")
+		{"get steps", "GET", "?expand=steps", "", func(c *api.Client) error {
+			_, err := c.Flows.Get(context.Background(), "proj", "wf_1", api.FlowExpandSteps)
 			return err
 		}},
-		{"update", "PATCH", "/draft", `{"revision":3,"metadata":null,"deleted_step_ids":["old"]}`, func(c *api.Client) error {
-			_, err := c.Flows.UpdateDraft(context.Background(), "proj", "wf_1", api.UpdateFlowDraft{FlowSettings: api.FlowSettings{Metadata: json.RawMessage("null")}, Revision: 3, DeletedStepIDs: []string{"old"}})
+		{"update", "PATCH", "", `{"revision":3,"metadata":null,"deleted_step_ids":["old"]}`, func(c *api.Client) error {
+			_, err := c.Flows.Update(context.Background(), "proj", "wf_1", api.UpdateFlow{FlowSettings: api.FlowSettings{Metadata: json.RawMessage("null")}, Revision: 3, DeletedStepIDs: []string{"old"}})
 			return err
 		}},
 		{"duplicate", "POST", "/actions/duplicate", `{"source_version":"published"}`, func(c *api.Client) error {
@@ -41,8 +41,8 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != tc.method || r.URL.Path != "/projects/proj/flows/wf_1"+tc.suffix {
-					t.Errorf("request = %s %s", r.Method, r.URL.Path)
+				if r.Method != tc.method || r.URL.RequestURI() != "/projects/proj/flows/wf_1"+tc.suffix {
+					t.Errorf("request = %s %s", r.Method, r.URL.RequestURI())
 				}
 				body, _ := io.ReadAll(r.Body)
 				if tc.body == "" {

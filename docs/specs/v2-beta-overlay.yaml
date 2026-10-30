@@ -1006,7 +1006,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FlowValidation'
-  /projects/{project_id}/flows/{flow_id}/draft:
+  /projects/{project_id}/flows/{flow_id}:
     parameters:
     - name: project_id
       in: path
@@ -1019,18 +1019,29 @@ paths:
       schema:
         type: string
     get:
-      summary: Get a Flow draft
-      operationId: get-flow-draft
+      summary: Get a Flow
+      operationId: get-flow
       x-release-status: development
       x-revenuecat-release-gatekeeping: false
       x-scopes:
       - project_configuration:workflows:read
+      parameters:
+      - name: expand
+        in: query
+        description: Accepted values are `steps` (adds the draft steps, settings and revision).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - steps
       responses:
         '200':
           description: OK
     patch:
-      summary: Update a Flow draft
-      operationId: update-flow-draft
+      summary: Update a Flow
+      operationId: update-flow
       x-release-status: development
       x-revenuecat-release-gatekeeping: false
       x-scopes:

@@ -16,12 +16,15 @@ import (
 func TestFlowExportUpdateRoundTrip(t *testing.T) {
 	var update map[string]json.RawMessage
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/projects/proj/flows/wf_1/draft" {
+		if r.URL.Path != "/projects/proj/flows/wf_1" {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		switch r.Method {
 		case http.MethodGet:
-			_, _ = io.WriteString(w, `{"id":"wf_1","object":"flow_draft","revision":4,"type":"web-funnel","display_name":"Checkout","initial_step_id":"screen","single_step_fallback_id":null,"app_id":null,"metadata":{"large":9007199254740993},"custom_context_parameters_config":null,"content_max_width":null,"steps":{"screen":{"type":"screen","paywall":{"components_config":{"large":9007199254740993},"components_localizations":{"en_US":{"title":"Hello"}},"haptics_enabled":false}}}}`)
+			if r.URL.Query().Get("expand") != "steps" {
+				t.Errorf("expand = %q, want steps", r.URL.Query().Get("expand"))
+			}
+			_, _ = io.WriteString(w, `{"id":"wf_1","object":"flow","revision":4,"type":"web-funnel","display_name":"Checkout","initial_step_id":"screen","single_step_fallback_id":null,"app_id":null,"metadata":{"large":9007199254740993},"custom_context_parameters_config":null,"content_max_width":null,"steps":{"screen":{"type":"screen","paywall":{"components_config":{"large":9007199254740993},"components_localizations":{"en_US":{"title":"Hello"}},"haptics_enabled":false}}}}`)
 		case http.MethodPatch:
 			if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
 				t.Error(err)

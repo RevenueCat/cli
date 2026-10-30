@@ -17254,6 +17254,21 @@ func (e GetProductsFromEntitlement503JSONResponseBodyType) Valid() bool {
 	}
 }
 
+// Defines values for GetFlowParamsExpand.
+const (
+	Steps GetFlowParamsExpand = "steps"
+)
+
+// Valid indicates whether the value is a known member of the GetFlowParamsExpand enum.
+func (e GetFlowParamsExpand) Valid() bool {
+	switch e {
+	case Steps:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListWebhookIntegrations400JSONResponseBodyObject.
 const (
 	ListWebhookIntegrations400JSONResponseBodyObjectError ListWebhookIntegrations400JSONResponseBodyObject = "error"
@@ -41801,6 +41816,15 @@ type GetProductsFromEntitlement503JSONResponseBodyObject string
 
 // GetProductsFromEntitlement503JSONResponseBodyType defines parameters for GetProductsFromEntitlement.
 type GetProductsFromEntitlement503JSONResponseBodyType string
+
+// GetFlowParams defines parameters for GetFlow.
+type GetFlowParams struct {
+	// Expand Accepted values are `steps` (adds the draft steps, settings and revision).
+	Expand *[]GetFlowParamsExpand `form:"expand,omitempty" json:"expand,omitempty"`
+}
+
+// GetFlowParamsExpand defines parameters for GetFlow.
+type GetFlowParamsExpand string
 
 // ListWebhookIntegrationsParams defines parameters for ListWebhookIntegrations.
 type ListWebhookIntegrationsParams struct {

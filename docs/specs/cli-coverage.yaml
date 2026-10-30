@@ -300,6 +300,6 @@ endpoints:
   - method: POST
     path: /projects/{project_id}/flows/{flow_id}/actions/validate
   - method: GET
-    path: /projects/{project_id}/flows/{flow_id}/draft
+    path: /projects/{project_id}/flows/{flow_id}
   - method: PATCH
-    path: /projects/{project_id}/flows/{flow_id}/draft
+    path: /projects/{project_id}/flows/{flow_id}

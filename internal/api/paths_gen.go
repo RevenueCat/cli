@@ -162,16 +162,16 @@ func pathExperiments(projectID string) string {
 	return encodePath("projects", projectID, "experiments")
 }
 
+func pathFlow(projectID string, flowID string) string {
+	return encodePath("projects", projectID, "flows", flowID)
+}
+
 func pathFlowActionsDuplicate(projectID string, flowID string) string {
 	return encodePath("projects", projectID, "flows", flowID, "actions", "duplicate")
 }
 
 func pathFlowActionsValidate(projectID string, flowID string) string {
 	return encodePath("projects", projectID, "flows", flowID, "actions", "validate")
-}
-
-func pathFlowDraft(projectID string, flowID string) string {
-	return encodePath("projects", projectID, "flows", flowID, "draft")
 }
 
 func pathFlows(projectID string) string {
