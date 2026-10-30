@@ -25,7 +25,7 @@ const (
 	streamFailed  = "data: {\"type\":\"run.failed\",\"session_id\":\"sess1\",\"error\":{\"code\":\"internal\",\"message\":\"boom\"},\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{\"partial\":true},\"components_localizations\":{}}}}\n\n"
 )
 
-func TestPaywallsEditStepID(t *testing.T) {
+func TestFlowsEdit(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
@@ -100,9 +100,14 @@ func TestPaywallsEditStepID(t *testing.T) {
 			wantErr: "drop --session",
 		},
 		{
-			name:    "flow id is required",
+			name:    "step id is required",
+			args:    []string{"wf_1"},
+			wantErr: `required flag(s) "step-id" not set`,
+		},
+		{
+			name:    "flow id is required without a prompt for it",
 			args:    []string{"--step-id", "screen"},
-			wantErr: "needs the flow id",
+			wantErr: "flow ID is required",
 		},
 	}
 	for _, tt := range tests {
@@ -131,7 +136,7 @@ func TestPaywallsEditStepID(t *testing.T) {
 			}))
 			defer server.Close()
 
-			args := append([]string{"paywalls", "edit"}, tt.args...)
+			args := append([]string{"flows", "edit"}, tt.args...)
 			args = append(args, "--prompt", "make it blue", "--base-url", server.URL, "--json", "--no-input")
 			out, _, err := runProjectSetupCommand(t, server.URL, args...)
 			if tt.wantErr != "" {

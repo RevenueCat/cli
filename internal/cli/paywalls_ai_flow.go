@@ -10,6 +10,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
 	"github.com/revenuecat/cli/internal/paywallai"
@@ -66,6 +69,55 @@ func applyFlowEvent(session *paywallAIFlowSession, event *paywallai.Event) {
 	if len(event.AppContext) > 0 {
 		session.AppContext = event.AppContext
 	}
+}
+
+func newFlowsEditCmd() *cobra.Command {
+	var stepID string
+	opts := paywallAIOptions{
+		prompt:  os.Getenv("RC_PAYWALL_PROMPT"),
+		baseURL: devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
+		timeout: 10 * time.Minute,
+	}
+	cmd := &cobra.Command{
+		Use:   "edit [flow-id] --step-id <step-id>",
+		Short: "Edit a Flow screen with the Paywalls AI Editor",
+		Long: `Applies a natural-language edit to one screen step of a Flow and saves the
+result onto the Flow draft (revision-guarded). The editor sees the whole Flow
+but is focused on --step-id; it may also adjust other screens. Find step ids
+with rc flows show.
+
+Each step keeps its own editor session in the CLI data dir, so repeating the
+command with the same --step-id continues the conversation. See rc paywalls
+edit --help for prompting guidance.`,
+		Example: `  rc flows edit wf_abc --step-id welcome --prompt "Bolder CTA, keep the layout"
+  rc flows edit wf_abc --step-id welcome --prompt "match this" --attachment DESIGN.md --image home.png`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rt := RuntimeFrom(cmd.Context())
+			if opts.sessionPath != "" {
+				return fmt.Errorf("--step-id keeps its own per-step session; drop --session")
+			}
+			client, err := rt.API()
+			if err != nil {
+				return err
+			}
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
+			}
+			flowID, err := requireID(rt, argAt(args, 0), "flow", func() ([]PickerItem, error) {
+				return flowPickerItems(cmd.Context(), client, projectID)
+			})
+			if err != nil {
+				return err
+			}
+			return runFlowEdit(cmd.Context(), rt, opts, flowID, stepID)
+		},
+	}
+	addPaywallAIFlags(cmd, &opts)
+	cmd.Flags().StringVar(&stepID, "step-id", "", "screen step to edit")
+	_ = cmd.MarkFlagRequired("step-id")
+	return cmd
 }
 
 // runFlowEdit drives one Astra run against a screen step of a Flow and saves
@@ -178,13 +230,13 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		if path, ok := screenshots["dark"]; ok {
 			rt.Out.Field("Preview (dark)", path)
 		}
-		rt.Out.Field("Keep designing", fmt.Sprintf("rc paywalls edit %s --step-id %s", draft.ID, stepID))
+		rt.Out.Field("Keep designing", fmt.Sprintf("rc flows edit %s --step-id %s", draft.ID, stepID))
 	default:
 		var apiErr *api.APIError
 		if errors.As(err, &apiErr) && apiErr.Status == 409 {
 			// The edits were made against a stale revision, so they are never replayed automatically.
 			rt.Out.Warn("Nothing was saved: the flow changed during the run (dashboard or another client).")
-			rt.Out.Hint(fmt.Sprintf("Re-run against the current draft:  rc paywalls edit %s --step-id %s", draft.ID, stepID))
+			rt.Out.Hint(fmt.Sprintf("Re-run against the current draft:  rc flows edit %s --step-id %s", draft.ID, stepID))
 		} else {
 			rt.Out.Warn("Could not save the design to RevenueCat: " + err.Error())
 			rt.Out.Hint("Nothing was saved. Re-run the command to try again.")

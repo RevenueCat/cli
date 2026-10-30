@@ -24,7 +24,7 @@ RevenueCat dashboard. Checkpoint rules decide which Flow a customer sees.`,
 	}
 	cmd.AddCommand(newFlowsListCmd())
 	cmd.AddCommand(newFlowsShowCmd(), newFlowsExportCmd(), newFlowsUpdateCmd(),
-		newFlowsCreateCmd(), newFlowsDuplicateCmd(), newFlowsValidateCmd())
+		newFlowsCreateCmd(), newFlowsDuplicateCmd(), newFlowsValidateCmd(), newFlowsEditCmd())
 	return cmd
 }
 

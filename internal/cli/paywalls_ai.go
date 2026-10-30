@@ -249,7 +249,6 @@ screenshots via --image, audience via --context.`,
 }
 
 func newPaywallsEditCmd() *cobra.Command {
-	var stepID string
 	opts := paywallAIOptions{
 		prompt:  os.Getenv("RC_PAYWALL_PROMPT"),
 		baseURL: devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
@@ -311,15 +310,6 @@ Using it well:
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			if stepID != "" {
-				if opts.sessionPath != "" {
-					return fmt.Errorf("--step-id keeps its own per-step session; drop --session")
-				}
-				if argAt(args, 0) == "" {
-					return WithHint(fmt.Errorf("--step-id needs the flow id"), "rc paywalls edit <flow-id> --step-id <step-id>; find ids with: rc flows list --type paywall")
-				}
-				return runFlowEdit(cmd.Context(), rt, opts, args[0], stepID)
-			}
 			var session *paywallAISession
 			var err error
 			switch {
@@ -360,8 +350,6 @@ Using it well:
 		},
 	}
 	addPaywallAIFlags(cmd, &opts)
-	cmd.Flags().StringVar(&stepID, "step-id", "", "edit one screen step of a flow (the argument is then the flow id)")
-	_ = cmd.Flags().MarkHidden("step-id")
 	return cmd
 }
 
