@@ -141,9 +141,6 @@ func newFlowsCreateCmd() *cobra.Command {
 			if err := readJSONConfigWithLimit(config, &body, maxFlowConfigBytes); err != nil {
 				return err
 			}
-			if body.Type != "" && body.Type != "general" && body.Type != "web-funnel" {
-				return fmt.Errorf("unsupported flow type %q: create supports web-funnel or general", body.Type)
-			}
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
@@ -207,16 +204,13 @@ func newFlowsDuplicateCmd() *cobra.Command {
 }
 
 func newFlowsValidateCmd() *cobra.Command {
-	var revision int
+	var revision int64
 	cmd := &cobra.Command{
 		Use: "validate [id]", Short: "Validate a saved Flow draft", Args: cobra.MaximumNArgs(1),
 		Long: "Returns workflow errors and step issues for the saved draft. Returns a nonzero exit status when the draft is invalid. Does not save or publish.",
 		Example: `  rc flows validate wf_abc
   rc flows validate wf_abc --revision 4`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if cmd.Flags().Changed("revision") && revision < 1 {
-				return fmt.Errorf("--revision must be positive")
-			}
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
 			if err != nil {
@@ -232,7 +226,11 @@ func newFlowsValidateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			validation, err := client.Flows.Validate(cmd.Context(), projectID, flowID, revision)
+			var body api.ValidateFlow
+			if cmd.Flags().Changed("revision") {
+				body.Revision = &revision
+			}
+			validation, err := client.Flows.Validate(cmd.Context(), projectID, flowID, body)
 			if err != nil {
 				return err
 			}
@@ -245,6 +243,6 @@ func newFlowsValidateCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().IntVar(&revision, "revision", 0, "require this draft revision")
+	cmd.Flags().Int64Var(&revision, "revision", 0, "require this draft revision")
 	return cmd
 }

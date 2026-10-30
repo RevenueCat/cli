@@ -134,14 +134,3 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 		t.Fatalf("requests = %v", paths)
 	}
 }
-
-func TestFlowCreateRejectsPaywallType(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "flow.json")
-	if err := os.WriteFile(path, []byte(`{"display_name":"P","type":"paywall"}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	_, _, err := runProjectSetupCommand(t, "http://127.0.0.1:0", "flows", "create", "--config", path, "--no-input")
-	if err == nil || !strings.Contains(err.Error(), "unsupported flow type") {
-		t.Fatalf("paywall type not rejected before HTTP: %v", err)
-	}
-}

@@ -126,13 +126,8 @@ func (s *FlowsService) Duplicate(ctx context.Context, projectID, id string, body
 	return &out, err
 }
 
-func (s *FlowsService) Validate(ctx context.Context, projectID, id string, revision int) (*FlowValidation, error) {
+func (s *FlowsService) Validate(ctx context.Context, projectID, id string, body ValidateFlow) (*FlowValidation, error) {
 	var out FlowValidation
-	var body ValidateFlow
-	if revision > 0 {
-		r := int64(revision)
-		body.Revision = &r
-	}
 	err := s.c.do(ctx, http.MethodPost, pathFlowActionsValidate(projectID, id), body, &out)
 	return &out, err
 }

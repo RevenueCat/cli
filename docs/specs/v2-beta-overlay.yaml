@@ -920,560 +920,124 @@ paths:
         '200':
           description: OK
   /projects/{project_id}/flows:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
     get:
       summary: Get a list of Flows
       operationId: list-flows
-      x-revenuecat-rate-limiting-domain: project_configuration
-      x-scopes:
-      - project_configuration:workflows:read
       x-release-status: development
       x-revenuecat-release-gatekeeping: false
-      tags:
-      - Flow
-      parameters:
-      - name: project_id
-        description: ID of the project
-        required: true
-        in: path
-        schema:
-          type: string
-          maxLength: 255
-          example: proj1ab2c3d4
-      - name: starting_after
-        in: query
-        required: false
-        description: Pagination cursor. Pass the id of the last item from the previous
-          page to fetch the next page; omit for the first page.
-        schema:
-          type: string
-          example: ent12354
-      - name: limit
-        in: query
-        required: false
-        description: Maximum number of items to return per page. Values below 1 or
-          above 100 are clamped to that range rather than rejected.
-        schema:
-          type: integer
-          example: 10
-          default: 20
-      - name: type
-        in: query
-        description: Only return Flows of these types. `general` matches Flows without
-          a specific type. Cannot be combined with `exclude_type`.
-        required: false
-        schema:
-          type: array
-          items:
-            type: string
-            enum:
-            - paywall
-            - web-funnel
-            - general
-        example: paywall
-      - name: exclude_type
-        in: query
-        description: Return Flows of every type except these. `general` matches Flows
-          without a specific type. Cannot be combined with `type`.
-        required: false
-        schema:
-          type: array
-          items:
-            type: string
-            enum:
-            - paywall
-            - web-funnel
-            - general
-        example: paywall
+      x-scopes:
+      - project_configuration:workflows:read
       responses:
         '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListFlows'
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '400':
-          description: BadRequest
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: NotFound
-        '423':
-          description: Locked
-        '429':
-          description: RateLimited
-        '500':
-          description: InternalError
-        '503':
-          description: InternalError
-      description: 'This endpoint requires the following permission(s): <code>project_configuration:workflows:read</code>.
-        This endpoint belongs to the <strong>Project Configuration</strong> domain,
-        which has a default rate limit of <strong>60 requests per minute</strong>.'
+          description: OK
     post:
       summary: Create a Flow draft
       operationId: create-flow
-      x-revenuecat-rate-limiting-domain: project_configuration
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
       x-scopes:
       - project_configuration:workflows:read_write
-      x-release-status: development
-      x-revenuecat-release-gatekeeping: false
-      tags:
-      - Flow
-      parameters:
-      - name: project_id
-        description: ID of the project
-        required: true
-        in: path
-        schema:
-          type: string
-          maxLength: 255
-          example: proj1ab2c3d4
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateFlow'
-      responses:
-        '201':
-          description: The new unpublished Flow
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Flow'
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '400':
-          description: BadRequest
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: NotFound
-        '409':
-          description: Conflict
-        '422':
-          description: UnprocessableEntity
-        '423':
-          description: Locked
-        '429':
-          description: RateLimited
-        '500':
-          description: InternalError
-        '503':
-          description: InternalError
-      description: 'This endpoint requires the following permission(s): <code>project_configuration:workflows:read_write</code>.
-        This endpoint belongs to the <strong>Project Configuration</strong> domain,
-        which has a default rate limit of <strong>60 requests per minute</strong>.'
-  /projects/{project_id}/flows/{flow_id}:
-    get:
-      summary: Get a Flow
-      operationId: get-flow
-      x-revenuecat-rate-limiting-domain: project_configuration
-      x-scopes:
-      - project_configuration:workflows:read
-      x-release-status: development
-      x-revenuecat-release-gatekeeping: false
-      tags:
-      - Flow
-      parameters:
-      - name: project_id
-        description: ID of the project
-        required: true
-        in: path
-        schema:
-          type: string
-          maxLength: 255
-          example: proj1ab2c3d4
-      - name: flow_id
-        description: ID of the Flow
-        required: true
-        in: path
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: wf1a2b3c4d5e6f7g8
       responses:
         '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Flow'
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '404':
-          description: NotFound
-        '400':
-          description: BadRequest
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '423':
-          description: Locked
-        '429':
-          description: RateLimited
-        '500':
-          description: InternalError
-        '503':
-          description: InternalError
-      description: 'This endpoint requires the following permission(s): <code>project_configuration:workflows:read</code>.
-        This endpoint belongs to the <strong>Project Configuration</strong> domain,
-        which has a default rate limit of <strong>60 requests per minute</strong>.'
+          description: OK
   /projects/{project_id}/flows/{flow_id}/actions/duplicate:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
     post:
       summary: Duplicate a Flow
       operationId: duplicate-flow
-      x-revenuecat-rate-limiting-domain: project_configuration
-      x-scopes:
-      - project_configuration:workflows:read_write
       x-release-status: development
       x-revenuecat-release-gatekeeping: false
-      tags:
-      - Flow
-      parameters:
-      - name: project_id
-        description: ID of the project
-        required: true
-        in: path
-        schema:
-          type: string
-          maxLength: 255
-          example: proj1ab2c3d4
-      - name: flow_id
-        description: ID of the Flow
-        required: true
-        in: path
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: wf1a2b3c4d5e6f7g8
+      x-scopes:
+      - project_configuration:workflows:read_write
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/DuplicateFlow'
       responses:
-        '201':
-          description: The new unpublished Flow
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Flow'
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '400':
-          description: BadRequest
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: NotFound
-        '409':
-          description: Conflict
-        '422':
-          description: UnprocessableEntity
-        '423':
-          description: Locked
-        '429':
-          description: RateLimited
-        '500':
-          description: InternalError
-        '503':
-          description: InternalError
-      description: 'This endpoint requires the following permission(s): <code>project_configuration:workflows:read_write</code>.
-        This endpoint belongs to the <strong>Project Configuration</strong> domain,
-        which has a default rate limit of <strong>60 requests per minute</strong>.'
-  /projects/{project_id}/flows/{flow_id}/actions/publish:
-    post:
-      summary: Publish a Flow draft
-      operationId: publish-flow
-      x-revenuecat-rate-limiting-domain: project_configuration
-      x-scopes:
-      - project_configuration:workflows:read_write
-      x-release-status: development
-      x-revenuecat-release-gatekeeping: false
-      tags:
-      - Flow
-      parameters:
-      - name: project_id
-        description: ID of the project
-        required: true
-        in: path
-        schema:
-          type: string
-          maxLength: 255
-          example: proj1ab2c3d4
-      - name: flow_id
-        description: ID of the Flow
-        required: true
-        in: path
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: wf1a2b3c4d5e6f7g8
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PublishFlow'
-      responses:
         '200':
-          description: The published Flow
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Flow'
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '409':
-          description: Conflict
-        '422':
-          description: UnprocessableEntity
-        '400':
-          description: BadRequest
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: NotFound
-        '423':
-          description: Locked
-        '429':
-          description: RateLimited
-        '500':
-          description: InternalError
-        '503':
-          description: InternalError
-      description: 'This endpoint requires the following permission(s): <code>project_configuration:workflows:read_write</code>.
-        This endpoint belongs to the <strong>Project Configuration</strong> domain,
-        which has a default rate limit of <strong>60 requests per minute</strong>.'
+          description: OK
   /projects/{project_id}/flows/{flow_id}/actions/validate:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
     post:
       summary: Validate a Flow draft
       operationId: validate-flow
-      x-revenuecat-rate-limiting-domain: project_configuration
-      x-scopes:
-      - project_configuration:workflows:read
       x-release-status: development
       x-revenuecat-release-gatekeeping: false
-      tags:
-      - Flow
-      parameters:
-      - name: project_id
-        description: ID of the project
-        required: true
-        in: path
-        schema:
-          type: string
-          maxLength: 255
-          example: proj1ab2c3d4
-      - name: flow_id
-        description: ID of the Flow
-        required: true
-        in: path
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: wf1a2b3c4d5e6f7g8
+      x-scopes:
+      - project_configuration:workflows:read
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ValidateFlow'
       responses:
         '200':
-          description: Draft validation issues
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FlowValidation'
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '400':
-          description: BadRequest
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: NotFound
-        '409':
-          description: Conflict
-        '422':
-          description: UnprocessableEntity
-        '423':
-          description: Locked
-        '429':
-          description: RateLimited
-        '500':
-          description: InternalError
-        '503':
-          description: InternalError
-      description: 'This endpoint requires the following permission(s): <code>project_configuration:workflows:read</code>.
-        This endpoint belongs to the <strong>Project Configuration</strong> domain,
-        which has a default rate limit of <strong>60 requests per minute</strong>.'
   /projects/{project_id}/flows/{flow_id}/draft:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
     get:
       summary: Get a Flow draft
       operationId: get-flow-draft
-      x-revenuecat-rate-limiting-domain: project_configuration
-      x-scopes:
-      - project_configuration:workflows:read
       x-release-status: development
       x-revenuecat-release-gatekeeping: false
-      tags:
-      - Flow
-      parameters:
-      - name: project_id
-        description: ID of the project
-        required: true
-        in: path
-        schema:
-          type: string
-          maxLength: 255
-          example: proj1ab2c3d4
-      - name: flow_id
-        description: ID of the Flow
-        required: true
-        in: path
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: wf1a2b3c4d5e6f7g8
+      x-scopes:
+      - project_configuration:workflows:read
       responses:
         '200':
-          description: The editable Flow draft
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FlowDraft'
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '400':
-          description: BadRequest
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: NotFound
-        '423':
-          description: Locked
-        '429':
-          description: RateLimited
-        '500':
-          description: InternalError
-        '503':
-          description: InternalError
-      description: 'This endpoint requires the following permission(s): <code>project_configuration:workflows:read</code>.
-        This endpoint belongs to the <strong>Project Configuration</strong> domain,
-        which has a default rate limit of <strong>60 requests per minute</strong>.'
+          description: OK
     patch:
       summary: Update a Flow draft
       operationId: update-flow-draft
-      x-revenuecat-rate-limiting-domain: project_configuration
-      x-scopes:
-      - project_configuration:workflows:read_write
       x-release-status: development
       x-revenuecat-release-gatekeeping: false
-      tags:
-      - Flow
-      parameters:
-      - name: project_id
-        description: ID of the project
-        required: true
-        in: path
-        schema:
-          type: string
-          maxLength: 255
-          example: proj1ab2c3d4
-      - name: flow_id
-        description: ID of the Flow
-        required: true
-        in: path
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: wf1a2b3c4d5e6f7g8
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateFlowDraft'
+      x-scopes:
+      - project_configuration:workflows:read_write
       responses:
         '200':
-          description: The Flow with its new revision
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Flow'
-          headers:
-            RevenueCat-Rate-Limit-Current-Usage:
-              $ref: '#/components/headers/RateLimitCurrentUsage'
-            RevenueCat-Rate-Limit-Current-Limit:
-              $ref: '#/components/headers/RateLimitCurrentLimit'
-        '409':
-          description: Conflict
-        '400':
-          description: BadRequest
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: NotFound
-        '422':
-          description: UnprocessableEntity
-        '423':
-          description: Locked
-        '429':
-          description: RateLimited
-        '500':
-          description: InternalError
-        '503':
-          description: InternalError
-      description: 'This endpoint requires the following permission(s): <code>project_configuration:workflows:read_write</code>.
-        This endpoint belongs to the <strong>Project Configuration</strong> domain,
-        which has a default rate limit of <strong>60 requests per minute</strong>.'
+          description: OK
   /projects/{project_id}/checkpoints:
     parameters:
     - name: project_id
@@ -1983,358 +1547,6 @@ components:
       - ZAR
       - ZMW
       - ZWL
-    ListFlows:
-      type: object
-      required:
-      - items
-      - next_page
-      - object
-      - url
-      title: FlowList
-      properties:
-        object:
-          description: String representing the object's type. Objects of the same type
-            share the same value. Always has the value `list`.
-          enum:
-          - list
-          type: string
-        items:
-          description: Details about each object.
-          items:
-            $ref: '#/components/schemas/Flow'
-          type: array
-        next_page:
-          description: URL to access the next page of the project's Flows. If not present
-            / null, there is no next page
-          type: string
-          nullable: true
-          example: /v2/projects/proj1ab2c3d4/flows?starting_after=wrkflw1a2b3c4d5
-        url:
-          description: The URL where this list can be accessed.
-          maxLength: 5000
-          type: string
-          example: /v2/projects/proj1ab2c3d4/flows
-      additionalProperties: false
-    Flow:
-      type: object
-      required:
-      - object
-      - id
-      - name
-      - created_at
-      - project_id
-      - type
-      - published_at
-      - has_unpublished_changes
-      - revision
-      properties:
-        object:
-          description: String representing the object's type. Objects of the same type
-            share the same value.
-          enum:
-          - flow
-          type: string
-        id:
-          description: The id of the Flow
-          nullable: false
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: wf_1a2b3c4d5
-        name:
-          description: The display name of the Flow
-          nullable: false
-          type: string
-          minLength: 1
-          maxLength: 1500
-          example: My offering flow
-        created_at:
-          description: The date the Flow was created at in ms since epoch
-          nullable: false
-          type: integer
-          format: int64
-          example: 1658399423658
-        project_id:
-          description: ID of the project to which the Flow belongs
-          nullable: false
-          minLength: 1
-          maxLength: 20
-          type: string
-          example: proj1ab2c3d4
-        type:
-          description: The type of the Flow. `general` means it has no specific type.
-          nullable: false
-          type: string
-          enum:
-          - paywall
-          - web-funnel
-          - general
-          example: paywall
-        published_at:
-          description: The date the Flow was last published in ms since epoch, or null
-            if it has never been published
-          nullable: true
-          type: integer
-          format: int64
-          example: 1658399423658
-        has_unpublished_changes:
-          description: Whether the Flow has draft changes that are not published yet.
-            Always true for a Flow that has never been published.
-          nullable: false
-          type: boolean
-          example: false
-        revision:
-          type: integer
-          format: int64
-          description: Current draft revision.
-          example: 1
-      additionalProperties: false
-    CreateFlow:
-      type: object
-      required:
-      - display_name
-      additionalProperties: false
-      properties:
-        type:
-          type: string
-          description: Flow type.
-          example: web-funnel
-          enum:
-          - paywall
-          - web-funnel
-          - general
-          default: general
-        display_name:
-          type: string
-          description: Display name of the flow.
-          example: Onboarding
-          minLength: 1
-          maxLength: 1500
-        initial_step_id:
-          type: string
-          description: ID of the first step.
-          example: welcome
-          nullable: true
-          maxLength: 255
-        single_step_fallback_id:
-          type: string
-          description: Fallback screen for clients that cannot present multiple steps.
-          example: paywall
-          nullable: true
-          maxLength: 255
-        app_id:
-          type: string
-          description: Web billing app ID.
-          example: app123456789a
-          nullable: true
-          maxLength: 200
-        metadata:
-          type: object
-          description: Flow metadata, including web funnel settings.
-          example: {}
-          additionalProperties: true
-          nullable: true
-        custom_context_parameters_config:
-          type: object
-          description: Custom context parameters.
-          example: {}
-          additionalProperties: true
-        content_max_width:
-          type: integer
-          description: Maximum web content width.
-          example: 600
-          nullable: true
-          minimum: 1
-        steps:
-          type: object
-          description: Editable draft steps keyed by stable step ID.
-          example: {}
-          additionalProperties:
-            $ref: '#/components/schemas/FlowStep'
-          maxProperties: 1000
-    FlowStep:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Display name of the step.
-          example: Welcome
-          nullable: true
-        type:
-          type: string
-          description: Required when creating a step.
-          example: screen
-          enum:
-          - screen
-          - checkout
-          - authentication
-          - branch
-          - experiment
-          - offering
-          - ad
-        param_values:
-          type: object
-          description: Step-specific configuration.
-          example: {}
-          additionalProperties: true
-        trigger_actions:
-          type: object
-          description: Navigation and actions keyed by trigger.
-          example: {}
-          additionalProperties: true
-        triggers:
-          type: array
-          description: Step triggers.
-          example: []
-          items: {}
-        outputs:
-          type: object
-          description: Output definitions keyed by component ID.
-          example: {}
-          additionalProperties: true
-        paywall_rc_public_id:
-          type: string
-          description: Existing workflow screen in this project. Mutually exclusive with
-            paywall.
-          example: pw123456789a
-          nullable: true
-        paywall:
-          $ref: '#/components/schemas/FlowScreen'
-          description: Inline screen content. Explicit null removes an authentication
-            step draft-only owned screen.
-          nullable: true
-        rc_metadata:
-          type: object
-          description: Step metadata.
-          example: {}
-          additionalProperties: true
-          nullable: true
-        node_position:
-          type: object
-          required:
-          - x
-          - y
-          properties:
-            x:
-              type: number
-              description: Canvas x coordinate.
-              example: 0
-            y:
-              type: number
-              description: Canvas y coordinate.
-              example: 0
-          additionalProperties: false
-          nullable: true
-        screen_type:
-          type: array
-          description: Screen classifications.
-          example:
-          - initial
-          items:
-            type: string
-            enum:
-            - paywall
-            - checkout
-            - success
-            - initial
-            - second
-            - authentication
-            - experiment
-            - redirect
-          uniqueItems: true
-      additionalProperties: false
-    FlowScreen:
-      type: object
-      properties:
-        default_locale:
-          type: string
-          description: Default locale of the screen.
-          example: en_US
-          nullable: true
-        components_config:
-          type: object
-          description: Raw components configuration, in the same format as paywall drafts.
-          example: {}
-          additionalProperties: true
-        components_localizations:
-          type: object
-          description: Component values keyed by locale.
-          example:
-            en_US: {}
-          additionalProperties:
-            type: object
-            additionalProperties: true
-        metadata:
-          type: object
-          description: Screen metadata.
-          example: {}
-          additionalProperties: true
-          nullable: true
-        params:
-          type: array
-          description: Screen parameters.
-          example: []
-          items:
-            type: object
-            additionalProperties: true
-        offering_id:
-          type: string
-          description: Offering ID for a paywall fallback screen. An empty string detaches
-            the offering.
-          example: ofrng123456789a
-          nullable: true
-        exit_offers:
-          type: object
-          description: Exit offers. Only used by paywall-type flows.
-          example: {}
-          additionalProperties: true
-          nullable: true
-        play_store_product_change_mode:
-          type: object
-          properties:
-            upgrade_replacement_mode:
-              type: string
-              description: Play Store replacement mode.
-              example: deferred
-              enum:
-              - charge_prorated_price
-              - charge_full_price
-              - with_time_proration
-              - without_proration
-              - deferred
-              nullable: true
-            downgrade_replacement_mode:
-              type: string
-              description: Play Store replacement mode.
-              example: deferred
-              enum:
-              - charge_full_price
-              - with_time_proration
-              - without_proration
-              - deferred
-              nullable: true
-          additionalProperties: false
-          nullable: true
-        automatically_scale_font_size:
-          type: boolean
-          description: Whether to scale font sizes automatically.
-          example: true
-        haptic_feedback_enabled:
-          type: boolean
-          description: Whether selections trigger haptic feedback.
-          example: false
-        state_declarations:
-          type: object
-          description: Per-screen state declarations.
-          example: {}
-          additionalProperties: true
-          nullable: true
-        generated_by:
-          type: string
-          description: Origin of the screen.
-          example: figma
-          nullable: true
-      additionalProperties: false
     DuplicateFlow:
       type: object
       additionalProperties: false
@@ -2353,19 +1565,6 @@ components:
           default: draft
           description: Which source version to copy. The copy is always unpublished.
           example: draft
-    PublishFlow:
-      type: object
-      additionalProperties: false
-      required:
-      - revision
-      properties:
-        revision:
-          type: integer
-          description: Current draft revision. Saves must supply this value to reject
-            stale writes.
-          example: 1
-          format: int64
-          minimum: 1
     ValidateFlow:
       type: object
       additionalProperties: false
@@ -2426,178 +1625,6 @@ components:
           example: []
     FlowValidationIssue:
       type: object
-      additionalProperties: true
-      required:
-      - key
-      - message
-      - severity
-      properties:
-        key:
-          oneOf:
-          - $ref: '#/components/schemas/PaywallValidationIssueKey'
-          - $ref: '#/components/schemas/FlowValidationIssueKey'
-        message:
-          description: A human-readable description of the issue.
-          type: string
-          example: Add a name to your paywall.
-        severity:
-          description: The severity of the validation issue.
-          type: string
-          enum:
-          - error
-          - warning
-          example: error
-        component_id:
-          description: The component associated with the issue.
-          type: string
-          nullable: true
-          example: main_stack
-        property:
-          description: The component property associated with the issue.
-          type: string
-          nullable: true
-          example: font_size
-        locale:
-          description: The locale associated with the issue.
-          type: string
-          nullable: true
-          example: en_US
-        localization_id:
-          description: The localization identifier associated with the issue.
-          type: string
-          nullable: true
-          example: title
-        path:
-          description: The schema path associated with the issue.
-          type: string
-          nullable: true
-          example: paywall.components_config.base.stack
-    PaywallValidationIssueKey:
-      description: A stable identifier for a paywall validation issue.
-      type: string
-      enum:
-      - Schema_Invalid
-      - Paywall_NoOffering
-      - Paywall_NoPackage
-      - Paywall_NoName
-      - Paywall_NoDefaultPackage
-      - Paywall_NoPurchaseFlow
-      - Text_NoDefaultText
-      - Text_NoIntroText
-      - Text_NoMultipleIntroText
-      - Text_NoPromoText
-      - Text_NoFont
-      - Text_DefaultModifier
-      - Text_IntroModifier
-      - Text_MultipleIntroModifier
-      - Text_PromoModifier
-      - Text_NoDefaultLocalization
-      - Text_NoIntroLocalization
-      - Text_NoMultipleIntroLocalization
-      - Text_NoPromoLocalization
-      - Text_UndefinedVariable
-      - Text_UndefinedInputVariable
-      - Text_UndefinedIntroVariable
-      - Text_UndefinedMultipleIntroVariable
-      - Text_UndefinedPromoVariable
-      - Text_OfferVariableRequiresRule
-      - Image_NoSource
-      - Image_NoLightSource
-      - Video_NoSource
-      - Video_NoLightSource
-      - Video_NoLowRes
-      - Video_UrlWhitespace
-      - Video_UrlLowResWhitespace
-      - Video_DarkUrlWhitespace
-      - Video_DarkUrlLowResWhitespace
-      - Package_NoPackageId
-      - Countdown_NoDate
-      - Countdown_PastTargetDate
-      - Button_NoDestination
-      - Button_NoUrl
-      - Button_InvalidUrl
-      - Button_NoUrlLocalization
-      - Button_SampleUrl
-      - Button_WPLNoOffering
-      - PurchaseButton_NoUrl
-      - PurchaseButton_SampleUrl
-      - PurchaseButton_WPLNoOffering
-      - PurchaseButton_HostedCheckoutNoOffering
-      - PurchaseButton_HostedCheckoutNoWebProduct
-      - Icon_InvalidBaseUrl
-      - Icon_NoBackgroundColor
-      - Stack_BadgeText
-      - Stack_BadgeIntroOfferText
-      - Stack_BadgeMultipleIntroOffersText
-      - Stack_BadgeNoLocalization
-      - Stack_IntegerMargin
-      - Stack_IntegerPadding
-      - Stack_NegativeMargin
-      - Stack_NegativePadding
-      - Stack_IntegerCorners
-      - Stack_IntegerBorderWidth
-      - Tabs_ToggleRequiresTwoTabs
-      - Tab_OrphanedComponent
-      - State_UnreachableCondition
-      - Choice_NoId
-      - Choice_InvalidFieldId
-      - Choice_DuplicateId
-      - ChoiceOption_NoId
-      - ChoiceOption_DuplicateId
-      - InputText_NoId
-      - InputText_InvalidFieldId
-      - InputText_DuplicateFieldId
-      - InputText_ValidationRange
-      - InputText_ValidationPattern
-      - WebView_NoUrl
-      - WebView_InvalidUrl
-      - WebView_DefaultBundle
-      - ExpressPurchaseButton_TooManyInstances
-      - ExpressPurchaseButton_NoWalletButton
-      - Toggle_FreeTrialWarning
-      - Localization_Missing
-      example: Paywall_NoName
-    FlowValidationIssueKey:
-      type: string
-      description: Workflow step validation issue key.
-      enum:
-      - Step_Unreachable
-      - Step_InitialStepNotRoot
-      - Step_InvalidTriggerAction
-      - Step_InvalidCheckoutConnection
-      - Branch_NoStepSelected
-      - Checkout_NoPaywall
-      - Checkout_NoAppConfig
-      - Screen_NoOffering
-      - Screen_NoOfferingWebProducts
-      - Screen_NoRedemptionButton
-      - Screen_RedemptionButtonOnProtectedStep
-      - Screen_RedemptionButtonWithoutRedemptionPolicy
-      - Screen_RedemptionButtonOnMixedAuthPath
-      - Screen_PurchaseComponentOnNonFinalScreen
-      - Screen_PurchaseButtonWithoutCheckout
-      - Screen_PaywallStepHasOutgoingNavigation
-      - Screen_PaywallWorkflowMultipleOutgoing
-      - Screen_PaywallWorkflowMultipleIncoming
-      - Screen_PaywallWorkflowLeafNotPaywall
-      - Screen_FlowFinalScreenNoExit
-      - Authentication_NoExternalUrl
-      - Authentication_NotHttps
-      - Authentication_NoNextStep
-      - Authentication_NoAppConfig
-      - Authentication_NoIamMethod
-      - Authentication_IamMethodNotFound
-      - Authentication_IamMethodsUnavailable
-      - Authentication_NoIamMethodUrl
-      - Authentication_NoEmailInput
-      - Authentication_NoPasswordInput
-      - Experiment_VariantNoSteps
-      - Experiment_FallbackRequired
-      - Experiment_NeedsMoreVariants
-      - Experiment_NestedInVariant
-      - Experiment_PackageRulesBeforeOfferingSplit
-      - Workflow_UnsupportedType
-      example: Step_Unreachable
     FlowValidationError:
       type: object
       additionalProperties: true
@@ -2640,167 +1667,3 @@ components:
           description: Suggested action to resolve the issue.
           nullable: true
           example: add_screen
-    FlowDraft:
-      type: object
-      required:
-      - object
-      - id
-      - type
-      - revision
-      - display_name
-      - initial_step_id
-      - single_step_fallback_id
-      - app_id
-      - metadata
-      - custom_context_parameters_config
-      - content_max_width
-      - steps
-      properties:
-        object:
-          type: string
-          description: Type of this object.
-          example: flow_draft
-          enum:
-          - flow_draft
-        id:
-          type: string
-          description: Flow ID.
-          example: wf_123456789a
-        type:
-          type: string
-          description: Flow type.
-          example: web-funnel
-          enum:
-          - paywall
-          - web-funnel
-          - general
-        revision:
-          type: integer
-          description: Current draft revision. Saves must supply this value to reject
-            stale writes.
-          example: 1
-          format: int64
-          minimum: 1
-        display_name:
-          type: string
-          description: Display name of the flow.
-          example: Onboarding
-          minLength: 1
-          maxLength: 1500
-        initial_step_id:
-          type: string
-          description: ID of the first step.
-          example: welcome
-          nullable: true
-          maxLength: 255
-        single_step_fallback_id:
-          type: string
-          description: Fallback screen for clients that cannot present multiple steps.
-          example: paywall
-          nullable: true
-          maxLength: 255
-        app_id:
-          type: string
-          description: Web billing app ID.
-          example: app123456789a
-          nullable: true
-          maxLength: 200
-        metadata:
-          type: object
-          description: Flow metadata, including web funnel settings.
-          example: {}
-          additionalProperties: true
-          nullable: true
-        custom_context_parameters_config:
-          type: object
-          description: Custom context parameters.
-          example: {}
-          additionalProperties: true
-        content_max_width:
-          type: integer
-          description: Maximum web content width.
-          example: 600
-          nullable: true
-          minimum: 1
-        steps:
-          type: object
-          description: Editable draft steps keyed by stable step ID.
-          example: {}
-          additionalProperties:
-            $ref: '#/components/schemas/FlowStep'
-          maxProperties: 1000
-      additionalProperties: true
-    UpdateFlowDraft:
-      type: object
-      additionalProperties: false
-      required:
-      - revision
-      properties:
-        revision:
-          type: integer
-          description: Current draft revision. Saves must supply this value to reject
-            stale writes.
-          example: 1
-          format: int64
-          minimum: 1
-        display_name:
-          type: string
-          description: Display name of the flow.
-          example: Onboarding
-          minLength: 1
-          maxLength: 1500
-        initial_step_id:
-          type: string
-          description: ID of the first step.
-          example: welcome
-          nullable: true
-          maxLength: 255
-        single_step_fallback_id:
-          type: string
-          description: Fallback screen for clients that cannot present multiple steps.
-          example: paywall
-          nullable: true
-          maxLength: 255
-        app_id:
-          type: string
-          description: Web billing app ID.
-          example: app123456789a
-          nullable: true
-          maxLength: 200
-        metadata:
-          type: object
-          description: Flow metadata, including web funnel settings.
-          example: {}
-          additionalProperties: true
-          nullable: true
-        custom_context_parameters_config:
-          type: object
-          description: Custom context parameters.
-          example: {}
-          additionalProperties: true
-        content_max_width:
-          type: integer
-          description: Maximum web content width.
-          example: 600
-          nullable: true
-          minimum: 1
-        updated_steps:
-          type: object
-          description: Steps to create or update. Omitted steps are preserved. Step fields
-            are patches; omitted or null fields preserve stored values, except explicit
-            paywall=null on an authentication step.
-          example: {}
-          additionalProperties:
-            $ref: '#/components/schemas/FlowStep'
-          maxProperties: 1000
-        deleted_step_ids:
-          type: array
-          description: Draft steps to delete explicitly. A step cannot also appear in
-            updated_steps.
-          items:
-            type: string
-            minLength: 1
-            maxLength: 255
-          maxItems: 1000
-          uniqueItems: true
-          example: []

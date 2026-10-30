@@ -17254,48 +17254,6 @@ func (e GetProductsFromEntitlement503JSONResponseBodyType) Valid() bool {
 	}
 }
 
-// Defines values for ListFlowsParamsType.
-const (
-	ListFlowsParamsTypeGeneral   ListFlowsParamsType = "general"
-	ListFlowsParamsTypePaywall   ListFlowsParamsType = "paywall"
-	ListFlowsParamsTypeWebFunnel ListFlowsParamsType = "web-funnel"
-)
-
-// Valid indicates whether the value is a known member of the ListFlowsParamsType enum.
-func (e ListFlowsParamsType) Valid() bool {
-	switch e {
-	case ListFlowsParamsTypeGeneral:
-		return true
-	case ListFlowsParamsTypePaywall:
-		return true
-	case ListFlowsParamsTypeWebFunnel:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListFlowsParamsExcludeType.
-const (
-	ListFlowsParamsExcludeTypeGeneral   ListFlowsParamsExcludeType = "general"
-	ListFlowsParamsExcludeTypePaywall   ListFlowsParamsExcludeType = "paywall"
-	ListFlowsParamsExcludeTypeWebFunnel ListFlowsParamsExcludeType = "web-funnel"
-)
-
-// Valid indicates whether the value is a known member of the ListFlowsParamsExcludeType enum.
-func (e ListFlowsParamsExcludeType) Valid() bool {
-	switch e {
-	case ListFlowsParamsExcludeTypeGeneral:
-		return true
-	case ListFlowsParamsExcludeTypePaywall:
-		return true
-	case ListFlowsParamsExcludeTypeWebFunnel:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ListWebhookIntegrations400JSONResponseBodyObject.
 const (
 	ListWebhookIntegrations400JSONResponseBodyObjectError ListWebhookIntegrations400JSONResponseBodyObject = "error"
@@ -37415,14 +37373,6 @@ type PublicAPIKeyEnvironment string
 // PublicAPIKeyObject String representing the object's type. Objects of the same type share the same value.
 type PublicAPIKeyObject string
 
-// PublishFlow defines model for PublishFlow.
-type PublishFlow struct {
-	// Revision Current draft revision. Saves must supply this value to reject stale writes.
-	//
-	// Example: 1
-	Revision int64 `json:"revision"`
-}
-
 // Purchase defines model for Purchase.
 type Purchase struct {
 	// Country The country that the object is associated with, in ISO alpha 2 code
@@ -41852,27 +41802,6 @@ type GetProductsFromEntitlement503JSONResponseBodyObject string
 // GetProductsFromEntitlement503JSONResponseBodyType defines parameters for GetProductsFromEntitlement.
 type GetProductsFromEntitlement503JSONResponseBodyType string
 
-// ListFlowsParams defines parameters for ListFlows.
-type ListFlowsParams struct {
-	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
-	StartingAfter *string `form:"starting_after,omitempty" json:"starting_after,omitempty"`
-
-	// Limit Maximum number of items to return per page. Values below 1 or above 100 are clamped to that range rather than rejected.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
-
-	// Type Only return Flows of these types. `general` matches Flows without a specific type. Cannot be combined with `exclude_type`.
-	Type *[]ListFlowsParamsType `form:"type,omitempty" json:"type,omitempty"`
-
-	// ExcludeType Return Flows of every type except these. `general` matches Flows without a specific type. Cannot be combined with `type`.
-	ExcludeType *[]ListFlowsParamsExcludeType `form:"exclude_type,omitempty" json:"exclude_type,omitempty"`
-}
-
-// ListFlowsParamsType defines parameters for ListFlows.
-type ListFlowsParamsType string
-
-// ListFlowsParamsExcludeType defines parameters for ListFlows.
-type ListFlowsParamsExcludeType string
-
 // ListWebhookIntegrationsParams defines parameters for ListWebhookIntegrations.
 type ListWebhookIntegrationsParams struct {
 	// StartingAfter Pagination cursor. Pass the id of the last item from the previous page to fetch the next page; omit for the first page.
@@ -45712,20 +45641,11 @@ type AttachProductsToEntitlementJSONRequestBody AttachProductsToEntitlementJSONB
 // DetachProductsFromEntitlementJSONRequestBody defines body for DetachProductsFromEntitlement for application/json ContentType.
 type DetachProductsFromEntitlementJSONRequestBody DetachProductsFromEntitlementJSONBody
 
-// CreateFlowJSONRequestBody defines body for CreateFlow for application/json ContentType.
-type CreateFlowJSONRequestBody = CreateFlow
-
 // DuplicateFlowJSONRequestBody defines body for DuplicateFlow for application/json ContentType.
 type DuplicateFlowJSONRequestBody = DuplicateFlow
 
-// PublishFlowJSONRequestBody defines body for PublishFlow for application/json ContentType.
-type PublishFlowJSONRequestBody = PublishFlow
-
 // ValidateFlowJSONRequestBody defines body for ValidateFlow for application/json ContentType.
 type ValidateFlowJSONRequestBody = ValidateFlow
-
-// UpdateFlowDraftJSONRequestBody defines body for UpdateFlowDraft for application/json ContentType.
-type UpdateFlowDraftJSONRequestBody = UpdateFlowDraft
 
 // CreateWebhookIntegrationJSONRequestBody defines body for CreateWebhookIntegration for application/json ContentType.
 type CreateWebhookIntegrationJSONRequestBody = CreateWebhookIntegrationInput

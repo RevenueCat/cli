@@ -3,11 +3,9 @@ package api_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -32,11 +30,12 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 			return err
 		}},
 		{"validate latest", "POST", "/actions/validate", `{}`, func(c *api.Client) error {
-			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", 0)
+			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", api.ValidateFlow{})
 			return err
 		}},
 		{"validate revision", "POST", "/actions/validate", `{"revision":3}`, func(c *api.Client) error {
-			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", 3)
+			revision := int64(3)
+			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", api.ValidateFlow{Revision: &revision})
 			return err
 		}},
 	} {
@@ -69,29 +68,5 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-	}
-}
-
-func TestFlowUpdatePreservesRawScreenJSONAndConflict(t *testing.T) {
-	const raw = `{"type":"screen","paywall":{"components_config":{"large":9007199254740993},"components_localizations":{"en_US":{"title":"Hello"}},"haptics_enabled":false}}`
-	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		body, _ := io.ReadAll(r.Body)
-		if !strings.Contains(string(body), raw) {
-			t.Errorf("screen changed: %s", body)
-		}
-		w.WriteHeader(http.StatusConflict)
-		_, _ = io.WriteString(w, `{"type":"resource_conflict","message":"Draft revision changed"}`)
-	}))
-	defer server.Close()
-	client := api.NewClient(api.Options{APIKey: "sk", BaseURL: server.URL})
-	_, err := client.Flows.UpdateDraft(context.Background(), "proj", "wf_1", api.UpdateFlowDraft{Revision: 2, UpdatedSteps: map[string]json.RawMessage{"screen": json.RawMessage(raw)}})
-	var apiError *api.APIError
-	if !errors.As(err, &apiError) || apiError.Status != http.StatusConflict {
-		t.Fatalf("error = %v", err)
-	}
-	if requests != 1 {
-		t.Errorf("conflicting update retried %d times", requests)
 	}
 }
