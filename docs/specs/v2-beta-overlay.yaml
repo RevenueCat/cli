@@ -936,6 +936,119 @@ paths:
       responses:
         '200':
           description: OK
+    post:
+      summary: Create a Flow draft
+      operationId: create-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/flows/{flow_id}/actions/duplicate:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Duplicate a Flow
+      operationId: duplicate-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read_write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DuplicateFlow'
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/flows/{flow_id}/actions/validate:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Validate a Flow draft
+      operationId: validate-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateFlow'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowValidation'
+  /projects/{project_id}/flows/{flow_id}:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a Flow
+      operationId: get-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read
+      parameters:
+      - name: expand
+        in: query
+        description: Accepted values are `steps` (adds the draft steps, settings and revision).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - steps
+      responses:
+        '200':
+          description: OK
+    patch:
+      summary: Update a Flow
+      operationId: update-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read_write
+      responses:
+        '200':
+          description: OK
   /projects/{project_id}/checkpoints:
     parameters:
     - name: project_id
@@ -1416,3 +1529,123 @@ components:
       - ZAR
       - ZMW
       - ZWL
+    DuplicateFlow:
+      type: object
+      additionalProperties: false
+      properties:
+        display_name:
+          type: string
+          description: Name of the duplicate.
+          minLength: 1
+          maxLength: 1500
+          example: Onboarding Copy
+        source_version:
+          type: string
+          enum:
+          - draft
+          - published
+          default: draft
+          description: Which source version to copy. The copy is always unpublished.
+          example: draft
+    ValidateFlow:
+      type: object
+      additionalProperties: false
+      properties:
+        revision:
+          type: integer
+          description: Current draft revision. Saves must supply this value to reject
+            stale writes.
+          example: 1
+          format: int64
+          minimum: 1
+    FlowValidation:
+      type: object
+      additionalProperties: true
+      required:
+      - object
+      - id
+      - valid
+      - revision
+      - step_issues
+      - workflow_errors
+      properties:
+        object:
+          type: string
+          enum:
+          - flow_validation
+          description: Type of this object.
+          example: flow_validation
+        id:
+          type: string
+          description: Flow ID.
+          example: wf_123456789a
+        valid:
+          type: boolean
+          description: Whether the draft can be published. Warnings do not prevent publication.
+          example: false
+        revision:
+          type: integer
+          description: Current draft revision. Saves must supply this value to reject
+            stale writes.
+          example: 1
+          format: int64
+          minimum: 1
+          nullable: true
+        step_issues:
+          type: object
+          description: Issues keyed by step ID.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/FlowValidationIssue'
+          example: {}
+        workflow_errors:
+          type: array
+          description: Issues affecting the entire flow.
+          items:
+            $ref: '#/components/schemas/FlowValidationError'
+          example: []
+    FlowValidationIssue:
+      type: object
+    FlowValidationError:
+      type: object
+      additionalProperties: true
+      required:
+      - key
+      - message
+      - severity
+      properties:
+        key:
+          type: string
+          description: Workflow validation error key.
+          enum:
+          - Workflow_ExperimentRunningCombosOverLimit
+          - Workflow_ExperimentPotentialCombosOverLimit
+          - Workflow_NoPaywallScreen
+          - Workflow_RestoreButtonNotOnFinalScreen
+          - Workflow_NoInitialStep
+          - Workflow_InitialStepNotFound
+          - Workflow_NoCheckoutStep
+          - Workflow_CheckoutNotReachable
+          - Workflow_CheckoutNoSuccessStep
+          - Workflow_NoWebConfig
+          - Workflow_NoWebProducts
+          - Workflow_ExclusiveRuleMixedOutcome
+          - Workflow_CookieConsentNoPrivacyPolicy
+          example: Workflow_ExperimentRunningCombosOverLimit
+        message:
+          description: A human-readable description of the issue.
+          type: string
+          example: Add a name to your paywall.
+        severity:
+          description: The severity of the validation issue.
+          type: string
+          enum:
+          - error
+          - warning
+          example: error
+        action:
+          type: string
+          description: Suggested action to resolve the issue.
+          nullable: true
+          example: add_screen

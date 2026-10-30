@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,7 +11,9 @@ import (
 // FlowsService wraps /flows. Feedback surveys are not returned by the API.
 type FlowsService struct{ c *Client }
 
+// Flow carries the settings and Steps only when fetched with FlowExpandSteps.
 type Flow struct {
+	FlowSettings
 	ID                    string  `json:"id"`
 	Object                string  `json:"object,omitempty"`
 	Name                  string  `json:"name"`
@@ -19,6 +22,44 @@ type Flow struct {
 	CreatedAt             Millis  `json:"created_at,omitempty"`
 	PublishedAt           *Millis `json:"published_at"`
 	HasUnpublishedChanges bool    `json:"has_unpublished_changes"`
+	Revision              int     `json:"revision"`
+
+	Steps map[string]json.RawMessage `json:"steps,omitempty"`
+}
+
+type FlowSettings struct {
+	DisplayName                   *string         `json:"display_name,omitempty"`
+	InitialStepID                 json.RawMessage `json:"initial_step_id,omitempty"`
+	SingleStepFallbackID          json.RawMessage `json:"single_step_fallback_id,omitempty"`
+	AppID                         json.RawMessage `json:"app_id,omitempty"`
+	Metadata                      json.RawMessage `json:"metadata,omitempty"`
+	CustomContextParametersConfig json.RawMessage `json:"custom_context_parameters_config,omitempty"`
+	ContentMaxWidth               json.RawMessage `json:"content_max_width,omitempty"`
+}
+
+type UpdateFlow struct {
+	FlowSettings
+	Revision       int                        `json:"revision"`
+	UpdatedSteps   map[string]json.RawMessage `json:"updated_steps,omitempty"`
+	DeletedStepIDs []string                   `json:"deleted_step_ids,omitempty"`
+}
+
+type CreateFlow struct {
+	FlowSettings
+	Type  string                     `json:"type,omitempty"`
+	Steps map[string]json.RawMessage `json:"steps,omitempty"`
+}
+
+type FlowValidationIssue struct {
+	Key            string  `json:"key"`
+	Message        string  `json:"message"`
+	Severity       string  `json:"severity"`
+	ComponentID    *string `json:"component_id,omitempty"`
+	Property       *string `json:"property,omitempty"`
+	Locale         *string `json:"locale,omitempty"`
+	LocalizationID *string `json:"localization_id,omitempty"`
+	Path           *string `json:"path,omitempty"`
+	Action         *string `json:"action,omitempty"`
 }
 
 // FlowListOptions filters by Flow type. Type and ExcludeType can't be combined.
@@ -54,4 +95,48 @@ func (s *FlowsService) List(ctx context.Context, projectID string, opts FlowList
 		return nil, err
 	}
 	return &out, nil
+}
+
+// FlowExpand names the optional sections get-flow can embed.
+type FlowExpand string
+
+// FlowExpandSteps adds the draft steps, settings and revision.
+const FlowExpandSteps FlowExpand = "steps"
+
+func (s *FlowsService) Get(ctx context.Context, projectID, id string, expand ...FlowExpand) (*Flow, error) {
+	path := pathFlow(projectID, id)
+	if len(expand) > 0 {
+		query := url.Values{}
+		for _, e := range expand {
+			query.Add("expand", string(e))
+		}
+		path += "?" + query.Encode()
+	}
+	var out Flow
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
+	return &out, err
+}
+
+func (s *FlowsService) Update(ctx context.Context, projectID, id string, body UpdateFlow) (*Flow, error) {
+	var out Flow
+	err := s.c.do(ctx, http.MethodPatch, pathFlow(projectID, id), body, &out)
+	return &out, err
+}
+
+func (s *FlowsService) Create(ctx context.Context, projectID string, body CreateFlow) (*Flow, error) {
+	var out Flow
+	err := s.c.do(ctx, http.MethodPost, pathFlows(projectID), body, &out)
+	return &out, err
+}
+
+func (s *FlowsService) Duplicate(ctx context.Context, projectID, id string, body DuplicateFlow) (*Flow, error) {
+	var out Flow
+	err := s.c.do(ctx, http.MethodPost, pathFlowActionsDuplicate(projectID, id), body, &out)
+	return &out, err
+}
+
+func (s *FlowsService) Validate(ctx context.Context, projectID, id string, body ValidateFlow) (*FlowValidation, error) {
+	var out FlowValidation
+	err := s.c.do(ctx, http.MethodPost, pathFlowActionsValidate(projectID, id), body, &out)
+	return &out, err
 }
