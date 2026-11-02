@@ -27,14 +27,15 @@ type Flow struct {
 	Steps map[string]json.RawMessage `json:"steps,omitempty"`
 }
 
+// Settings are RawMessage so omitted stays unchanged and a literal null clears the field.
 type FlowSettings struct {
-	DisplayName                   *string         `json:"display_name,omitempty"`
-	InitialStepID                 json.RawMessage `json:"initial_step_id,omitempty"`
-	SingleStepFallbackID          json.RawMessage `json:"single_step_fallback_id,omitempty"`
-	AppID                         json.RawMessage `json:"app_id,omitempty"`
-	Metadata                      json.RawMessage `json:"metadata,omitempty"`
-	CustomContextParametersConfig json.RawMessage `json:"custom_context_parameters_config,omitempty"`
-	ContentMaxWidth               json.RawMessage `json:"content_max_width,omitempty"`
+	DisplayName          *string         `json:"display_name,omitempty"`
+	InitialStepID        json.RawMessage `json:"initial_step_id,omitempty"`
+	SingleStepFallbackID json.RawMessage `json:"single_step_fallback_id,omitempty"`
+	AppID                json.RawMessage `json:"app_id,omitempty"`
+	Metadata             json.RawMessage `json:"metadata,omitempty"`
+	CustomParameters     json.RawMessage `json:"custom_parameters,omitempty"`
+	ContentMaxWidth      json.RawMessage `json:"content_max_width,omitempty"`
 }
 
 type UpdateFlow struct {
@@ -48,18 +49,6 @@ type CreateFlow struct {
 	FlowSettings
 	Type  string                     `json:"type,omitempty"`
 	Steps map[string]json.RawMessage `json:"steps,omitempty"`
-}
-
-type FlowValidationIssue struct {
-	Key            string  `json:"key"`
-	Message        string  `json:"message"`
-	Severity       string  `json:"severity"`
-	ComponentID    *string `json:"component_id,omitempty"`
-	Property       *string `json:"property,omitempty"`
-	Locale         *string `json:"locale,omitempty"`
-	LocalizationID *string `json:"localization_id,omitempty"`
-	Path           *string `json:"path,omitempty"`
-	Action         *string `json:"action,omitempty"`
 }
 
 // FlowListOptions filters by Flow type. Type and ExcludeType can't be combined.

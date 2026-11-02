@@ -202,7 +202,7 @@ rc flows show [id]                                      # editable draft, includ
 rc flows export [id] --output <path>                     # save an update request containing the current revision and all steps
 rc flows update [id] --config <path|->                   # save the exported JSON or a partial update; only deleted_step_ids removes steps (PATCH /flows/{id})
 rc flows create --config <path|->                       # create an unpublished web-funnel or general flow (type paywall is rejected)
-rc flows duplicate [id] [--name <name>] [--source-version draft|published] # create an unpublished copy
+rc flows duplicate [id] [--name <name>] # create an unpublished copy of the draft
 rc flows validate [id] [--revision <revision>]           # return saved-draft validation issues
 # Experiments — development v2 endpoints, normal discoverable CLI surface
 rc experiments list [--status <status>]

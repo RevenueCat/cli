@@ -943,6 +943,7 @@ paths:
       x-revenuecat-release-gatekeeping: false
       x-scopes:
       - project_configuration:workflows:read_write
+      - project_configuration:offerings:read_write
       responses:
         '200':
           description: OK
@@ -965,6 +966,7 @@ paths:
       x-revenuecat-release-gatekeeping: false
       x-scopes:
       - project_configuration:workflows:read_write
+      - project_configuration:offerings:read_write
       requestBody:
         required: true
         content:
@@ -993,6 +995,7 @@ paths:
       x-revenuecat-release-gatekeeping: false
       x-scopes:
       - project_configuration:workflows:read
+      - project_configuration:offerings:read
       requestBody:
         required: true
         content:
@@ -1025,10 +1028,12 @@ paths:
       x-revenuecat-release-gatekeeping: false
       x-scopes:
       - project_configuration:workflows:read
+      x-expandable-fields:
+      - steps: project_configuration:offerings:read
       parameters:
       - name: expand
         in: query
-        description: Accepted values are `steps` (adds the draft steps, settings and revision).
+        description: Accepted values are `steps` (adds the draft steps, settings and revision; requires `project_configuration:offerings:read`).
         required: false
         schema:
           type: array
@@ -1046,6 +1051,7 @@ paths:
       x-revenuecat-release-gatekeeping: false
       x-scopes:
       - project_configuration:workflows:read_write
+      - project_configuration:offerings:read_write
       responses:
         '200':
           description: OK
@@ -1539,14 +1545,6 @@ components:
           minLength: 1
           maxLength: 1500
           example: Onboarding Copy
-        source_version:
-          type: string
-          enum:
-          - draft
-          - published
-          default: draft
-          description: Which source version to copy. The copy is always unpublished.
-          example: draft
     ValidateFlow:
       type: object
       additionalProperties: false
@@ -1567,7 +1565,7 @@ components:
       - valid
       - revision
       - step_issues
-      - workflow_errors
+      - flow_issues
       properties:
         object:
           type: string
@@ -1585,12 +1583,10 @@ components:
           example: false
         revision:
           type: integer
-          description: Current draft revision. Saves must supply this value to reject
-            stale writes.
+          description: Draft revision that was validated.
           example: 1
           format: int64
-          minimum: 1
-          nullable: true
+          minimum: 0
         step_issues:
           type: object
           description: Issues keyed by step ID.
@@ -1599,15 +1595,13 @@ components:
             items:
               $ref: '#/components/schemas/FlowValidationIssue'
           example: {}
-        workflow_errors:
+        flow_issues:
           type: array
-          description: Issues affecting the entire flow.
+          description: Issues affecting the whole flow.
           items:
-            $ref: '#/components/schemas/FlowValidationError'
+            $ref: '#/components/schemas/FlowValidationIssue'
           example: []
     FlowValidationIssue:
-      type: object
-    FlowValidationError:
       type: object
       additionalProperties: true
       required:
@@ -1617,22 +1611,8 @@ components:
       properties:
         key:
           type: string
-          description: Workflow validation error key.
-          enum:
-          - Workflow_ExperimentRunningCombosOverLimit
-          - Workflow_ExperimentPotentialCombosOverLimit
-          - Workflow_NoPaywallScreen
-          - Workflow_RestoreButtonNotOnFinalScreen
-          - Workflow_NoInitialStep
-          - Workflow_InitialStepNotFound
-          - Workflow_NoCheckoutStep
-          - Workflow_CheckoutNotReachable
-          - Workflow_CheckoutNoSuccessStep
-          - Workflow_NoWebConfig
-          - Workflow_NoWebProducts
-          - Workflow_ExclusiveRuleMixedOutcome
-          - Workflow_CookieConsentNoPrivacyPolicy
-          example: Workflow_ExperimentRunningCombosOverLimit
+          description: Validation issue key.
+          example: Step_Unreachable
         message:
           description: A human-readable description of the issue.
           type: string
@@ -1644,8 +1624,33 @@ components:
           - error
           - warning
           example: error
-        action:
+        component_id:
+          description: The component associated with the issue.
           type: string
+          nullable: true
+          example: main_stack
+        property:
+          description: The component property associated with the issue.
+          type: string
+          nullable: true
+          example: font_size
+        locale:
+          description: The locale associated with the issue.
+          type: string
+          nullable: true
+          example: en_US
+        localization_id:
+          description: The localization identifier associated with the issue.
+          type: string
+          nullable: true
+          example: title
+        path:
+          description: The schema path associated with the issue.
+          type: string
+          nullable: true
+          example: paywall.components_config.base.stack
+        action:
           description: Suggested action to resolve the issue.
+          type: string
           nullable: true
           example: add_screen

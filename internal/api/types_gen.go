@@ -1975,24 +1975,6 @@ func (e DeletedObjectObject) Valid() bool {
 	}
 }
 
-// Defines values for DuplicateFlowSourceVersion.
-const (
-	DuplicateFlowSourceVersionDraft     DuplicateFlowSourceVersion = "draft"
-	DuplicateFlowSourceVersionPublished DuplicateFlowSourceVersion = "published"
-)
-
-// Valid indicates whether the value is a known member of the DuplicateFlowSourceVersion enum.
-func (e DuplicateFlowSourceVersion) Valid() bool {
-	switch e {
-	case DuplicateFlowSourceVersionDraft:
-		return true
-	case DuplicateFlowSourceVersionPublished:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for Duration.
 const (
 	P1M Duration = "P1M"
@@ -2188,69 +2170,18 @@ func (e FlowValidationObject) Valid() bool {
 	}
 }
 
-// Defines values for FlowValidationErrorKey.
+// Defines values for FlowValidationIssueSeverity.
 const (
-	WorkflowCheckoutNoSuccessStep              FlowValidationErrorKey = "Workflow_CheckoutNoSuccessStep"
-	WorkflowCheckoutNotReachable               FlowValidationErrorKey = "Workflow_CheckoutNotReachable"
-	WorkflowCookieConsentNoPrivacyPolicy       FlowValidationErrorKey = "Workflow_CookieConsentNoPrivacyPolicy"
-	WorkflowExclusiveRuleMixedOutcome          FlowValidationErrorKey = "Workflow_ExclusiveRuleMixedOutcome"
-	WorkflowExperimentPotentialCombosOverLimit FlowValidationErrorKey = "Workflow_ExperimentPotentialCombosOverLimit"
-	WorkflowExperimentRunningCombosOverLimit   FlowValidationErrorKey = "Workflow_ExperimentRunningCombosOverLimit"
-	WorkflowInitialStepNotFound                FlowValidationErrorKey = "Workflow_InitialStepNotFound"
-	WorkflowNoCheckoutStep                     FlowValidationErrorKey = "Workflow_NoCheckoutStep"
-	WorkflowNoInitialStep                      FlowValidationErrorKey = "Workflow_NoInitialStep"
-	WorkflowNoPaywallScreen                    FlowValidationErrorKey = "Workflow_NoPaywallScreen"
-	WorkflowNoWebConfig                        FlowValidationErrorKey = "Workflow_NoWebConfig"
-	WorkflowNoWebProducts                      FlowValidationErrorKey = "Workflow_NoWebProducts"
-	WorkflowRestoreButtonNotOnFinalScreen      FlowValidationErrorKey = "Workflow_RestoreButtonNotOnFinalScreen"
+	FlowValidationIssueSeverityError   FlowValidationIssueSeverity = "error"
+	FlowValidationIssueSeverityWarning FlowValidationIssueSeverity = "warning"
 )
 
-// Valid indicates whether the value is a known member of the FlowValidationErrorKey enum.
-func (e FlowValidationErrorKey) Valid() bool {
+// Valid indicates whether the value is a known member of the FlowValidationIssueSeverity enum.
+func (e FlowValidationIssueSeverity) Valid() bool {
 	switch e {
-	case WorkflowCheckoutNoSuccessStep:
+	case FlowValidationIssueSeverityError:
 		return true
-	case WorkflowCheckoutNotReachable:
-		return true
-	case WorkflowCookieConsentNoPrivacyPolicy:
-		return true
-	case WorkflowExclusiveRuleMixedOutcome:
-		return true
-	case WorkflowExperimentPotentialCombosOverLimit:
-		return true
-	case WorkflowExperimentRunningCombosOverLimit:
-		return true
-	case WorkflowInitialStepNotFound:
-		return true
-	case WorkflowNoCheckoutStep:
-		return true
-	case WorkflowNoInitialStep:
-		return true
-	case WorkflowNoPaywallScreen:
-		return true
-	case WorkflowNoWebConfig:
-		return true
-	case WorkflowNoWebProducts:
-		return true
-	case WorkflowRestoreButtonNotOnFinalScreen:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for FlowValidationErrorSeverity.
-const (
-	FlowValidationErrorSeverityError   FlowValidationErrorSeverity = "error"
-	FlowValidationErrorSeverityWarning FlowValidationErrorSeverity = "warning"
-)
-
-// Valid indicates whether the value is a known member of the FlowValidationErrorSeverity enum.
-func (e FlowValidationErrorSeverity) Valid() bool {
-	switch e {
-	case FlowValidationErrorSeverityError:
-		return true
-	case FlowValidationErrorSeverityWarning:
+	case FlowValidationIssueSeverityWarning:
 		return true
 	default:
 		return false
@@ -35766,17 +35697,7 @@ type DuplicateFlow struct {
 	//
 	// Example: Onboarding Copy
 	DisplayName *string `json:"display_name,omitempty"`
-
-	// SourceVersion Which source version to copy. The copy is always unpublished.
-	//
-	// Example: draft
-	SourceVersion *DuplicateFlowSourceVersion `json:"source_version,omitempty"`
 }
-
-// DuplicateFlowSourceVersion Which source version to copy. The copy is always unpublished.
-//
-// Example: draft
-type DuplicateFlowSourceVersion string
 
 // Duration The duration of the product subscription. This field is only supported for the test store and it is ignored for other stores.
 //
@@ -35924,6 +35845,11 @@ type ExtendSubscriptionUntilDateExtendReasonCode string
 
 // FlowValidation defines model for FlowValidation.
 type FlowValidation struct {
+	// FlowIssues Issues affecting the whole flow.
+	//
+	// Example: []
+	FlowIssues []FlowValidationIssue `json:"flow_issues"`
+
 	// ID Flow ID.
 	//
 	// Example: wf_123456789a
@@ -35934,10 +35860,10 @@ type FlowValidation struct {
 	// Example: flow_validation
 	Object FlowValidationObject `json:"object"`
 
-	// Revision Current draft revision. Saves must supply this value to reject stale writes.
+	// Revision Draft revision that was validated.
 	//
 	// Example: 1
-	Revision *int64 `json:"revision"`
+	Revision int64 `json:"revision"`
 
 	// StepIssues Issues keyed by step ID.
 	//
@@ -35947,12 +35873,7 @@ type FlowValidation struct {
 	// Valid Whether the draft can be published. Warnings do not prevent publication.
 	//
 	// Example: false
-	Valid bool `json:"valid"`
-
-	// WorkflowErrors Issues affecting the entire flow.
-	//
-	// Example: []
-	WorkflowErrors       []FlowValidationError  `json:"workflow_errors"`
+	Valid                bool                   `json:"valid"`
 	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
@@ -35961,39 +35882,59 @@ type FlowValidation struct {
 // Example: flow_validation
 type FlowValidationObject string
 
-// FlowValidationError defines model for FlowValidationError.
-type FlowValidationError struct {
+// FlowValidationIssue defines model for FlowValidationIssue.
+type FlowValidationIssue struct {
 	// Action Suggested action to resolve the issue.
 	//
 	// Example: add_screen
 	Action *string `json:"action,omitempty"`
 
-	// Key Workflow validation error key.
+	// ComponentID The component associated with the issue.
 	//
-	// Example: Workflow_ExperimentRunningCombosOverLimit
-	Key FlowValidationErrorKey `json:"key"`
+	// Example: main_stack
+	ComponentID *string `json:"component_id,omitempty"`
+
+	// Key Validation issue key.
+	//
+	// Example: Step_Unreachable
+	Key string `json:"key"`
+
+	// Locale The locale associated with the issue.
+	//
+	// Example: en_US
+	Locale *string `json:"locale,omitempty"`
+
+	// LocalizationID The localization identifier associated with the issue.
+	//
+	// Example: title
+	LocalizationID *string `json:"localization_id,omitempty"`
 
 	// Message A human-readable description of the issue.
 	//
 	// Example: Add a name to your paywall.
 	Message string `json:"message"`
 
+	// Path The schema path associated with the issue.
+	//
+	// Example: paywall.components_config.base.stack
+	Path *string `json:"path,omitempty"`
+
+	// Property The component property associated with the issue.
+	//
+	// Example: font_size
+	Property *string `json:"property,omitempty"`
+
 	// Severity The severity of the validation issue.
 	//
 	// Example: error
-	Severity             FlowValidationErrorSeverity `json:"severity"`
+	Severity             FlowValidationIssueSeverity `json:"severity"`
 	AdditionalProperties map[string]interface{}      `json:"-"`
 }
 
-// FlowValidationErrorKey Workflow validation error key.
-//
-// Example: Workflow_ExperimentRunningCombosOverLimit
-type FlowValidationErrorKey string
-
-// FlowValidationErrorSeverity The severity of the validation issue.
+// FlowValidationIssueSeverity The severity of the validation issue.
 //
 // Example: error
-type FlowValidationErrorSeverity string
+type FlowValidationIssueSeverity string
 
 // IndicativePrice An indicative price for a product, in the default currency/country (USD / US). Uses the same price source as the get-offering-prices endpoint.
 type IndicativePrice struct {
@@ -41814,7 +41755,7 @@ type GetProductsFromEntitlement503JSONResponseBodyType string
 
 // GetFlowParams defines parameters for GetFlow.
 type GetFlowParams struct {
-	// Expand Accepted values are `steps` (adds the draft steps, settings and revision).
+	// Expand Accepted values are `steps` (adds the draft steps, settings and revision; requires `project_configuration:offerings:read`).
 	Expand *[]GetFlowParamsExpand `form:"expand,omitempty" json:"expand,omitempty"`
 }
 
@@ -46756,6 +46697,14 @@ func (a *FlowValidation) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	if raw, found := object["flow_issues"]; found {
+		err = json.Unmarshal(raw, &a.FlowIssues)
+		if err != nil {
+			return fmt.Errorf("error reading 'flow_issues': %w", err)
+		}
+		delete(object, "flow_issues")
+	}
+
 	if raw, found := object["id"]; found {
 		err = json.Unmarshal(raw, &a.ID)
 		if err != nil {
@@ -46796,14 +46745,6 @@ func (a *FlowValidation) UnmarshalJSON(b []byte) error {
 		delete(object, "valid")
 	}
 
-	if raw, found := object["workflow_errors"]; found {
-		err = json.Unmarshal(raw, &a.WorkflowErrors)
-		if err != nil {
-			return fmt.Errorf("error reading 'workflow_errors': %w", err)
-		}
-		delete(object, "workflow_errors")
-	}
-
 	if len(object) != 0 {
 		a.AdditionalProperties = make(map[string]interface{})
 		for fieldName, fieldBuf := range object {
@@ -46822,6 +46763,13 @@ func (a *FlowValidation) UnmarshalJSON(b []byte) error {
 func (a FlowValidation) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
+
+	if a.FlowIssues != nil {
+		object["flow_issues"], err = json.Marshal(a.FlowIssues)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'flow_issues': %w", err)
+		}
+	}
 
 	object["id"], err = json.Marshal(a.ID)
 	if err != nil {
@@ -46850,13 +46798,6 @@ func (a FlowValidation) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'valid': %w", err)
 	}
 
-	if a.WorkflowErrors != nil {
-		object["workflow_errors"], err = json.Marshal(a.WorkflowErrors)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'workflow_errors': %w", err)
-		}
-	}
-
 	for fieldName, field := range a.AdditionalProperties {
 		object[fieldName], err = json.Marshal(field)
 		if err != nil {
@@ -46866,25 +46807,25 @@ func (a FlowValidation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
-// Getter for additional properties for FlowValidationError. Returns the specified
+// Getter for additional properties for FlowValidationIssue. Returns the specified
 // element and whether it was found
-func (a FlowValidationError) Get(fieldName string) (value interface{}, found bool) {
+func (a FlowValidationIssue) Get(fieldName string) (value interface{}, found bool) {
 	if a.AdditionalProperties != nil {
 		value, found = a.AdditionalProperties[fieldName]
 	}
 	return
 }
 
-// Setter for additional properties for FlowValidationError
-func (a *FlowValidationError) Set(fieldName string, value interface{}) {
+// Setter for additional properties for FlowValidationIssue
+func (a *FlowValidationIssue) Set(fieldName string, value interface{}) {
 	if a.AdditionalProperties == nil {
 		a.AdditionalProperties = make(map[string]interface{})
 	}
 	a.AdditionalProperties[fieldName] = value
 }
 
-// Override default JSON handling for FlowValidationError to handle AdditionalProperties
-func (a *FlowValidationError) UnmarshalJSON(b []byte) error {
+// Override default JSON handling for FlowValidationIssue to handle AdditionalProperties
+func (a *FlowValidationIssue) UnmarshalJSON(b []byte) error {
 	object := make(map[string]json.RawMessage)
 	err := json.Unmarshal(b, &object)
 	if err != nil {
@@ -46899,6 +46840,14 @@ func (a *FlowValidationError) UnmarshalJSON(b []byte) error {
 		delete(object, "action")
 	}
 
+	if raw, found := object["component_id"]; found {
+		err = json.Unmarshal(raw, &a.ComponentID)
+		if err != nil {
+			return fmt.Errorf("error reading 'component_id': %w", err)
+		}
+		delete(object, "component_id")
+	}
+
 	if raw, found := object["key"]; found {
 		err = json.Unmarshal(raw, &a.Key)
 		if err != nil {
@@ -46907,12 +46856,44 @@ func (a *FlowValidationError) UnmarshalJSON(b []byte) error {
 		delete(object, "key")
 	}
 
+	if raw, found := object["locale"]; found {
+		err = json.Unmarshal(raw, &a.Locale)
+		if err != nil {
+			return fmt.Errorf("error reading 'locale': %w", err)
+		}
+		delete(object, "locale")
+	}
+
+	if raw, found := object["localization_id"]; found {
+		err = json.Unmarshal(raw, &a.LocalizationID)
+		if err != nil {
+			return fmt.Errorf("error reading 'localization_id': %w", err)
+		}
+		delete(object, "localization_id")
+	}
+
 	if raw, found := object["message"]; found {
 		err = json.Unmarshal(raw, &a.Message)
 		if err != nil {
 			return fmt.Errorf("error reading 'message': %w", err)
 		}
 		delete(object, "message")
+	}
+
+	if raw, found := object["path"]; found {
+		err = json.Unmarshal(raw, &a.Path)
+		if err != nil {
+			return fmt.Errorf("error reading 'path': %w", err)
+		}
+		delete(object, "path")
+	}
+
+	if raw, found := object["property"]; found {
+		err = json.Unmarshal(raw, &a.Property)
+		if err != nil {
+			return fmt.Errorf("error reading 'property': %w", err)
+		}
+		delete(object, "property")
 	}
 
 	if raw, found := object["severity"]; found {
@@ -46937,8 +46918,8 @@ func (a *FlowValidationError) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Override default JSON handling for FlowValidationError to handle AdditionalProperties
-func (a FlowValidationError) MarshalJSON() ([]byte, error) {
+// Override default JSON handling for FlowValidationIssue to handle AdditionalProperties
+func (a FlowValidationIssue) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
 
@@ -46949,14 +46930,49 @@ func (a FlowValidationError) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	if a.ComponentID != nil {
+		object["component_id"], err = json.Marshal(a.ComponentID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'component_id': %w", err)
+		}
+	}
+
 	object["key"], err = json.Marshal(a.Key)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'key': %w", err)
 	}
 
+	if a.Locale != nil {
+		object["locale"], err = json.Marshal(a.Locale)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'locale': %w", err)
+		}
+	}
+
+	if a.LocalizationID != nil {
+		object["localization_id"], err = json.Marshal(a.LocalizationID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'localization_id': %w", err)
+		}
+	}
+
 	object["message"], err = json.Marshal(a.Message)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'message': %w", err)
+	}
+
+	if a.Path != nil {
+		object["path"], err = json.Marshal(a.Path)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'path': %w", err)
+		}
+	}
+
+	if a.Property != nil {
+		object["property"], err = json.Marshal(a.Property)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'property': %w", err)
+		}
 	}
 
 	object["severity"], err = json.Marshal(a.Severity)

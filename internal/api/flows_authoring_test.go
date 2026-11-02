@@ -12,7 +12,6 @@ import (
 )
 
 func TestFlowAuthoringRoutes(t *testing.T) {
-	published := api.DuplicateFlowSourceVersionPublished
 	for _, tc := range []struct {
 		name, method, suffix, body string
 		call                       func(*api.Client) error
@@ -25,8 +24,9 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 			_, err := c.Flows.Update(context.Background(), "proj", "wf_1", api.UpdateFlow{FlowSettings: api.FlowSettings{Metadata: json.RawMessage("null")}, Revision: 3, DeletedStepIDs: []string{"old"}})
 			return err
 		}},
-		{"duplicate", "POST", "/actions/duplicate", `{"source_version":"published"}`, func(c *api.Client) error {
-			_, err := c.Flows.Duplicate(context.Background(), "proj", "wf_1", api.DuplicateFlow{SourceVersion: &published})
+		{"duplicate", "POST", "/actions/duplicate", `{"display_name":"Copy"}`, func(c *api.Client) error {
+			name := "Copy"
+			_, err := c.Flows.Duplicate(context.Background(), "proj", "wf_1", api.DuplicateFlow{DisplayName: &name})
 			return err
 		}},
 		{"validate latest", "POST", "/actions/validate", `{}`, func(c *api.Client) error {

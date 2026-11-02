@@ -164,11 +164,10 @@ func newFlowsCreateCmd() *cobra.Command {
 }
 
 func newFlowsDuplicateCmd() *cobra.Command {
-	var name, sourceVersion string
+	var name string
 	cmd := &cobra.Command{
 		Use: "duplicate [id]", Short: "Duplicate a Flow into an unpublished draft", Args: cobra.MaximumNArgs(1),
-		Example: `  rc flows duplicate wf_abc --name "Onboarding copy"
-  rc flows duplicate wf_abc --source-version published`,
+		Example: `  rc flows duplicate wf_abc --name "Onboarding copy"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -185,8 +184,7 @@ func newFlowsDuplicateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			source := api.DuplicateFlowSourceVersion(sourceVersion)
-			body := api.DuplicateFlow{SourceVersion: &source}
+			var body api.DuplicateFlow
 			if name != "" {
 				body.DisplayName = &name
 			}
@@ -199,7 +197,6 @@ func newFlowsDuplicateCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "name of the duplicate")
-	cmd.Flags().StringVar(&sourceVersion, "source-version", string(api.DuplicateFlowSourceVersionDraft), "source to copy: draft or published")
 	return cmd
 }
 
@@ -207,7 +204,7 @@ func newFlowsValidateCmd() *cobra.Command {
 	var revision int64
 	cmd := &cobra.Command{
 		Use: "validate [id]", Short: "Validate a saved Flow draft", Args: cobra.MaximumNArgs(1),
-		Long: "Returns workflow errors and step issues for the saved draft. Returns a nonzero exit status when the draft is invalid. Does not save or publish.",
+		Long: "Returns flow issues and step issues for the saved draft. Returns a nonzero exit status when the draft is invalid. Does not save or publish.",
 		Example: `  rc flows validate wf_abc
   rc flows validate wf_abc --revision 4`,
 		RunE: func(cmd *cobra.Command, args []string) error {

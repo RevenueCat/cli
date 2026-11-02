@@ -73,7 +73,7 @@ func TestFlowValidationInvalidRendersIssuesAndFails(t *testing.T) {
 		if r.URL.Path != "/projects/proj/flows/wf_1/actions/validate" || r.Method != "POST" {
 			t.Errorf("request = %s %s", r.Method, r.URL.Path)
 		}
-		_, _ = io.WriteString(w, `{"object":"flow_validation","id":"wf_1","revision":4,"valid":false,"step_issues":{},"workflow_errors":[{"key":"no_initial_step","message":"Choose a start step","severity":"error"}]}`)
+		_, _ = io.WriteString(w, `{"object":"flow_validation","id":"wf_1","revision":4,"valid":false,"step_issues":{},"flow_issues":[{"key":"no_initial_step","message":"Choose a start step","severity":"error"}]}`)
 	}))
 	defer server.Close()
 	out, _, err := runProjectSetupCommand(t, server.URL, "flows", "validate", "wf_1", "--revision", "4", "--json", "--no-input")
@@ -112,7 +112,7 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 				t.Errorf("create body = %s", body)
 			}
 		} else if r.URL.Path == "/projects/proj/flows/wf_1/actions/duplicate" {
-			if string(body["source_version"]) != `"published"` || string(body["display_name"]) != `"Copy"` {
+			if string(body["display_name"]) != `"Copy"` {
 				t.Errorf("duplicate body = %s", body)
 			}
 		} else {
@@ -127,7 +127,7 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 	}
 	for _, args := range [][]string{
 		{"flows", "create", "--config", path, "--json", "--no-input"},
-		{"flows", "duplicate", "wf_1", "--name", "Copy", "--source-version", "published", "--json", "--no-input"},
+		{"flows", "duplicate", "wf_1", "--name", "Copy", "--json", "--no-input"},
 	} {
 		if _, _, err := runProjectSetupCommand(t, server.URL, args...); err != nil {
 			t.Fatal(err)
