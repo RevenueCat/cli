@@ -51,9 +51,7 @@ func (s *ProductsService) List(ctx context.Context, projectID string, opts *Prod
 	if opts != nil && opts.AppID != "" {
 		path += "?app_id=" + url.QueryEscape(opts.AppID)
 	}
-	var out Page[Product]
-	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
-	return &out, err
+	return listAll[Product](ctx, s.c, path)
 }
 
 func (s *ProductsService) Create(ctx context.Context, projectID string, body ProductCreate) (*Product, error) {

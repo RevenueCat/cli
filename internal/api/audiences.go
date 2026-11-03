@@ -83,9 +83,7 @@ const (
 )
 
 func (s *AudiencesService) List(ctx context.Context, projectID string) (*Page[Audience], error) {
-	var out Page[Audience]
-	err := s.c.do(ctx, http.MethodGet, pathAudiences(projectID), nil, &out)
-	return &out, err
+	return listAll[Audience](ctx, s.c, pathAudiences(projectID))
 }
 
 func (s *AudiencesService) Get(ctx context.Context, projectID, id string, expand ...AudienceExpand) (*Audience, error) {
