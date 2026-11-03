@@ -740,6 +740,14 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	return nil
 }
 
+// removePaywallScreenshots deletes the session's preview files so a stale png
+// never survives a run that returns none.
+func removePaywallScreenshots(sessionPath string) {
+	base := screenshotBase(sessionPath)
+	os.Remove(base + ".light.png")
+	os.Remove(base + ".dark.png")
+}
+
 // savePaywallScreenshots writes the run's rendered previews next to the
 // session file (<base>.light.png / .dark.png) and returns the paths by color
 // scheme. Best-effort: a decode or write failure warns, never fails the turn.

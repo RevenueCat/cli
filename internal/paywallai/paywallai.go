@@ -69,7 +69,8 @@ type EditorRequest struct {
 	Source                   string            `json:"source"`
 }
 
-// WorkflowContext scopes a v3 run to one step of a Flow.
+// WorkflowContext scopes a v3 run to steps of a Flow; an empty ReferencedStepIDs
+// (never nil) means the whole Flow.
 type WorkflowContext struct {
 	Version           int      `json:"version"`
 	WorkflowID        string   `json:"workflow_id"`
@@ -113,6 +114,12 @@ type ResultScreenshot struct {
 	DataBase64  string `json:"data_base64"`
 }
 
+// ValidationIssue is a flow-level problem the editor found in the finished run.
+type ValidationIssue struct {
+	Key     string `json:"key"`
+	Message string `json:"message"`
+}
+
 type StreamError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -132,6 +139,7 @@ type Event struct {
 	ResultScreenshots []ResultScreenshot `json:"result_screenshots,omitempty"`
 	// v3 only: every step the run edited, keyed by step id.
 	EditedPaywallsByStepID map[string]PaywallData `json:"edited_paywalls_by_step_id,omitempty"`
+	ValidationIssues       []ValidationIssue      `json:"validation_issues,omitempty"`
 }
 
 func (e *Event) Terminal() bool {
@@ -218,14 +226,31 @@ func checkStatus(resp *http.Response) error {
 	return &APIError{StatusCode: resp.StatusCode, Message: errorMessage(body)}
 }
 
+// errorMessage prefers the server's own text: FastAPI sends "detail" as a string,
+// or as a list of {msg} objects for validation errors.
 func errorMessage(body []byte) string {
 	var envelope struct {
-		Detail  string `json:"detail"`
-		Message string `json:"message"`
+		Detail  json.RawMessage `json:"detail"`
+		Message string          `json:"message"`
 	}
 	if err := json.Unmarshal(body, &envelope); err == nil {
-		if envelope.Detail != "" {
-			return envelope.Detail
+		var text string
+		var items []struct {
+			Msg string `json:"msg"`
+		}
+		if json.Unmarshal(envelope.Detail, &text) == nil && text != "" {
+			return text
+		}
+		if json.Unmarshal(envelope.Detail, &items) == nil {
+			var msgs []string
+			for _, item := range items {
+				if item.Msg != "" {
+					msgs = append(msgs, strings.TrimPrefix(item.Msg, "Value error, "))
+				}
+			}
+			if len(msgs) > 0 {
+				return strings.Join(msgs, "; ")
+			}
 		}
 		if envelope.Message != "" {
 			return envelope.Message

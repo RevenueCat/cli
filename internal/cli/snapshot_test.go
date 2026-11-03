@@ -33,7 +33,7 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.URL.Path == "/projects/proj_snap/flows/wf_snap" || r.URL.Path == "/projects/proj_snap/flows/wf_stale":
+		case r.URL.Path == "/projects/proj_snap/flows/wf_snap" || r.URL.Path == "/projects/proj_snap/flows/wf_stale" || r.URL.Path == "/projects/proj_snap/flows/wf_issues":
 			if r.Method == http.MethodPatch {
 				if strings.HasSuffix(r.URL.Path, "wf_stale") {
 					w.WriteHeader(http.StatusConflict)
@@ -43,9 +43,21 @@ func snapshotServer(t *testing.T) *httptest.Server {
 				io.WriteString(w, `{"id":"wf_snap","revision":5}`)
 				return
 			}
-			fmt.Fprintf(w, `{"id":%q,"object":"flow","revision":4,"type":"paywall","steps":{"welcome":{"type":"screen","screen":{"components_config":{}}}}}`, path.Base(r.URL.Path))
+			fmt.Fprintf(w, `{"id":%q,"object":"flow","revision":4,"type":"paywall","steps":{"welcome":{"type":"screen","screen":{"components_config":{}}},"pricing":{"type":"screen","screen":{"components_config":{}}}}}`, path.Base(r.URL.Path))
 		case r.URL.Path == "/editor/v3/stream":
 			io.WriteString(w, "data: {\"type\":\"run.started\",\"session_id\":\"sess_snap\"}\n\n")
+			var req struct {
+				WorkflowContext struct {
+					WorkflowID string `json:"workflow_id"`
+				} `json:"workflow_context"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Error(err)
+			}
+			if req.WorkflowContext.WorkflowID == "wf_issues" {
+				io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"edited_paywalls_by_step_id\":{\"welcome\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}},\"pricing\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}},\"validation_issues\":[{\"key\":\"pricing.cta\",\"message\":\"Button has no action\"}]}\n\n")
+				return
+			}
 			io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"edited_paywalls_by_step_id\":{\"welcome\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}},\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"},{\"color_scheme\":\"dark\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n")
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/actions/stop"):
 			io.WriteString(w, `{"id":"exp_snap","display_name":"Price paywall","status":"stopped"}`)
@@ -138,8 +150,11 @@ func TestOutputSnapshots(t *testing.T) {
 		{"apps-list", []string{"apps", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
 		{"error-not-found", []string{"offerings", "show", "ofrng_missing", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
-		{"flows-edit-saved", []string{"flows", "edit", "wf_snap", "--step-id", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
-		{"flows-edit-stale-revision", []string{"flows", "edit", "wf_stale", "--step-id", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"flows-edit-saved", []string{"flows", "edit", "wf_snap", "--step-ids", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"flows-edit-stale-revision", []string{"flows", "edit", "wf_stale", "--step-ids", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"flows-edit-whole-flow-saved", []string{"flows", "edit", "wf_snap", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"flows-edit-whole-flow-stale-revision", []string{"flows", "edit", "wf_stale", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"flows-edit-sibling-and-issues", []string{"flows", "edit", "wf_issues", "--step-ids", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-apple-setup", []string{"apps", "apple", "setup", "app_snap1", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 	}
 
