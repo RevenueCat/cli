@@ -1,0 +1,7 @@
+$ rc flows edit wf_issues --step-ids welcome --prompt Bolder CTA --no-input --project-id proj_snap --api-key sk_snap
+· Designing with the Paywalls AI Editor — this can take a few minutes…
+✓ Design saved to flow draft wf_issues (pricing, welcome)
+  Also changed                pricing          · not in --step-ids
+· No preview was returned for the edited steps.
+  Keep designing              rc flows edit wf_issues --step-ids welcome
+! pricing.cta: Button has no action

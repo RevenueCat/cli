@@ -124,6 +124,35 @@ func TestStreamHTTPError(t *testing.T) {
 	}
 }
 
+func TestStreamHTTPErrorDetailList(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		io.WriteString(w, `{"detail":[{"loc":["body"],"msg":"first","type":"x"},{"msg":"second"}]}`)
+	}))
+	defer server.Close()
+	client := NewClient(Options{BaseURL: server.URL, Token: "tok"})
+	_, err := client.StreamV3(context.Background(), EditorRequestV3{})
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != 422 || apiErr.Message != "first; second" {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestErrorMessage(t *testing.T) {
+	tests := []struct{ name, body, want string }{
+		{"string detail", `{"detail":"not allowed"}`, "not allowed"},
+		{"detail list", `{"detail":[{"msg":"first"},{"msg":"second"}]}`, "first; second"},
+		{"strips pydantic prefix", `{"detail":[{"msg":"Value error, bad id"},{"msg":"Value error, bad name"},{"msg":"plain"}]}`, "bad id; bad name; plain"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := errorMessage([]byte(tt.body)); got != tt.want {
+				t.Fatalf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestFeedbackAndRewind(t *testing.T) {
 	var paths []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

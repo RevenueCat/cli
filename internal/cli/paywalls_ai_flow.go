@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -18,8 +19,9 @@ import (
 	"github.com/revenuecat/cli/internal/paywallai"
 )
 
-// paywallAIFlowSession is the conversation memory for one Flow step. Astra
-// reads the step's content from the Flow itself, so no paywall is stored.
+// paywallAIFlowSession is the conversation memory for one set of Flow steps (or
+// the whole Flow when none are named). Astra reads the content from the Flow
+// itself, so no paywall is stored.
 type paywallAIFlowSession struct {
 	SessionID        string            `json:"session_id,omitempty"`
 	TraceID          string            `json:"trace_id,omitempty"`
@@ -29,12 +31,26 @@ type paywallAIFlowSession struct {
 	AppContext       json.RawMessage   `json:"app_context,omitempty"`
 }
 
-func defaultFlowSessionPath(projectID, flowID, stepID string) (string, error) {
+func defaultFlowSessionPath(projectID, flowID string, stepIDs []string) (string, error) {
 	base, err := defaultPaywallSessionPath(projectID, flowID)
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(filepath.Dir(base), "session."+stepID+paywallSessionSuffix), nil
+	if len(stepIDs) == 0 {
+		return base, nil
+	}
+	// Sorted so the same set of steps resumes the same conversation in any flag order.
+	// The key is never empty, so it cannot equal the flow-wide "session" file.
+	key := strings.Join(slices.Sorted(slices.Values(stepIDs)), "+")
+	return filepath.Join(filepath.Dir(base), "session."+key+paywallSessionSuffix), nil
+}
+
+func flowEditCommand(flowID string, stepIDs []string) string {
+	cmd := "rc flows edit " + flowID
+	if len(stepIDs) > 0 {
+		cmd += " --step-ids " + strings.Join(stepIDs, ",")
+	}
+	return cmd
 }
 
 func loadFlowSession(path string) (*paywallAIFlowSession, error) {
@@ -68,30 +84,32 @@ func applyFlowEvent(session *paywallAIFlowSession, event *paywallai.Event) {
 }
 
 func newFlowsEditCmd() *cobra.Command {
-	var stepID string
+	var stepIDs []string
 	opts := paywallAIOptions{
 		prompt:  os.Getenv("RC_PAYWALL_PROMPT"),
 		baseURL: devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
 		timeout: 10 * time.Minute,
 	}
 	cmd := &cobra.Command{
-		Use:   "edit [flow-id] --step-id <step-id>",
+		Use:   "edit [flow-id] [--step-ids <step-id>[,<step-id>...]]",
 		Short: "Edit a Flow screen with the Paywalls AI Editor",
-		Long: `Applies a natural-language edit to one screen step of a Flow and saves the
+		Long: `Applies a natural-language edit to screen steps of a Flow and saves the
 result onto the Flow draft (revision-guarded). The editor sees the whole Flow
-but is scoped to --step-id; it may also adjust other screens. Find step ids
-with rc flows show.
+but is scoped to --step-ids (comma-separated or repeated); it may also adjust
+other screens, which are reported as "also changed". Omit --step-ids to edit
+the whole Flow. Find step ids with rc flows show.
 
-Each step keeps its own editor session in the CLI data dir, so repeating the
-command with the same --step-id continues the conversation. See rc paywalls
-edit --help for prompting guidance.`,
-		Example: `  rc flows edit wf_abc --step-id welcome --prompt "Bolder CTA, keep the layout"
-  rc flows edit wf_abc --step-id welcome --prompt "match this" --attachment DESIGN.md --image home.png`,
+Each set of steps (or the whole Flow) keeps its own editor session in the CLI
+data dir, so repeating the command with the same --step-ids values continues
+the conversation. See rc paywalls edit --help for prompting guidance.`,
+		Example: `  rc flows edit wf_abc --step-ids welcome --prompt "Bolder CTA, keep the layout"
+  rc flows edit wf_abc --step-ids welcome,pricing --prompt "same button style on both"
+  rc flows edit wf_abc --step-ids welcome --prompt "match this" --attachment DESIGN.md --image home.png`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if opts.sessionPath != "" {
-				return fmt.Errorf("--step-id keeps its own per-step session; drop --session")
+				return fmt.Errorf("rc flows edit keeps its own session per flow or step set; drop --session")
 			}
 			client, err := rt.API()
 			if err != nil {
@@ -107,17 +125,17 @@ edit --help for prompting guidance.`,
 			if err != nil {
 				return err
 			}
-			return runFlowEdit(cmd.Context(), rt, opts, flowID, stepID)
+			return runFlowEdit(cmd.Context(), rt, opts, flowID, stepIDs)
 		},
 	}
 	addPaywallAIFlags(cmd, &opts)
-	cmd.Flags().StringVar(&stepID, "step-id", "", "screen step to edit")
+	cmd.Flags().StringSliceVar(&stepIDs, "step-ids", nil, "screen steps to edit, comma-separated or repeated (default: the whole flow)")
 	return cmd
 }
 
-// runFlowEdit drives one Astra run against a screen step of a Flow and saves
+// runFlowEdit drives one Astra run against screen steps of a Flow and saves
 // the edited steps onto the Flow draft itself.
-func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID, stepID string) error {
+func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID string, stepIDs []string) error {
 	client, err := rt.API()
 	if err != nil {
 		return err
@@ -133,26 +151,30 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 		}
 		return err
 	}
-	if stepID == "" {
-		// An absent or null initial_step_id decodes to "".
-		_ = json.Unmarshal(draft.InitialStepID, &stepID)
-		if stepID == "" {
-			return WithHint(fmt.Errorf("flow %s has no initial step; pass --step-id", draft.ID), "List the flow's steps with: rc flows show "+draft.ID)
+	seen := map[string]bool{}
+	// Non-nil so no ids serialises as [] (whole flow), never null.
+	stepIDs = slices.DeleteFunc(append([]string{}, stepIDs...), func(id string) bool {
+		dup := seen[id]
+		seen[id] = true
+		return dup
+	})
+	for _, id := range stepIDs {
+		if err := requireScreenStep(draft, id); err != nil {
+			return err
 		}
-	}
-	if err := requireScreenStep(draft, stepID); err != nil {
-		return err
 	}
 	if err := requirePaywallAIPrompt(rt, &opts.prompt, "What should change?"); err != nil {
 		return err
 	}
-	if opts.sessionPath, err = defaultFlowSessionPath(projectID, flowID, stepID); err != nil {
+	if opts.sessionPath, err = defaultFlowSessionPath(projectID, flowID, stepIDs); err != nil {
 		return err
 	}
 	session, err := loadFlowSession(opts.sessionPath)
 	if err != nil {
 		return err
 	}
+	// Previews from an earlier run must never be mistaken for this run's.
+	removePaywallScreenshots(opts.sessionPath)
 
 	astra, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
@@ -179,7 +201,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 		WorkflowContext: paywallai.WorkflowContext{
 			Version:           3,
 			WorkflowID:        flowID,
-			ReferencedStepIDs: []string{stepID},
+			ReferencedStepIDs: stepIDs,
 			WorkflowRevision:  draft.Revision,
 		},
 		IncludeResultScreenshots: true,
@@ -216,49 +238,89 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 			if err := writeJSONFile(opts.sessionPath, session); err != nil {
 				return err
 			}
-			return finishFlowEdit(ctx, rt, opts, client, projectID, draft, stepID, session, event)
+			return finishFlowEdit(ctx, rt, opts, client, projectID, draft, stepIDs, session, event)
 		}
 	}
 }
 
-func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.Flow, stepID string, session *paywallAIFlowSession, event *paywallai.Event) error {
+func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.Flow, stepIDs []string, session *paywallAIFlowSession, event *paywallai.Event) error {
 	screenshots := savePaywallScreenshots(rt, opts.sessionPath, event.ResultScreenshots)
 	saved, err := saveEditedSteps(ctx, client, projectID, draft, event.EditedPaywallsByStepID)
+	if saved == nil {
+		saved = []string{}
+	}
+	issues := event.ValidationIssues
+	if issues == nil {
+		issues = []paywallai.ValidationIssue{}
+	}
+	alsoChanged := siblingSteps(event.EditedPaywallsByStepID, stepIDs)
 	switch {
 	case err == nil && len(saved) == 0:
 		rt.Out.Info("The editor made no changes to the flow.")
 	case err == nil:
 		rt.Out.Success(fmt.Sprintf("Design saved to flow draft %s (%s)", draft.ID, strings.Join(saved, ", ")))
+		if len(alsoChanged) > 0 {
+			rt.Out.Field("Also changed", strings.Join(alsoChanged, ", "), "not in --step-ids")
+		}
+		// Astra renders the requested step only when exactly one was named.
+		previewLabel, darkLabel := "Preview", "Preview (dark)"
+		if len(stepIDs) == 1 {
+			previewLabel, darkLabel = "Preview ("+stepIDs[0]+")", "Preview ("+stepIDs[0]+", dark)"
+		}
 		if path, ok := screenshots["light"]; ok {
-			rt.Out.Field("Preview", path)
+			rt.Out.Field(previewLabel, path)
 		}
 		if path, ok := screenshots["dark"]; ok {
-			rt.Out.Field("Preview (dark)", path)
+			rt.Out.Field(darkLabel, path)
 		}
-		rt.Out.Field("Keep designing", fmt.Sprintf("rc flows edit %s --step-id %s", draft.ID, stepID))
+		if len(screenshots) == 0 {
+			rt.Out.Info("No preview was returned for the edited steps.")
+		}
+		rt.Out.Field("Keep designing", flowEditCommand(draft.ID, stepIDs))
 	default:
 		var apiErr *api.APIError
 		if errors.As(err, &apiErr) && apiErr.Status == 409 {
 			// The edits were made against a stale revision, so they are never replayed automatically.
 			rt.Out.Warn("Nothing was saved: the flow changed during the run (dashboard or another client).")
-			rt.Out.Hint(fmt.Sprintf("Re-run against the current draft:  rc flows edit %s --step-id %s", draft.ID, stepID))
+			rt.Out.Hint("Re-run against the current draft:  " + flowEditCommand(draft.ID, stepIDs))
 		} else {
 			return WithHint(err, "Nothing was saved. Re-run the command to try again.")
 		}
 	}
+	for _, issue := range issues {
+		rt.Out.Warn(issue.Key + ": " + issue.Message)
+	}
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(map[string]any{
-			"flow_id":          draft.ID,
-			"step_id":          stepID,
-			"saved_steps":      saved,
-			"saved_to_draft":   len(saved) > 0,
-			"session_id":       session.SessionID,
-			"trace_id":         session.TraceID,
-			"session_file":     opts.sessionPath,
-			"screenshot_paths": screenshots,
-			"activity":         event.Activity,
+			"flow_id":           draft.ID,
+			"step_ids":          stepIDs,
+			"saved_steps":       saved,
+			"also_changed":      alsoChanged,
+			"validation_issues": issues,
+			"saved_to_draft":    len(saved) > 0,
+			"session_id":        session.SessionID,
+			"trace_id":          session.TraceID,
+			"session_file":      opts.sessionPath,
+			"screenshot_paths":  screenshots,
+			"activity":          event.Activity,
 		})
 	}
+}
+
+// siblingSteps lists edited steps the request did not name; a whole-flow
+// request (no ids) has none. Never nil, so it serialises as [].
+func siblingSteps(edited map[string]paywallai.PaywallData, requested []string) []string {
+	siblings := []string{}
+	if len(requested) == 0 {
+		return siblings
+	}
+	for id := range edited {
+		if !slices.Contains(requested, id) {
+			siblings = append(siblings, id)
+		}
+	}
+	sort.Strings(siblings)
+	return siblings
 }
 
 // saveEditedSteps writes every step the run edited back in one draft update,

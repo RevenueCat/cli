@@ -1,6 +1,6 @@
-$ rc flows edit wf_snap --step-id welcome --prompt Bolder CTA --no-input --project-id proj_snap --api-key sk_snap
+$ rc flows edit wf_snap --step-ids welcome --prompt Bolder CTA --no-input --project-id proj_snap --api-key sk_snap
 · Designing with the Paywalls AI Editor — this can take a few minutes…
 ✓ Design saved to flow draft wf_snap (welcome)
-  Preview                     <config-dir>/paywalls/proj_snap/wf_snap/session.welcome.light.png
-  Preview (dark)              <config-dir>/paywalls/proj_snap/wf_snap/session.welcome.dark.png
-  Keep designing              rc flows edit wf_snap --step-id welcome
+  Preview (welcome)           <config-dir>/paywalls/proj_snap/wf_snap/session.welcome.light.png
+  Preview (welcome, dark)     <config-dir>/paywalls/proj_snap/wf_snap/session.welcome.dark.png
+  Keep designing              rc flows edit wf_snap --step-ids welcome
