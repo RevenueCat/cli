@@ -38,9 +38,7 @@ type WebhookUpdate struct {
 }
 
 func (s *WebhooksService) List(ctx context.Context, projectID string) (*Page[Webhook], error) {
-	var out Page[Webhook]
-	err := s.c.do(ctx, http.MethodGet, pathIntegrationsWebhooks(projectID), nil, &out)
-	return &out, err
+	return listAll[Webhook](ctx, s.c, pathIntegrationsWebhooks(projectID))
 }
 
 func (s *WebhooksService) Get(ctx context.Context, projectID, id string) (*Webhook, error) {

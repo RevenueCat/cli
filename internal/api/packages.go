@@ -10,9 +10,7 @@ type PackagesService struct{ c *Client }
 // Package type is generated in types_gen.go.
 
 func (s *PackagesService) List(ctx context.Context, projectID, offeringID string) (*Page[Package], error) {
-	var out Page[Package]
-	err := s.c.do(ctx, http.MethodGet, pathOfferingPackages(projectID, offeringID), nil, &out)
-	return &out, err
+	return listAll[Package](ctx, s.c, pathOfferingPackages(projectID, offeringID))
 }
 
 func (s *PackagesService) Get(ctx context.Context, projectID, id string) (*Package, error) {

@@ -21,11 +21,7 @@ type EntitlementUpdate struct {
 
 // GET /projects/{project_id}/entitlements
 func (s *EntitlementsService) List(ctx context.Context, projectID string) (*Page[Entitlement], error) {
-	var out Page[Entitlement]
-	if err := s.c.do(ctx, http.MethodGet, pathEntitlements(projectID), nil, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
+	return listAll[Entitlement](ctx, s.c, pathEntitlements(projectID))
 }
 
 // GET /projects/{project_id}/entitlements/{id}

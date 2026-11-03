@@ -51,9 +51,7 @@ type PaywallDraftUpdate struct {
 }
 
 func (s *PaywallsService) List(ctx context.Context, projectID string) (*Page[Paywall], error) {
-	var out Page[Paywall]
-	err := s.c.do(ctx, http.MethodGet, pathPaywalls(projectID), nil, &out)
-	return &out, err
+	return listAll[Paywall](ctx, s.c, pathPaywalls(projectID))
 }
 
 func (s *PaywallsService) Get(ctx context.Context, projectID, id string) (*Paywall, error) {

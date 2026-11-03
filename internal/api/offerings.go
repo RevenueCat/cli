@@ -22,9 +22,7 @@ type OfferingUpdate struct {
 }
 
 func (s *OfferingsService) List(ctx context.Context, projectID string) (*Page[Offering], error) {
-	var out Page[Offering]
-	err := s.c.do(ctx, http.MethodGet, pathOfferings(projectID), nil, &out)
-	return &out, err
+	return listAll[Offering](ctx, s.c, pathOfferings(projectID))
 }
 
 func (s *OfferingsService) Get(ctx context.Context, projectID, id string) (*Offering, error) {
