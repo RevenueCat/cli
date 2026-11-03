@@ -170,16 +170,8 @@ func pathFlowActionsDuplicate(projectID string, flowID string) string {
 	return encodePath("projects", projectID, "flows", flowID, "actions", "duplicate")
 }
 
-func pathFlowActionsPublish(projectID string, flowID string) string {
-	return encodePath("projects", projectID, "flows", flowID, "actions", "publish")
-}
-
 func pathFlowActionsValidate(projectID string, flowID string) string {
 	return encodePath("projects", projectID, "flows", flowID, "actions", "validate")
-}
-
-func pathFlowDraft(projectID string, flowID string) string {
-	return encodePath("projects", projectID, "flows", flowID, "draft")
 }
 
 func pathFlows(projectID string) string {

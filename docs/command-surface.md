@@ -182,7 +182,6 @@ rc products store screenshot <product-id>                # upload an App Review 
 
 # Checkpoints (points in the app where Checkpoint rules choose which Flow to show)
 rc checkpoints list                                      # experimental (hidden from --help until Checkpoint rules roll out)
-rc checkpoints create --identifier <identifier>           # register a checkpoint before the SDK encounters it; does not attach or activate a Flow
 
 # Paywalls
 rc paywalls                                              # help; under npx a TTY shows a generate/edit picker (npm launcher sets RC_GUIDED — paywalls-only for now)
@@ -199,13 +198,12 @@ rc paywalls delete <id> [--force]                        # attached/published pa
 
 # Flows (paywalls, web funnels, and multi-step experiences)
 rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # experimental (hidden from --help until Checkpoint rules roll out); repeatable; shows type and publish state
-rc flows show <id>                                      # editable draft, including steps and screen content
-rc flows export <id> --output <path>                     # save an update request containing the current revision and all steps; refuses to overwrite
-rc flows update <id> --config <path|->                   # save the exported JSON or a partial update; only deleted_step_ids removes steps
-rc flows create --config <path|->                       # create an unpublished paywall, web-funnel, or general flow
-rc flows duplicate <id> [--name <name>] [--source-version draft|published] # create an unpublished copy
-rc flows validate <id> [--revision <revision>]           # return saved-draft validation issues
-rc flows publish <id> --revision <revision>             # validate and publish that revision; confirmation/--yes
+rc flows show [id]                                      # editable draft, including steps and screen content (GET /flows/{id}?expand=steps)
+rc flows export [id] --output <path>                     # save an update request containing the current revision and all steps
+rc flows update [id] --config <path|->                   # save the exported JSON or a partial update; only deleted_step_ids removes steps (PATCH /flows/{id})
+rc flows create --config <path|->                       # create an unpublished web-funnel or general flow (type paywall is rejected)
+rc flows duplicate [id] [--name <name>] # create an unpublished copy of the draft
+rc flows validate [id] [--revision <revision>]           # return saved-draft validation issues
 # Experiments — development v2 endpoints, normal discoverable CLI surface
 rc experiments list [--status <status>]
 rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline
@@ -221,7 +219,7 @@ rc experiments resume <id>                             # resumes enrollment; con
 rc experiments stop <id>                                # permanent; confirmation/--yes
 
 # Targeting rules — development v2 endpoints
-rc targeting list [--state <state>] [--checkpoint-id <id>] [--flow-id <id>]
+rc targeting list [--state <state>]
 rc targeting show <id>                                 # human detail view shows audience, placements, schedule, and checkpoints
 rc targeting create (--name <name> --offering <offering-id> [--state inactive|active] | --config <json-file>)  # initially inactive
 rc targeting update <id> --config <json-file>           # partial update of an Offering or checkpoint rule
