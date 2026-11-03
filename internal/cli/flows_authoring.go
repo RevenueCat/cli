@@ -199,6 +199,9 @@ func newFlowsValidateCmd() *cobra.Command {
 			}
 			var body api.ValidateFlow
 			if cmd.Flags().Changed("revision") {
+				if revision < 0 {
+					return WithHint(errors.New("--revision must be 0 or greater"), "Get the current revision with: rc flows show <id>")
+				}
 				body.Revision = &revision
 			}
 			validation, err := client.Flows.Validate(cmd.Context(), projectID, flowID, body)

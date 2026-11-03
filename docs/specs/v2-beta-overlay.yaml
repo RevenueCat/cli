@@ -1555,7 +1555,7 @@ components:
             stale writes.
           example: 1
           format: int64
-          minimum: 1
+          minimum: 0
     FlowValidation:
       type: object
       additionalProperties: true
