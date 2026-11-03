@@ -229,8 +229,6 @@ endpoints:
   # Checkpoints (development-status; provided by the beta overlay)
   - method: GET
     path: /projects/{project_id}/checkpoints
-  - method: POST
-    path: /projects/{project_id}/checkpoints
 
   # Audiences (provided by the beta overlay until the published spec includes them)
   - method: GET
@@ -295,15 +293,11 @@ endpoints:
   # Flow authoring (development API)
   - method: POST
     path: /projects/{project_id}/flows
-  - method: GET
-    path: /projects/{project_id}/flows/{flow_id}
   - method: POST
     path: /projects/{project_id}/flows/{flow_id}/actions/duplicate
   - method: POST
-    path: /projects/{project_id}/flows/{flow_id}/actions/publish
-  - method: POST
     path: /projects/{project_id}/flows/{flow_id}/actions/validate
   - method: GET
-    path: /projects/{project_id}/flows/{flow_id}/draft
+    path: /projects/{project_id}/flows/{flow_id}
   - method: PATCH
-    path: /projects/{project_id}/flows/{flow_id}/draft
+    path: /projects/{project_id}/flows/{flow_id}

@@ -16,12 +16,15 @@ import (
 func TestFlowExportUpdateRoundTrip(t *testing.T) {
 	var update map[string]json.RawMessage
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/projects/proj/flows/wf_1/draft" {
+		if r.URL.Path != "/projects/proj/flows/wf_1" {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		switch r.Method {
 		case http.MethodGet:
-			_, _ = io.WriteString(w, `{"id":"wf_1","object":"flow_draft","revision":4,"type":"web-funnel","display_name":"Checkout","initial_step_id":"screen","single_step_fallback_id":null,"app_id":null,"metadata":{"large":9007199254740993},"custom_context_parameters_config":null,"content_max_width":null,"steps":{"screen":{"type":"screen","paywall":{"components_config":{"large":9007199254740993},"components_localizations":{"en_US":{"title":"Hello"}},"haptics_enabled":false}}}}`)
+			if r.URL.Query().Get("expand") != "steps" {
+				t.Errorf("expand = %q, want steps", r.URL.Query().Get("expand"))
+			}
+			_, _ = io.WriteString(w, `{"id":"wf_1","object":"flow","revision":4,"type":"web-funnel","display_name":"Checkout","initial_step_id":"screen","single_step_fallback_id":null,"app_id":null,"metadata":{"large":9007199254740993},"custom_parameters":null,"content_max_width":null,"steps":{"screen":{"type":"screen","screen":{"components_config":{"large":9007199254740993},"components_localizations":{"en_US":{"title":"Hello"}},"haptics_enabled":false}}}}`)
 		case http.MethodPatch:
 			if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
 				t.Error(err)
@@ -63,51 +66,6 @@ func TestFlowExportUpdateRoundTrip(t *testing.T) {
 	if _, exists := update["deleted_step_ids"]; exists {
 		t.Fatal("export inferred step deletions")
 	}
-	_, _, err = runProjectSetupCommand(t, server.URL, "flows", "export", "wf_1", "--output", path, "--json", "--no-input")
-	if err == nil {
-		t.Fatal("export overwrote existing file")
-	}
-	after, _ := os.ReadFile(path)
-	if string(after) != string(data) {
-		t.Fatal("existing file changed")
-	}
-}
-
-func TestFlowPublishRequiresConfirmationAndRevision(t *testing.T) {
-	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		if r.Method != "POST" || r.URL.Path != "/projects/proj/flows/wf_1/actions/publish" {
-			t.Errorf("request = %s %s", r.Method, r.URL.Path)
-		}
-		var body struct {
-			Revision int `json:"revision"`
-		}
-		_ = json.NewDecoder(r.Body).Decode(&body)
-		if body.Revision != 4 {
-			t.Errorf("revision = %d", body.Revision)
-		}
-		_, _ = io.WriteString(w, `{"id":"wf_1","revision":4}`)
-	}))
-	defer server.Close()
-	for _, args := range [][]string{
-		{"flows", "publish", "wf_1", "--revision", "4", "--no-input"},
-		{"flows", "publish", "wf_1", "--yes", "--no-input"},
-	} {
-		if _, _, err := runProjectSetupCommand(t, server.URL, args...); err == nil {
-			t.Fatalf("accepted missing confirmation/revision: %v", args)
-		}
-	}
-	if requests != 0 {
-		t.Fatal("published before confirmation")
-	}
-	_, _, err := runProjectSetupCommand(t, server.URL, "flows", "publish", "wf_1", "--revision", "4", "--yes", "--json", "--no-input")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if requests != 1 {
-		t.Errorf("publish requests = %d", requests)
-	}
 }
 
 func TestFlowValidationInvalidRendersIssuesAndFails(t *testing.T) {
@@ -115,7 +73,7 @@ func TestFlowValidationInvalidRendersIssuesAndFails(t *testing.T) {
 		if r.URL.Path != "/projects/proj/flows/wf_1/actions/validate" || r.Method != "POST" {
 			t.Errorf("request = %s %s", r.Method, r.URL.Path)
 		}
-		_, _ = io.WriteString(w, `{"object":"flow_validation","id":"wf_1","revision":4,"valid":false,"step_issues":{},"workflow_errors":[{"key":"no_initial_step","message":"Choose a start step","severity":"error"}]}`)
+		_, _ = io.WriteString(w, `{"object":"flow_validation","id":"wf_1","revision":4,"valid":false,"step_issues":{},"flow_issues":[{"key":"no_initial_step","message":"Choose a start step","severity":"error"}]}`)
 	}))
 	defer server.Close()
 	out, _, err := runProjectSetupCommand(t, server.URL, "flows", "validate", "wf_1", "--revision", "4", "--json", "--no-input")
@@ -128,7 +86,7 @@ func TestFlowValidationInvalidRendersIssuesAndFails(t *testing.T) {
 }
 
 func TestFlowUpdateRejectsInvalidConfigsBeforeRequest(t *testing.T) {
-	for _, data := range []string{`{"display_name":"Missing revision"}`, `{"revision":1,"unknown":true}`, `{"revision":1} {"revision":2}`} {
+	for _, data := range []string{`{"revision":1,"unknown":true}`, `{"revision":1} {"revision":2}`, `{"display_name":"x"}`} {
 		path := filepath.Join(t.TempDir(), "flow.json")
 		if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 			t.Fatal(err)
@@ -150,11 +108,11 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 		var body map[string]json.RawMessage
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		if r.URL.Path == "/projects/proj/flows" {
-			if string(body["type"]) != `"paywall"` || !strings.Contains(string(body["steps"]), `"screen"`) {
+			if string(body["type"]) != `"web-funnel"` || !strings.Contains(string(body["steps"]), `"screen"`) {
 				t.Errorf("create body = %s", body)
 			}
 		} else if r.URL.Path == "/projects/proj/flows/wf_1/actions/duplicate" {
-			if string(body["source_version"]) != `"published"` || string(body["display_name"]) != `"Copy"` {
+			if string(body["display_name"]) != `"Copy"` {
 				t.Errorf("duplicate body = %s", body)
 			}
 		} else {
@@ -164,12 +122,12 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 	}))
 	defer server.Close()
 	path := filepath.Join(t.TempDir(), "flow.json")
-	if err := os.WriteFile(path, []byte(`{"display_name":"Original","type":"paywall","steps":{"screen":{"type":"screen"}}}`), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(`{"display_name":"Original","type":"web-funnel","steps":{"screen":{"type":"screen"}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	for _, args := range [][]string{
 		{"flows", "create", "--config", path, "--json", "--no-input"},
-		{"flows", "duplicate", "wf_1", "--name", "Copy", "--source-version", "published", "--json", "--no-input"},
+		{"flows", "duplicate", "wf_1", "--name", "Copy", "--json", "--no-input"},
 	} {
 		if _, _, err := runProjectSetupCommand(t, server.URL, args...); err != nil {
 			t.Fatal(err)

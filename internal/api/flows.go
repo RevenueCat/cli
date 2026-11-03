@@ -11,7 +11,9 @@ import (
 // FlowsService wraps /flows. Feedback surveys are not returned by the API.
 type FlowsService struct{ c *Client }
 
+// Flow carries the settings and Steps only when fetched with FlowExpandSteps.
 type Flow struct {
+	FlowSettings
 	ID                    string  `json:"id"`
 	Object                string  `json:"object,omitempty"`
 	Name                  string  `json:"name"`
@@ -21,28 +23,22 @@ type Flow struct {
 	PublishedAt           *Millis `json:"published_at"`
 	HasUnpublishedChanges bool    `json:"has_unpublished_changes"`
 	Revision              int     `json:"revision"`
+
+	Steps map[string]json.RawMessage `json:"steps,omitempty"`
 }
 
+// Settings are RawMessage so omitted stays unchanged and a literal null clears the field.
 type FlowSettings struct {
-	DisplayName                   *string         `json:"display_name,omitempty"`
-	InitialStepID                 json.RawMessage `json:"initial_step_id,omitempty"`
-	SingleStepFallbackID          json.RawMessage `json:"single_step_fallback_id,omitempty"`
-	AppID                         json.RawMessage `json:"app_id,omitempty"`
-	Metadata                      json.RawMessage `json:"metadata,omitempty"`
-	CustomContextParametersConfig json.RawMessage `json:"custom_context_parameters_config,omitempty"`
-	ContentMaxWidth               json.RawMessage `json:"content_max_width,omitempty"`
+	DisplayName          *string         `json:"display_name,omitempty"`
+	InitialStepID        json.RawMessage `json:"initial_step_id,omitempty"`
+	SingleStepFallbackID json.RawMessage `json:"single_step_fallback_id,omitempty"`
+	AppID                json.RawMessage `json:"app_id,omitempty"`
+	Metadata             json.RawMessage `json:"metadata,omitempty"`
+	CustomParameters     json.RawMessage `json:"custom_parameters,omitempty"`
+	ContentMaxWidth      json.RawMessage `json:"content_max_width,omitempty"`
 }
 
-type FlowDraft struct {
-	FlowSettings
-	ID       string                     `json:"id"`
-	Object   string                     `json:"object"`
-	Type     string                     `json:"type"`
-	Revision int                        `json:"revision"`
-	Steps    map[string]json.RawMessage `json:"steps"`
-}
-
-type UpdateFlowDraft struct {
+type UpdateFlow struct {
 	FlowSettings
 	Revision       int                        `json:"revision"`
 	UpdatedSteps   map[string]json.RawMessage `json:"updated_steps,omitempty"`
@@ -53,40 +49,6 @@ type CreateFlow struct {
 	FlowSettings
 	Type  string                     `json:"type,omitempty"`
 	Steps map[string]json.RawMessage `json:"steps,omitempty"`
-}
-
-type DuplicateFlow struct {
-	DisplayName   string `json:"display_name,omitempty"`
-	SourceVersion string `json:"source_version,omitempty"`
-}
-
-type ValidateFlow struct {
-	Revision int `json:"revision,omitempty"`
-}
-
-type PublishFlow struct {
-	Revision int `json:"revision"`
-}
-
-type FlowValidationIssue struct {
-	Key            string  `json:"key"`
-	Message        string  `json:"message"`
-	Severity       string  `json:"severity"`
-	ComponentID    *string `json:"component_id,omitempty"`
-	Property       *string `json:"property,omitempty"`
-	Locale         *string `json:"locale,omitempty"`
-	LocalizationID *string `json:"localization_id,omitempty"`
-	Path           *string `json:"path,omitempty"`
-	Action         *string `json:"action,omitempty"`
-}
-
-type FlowValidation struct {
-	ID             string                           `json:"id"`
-	Object         string                           `json:"object"`
-	Revision       *int                             `json:"revision"`
-	Valid          bool                             `json:"valid"`
-	StepIssues     map[string][]FlowValidationIssue `json:"step_issues"`
-	WorkflowErrors []FlowValidationIssue            `json:"workflow_errors"`
 }
 
 // FlowListOptions filters by Flow type. Type and ExcludeType can't be combined.
@@ -124,21 +86,29 @@ func (s *FlowsService) List(ctx context.Context, projectID string, opts FlowList
 	return &out, nil
 }
 
-func (s *FlowsService) Get(ctx context.Context, projectID, id string) (*Flow, error) {
+// FlowExpand names the optional sections get-flow can embed.
+type FlowExpand string
+
+// FlowExpandSteps adds the draft steps, settings and revision.
+const FlowExpandSteps FlowExpand = "steps"
+
+func (s *FlowsService) Get(ctx context.Context, projectID, id string, expand ...FlowExpand) (*Flow, error) {
+	path := pathFlow(projectID, id)
+	if len(expand) > 0 {
+		query := url.Values{}
+		for _, e := range expand {
+			query.Add("expand", string(e))
+		}
+		path += "?" + query.Encode()
+	}
 	var out Flow
-	err := s.c.do(ctx, http.MethodGet, pathFlow(projectID, id), nil, &out)
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
 	return &out, err
 }
 
-func (s *FlowsService) GetDraft(ctx context.Context, projectID, id string) (*FlowDraft, error) {
-	var out FlowDraft
-	err := s.c.do(ctx, http.MethodGet, pathFlowDraft(projectID, id), nil, &out)
-	return &out, err
-}
-
-func (s *FlowsService) UpdateDraft(ctx context.Context, projectID, id string, body UpdateFlowDraft) (*Flow, error) {
+func (s *FlowsService) Update(ctx context.Context, projectID, id string, body UpdateFlow) (*Flow, error) {
 	var out Flow
-	err := s.c.do(ctx, http.MethodPatch, pathFlowDraft(projectID, id), body, &out)
+	err := s.c.do(ctx, http.MethodPatch, pathFlow(projectID, id), body, &out)
 	return &out, err
 }
 
@@ -154,16 +124,8 @@ func (s *FlowsService) Duplicate(ctx context.Context, projectID, id string, body
 	return &out, err
 }
 
-func (s *FlowsService) Validate(ctx context.Context, projectID, id string, revision int) (*FlowValidation, error) {
+func (s *FlowsService) Validate(ctx context.Context, projectID, id string, body ValidateFlow) (*FlowValidation, error) {
 	var out FlowValidation
-	body := ValidateFlow{Revision: revision}
 	err := s.c.do(ctx, http.MethodPost, pathFlowActionsValidate(projectID, id), body, &out)
-	return &out, err
-}
-
-func (s *FlowsService) Publish(ctx context.Context, projectID, id string, revision int) (*Flow, error) {
-	var out Flow
-	body := PublishFlow{Revision: revision}
-	err := s.c.do(ctx, http.MethodPost, pathFlowActionsPublish(projectID, id), body, &out)
 	return &out, err
 }

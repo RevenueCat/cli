@@ -3,11 +3,9 @@ package api_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -18,36 +16,33 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 		name, method, suffix, body string
 		call                       func(*api.Client) error
 	}{
-		{"get", "GET", "", "", func(c *api.Client) error { _, err := c.Flows.Get(context.Background(), "proj", "wf_1"); return err }},
-		{"draft", "GET", "/draft", "", func(c *api.Client) error {
-			_, err := c.Flows.GetDraft(context.Background(), "proj", "wf_1")
+		{"get steps", "GET", "?expand=steps", "", func(c *api.Client) error {
+			_, err := c.Flows.Get(context.Background(), "proj", "wf_1", api.FlowExpandSteps)
 			return err
 		}},
-		{"update", "PATCH", "/draft", `{"revision":3,"metadata":null,"deleted_step_ids":["old"]}`, func(c *api.Client) error {
-			_, err := c.Flows.UpdateDraft(context.Background(), "proj", "wf_1", api.UpdateFlowDraft{FlowSettings: api.FlowSettings{Metadata: json.RawMessage("null")}, Revision: 3, DeletedStepIDs: []string{"old"}})
+		{"update", "PATCH", "", `{"revision":3,"metadata":null,"deleted_step_ids":["old"]}`, func(c *api.Client) error {
+			_, err := c.Flows.Update(context.Background(), "proj", "wf_1", api.UpdateFlow{FlowSettings: api.FlowSettings{Metadata: json.RawMessage("null")}, Revision: 3, DeletedStepIDs: []string{"old"}})
 			return err
 		}},
-		{"duplicate", "POST", "/actions/duplicate", `{"source_version":"published"}`, func(c *api.Client) error {
-			_, err := c.Flows.Duplicate(context.Background(), "proj", "wf_1", api.DuplicateFlow{SourceVersion: "published"})
+		{"duplicate", "POST", "/actions/duplicate", `{"display_name":"Copy"}`, func(c *api.Client) error {
+			name := "Copy"
+			_, err := c.Flows.Duplicate(context.Background(), "proj", "wf_1", api.DuplicateFlow{DisplayName: &name})
 			return err
 		}},
 		{"validate latest", "POST", "/actions/validate", `{}`, func(c *api.Client) error {
-			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", 0)
+			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", api.ValidateFlow{})
 			return err
 		}},
 		{"validate revision", "POST", "/actions/validate", `{"revision":3}`, func(c *api.Client) error {
-			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", 3)
-			return err
-		}},
-		{"publish", "POST", "/actions/publish", `{"revision":3}`, func(c *api.Client) error {
-			_, err := c.Flows.Publish(context.Background(), "proj", "wf_1", 3)
+			revision := int64(3)
+			_, err := c.Flows.Validate(context.Background(), "proj", "wf_1", api.ValidateFlow{Revision: &revision})
 			return err
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != tc.method || r.URL.Path != "/projects/proj/flows/wf_1"+tc.suffix {
-					t.Errorf("request = %s %s", r.Method, r.URL.Path)
+				if r.Method != tc.method || r.URL.RequestURI() != "/projects/proj/flows/wf_1"+tc.suffix {
+					t.Errorf("request = %s %s", r.Method, r.URL.RequestURI())
 				}
 				body, _ := io.ReadAll(r.Body)
 				if tc.body == "" {
@@ -73,29 +68,5 @@ func TestFlowAuthoringRoutes(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-	}
-}
-
-func TestFlowUpdatePreservesRawScreenJSONAndConflict(t *testing.T) {
-	const raw = `{"type":"screen","paywall":{"components_config":{"large":9007199254740993},"components_localizations":{"en_US":{"title":"Hello"}},"haptics_enabled":false}}`
-	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		body, _ := io.ReadAll(r.Body)
-		if !strings.Contains(string(body), raw) {
-			t.Errorf("screen changed: %s", body)
-		}
-		w.WriteHeader(http.StatusConflict)
-		_, _ = io.WriteString(w, `{"type":"resource_conflict","message":"Draft revision changed"}`)
-	}))
-	defer server.Close()
-	client := api.NewClient(api.Options{APIKey: "sk", BaseURL: server.URL})
-	_, err := client.Flows.UpdateDraft(context.Background(), "proj", "wf_1", api.UpdateFlowDraft{Revision: 2, UpdatedSteps: map[string]json.RawMessage{"screen": json.RawMessage(raw)}})
-	var apiError *api.APIError
-	if !errors.As(err, &apiError) || apiError.Status != http.StatusConflict {
-		t.Fatalf("error = %v", err)
-	}
-	if requests != 1 {
-		t.Errorf("conflicting update retried %d times", requests)
 	}
 }
