@@ -85,6 +85,13 @@ func TestFlowValidationInvalidRendersIssuesAndFails(t *testing.T) {
 	}
 }
 
+func TestFlowValidateRejectsNegativeRevisionBeforeRequest(t *testing.T) {
+	_, _, err := runProjectSetupCommand(t, "http://127.0.0.1:0", "flows", "validate", "wf_1", "--revision", "-1", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "--revision must be 0 or greater") {
+		t.Fatalf("negative revision not rejected locally: %v", err)
+	}
+}
+
 func TestFlowUpdateRejectsInvalidConfigsBeforeRequest(t *testing.T) {
 	for _, data := range []string{`{"revision":1,"unknown":true}`, `{"revision":1} {"revision":2}`, `{"display_name":"x"}`} {
 		path := filepath.Join(t.TempDir(), "flow.json")
