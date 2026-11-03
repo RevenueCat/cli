@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -146,5 +147,47 @@ func TestFeedbackAndRewind(t *testing.T) {
 	}
 	if len(paths) != 2 || paths[0] != "/editor/v1/feedback" || paths[1] != "/editor/v1/rewind" {
 		t.Fatalf("paths = %v", paths)
+	}
+}
+
+func TestStreamV3PostsWorkflowContext(t *testing.T) {
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/editor/v3/stream" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Errorf("decode body: %v", err)
+		}
+		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"a\":1},\"components_localizations\":{}}}}\n\n")
+	}))
+	defer server.Close()
+
+	client := NewClient(Options{BaseURL: server.URL, Token: "tok"})
+	stream, err := client.StreamV3(context.Background(), EditorRequestV3{
+		ProjectID:       "proj1",
+		Message:         "make it blue",
+		WorkflowContext: WorkflowContext{Version: 3, WorkflowID: "wf_1", ReferencedStepIDs: []string{"screen"}, WorkflowRevision: 4},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stream.Close()
+
+	if _, ok := gotBody["paywall"]; ok {
+		t.Error("v3 request must not carry a paywall")
+	}
+	if gotBody["source"] != "cli" {
+		t.Errorf("source = %v", gotBody["source"])
+	}
+	if got, _ := gotBody["workflow_context"].(map[string]any); got["workflow_id"] != "wf_1" || fmt.Sprint(got["referenced_step_ids"]) != "[screen]" || got["workflow_revision"] != float64(4) || got["version"] != float64(3) {
+		t.Errorf("workflow_context = %v", gotBody["workflow_context"])
+	}
+	event, err := stream.Next()
+	if err != nil || event.Type != EventRunCompleted {
+		t.Fatalf("event = %+v, err %v", event, err)
+	}
+	if got := event.EditedPaywallsByStepID["screen"]; string(got.ComponentsConfig) != `{"a":1}` {
+		t.Errorf("edited paywalls = %+v", event.EditedPaywallsByStepID)
 	}
 }
