@@ -106,6 +106,9 @@ func newFlowsUpdateCmd() *cobra.Command {
 			if input.Revision == nil {
 				return WithHint(errors.New("config must include revision"), "Get it with: rc flows export <id> --output flow.json")
 			}
+			if *input.Revision < 0 {
+				return WithHint(errors.New("revision must be 0 or greater"), "Get the current revision with: rc flows show <id>")
+			}
 			body := input.UpdateFlow
 			body.Revision = *input.Revision
 			rt, client, projectID, flowID, err := resolveFlowTarget(cmd, args)

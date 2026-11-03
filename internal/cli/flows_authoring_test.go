@@ -105,6 +105,17 @@ func TestFlowUpdateRejectsInvalidConfigsBeforeRequest(t *testing.T) {
 	}
 }
 
+func TestFlowUpdateRejectsNegativeRevisionBeforeRequest(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "flow.json")
+	if err := os.WriteFile(path, []byte(`{"revision":-1}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err := runProjectSetupCommand(t, "http://127.0.0.1:0", "flows", "update", "wf_1", "--config", path, "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "revision must be 0 or greater") {
+		t.Fatalf("negative revision not rejected locally: %v", err)
+	}
+}
+
 func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 	var paths []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
