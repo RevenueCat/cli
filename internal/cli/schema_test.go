@@ -234,3 +234,64 @@ func TestTargetingSchemaDocumentsNullableFields(t *testing.T) {
 		}
 	}
 }
+
+func TestSchemaUnknownCommandErrors(t *testing.T) {
+	for _, path := range [][]string{{"bogus"}, {"apps", "bogus"}, {"apps:bogus"}, {"apps:create:bogus"}, {"rc", "apps", "bogus"}} {
+		t.Run(strings.Join(path, " "), func(t *testing.T) {
+			root := NewRootCmd("test")
+			root.SetArgs(append([]string{"schema"}, path...))
+			var out strings.Builder
+			root.SetOut(&out)
+			root.SetErr(&strings.Builder{})
+			err := root.Execute()
+			if err == nil || !strings.Contains(err.Error(), "unknown command") || ExitCodeFor(err) != 2 || out.Len() != 0 {
+				t.Fatalf("expected usage error without schema output: err=%v stdout=%s", err, out.String())
+			}
+		})
+	}
+}
+
+func TestSchemaAcceptsRootPrefixedDiscoveryPaths(t *testing.T) {
+	for _, tc := range []struct {
+		path []string
+		want string
+	}{
+		{[]string{"rc"}, "rc"},
+		{[]string{"rc", "apps", "create"}, "rc apps create"},
+		{[]string{"rc:apps:create"}, "rc apps create"},
+	} {
+		t.Run(strings.Join(tc.path, " "), func(t *testing.T) {
+			root := NewRootCmd("test")
+			root.SetArgs(append([]string{"schema"}, tc.path...))
+			var out strings.Builder
+			root.SetOut(&out)
+			root.SetErr(&strings.Builder{})
+			if err := root.Execute(); err != nil {
+				t.Fatal(err)
+			}
+			var schema struct {
+				Path string `json:"path"`
+			}
+			if err := json.Unmarshal([]byte(out.String()), &schema); err != nil {
+				t.Fatal(err)
+			}
+			if schema.Path != tc.want {
+				t.Fatalf("got schema path %q, want %q", schema.Path, tc.want)
+			}
+		})
+	}
+}
+
+func TestSchemaAcceptsColonCapabilityIDs(t *testing.T) {
+	root := NewRootCmd("test")
+	var out strings.Builder
+	root.SetArgs([]string{"schema", "apps:create"})
+	root.SetOut(&out)
+	root.SetErr(&strings.Builder{})
+	if err := root.Execute(); err != nil {
+		t.Fatalf("schema apps:create: %v", err)
+	}
+	if !strings.Contains(out.String(), `"name": "create"`) {
+		t.Fatalf("expected the apps create schema, got: %s", out.String())
+	}
+}
