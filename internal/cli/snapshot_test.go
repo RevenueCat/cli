@@ -77,6 +77,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 			_, _ = w.Write(fixture)
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/results"):
 			io.WriteString(w, `{"object":"experiment_results","currency":"USD","sections":[{"object":"experiment_results_section","section":"Conversion","metrics":[{"name":"trial_conversion_rate","unit":"%"}],"segments":[{"object":"experiment_results_segment","id":"total","display_name":"Total","is_total":true}],"values":[{"object":"experiment_results_value","metric":0,"segment":0,"variant":"Control","value":12.5,"change":null,"credible_interval":null,"lift_credible_interval":null},{"object":"experiment_results_value","metric":0,"segment":0,"variant":"Treatment","value":15.0,"change":20,"credible_interval":null,"lift_credible_interval":null}]}],"statistics":[{"object":"experiment_results_statistic","metric_name":"trial_conversion_rate","variants":[{"object":"experiment_results_variant_statistic","name":"Control","chance_to_win":null,"chance_to_win_status":"unavailable","credible_interval_lower":0.1,"credible_interval_upper":0.15,"credible_interval_status":"ok","lift_credible_interval_lower":null,"lift_credible_interval_upper":null,"lift_credible_interval_status":"unavailable"},{"object":"experiment_results_variant_statistic","name":"Treatment","chance_to_win":0.98,"chance_to_win_status":"ok","credible_interval_lower":0.11,"credible_interval_upper":0.18,"credible_interval_status":"ok","lift_credible_interval_lower":-5,"lift_credible_interval_upper":22,"lift_credible_interval_status":"ok"}]}],"predicted_ltv":null}`)
+		case r.URL.Path == "/projects/proj_snap/products/actions/submit_to_store":
+			io.WriteString(w, `{"object":"submit_products_to_store_response","submitted_count":1,"results":[{"object":"submit_product_to_store_result","product_id":"prod_snap1","status":"submitted","submission_id":"sub_snap1","message":null},{"object":"submit_product_to_store_result","product_id":"prod_snap2","status":"skipped","submission_id":null,"message":"App Store metadata is incomplete"}]}`)
 		case strings.HasSuffix(r.URL.Path, "/offerings/ofrng_snap"):
 			io.WriteString(w, `{"object":"offering","id":"ofrng_snap","lookup_key":"default","display_name":"Default","is_current":true,"created_at":1784297950368,"project_id":"proj_snap"}`)
 		case strings.HasSuffix(r.URL.Path, "/apps/app_snap1"):
@@ -123,6 +125,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
 		{"error-not-found", []string{"offerings", "show", "ofrng_missing", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-apple-setup", []string{"apps", "apple", "setup", "app_snap1", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"products-store-submit", []string{"products", "store", "submit", "prod_snap1", "prod_snap2", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 	}
 
 	for _, sc := range scenarios {
