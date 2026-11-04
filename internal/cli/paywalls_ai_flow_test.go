@@ -117,17 +117,7 @@ func TestFlowsEdit(t *testing.T) {
 			wantPatches: 1,
 			wantOut:     `"step_ids": [`,
 			wantRefs:    []string{"screen", "other"},
-			wantSession: "/wf_1/session.other+screen.paywall.json",
-		},
-		{
-			name:        "long step-id sets use a hashed session file",
-			draft:       `{"id":"wf_1","object":"flow","revision":4,"type":"paywall","steps":{"screen":{"type":"screen","screen":{"components_config":{}}},"step_0_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}},"step_1_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}},"step_2_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}},"step_3_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}},"step_4_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}}}}`,
-			args:        []string{"wf_1", "--step-ids", "screen", "--step-ids", "step_0_xxxxxxxxxxxxxxxxxxxx", "--step-ids", "step_1_xxxxxxxxxxxxxxxxxxxx", "--step-ids", "step_2_xxxxxxxxxxxxxxxxxxxx", "--step-ids", "step_3_xxxxxxxxxxxxxxxxxxxx", "--step-ids", "step_4_xxxxxxxxxxxxxxxxxxxx"},
-			stream:      streamStarted + streamEdited,
-			saveStatus:  http.StatusOK,
-			wantStream:  true,
-			wantPatches: 1,
-			wantSession: "/wf_1/session.2569086c0ffe0bb6.paywall.json",
+			wantSession: "/wf_1/session.paywall.json",
 		},
 		{
 			name:    "every --step-ids must exist",
@@ -158,12 +148,12 @@ func TestFlowsEdit(t *testing.T) {
 			wantErr: "only screens can be edited",
 		},
 		{
-			name:    "session file is rejected with a step",
+			name:    "session file is rejected",
 			args:    []string{"wf_1", "--step-ids", "screen", "--session", "x.paywall.json"},
 			wantErr: "drop --session",
 		},
 		{
-			name:        "omitted --step-ids sends an empty list and a flow-keyed session",
+			name:        "omitted --step-ids sends an empty list",
 			args:        []string{"wf_1"},
 			stream:      streamStarted + streamEdited,
 			saveStatus:  http.StatusOK,
@@ -344,6 +334,50 @@ func TestFlowsEditJSONShape(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestFlowsEditSessionIsPerFlow(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet:
+			_, _ = io.WriteString(w, flowDraftJSON)
+		case r.URL.Path == "/editor/v3/stream":
+			_, _ = io.WriteString(w, streamStarted+streamEdited)
+		default:
+			_, _ = io.WriteString(w, `{"id":"wf","revision":5}`)
+		}
+	}))
+	defer server.Close()
+	sessionFile := func(args ...string) string {
+		t.Helper()
+		args = append([]string{"flows", "edit"}, args...)
+		args = append(args, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input")
+		out, _, err := runProjectSetupCommand(t, server.URL, args...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var envelope struct {
+			Data struct {
+				SessionFile string `json:"session_file"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal([]byte(out), &envelope); err != nil {
+			t.Fatalf("output is not JSON: %v\n%s", err, out)
+		}
+		// Each run gets a fresh config dir; compare the path beneath it.
+		_, rel, _ := strings.Cut(envelope.Data.SessionFile, "paywalls")
+		return rel
+	}
+	first := sessionFile("wf_1", "--step-ids", "screen")
+	if got := sessionFile("wf_1", "--step-ids", "other"); got != first {
+		t.Errorf("different --step-ids on one flow: session %s, want %s", got, first)
+	}
+	if got := sessionFile("wf_1"); got != first {
+		t.Errorf("whole-flow run: session %s, want %s", got, first)
+	}
+	if got := sessionFile("wf_2", "--step-ids", "screen"); got == first {
+		t.Errorf("different flows share session %s", got)
 	}
 }
 
