@@ -187,13 +187,24 @@ func TestProductsPricesSet_CreatesMissingAndUpdatesExistingCurrencies(t *testing
 }
 
 func TestPaywallsPublishRequiresConfirmationAndReturnsState(t *testing.T) {
+	validations := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/projects/proj/paywalls/pw_test/actions/publish" {
-			http.Error(w, "unexpected request", http.StatusNotFound)
-			return
-		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"id":"pw_test","name":"Default Paywall","offering_id":"ofrng_default","created_at":1,"published_at":2,"object":"paywall"}`)
+		switch r.Method + " " + r.URL.Path {
+		case "GET /projects/proj/paywalls/pw_test":
+			_, _ = io.WriteString(w, `{"id":"pw_test","name":"Default Paywall","created_at":1,"published_at":null,"components":{"draft":{"default_locale":"en_US","components_config":{"base":{}},"components_localizations":{"en_US":{}}}}}`)
+		case "GET /projects/proj/apps":
+			_, _ = io.WriteString(w, `{"object":"list","items":[],"next_page":null}`)
+		case "GET /projects/proj/ui_config":
+			_, _ = io.WriteString(w, `{}`)
+		case "POST /projects/proj/paywalls/actions/validate":
+			validations++
+			_, _ = io.WriteString(w, `{"valid":true,"issues":[]}`)
+		case "POST /projects/proj/paywalls/pw_test/actions/publish":
+			_, _ = io.WriteString(w, `{"id":"pw_test","name":"Default Paywall","offering_id":"ofrng_default","created_at":1,"published_at":2,"object":"paywall"}`)
+		default:
+			http.Error(w, "unexpected request", http.StatusNotFound)
+		}
 	}))
 	t.Cleanup(server.Close)
 
@@ -210,6 +221,9 @@ func TestPaywallsPublishRequiresConfirmationAndReturnsState(t *testing.T) {
 	}
 	if !strings.Contains(out, `"published_at": 2`) {
 		t.Fatalf("unexpected output: %s", out)
+	}
+	if validations != 2 {
+		t.Fatalf("validations = %d, want one per publish attempt", validations)
 	}
 }
 

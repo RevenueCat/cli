@@ -33,6 +33,12 @@ func (s *OfferingsService) Get(ctx context.Context, projectID, id string) (*Offe
 	return &out, err
 }
 
+func (s *OfferingsService) GetWithProducts(ctx context.Context, projectID, id string) (*Offering, error) {
+	var out Offering
+	err := s.c.do(ctx, http.MethodGet, pathOffering(projectID, id)+"?expand=package.product", nil, &out)
+	return &out, err
+}
+
 func (s *OfferingsService) Create(ctx context.Context, projectID string, body OfferingCreate) (*Offering, error) {
 	var out Offering
 	err := s.c.do(ctx, http.MethodPost, pathOfferings(projectID), body, &out)

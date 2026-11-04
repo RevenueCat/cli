@@ -234,6 +234,10 @@ func pathPaywalls(projectID string) string {
 	return encodePath("projects", projectID, "paywalls")
 }
 
+func pathPaywallsActionsValidate(projectID string) string {
+	return encodePath("projects", projectID, "paywalls", "actions", "validate")
+}
+
 func pathProduct(projectID string, productID string) string {
 	return encodePath("projects", projectID, "products", productID)
 }
@@ -336,4 +340,8 @@ func pathTargetingRule(projectID string, targetingRuleID string) string {
 
 func pathTargetingRules(projectID string) string {
 	return encodePath("projects", projectID, "targeting_rules")
+}
+
+func pathUiConfig(projectID string) string {
+	return encodePath("projects", projectID, "ui_config")
 }

@@ -159,6 +159,10 @@ endpoints:
     path: /projects/{project_id}/paywalls/{paywall_id}/actions/unpublish
   - method: DELETE
     path: /projects/{project_id}/paywalls/{paywall_id}
+  - method: POST
+    path: /projects/{project_id}/paywalls/actions/validate
+  - method: GET
+    path: /projects/{project_id}/ui_config
 
   # Media assets
   - method: GET

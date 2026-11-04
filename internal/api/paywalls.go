@@ -109,6 +109,73 @@ func (s *PaywallsService) Publish(ctx context.Context, projectID, id string) (*P
 	return &out, err
 }
 
+type PaywallValidationRequest struct {
+	Paywall PaywallValidationPaywall `json:"paywall"`
+	Context PaywallValidationContext `json:"context"`
+}
+
+type PaywallValidationPaywall struct {
+	RCPublicID              string          `json:"rc_public_id"`
+	Name                    *string         `json:"name"`
+	TemplateName            string          `json:"template_name"`
+	OfferingID              *string         `json:"offering_id"`
+	DefaultLocale           string          `json:"default_locale"`
+	ComponentsConfig        json.RawMessage `json:"components_config"`
+	ComponentsLocalizations json.RawMessage `json:"components_localizations"`
+	StateDeclarations       json.RawMessage `json:"state_declarations"`
+}
+
+type PaywallValidationContext struct {
+	Offering            *PaywallValidationOffering `json:"offering"`
+	UIConfig            json.RawMessage            `json:"ui_config"`
+	IsStandaloneBuilder bool                       `json:"is_standalone_builder"`
+}
+
+type PaywallValidationOffering struct {
+	ID          string                     `json:"id"`
+	Identifier  string                     `json:"identifier"`
+	DisplayName string                     `json:"display_name"`
+	IsCurrent   bool                       `json:"is_current"`
+	Packages    []PaywallValidationPackage `json:"packages"`
+}
+
+type PaywallValidationPackage struct {
+	ID          string                     `json:"id"`
+	Identifier  string                     `json:"identifier"`
+	DisplayName string                     `json:"display_name"`
+	Products    []PaywallValidationProduct `json:"products"`
+}
+
+type PaywallValidationProduct struct {
+	ID  string                   `json:"id"`
+	App *PaywallValidationAppRef `json:"app"`
+}
+
+type PaywallValidationAppRef struct {
+	Type string `json:"type"`
+}
+
+type PaywallValidationResult struct {
+	Valid  bool                     `json:"valid"`
+	Issues []PaywallValidationIssue `json:"issues"`
+}
+
+type PaywallValidationIssue struct {
+	Key         string `json:"key"`
+	Severity    string `json:"severity"`
+	Message     string `json:"message"`
+	ComponentID string `json:"component_id,omitempty"`
+	Property    string `json:"property,omitempty"`
+	Locale      string `json:"locale,omitempty"`
+	Path        string `json:"path,omitempty"`
+}
+
+func (s *PaywallsService) Validate(ctx context.Context, projectID string, body PaywallValidationRequest) (*PaywallValidationResult, error) {
+	var out PaywallValidationResult
+	err := s.c.do(ctx, http.MethodPost, pathPaywallsActionsValidate(projectID), body, &out)
+	return &out, err
+}
+
 func (s *PaywallsService) Unpublish(ctx context.Context, projectID, id string) (*Paywall, error) {
 	var out Paywall
 	path := pathPaywallActionsUnpublish(projectID, id)

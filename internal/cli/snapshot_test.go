@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -32,6 +33,19 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/paywalls/pw_blocked"), strings.HasSuffix(r.URL.Path, "/paywalls/pw_warn"):
+			io.WriteString(w, `{"object":"paywall","id":"`+path.Base(r.URL.Path)+`","name":"Onboarding","created_at":1784297950368,"published_at":null,"components":{"draft":{"default_locale":"en_US","components_config":{"base":{}},"components_localizations":{"en_US":{}}}}}`)
+		case strings.HasSuffix(r.URL.Path, "/ui_config"):
+			io.WriteString(w, `{"object":"ui_config"}`)
+		case strings.HasSuffix(r.URL.Path, "/paywalls/actions/validate"):
+			body, _ := io.ReadAll(r.Body)
+			if strings.Contains(string(body), "pw_blocked") {
+				io.WriteString(w, `{"valid":false,"issues":[{"key":"Paywall_NoPurchaseFlow","severity":"error","message":"A paywall needs a purchase button component for completing purchases to be published.","component_id":"stack_root"},{"key":"Button_SampleUrl","severity":"error","message":"Replace the sample URL with a real one.","component_id":"btn_terms","property":"url","locale":"en_US"}]}`)
+			} else {
+				io.WriteString(w, `{"valid":true,"issues":[{"key":"Text_NoTranslation","severity":"warning","message":"Add the missing translations.","component_id":"txt_title","locale":"es_ES"}]}`)
+			}
+		case strings.HasSuffix(r.URL.Path, "/paywalls/pw_warn/actions/publish"):
+			io.WriteString(w, `{"object":"paywall","id":"pw_warn","name":"Onboarding","created_at":1784297950368,"published_at":1784297950368}`)
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/actions/stop"):
 			io.WriteString(w, `{"id":"exp_snap","display_name":"Price paywall","status":"stopped"}`)
 		case strings.HasSuffix(r.URL.Path, "/targeting_rules/chkptrule_snap"):
@@ -122,6 +136,8 @@ func TestOutputSnapshots(t *testing.T) {
 		{"apps-list", []string{"apps", "list", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-list-all-projects", []string{"apps", "list", "--all-projects", "--bundle-id", "com.example.moodly", "--no-input", "--api-key", "sk_snap"}},
 		{"error-not-found", []string{"offerings", "show", "ofrng_missing", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"paywalls-publish-blocked", []string{"paywalls", "publish", "pw_blocked", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"paywalls-publish-warnings", []string{"paywalls", "publish", "pw_warn", "--yes", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-apple-setup", []string{"apps", "apple", "setup", "app_snap1", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 	}
 
