@@ -2,8 +2,6 @@ package cli
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,9 +19,9 @@ import (
 	"github.com/revenuecat/cli/internal/paywallai"
 )
 
-// paywallAIFlowSession is the conversation memory for one set of Flow steps (or
-// the whole Flow when none are named). Astra reads the content from the Flow
-// itself, so no paywall is stored.
+// paywallAIFlowSession is the conversation memory for one Flow, shared by every
+// --step-ids scope. Astra reads the content from the Flow itself, so no paywall
+// is stored.
 type paywallAIFlowSession struct {
 	SessionID        string            `json:"session_id,omitempty"`
 	TraceID          string            `json:"trace_id,omitempty"`
@@ -33,25 +31,14 @@ type paywallAIFlowSession struct {
 	AppContext       json.RawMessage   `json:"app_context,omitempty"`
 }
 
-const maxFlowSessionKeyLen = 100
-
-func defaultFlowSessionPath(projectID, flowID string, stepIDs []string) (string, error) {
-	base, err := defaultPaywallSessionPath(projectID, flowID)
-	if err != nil {
-		return "", err
+// flowPreviewSessionPath keys previews by step: Astra renders only the requested
+// step when exactly one is named, so that step owns the file. Other runs return
+// no step id and keep the flow-wide name.
+func flowPreviewSessionPath(sessionPath string, stepIDs []string) string {
+	if id := singleStepID(stepIDs); id != "" {
+		return screenshotBase(sessionPath) + "." + id + paywallSessionSuffix
 	}
-	if len(stepIDs) == 0 {
-		return base, nil
-	}
-	// Sorted so the same set of steps resumes the same conversation in any flag order.
-	// The key is never empty, so it cannot equal the flow-wide "session" file.
-	key := strings.Join(slices.Sorted(slices.Values(stepIDs)), "+")
-	// Long sets are hashed to stay under filesystem filename limits (preview files append more).
-	if len(key) > maxFlowSessionKeyLen {
-		sum := sha256.Sum256([]byte(key))
-		key = hex.EncodeToString(sum[:])[:16]
-	}
-	return filepath.Join(filepath.Dir(base), "session."+key+paywallSessionSuffix), nil
+	return filepath.Join(filepath.Dir(sessionPath), "session."+stepIDs[0]+paywallSessionSuffix)
 }
 
 func flowEditCommand(flowID string, stepIDs []string) string {
@@ -108,9 +95,10 @@ but is scoped to --step-ids (comma-separated or repeated); it may also adjust
 other screens, which are reported as "also changed". Omit --step-ids to edit
 the whole Flow. Find step ids with rc flows show.
 
-Each set of steps (or the whole Flow) keeps its own editor session in the CLI
-data dir, so repeating the command with the same --step-ids values continues
-the conversation. See rc paywalls edit --help for prompting guidance.`,
+Each Flow keeps one editor session in the CLI data dir. --step-ids only scopes
+a single run, so you can edit some steps, check them, then continue on other
+steps (or the whole Flow) and the earlier instructions are remembered. See rc
+paywalls edit --help for prompting guidance.`,
 		Example: `  rc flows edit wf_abc --step-ids welcome --prompt "Bolder CTA, keep the layout"
   rc flows edit wf_abc --step-ids welcome,pricing --prompt "same button style on both"
   rc flows edit wf_abc --step-ids welcome --prompt "match this" --attachment DESIGN.md --image home.png`,
@@ -118,7 +106,7 @@ the conversation. See rc paywalls edit --help for prompting guidance.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			if opts.sessionPath != "" {
-				return fmt.Errorf("rc flows edit keeps its own session per flow or step set; drop --session")
+				return fmt.Errorf("rc flows edit keeps one session per flow; drop --session")
 			}
 			client, err := rt.API()
 			if err != nil {
@@ -175,7 +163,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 	if err := requirePaywallAIPrompt(rt, &opts.prompt, "What should change?"); err != nil {
 		return err
 	}
-	if opts.sessionPath, err = defaultFlowSessionPath(projectID, flowID, stepIDs); err != nil {
+	if opts.sessionPath, err = defaultPaywallSessionPath(projectID, flowID); err != nil {
 		return err
 	}
 	session, err := loadFlowSession(opts.sessionPath)
@@ -183,7 +171,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 		return err
 	}
 	// Previews from an earlier run must never be mistaken for this run's.
-	removePaywallScreenshots(opts.sessionPath)
+	removePaywallScreenshots(flowPreviewSessionPath(opts.sessionPath, stepIDs))
 
 	astra, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
@@ -253,7 +241,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 }
 
 func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.Flow, stepIDs []string, session *paywallAIFlowSession, event *paywallai.Event) error {
-	screenshots := savePaywallScreenshots(rt, opts.sessionPath, event.ResultScreenshots)
+	screenshots := savePaywallScreenshots(rt, flowPreviewSessionPath(opts.sessionPath, stepIDs), event.ResultScreenshots)
 	saved, err := saveEditedSteps(ctx, client, projectID, draft, event.EditedPaywallsByStepID)
 	if saved == nil {
 		saved = []string{}
