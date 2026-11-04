@@ -135,6 +135,10 @@ func newPaywallsPublishCmd() *cobra.Command {
 This changes what customers see. Review the preview screenshot and the
 dashboard builder URL, and get the user's approval before publishing.
 
+The paywall is validated first with the same rules as the dashboard. Errors
+block the publish and are listed (under --json, in error.issues). Warnings do
+not block; they are printed, and under --json returned in data.warnings.
+
 Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`,
 		Example: `  rc paywalls publish pw_abc
   rc paywalls publish pw_abc --yes --no-input --json`,
@@ -155,6 +159,16 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			if err != nil {
 				return err
 			}
+			warnings, err := checkPaywallPublishable(cmd.Context(), client, projectID, paywallID)
+			if err != nil {
+				return err
+			}
+			warningLines := make([]string, 0, len(warnings))
+			for _, warning := range warnings {
+				line := describeValidationIssue(warning)
+				warningLines = append(warningLines, line)
+				rt.Out.Warn("Validation warning: " + line)
+			}
 			if err := confirmOrAbort(rt, fmt.Sprintf("Publish paywall %q?", paywallID)); err != nil {
 				return err
 			}
@@ -163,6 +177,12 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return wrapPaywallActionGateError(err, "publish")
 			}
 			rt.Out.Success(fmt.Sprintf("Published %s", paywall.ID))
+			if rt.Out.IsJSON() && len(warningLines) > 0 {
+				return rt.Out.Render(struct {
+					*api.Paywall
+					Warnings []string `json:"warnings"`
+				}{paywall, warningLines})
+			}
 			return rt.Out.Render(paywall)
 		},
 	}

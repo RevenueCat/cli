@@ -1,0 +1,7 @@
+$ rc paywalls publish pw_warn --yes --no-input --project-id proj_snap --api-key sk_snap
+! Validation warning: component txt_title, locale es_ES: Add the missing translations. [Text_NoTranslation]
+✓ Published pw_warn
+id            pw_warn
+name          Onboarding
+created_at    2026-07-17 14:19 UTC
+published_at  2026-07-17 14:19 UTC

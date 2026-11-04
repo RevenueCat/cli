@@ -1,0 +1,4 @@
+$ rc paywalls publish pw_blocked --yes --no-input --project-id proj_snap --api-key sk_snap
+(exit: paywall not published: it has 2 validation errors that would also block publishing from the dashboard:
+  - component stack_root: A paywall needs a purchase button component for completing purchases to be published. [Paywall_NoPurchaseFlow]
+  - component btn_terms, property url, locale en_US: Replace the sample URL with a real one. [Button_SampleUrl])

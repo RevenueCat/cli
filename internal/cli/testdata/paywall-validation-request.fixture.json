@@ -1,0 +1,620 @@
+{
+  "inputs": {
+    "paywall": {
+      "object": "paywall",
+      "id": "pwFixture",
+      "name": "Summer sale",
+      "offering_id": "ofrngFixture",
+      "created_at": 1790000000000,
+      "published_at": null,
+      "automatically_scale_font_size": false,
+      "revision": 3,
+      "components": {
+        "published": null,
+        "draft": {
+          "revision": 3,
+          "components_config": {
+            "base": {
+              "background": {
+                "type": "color",
+                "value": {
+                  "light": {
+                    "type": "hex",
+                    "value": "#ffffff"
+                  }
+                }
+              },
+              "stack": {
+                "id": "stkRoot",
+                "name": "Content",
+                "type": "stack",
+                "components": [
+                  {
+                    "id": "txtHeadline",
+                    "name": "Headline",
+                    "type": "text",
+                    "text_lid": "headlineTx",
+                    "color": {
+                      "light": {
+                        "type": "hex",
+                        "value": "#000000"
+                      }
+                    },
+                    "font_name": "brand",
+                    "font_weight": "bold",
+                    "font_weight_int": 700,
+                    "font_size": 32,
+                    "horizontal_alignment": "center",
+                    "padding": {
+                      "top": 0,
+                      "bottom": 0,
+                      "leading": 0,
+                      "trailing": 0
+                    },
+                    "margin": {
+                      "top": 0,
+                      "bottom": 0,
+                      "leading": 0,
+                      "trailing": 0
+                    },
+                    "size": {
+                      "width": {
+                        "type": "fit"
+                      },
+                      "height": {
+                        "type": "fit"
+                      }
+                    }
+                  },
+                  {
+                    "id": "btnTerms",
+                    "name": "Terms",
+                    "type": "button",
+                    "action": {
+                      "type": "navigate_to",
+                      "destination": "terms",
+                      "url": {
+                        "url_lid": "termsUrlId",
+                        "method": "external_browser"
+                      }
+                    },
+                    "stack": {
+                      "id": "stkTerms",
+                      "name": "",
+                      "type": "stack",
+                      "components": [
+                        {
+                          "id": "txtTerms",
+                          "name": "",
+                          "type": "text",
+                          "text_lid": "termsLabel",
+                          "color": {
+                            "light": {
+                              "type": "hex",
+                              "value": "#3C3C43"
+                            }
+                          },
+                          "font_weight": "regular",
+                          "font_weight_int": 400,
+                          "font_size": 13,
+                          "horizontal_alignment": "center",
+                          "padding": {
+                            "top": 0,
+                            "bottom": 0,
+                            "leading": 0,
+                            "trailing": 0
+                          },
+                          "margin": {
+                            "top": 0,
+                            "bottom": 0,
+                            "leading": 0,
+                            "trailing": 0
+                          },
+                          "size": {
+                            "width": {
+                              "type": "fit"
+                            },
+                            "height": {
+                              "type": "fit"
+                            }
+                          }
+                        }
+                      ],
+                      "size": {
+                        "width": {
+                          "type": "fit"
+                        },
+                        "height": {
+                          "type": "fit"
+                        }
+                      },
+                      "spacing": 0,
+                      "dimension": {
+                        "type": "vertical",
+                        "alignment": "center",
+                        "distribution": "start"
+                      },
+                      "padding": {
+                        "top": 0,
+                        "bottom": 0,
+                        "leading": 0,
+                        "trailing": 0
+                      },
+                      "margin": {
+                        "top": 0,
+                        "bottom": 0,
+                        "leading": 0,
+                        "trailing": 0
+                      }
+                    }
+                  }
+                ],
+                "size": {
+                  "width": {
+                    "type": "fill"
+                  },
+                  "height": {
+                    "type": "fill"
+                  }
+                },
+                "spacing": 16,
+                "dimension": {
+                  "type": "vertical",
+                  "alignment": "center",
+                  "distribution": "start"
+                },
+                "padding": {
+                  "top": 0,
+                  "bottom": 0,
+                  "leading": 0,
+                  "trailing": 0
+                },
+                "margin": {
+                  "top": 0,
+                  "bottom": 0,
+                  "leading": 0,
+                  "trailing": 0
+                }
+              }
+            }
+          },
+          "default_locale": "en_US",
+          "components_localizations": {
+            "en_US": {
+              "headlineTx": "Unlock everything",
+              "termsLabel": "Terms",
+              "termsUrlId": "https://example.com/terms"
+            },
+            "de_DE": {
+              "headlineTx": "Alles freischalten",
+              "termsLabel": "AGB",
+              "termsUrlId": "https://example.com/de/terms"
+            }
+          },
+          "automatically_scale_font_size": false,
+          "state_declarations": {
+            "selectedPlan": {
+              "type": "string",
+              "default": "monthly"
+            }
+          }
+        }
+      }
+    },
+    "offering": {
+      "state": "active",
+      "object": "offering",
+      "id": "ofrngFixture",
+      "lookup_key": "default",
+      "display_name": "Default",
+      "is_current": true,
+      "created_at": 1790000000000,
+      "project_id": "projFixture",
+      "paywall_id": "pwFixture",
+      "packages": {
+        "object": "list",
+        "items": [
+          {
+            "object": "package",
+            "id": "pkgeMonthly",
+            "lookup_key": "$rc_monthly",
+            "display_name": "Monthly",
+            "position": 1,
+            "created_at": 1790000000000,
+            "products": {
+              "object": "list",
+              "items": [
+                {
+                  "product": {
+                    "state": "active",
+                    "object": "product",
+                    "id": "prodIos",
+                    "store_identifier": "pro_monthly",
+                    "type": "subscription",
+                    "subscription": {
+                      "duration": "P1M",
+                      "grace_period_duration": null,
+                      "trial_duration": null
+                    },
+                    "created_at": 1790000000000,
+                    "app_id": "appIos",
+                    "display_name": "pro_monthly"
+                  },
+                  "eligibility_criteria": "all"
+                },
+                {
+                  "product": {
+                    "state": "active",
+                    "object": "product",
+                    "id": "prodWeb",
+                    "store_identifier": "pro_monthly_web",
+                    "type": "subscription",
+                    "subscription": {
+                      "duration": "P1M",
+                      "grace_period_duration": null,
+                      "trial_duration": null
+                    },
+                    "created_at": 1790000000000,
+                    "app_id": "appStripe",
+                    "display_name": "pro_monthly_web"
+                  },
+                  "eligibility_criteria": "all"
+                }
+              ],
+              "next_page": null,
+              "url": "/v2/projects/projFixture/packages/pkgeMonthly/products"
+            }
+          },
+          {
+            "object": "package",
+            "id": "pkgeAnnual",
+            "lookup_key": "$rc_annual",
+            "display_name": "Annual",
+            "position": 1,
+            "created_at": 1790000000000,
+            "products": {
+              "object": "list",
+              "items": [
+                {
+                  "product": {
+                    "state": "active",
+                    "object": "product",
+                    "id": "prodIosAnnual",
+                    "store_identifier": "pro_annual",
+                    "type": "subscription",
+                    "subscription": {
+                      "duration": "P1M",
+                      "grace_period_duration": null,
+                      "trial_duration": null
+                    },
+                    "created_at": 1790000000000,
+                    "app_id": "appIos",
+                    "display_name": "pro_annual"
+                  },
+                  "eligibility_criteria": "all"
+                }
+              ],
+              "next_page": null,
+              "url": "/v2/projects/projFixture/packages/pkgeAnnual/products"
+            }
+          }
+        ],
+        "next_page": null,
+        "url": "/v2/projects/projFixture/offerings/ofrngFixture/packages"
+      }
+    },
+    "apps": [
+      {
+        "id": "appIos",
+        "type": "app_store"
+      },
+      {
+        "id": "appStripe",
+        "type": "stripe"
+      }
+    ],
+    "ui_config": {
+      "object": "ui_config",
+      "fonts": {
+        "brand": {
+          "ios": {
+            "type": "google_fonts",
+            "value": "Poppins"
+          },
+          "android": {
+            "type": "google_fonts",
+            "value": "Poppins"
+          }
+        },
+        "body": "Inter"
+      },
+      "colors": {
+        "primary": {
+          "light": {
+            "type": "hex",
+            "value": "#5B2DE6"
+          }
+        }
+      },
+      "presets": {
+        "saved_colors": ["#5B2DE6"],
+        "saved_gradients": []
+      },
+      "custom_variables": {
+        "plan_name": {
+          "type": "string",
+          "default_value": "Pro"
+        }
+      }
+    }
+  },
+  "expected_request": {
+    "paywall": {
+      "rc_public_id": "pwFixture",
+      "name": "Summer sale",
+      "template_name": "components",
+      "offering_id": "ofrngFixture",
+      "default_locale": "en_US",
+      "components_config": {
+        "base": {
+          "background": {
+            "type": "color",
+            "value": {
+              "light": {
+                "type": "hex",
+                "value": "#ffffff"
+              }
+            }
+          },
+          "stack": {
+            "id": "stkRoot",
+            "name": "Content",
+            "type": "stack",
+            "components": [
+              {
+                "id": "txtHeadline",
+                "name": "Headline",
+                "type": "text",
+                "text_lid": "headlineTx",
+                "color": {
+                  "light": {
+                    "type": "hex",
+                    "value": "#000000"
+                  }
+                },
+                "font_name": "brand",
+                "font_weight": "bold",
+                "font_weight_int": 700,
+                "font_size": 32,
+                "horizontal_alignment": "center",
+                "padding": {
+                  "top": 0,
+                  "bottom": 0,
+                  "leading": 0,
+                  "trailing": 0
+                },
+                "margin": {
+                  "top": 0,
+                  "bottom": 0,
+                  "leading": 0,
+                  "trailing": 0
+                },
+                "size": {
+                  "width": {
+                    "type": "fit"
+                  },
+                  "height": {
+                    "type": "fit"
+                  }
+                }
+              },
+              {
+                "id": "btnTerms",
+                "name": "Terms",
+                "type": "button",
+                "action": {
+                  "type": "navigate_to",
+                  "destination": "terms",
+                  "url": {
+                    "url_lid": "termsUrlId",
+                    "method": "external_browser"
+                  }
+                },
+                "stack": {
+                  "id": "stkTerms",
+                  "name": "",
+                  "type": "stack",
+                  "components": [
+                    {
+                      "id": "txtTerms",
+                      "name": "",
+                      "type": "text",
+                      "text_lid": "termsLabel",
+                      "color": {
+                        "light": {
+                          "type": "hex",
+                          "value": "#3C3C43"
+                        }
+                      },
+                      "font_weight": "regular",
+                      "font_weight_int": 400,
+                      "font_size": 13,
+                      "horizontal_alignment": "center",
+                      "padding": {
+                        "top": 0,
+                        "bottom": 0,
+                        "leading": 0,
+                        "trailing": 0
+                      },
+                      "margin": {
+                        "top": 0,
+                        "bottom": 0,
+                        "leading": 0,
+                        "trailing": 0
+                      },
+                      "size": {
+                        "width": {
+                          "type": "fit"
+                        },
+                        "height": {
+                          "type": "fit"
+                        }
+                      }
+                    }
+                  ],
+                  "size": {
+                    "width": {
+                      "type": "fit"
+                    },
+                    "height": {
+                      "type": "fit"
+                    }
+                  },
+                  "spacing": 0,
+                  "dimension": {
+                    "type": "vertical",
+                    "alignment": "center",
+                    "distribution": "start"
+                  },
+                  "padding": {
+                    "top": 0,
+                    "bottom": 0,
+                    "leading": 0,
+                    "trailing": 0
+                  },
+                  "margin": {
+                    "top": 0,
+                    "bottom": 0,
+                    "leading": 0,
+                    "trailing": 0
+                  }
+                }
+              }
+            ],
+            "size": {
+              "width": {
+                "type": "fill"
+              },
+              "height": {
+                "type": "fill"
+              }
+            },
+            "spacing": 16,
+            "dimension": {
+              "type": "vertical",
+              "alignment": "center",
+              "distribution": "start"
+            },
+            "padding": {
+              "top": 0,
+              "bottom": 0,
+              "leading": 0,
+              "trailing": 0
+            },
+            "margin": {
+              "top": 0,
+              "bottom": 0,
+              "leading": 0,
+              "trailing": 0
+            }
+          }
+        }
+      },
+      "components_localizations": {
+        "en_US": {
+          "headlineTx": "Unlock everything",
+          "termsLabel": "Terms",
+          "termsUrlId": "https://example.com/terms"
+        },
+        "de_DE": {
+          "headlineTx": "Alles freischalten",
+          "termsLabel": "AGB",
+          "termsUrlId": "https://example.com/de/terms"
+        }
+      },
+      "state_declarations": {
+        "selectedPlan": {
+          "type": "string",
+          "default": "monthly"
+        }
+      }
+    },
+    "context": {
+      "offering": {
+        "id": "ofrngFixture",
+        "identifier": "default",
+        "display_name": "Default",
+        "is_current": true,
+        "packages": [
+          {
+            "id": "pkgeMonthly",
+            "identifier": "$rc_monthly",
+            "display_name": "Monthly",
+            "products": [
+              {
+                "id": "prodIos",
+                "app": {
+                  "type": "app_store"
+                }
+              },
+              {
+                "id": "prodWeb",
+                "app": {
+                  "type": "stripe"
+                }
+              }
+            ]
+          },
+          {
+            "id": "pkgeAnnual",
+            "identifier": "$rc_annual",
+            "display_name": "Annual",
+            "products": [
+              {
+                "id": "prodIosAnnual",
+                "app": {
+                  "type": "app_store"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "ui_config": {
+        "object": "ui_config",
+        "fonts": {
+          "brand": {
+            "ios": {
+              "type": "google_fonts",
+              "value": "Poppins"
+            },
+            "android": {
+              "type": "google_fonts",
+              "value": "Poppins"
+            }
+          },
+          "body": "Inter"
+        },
+        "colors": {
+          "primary": {
+            "light": {
+              "type": "hex",
+              "value": "#5B2DE6"
+            }
+          }
+        },
+        "presets": {
+          "saved_colors": ["#5B2DE6"],
+          "saved_gradients": []
+        },
+        "custom_variables": {
+          "plan_name": {
+            "type": "string",
+            "default_value": "Pro"
+          }
+        }
+      },
+      "is_standalone_builder": false
+    }
+  }
+}

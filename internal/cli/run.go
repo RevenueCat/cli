@@ -105,6 +105,8 @@ type errorEnvelope struct {
 	DocURL            string `json:"doc_url,omitempty"`
 	Hint              string `json:"hint,omitempty"`
 	RetryAfterSeconds int    `json:"retry_after_seconds,omitempty"`
+
+	Issues []api.PaywallValidationIssue `json:"issues,omitempty"`
 }
 
 func writeJSONError(w io.Writer, err error) {
@@ -116,11 +118,20 @@ func writeJSONError(w io.Writer, err error) {
 	}
 	var apiErr *api.APIError
 	if errors.As(err, &apiErr) {
-		env.Type = apiErr.Type
-		env.Message = apiErr.Message
 		env.RequestID = apiErr.RequestID
 		env.DocURL = apiErr.DocURL
 		env.RetryAfterSeconds = apiErr.RetryAfterSeconds
+	}
+	var validationErr *paywallValidationError
+	var unavailableErr *paywallValidationUnavailableError
+	if errors.As(err, &validationErr) {
+		env.Type = "paywall_validation_error"
+		env.Issues = validationErr.issues
+	} else if errors.As(err, &unavailableErr) {
+		env.Type = "paywall_validation_unavailable"
+	} else if apiErr != nil {
+		env.Type = apiErr.Type
+		env.Message = apiErr.Message
 	} else if errors.Is(err, ErrNotAuthenticated) {
 		env.Type = "unauthorized"
 	} else if uce := (*unknownSubcommandError)(nil); errors.As(err, &uce) {

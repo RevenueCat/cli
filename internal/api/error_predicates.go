@@ -52,6 +52,12 @@ func IsUnauthorized(err error) bool {
 		t == string(ForbiddenTypeAuthorizationError) || t == "unauthorized")
 }
 
+// IsUnauthenticated reports a 401 only; unlike IsUnauthorized it never matches a 403.
+func IsUnauthenticated(err error) bool {
+	var e *APIError
+	return errors.As(err, &e) && e.Status == 401
+}
+
 // IsServerError reports a 500/502 server_error.
 func IsServerError(err error) bool {
 	t, ok := apiErrorType(err)

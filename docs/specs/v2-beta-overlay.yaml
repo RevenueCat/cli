@@ -936,6 +936,40 @@ paths:
       responses:
         '200':
           description: OK
+  /projects/{project_id}/paywalls/actions/validate:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Validate a paywall
+      operationId: validate-paywall
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:offerings:read
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/ui_config:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get the UI configuration for a project
+      operationId: get-project-ui-config
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:projects:read
+      responses:
+        '200':
+          description: OK
   /projects/{project_id}/checkpoints:
     parameters:
     - name: project_id

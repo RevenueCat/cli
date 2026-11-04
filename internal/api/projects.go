@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 )
@@ -37,6 +38,12 @@ func (s *ProjectsService) List(ctx context.Context) (*Page[Project], error) {
 		path = pathProjects() + "?starting_after=" + url.QueryEscape(cursor)
 	}
 	return &Page[Project]{Items: all}, nil
+}
+
+func (s *ProjectsService) UIConfig(ctx context.Context, projectID string) (json.RawMessage, error) {
+	var out json.RawMessage
+	err := s.c.do(ctx, http.MethodGet, pathUiConfig(projectID), nil, &out)
+	return out, err
 }
 
 // POST /projects
