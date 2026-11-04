@@ -2,6 +2,8 @@ package cli
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,6 +33,8 @@ type paywallAIFlowSession struct {
 	AppContext       json.RawMessage   `json:"app_context,omitempty"`
 }
 
+const maxFlowSessionKeyLen = 100
+
 func defaultFlowSessionPath(projectID, flowID string, stepIDs []string) (string, error) {
 	base, err := defaultPaywallSessionPath(projectID, flowID)
 	if err != nil {
@@ -42,6 +46,11 @@ func defaultFlowSessionPath(projectID, flowID string, stepIDs []string) (string,
 	// Sorted so the same set of steps resumes the same conversation in any flag order.
 	// The key is never empty, so it cannot equal the flow-wide "session" file.
 	key := strings.Join(slices.Sorted(slices.Values(stepIDs)), "+")
+	// Long sets are hashed to stay under filesystem filename limits (preview files append more).
+	if len(key) > maxFlowSessionKeyLen {
+		sum := sha256.Sum256([]byte(key))
+		key = hex.EncodeToString(sum[:])[:16]
+	}
 	return filepath.Join(filepath.Dir(base), "session."+key+paywallSessionSuffix), nil
 }
 

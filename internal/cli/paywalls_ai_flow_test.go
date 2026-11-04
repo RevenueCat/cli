@@ -120,6 +120,16 @@ func TestFlowsEdit(t *testing.T) {
 			wantSession: "/wf_1/session.other+screen.paywall.json",
 		},
 		{
+			name:        "long step-id sets use a hashed session file",
+			draft:       `{"id":"wf_1","object":"flow","revision":4,"type":"paywall","steps":{"screen":{"type":"screen","screen":{"components_config":{}}},"step_0_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}},"step_1_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}},"step_2_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}},"step_3_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}},"step_4_xxxxxxxxxxxxxxxxxxxx":{"type":"screen","screen":{"components_config":{}}}}}`,
+			args:        []string{"wf_1", "--step-ids", "screen", "--step-ids", "step_0_xxxxxxxxxxxxxxxxxxxx", "--step-ids", "step_1_xxxxxxxxxxxxxxxxxxxx", "--step-ids", "step_2_xxxxxxxxxxxxxxxxxxxx", "--step-ids", "step_3_xxxxxxxxxxxxxxxxxxxx", "--step-ids", "step_4_xxxxxxxxxxxxxxxxxxxx"},
+			stream:      streamStarted + streamEdited,
+			saveStatus:  http.StatusOK,
+			wantStream:  true,
+			wantPatches: 1,
+			wantSession: "/wf_1/session.2569086c0ffe0bb6.paywall.json",
+		},
+		{
 			name:    "every --step-ids must exist",
 			args:    []string{"wf_1", "--step-ids", "screen", "--step-ids", "nope"},
 			wantErr: `no step "nope"`,
