@@ -9,9 +9,9 @@ type ProjectsService struct{ c *Client }
 
 // Project type is generated in types_gen.go.
 
-// GET /projects, following next_page until the account's projects are drained.
+// GET /projects, draining every page.
 func (s *ProjectsService) List(ctx context.Context) (*Page[Project], error) {
-	return listAll[Project](ctx, s.c, pathProjects())
+	return listAll[Project](ctx, s.c, pathProjects(), 0)
 }
 
 // POST /projects

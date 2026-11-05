@@ -83,6 +83,13 @@ const (
 )
 
 func (s *AudiencesService) List(ctx context.Context, projectID string) (*Page[Audience], error) {
+	var out Page[Audience]
+	err := s.c.do(ctx, http.MethodGet, pathAudiences(projectID), nil, &out)
+	return &out, err
+}
+
+// ListAll follows next_page until every Audience is loaded, for pickers.
+func (s *AudiencesService) ListAll(ctx context.Context, projectID string) (*Page[Audience], error) {
 	return listAll[Audience](ctx, s.c, pathAudiences(projectID))
 }
 

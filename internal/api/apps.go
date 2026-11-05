@@ -106,8 +106,9 @@ type StripeAppConfig struct {
 	StripeAccountID *string `json:"stripe_account_id,omitempty"`
 }
 
+// List drains every page of the project's apps.
 func (s *AppsService) List(ctx context.Context, projectID string) (*Page[App], error) {
-	return listAll[App](ctx, s.c, pathApps(projectID))
+	return listAll[App](ctx, s.c, pathApps(projectID), 0)
 }
 
 func (s *AppsService) Get(ctx context.Context, projectID, id string) (*App, error) {

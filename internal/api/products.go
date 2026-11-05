@@ -51,7 +51,14 @@ func (s *ProductsService) List(ctx context.Context, projectID string, opts *Prod
 	if opts != nil && opts.AppID != "" {
 		path += "?app_id=" + url.QueryEscape(opts.AppID)
 	}
-	return listAll[Product](ctx, s.c, path)
+	var out Page[Product]
+	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
+	return &out, err
+}
+
+// ListAll follows next_page until every Product is loaded, for pickers.
+func (s *ProductsService) ListAll(ctx context.Context, projectID string) (*Page[Product], error) {
+	return listAll[Product](ctx, s.c, pathProducts(projectID))
 }
 
 func (s *ProductsService) Create(ctx context.Context, projectID string, body ProductCreate) (*Product, error) {

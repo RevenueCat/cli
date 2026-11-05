@@ -432,7 +432,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 // ── picker helpers ───────────────────────────────────────────────────────────
 
 func entitlementPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
-	page, err := client.Entitlements.List(ctx, projectID)
+	page, err := client.Entitlements.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
