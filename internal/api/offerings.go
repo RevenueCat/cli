@@ -22,6 +22,13 @@ type OfferingUpdate struct {
 }
 
 func (s *OfferingsService) List(ctx context.Context, projectID string) (*Page[Offering], error) {
+	var out Page[Offering]
+	err := s.c.do(ctx, http.MethodGet, pathOfferings(projectID), nil, &out)
+	return &out, err
+}
+
+// ListAll follows next_page until every Offering is loaded, for pickers.
+func (s *OfferingsService) ListAll(ctx context.Context, projectID string) (*Page[Offering], error) {
 	return listAll[Offering](ctx, s.c, pathOfferings(projectID))
 }
 

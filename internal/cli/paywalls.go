@@ -340,7 +340,7 @@ func paywallRevision(paywall *api.Paywall) int {
 }
 
 func paywallPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
-	page, err := client.Paywalls.List(ctx, projectID)
+	page, err := client.Paywalls.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}

@@ -690,7 +690,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 // ── picker helpers ───────────────────────────────────────────────────────────
 
 func productPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
-	page, err := client.Products.List(ctx, projectID, nil)
+	page, err := client.Products.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}

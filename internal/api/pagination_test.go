@@ -57,14 +57,14 @@ func pagedServer(t *testing.T, pages map[string]string, failCursor string) (*htt
 	return srv, &queries
 }
 
-func TestListDrainsEveryPage(t *testing.T) {
+func TestListAllDrainsEveryPage(t *testing.T) {
 	srv, queries := pagedServer(t, map[string]string{
 		"":     `{"items":[{"id":"aud1"},{"id":"aud2"}],"next_page":"/v2/projects/p/audiences?starting_after=aud2"}`,
 		"aud2": `{"items":[{"id":"aud3"}],"next_page":"/v2/projects/p/audiences?starting_after=aud3"}`,
 		"aud3": `{"items":[{"id":"aud4"}]}`,
 	}, "")
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	page, err := c.Audiences.List(context.Background(), "p")
+	page, err := c.Audiences.ListAll(context.Background(), "p")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,12 +83,12 @@ func TestListDrainsEveryPage(t *testing.T) {
 	}
 }
 
-func TestListSinglePage(t *testing.T) {
+func TestListAllSinglePage(t *testing.T) {
 	srv, queries := pagedServer(t, map[string]string{
 		"": `{"items":[{"id":"aud1"}]}`,
 	}, "")
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	page, err := c.Audiences.List(context.Background(), "p")
+	page, err := c.Audiences.ListAll(context.Background(), "p")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,10 +97,10 @@ func TestListSinglePage(t *testing.T) {
 	}
 }
 
-func TestListEmptyEncodesItemsAsArray(t *testing.T) {
+func TestListAllEmptyEncodesItemsAsArray(t *testing.T) {
 	srv, _ := pagedServer(t, map[string]string{"": `{"items":[]}`}, "")
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	page, err := c.Audiences.List(context.Background(), "p")
+	page, err := c.Audiences.ListAll(context.Background(), "p")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,31 +113,45 @@ func TestListEmptyEncodesItemsAsArray(t *testing.T) {
 	}
 }
 
-func TestListErrorOnLaterPage(t *testing.T) {
+func TestListAllErrorOnLaterPage(t *testing.T) {
 	srv, _ := pagedServer(t, map[string]string{
 		"": `{"items":[{"id":"aud1"}],"next_page":"/v2/projects/p/audiences?starting_after=aud1"}`,
 	}, "aud1")
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	if page, err := c.Audiences.List(context.Background(), "p"); err == nil {
+	if page, err := c.Audiences.ListAll(context.Background(), "p"); err == nil {
 		t.Fatalf("want error, got %d items", len(page.Items))
 	}
 }
 
-func TestListKeepsFilterWhileDraining(t *testing.T) {
+func TestListAllKeepsFilterWhileDraining(t *testing.T) {
 	srv, queries := pagedServer(t, map[string]string{
-		"":      `{"items":[{"id":"prod1"}],"next_page":"/v2/projects/p/products?app_id=app1&starting_after=prod1"}`,
-		"prod1": `{"items":[{"id":"prod2"}]}`,
+		"":      `{"items":[{"id":"flow1"}],"next_page":"/v2/projects/p/flows?type=paywall&starting_after=flow1"}`,
+		"flow1": `{"items":[{"id":"flow2"}]}`,
 	}, "")
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	page, err := c.Products.List(context.Background(), "p", &api.ProductListOptions{AppID: "app1"})
+	page, err := c.Flows.ListAll(context.Background(), "p", api.FlowListOptions{Type: []string{"paywall"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page.Items) != 2 {
 		t.Fatalf("items = %d, want 2", len(page.Items))
 	}
-	want := []string{"app_id=app1", "app_id=app1&starting_after=prod1"}
+	want := []string{"type=paywall", "type=paywall&starting_after=flow1"}
 	if !slices.Equal(*queries, want) {
 		t.Fatalf("queries = %v, want %v", *queries, want)
+	}
+}
+
+func TestListReturnsOnlyFirstPage(t *testing.T) {
+	srv, queries := pagedServer(t, map[string]string{
+		"": `{"items":[{"id":"aud1"}],"next_page":"/v2/projects/p/audiences?starting_after=aud1"}`,
+	}, "")
+	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+	page, err := c.Audiences.List(context.Background(), "p")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Items) != 1 || page.NextPage == "" || len(*queries) != 1 {
+		t.Fatalf("items=%d next=%q requests=%v", len(page.Items), page.NextPage, *queries)
 	}
 }
