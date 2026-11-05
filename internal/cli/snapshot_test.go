@@ -33,7 +33,7 @@ func snapshotServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.URL.Path == "/projects/proj_snap/flows/wf_snap" || r.URL.Path == "/projects/proj_snap/flows/wf_stale" || r.URL.Path == "/projects/proj_snap/flows/wf_issues":
+		case r.URL.Path == "/projects/proj_snap/flows/wf_snap" || r.URL.Path == "/projects/proj_snap/flows/wf_stale" || r.URL.Path == "/projects/proj_snap/flows/wf_sibling":
 			if r.Method == http.MethodPatch {
 				if strings.HasSuffix(r.URL.Path, "wf_stale") {
 					w.WriteHeader(http.StatusConflict)
@@ -54,8 +54,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Error(err)
 			}
-			if req.WorkflowContext.WorkflowID == "wf_issues" {
-				io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"edited_paywalls_by_step_id\":{\"welcome\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}},\"pricing\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}},\"validation_issues\":[{\"key\":\"pricing.cta\",\"message\":\"Button has no action\"}]}\n\n")
+			if req.WorkflowContext.WorkflowID == "wf_sibling" {
+				io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"edited_paywalls_by_step_id\":{\"welcome\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}},\"pricing\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}}}\n\n")
 				return
 			}
 			io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"edited_paywalls_by_step_id\":{\"welcome\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}},\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"},{\"color_scheme\":\"dark\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n")
@@ -153,7 +153,7 @@ func TestOutputSnapshots(t *testing.T) {
 		{"flows-edit-saved", []string{"flows", "edit", "wf_snap", "--step-ids", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"flows-edit-stale-revision", []string{"flows", "edit", "wf_stale", "--step-ids", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"flows-edit-whole-flow-saved", []string{"flows", "edit", "wf_snap", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
-		{"flows-edit-sibling-and-issues", []string{"flows", "edit", "wf_issues", "--step-ids", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
+		{"flows-edit-sibling", []string{"flows", "edit", "wf_sibling", "--step-ids", "welcome", "--prompt", "Bolder CTA", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 		{"apps-apple-setup", []string{"apps", "apple", "setup", "app_snap1", "--no-input", "--project-id", "proj_snap", "--api-key", "sk_snap"}},
 	}
 

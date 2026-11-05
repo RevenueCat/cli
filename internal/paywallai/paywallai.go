@@ -114,12 +114,6 @@ type ResultScreenshot struct {
 	DataBase64  string `json:"data_base64"`
 }
 
-// ValidationIssue is a flow-level problem the editor found in the finished run.
-type ValidationIssue struct {
-	Key     string `json:"key"`
-	Message string `json:"message"`
-}
-
 type StreamError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -139,7 +133,6 @@ type Event struct {
 	ResultScreenshots []ResultScreenshot `json:"result_screenshots,omitempty"`
 	// v3 only: every step the run edited, keyed by step id.
 	EditedPaywallsByStepID map[string]PaywallData `json:"edited_paywalls_by_step_id,omitempty"`
-	ValidationIssues       []ValidationIssue      `json:"validation_issues,omitempty"`
 }
 
 func (e *Event) Terminal() bool {

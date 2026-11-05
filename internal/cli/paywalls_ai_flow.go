@@ -246,10 +246,6 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 	if saved == nil {
 		saved = []string{}
 	}
-	issues := event.ValidationIssues
-	if issues == nil {
-		issues = []paywallai.ValidationIssue{}
-	}
 	alsoChanged := siblingSteps(event.EditedPaywallsByStepID, stepIDs)
 	switch {
 	case err == nil && len(saved) == 0:
@@ -284,22 +280,18 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 			return WithHint(err, "Nothing was saved. Re-run the command to try again.")
 		}
 	}
-	for _, issue := range issues {
-		rt.Out.Warn(issue.Key + ": " + issue.Message)
-	}
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(map[string]any{
-			"flow_id":           draft.ID,
-			"step_ids":          stepIDs,
-			"saved_steps":       saved,
-			"also_changed":      alsoChanged,
-			"validation_issues": issues,
-			"saved_to_draft":    len(saved) > 0,
-			"session_id":        session.SessionID,
-			"trace_id":          session.TraceID,
-			"session_file":      opts.sessionPath,
-			"screenshot_paths":  screenshots,
-			"activity":          event.Activity,
+			"flow_id":          draft.ID,
+			"step_ids":         stepIDs,
+			"saved_steps":      saved,
+			"also_changed":     alsoChanged,
+			"saved_to_draft":   len(saved) > 0,
+			"session_id":       session.SessionID,
+			"trace_id":         session.TraceID,
+			"session_file":     opts.sessionPath,
+			"screenshot_paths": screenshots,
+			"activity":         event.Activity,
 		})
 	}
 }
