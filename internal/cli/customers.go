@@ -126,7 +126,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return err
 			}
 
-			products, err := client.Products.List(cmd.Context(), projectID, &api.ProductListOptions{AppID: appID})
+			products, err := client.Products.ListAll(cmd.Context(), projectID, &api.ProductListOptions{AppID: appID})
 			if err != nil {
 				return err
 			}

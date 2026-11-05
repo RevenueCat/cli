@@ -495,7 +495,7 @@ func entitlementToItem(ctx context.Context, client *api.Client, projectID string
 // examples (and the skills) have always shown lookup keys, but the API wants
 // IDs — agents burned cycles on "Could not find entitlement 'pro'".
 func resolveEntitlementRef(ctx context.Context, client *api.Client, projectID, ref string) (string, error) {
-	page, err := client.Entitlements.List(ctx, projectID)
+	page, err := client.Entitlements.ListAll(ctx, projectID)
 	if err != nil {
 		return ref, nil // let the original call surface the real error
 	}
