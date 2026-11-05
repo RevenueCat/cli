@@ -28,10 +28,9 @@ const (
 	streamEditedFull = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{" +
 		"\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{\"a\":1},\"components_localizations\":{},\"state_declarations\":{\"x\":1},\"automatically_scale_font_size\":false}," +
 		"\"other\":{\"default_locale\":\"fr_FR\",\"state_declarations\":null,\"components_config\":{\"b\":2},\"components_localizations\":{}}}}\n\n"
-	streamSiblingIssues = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{" +
+	streamSiblings = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{" +
 		"\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}," +
-		"\"other\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}}," +
-		"\"validation_issues\":[{\"key\":\"other.cta\",\"message\":\"no action\"}]}\n\n"
+		"\"other\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}}}\n\n"
 	streamNoEdits = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{}}\n\n"
 	streamFailed  = "data: {\"type\":\"run.failed\",\"session_id\":\"sess1\",\"error\":{\"code\":\"internal\",\"message\":\"boom\"},\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{\"partial\":true},\"components_localizations\":{}}}}\n\n"
 )
@@ -283,30 +282,30 @@ func TestFlowsEditJSONShape(t *testing.T) {
 		want       string
 	}{
 		{
-			name:       "sibling edit and validation issues",
+			name:       "sibling edit",
 			args:       []string{"--step-ids", "screen"},
-			stream:     streamStarted + streamSiblingIssues,
+			stream:     streamStarted + streamSiblings,
 			saveStatus: http.StatusOK,
-			want:       `{"step_ids":["screen"],"saved_steps":["other","screen"],"also_changed":["other"],"validation_issues":[{"key":"other.cta","message":"no action"}],"saved_to_draft":true}`,
+			want:       `{"step_ids":["screen"],"saved_steps":["other","screen"],"also_changed":["other"],"saved_to_draft":true}`,
 		},
 		{
 			name:       "whole-flow run has no sibling steps",
-			stream:     streamStarted + streamSiblingIssues,
+			stream:     streamStarted + streamSiblings,
 			saveStatus: http.StatusOK,
 			want:       `{"step_ids":[],"saved_steps":["other","screen"],"also_changed":[],"saved_to_draft":true}`,
 		},
 		{
 			name:       "stale revision saves nothing but still reports the arrays",
 			args:       []string{"--step-ids", "screen"},
-			stream:     streamStarted + streamSiblingIssues,
+			stream:     streamStarted + streamSiblings,
 			saveStatus: http.StatusConflict,
-			want:       `{"step_ids":["screen"],"saved_steps":[],"also_changed":["other"],"validation_issues":[{"key":"other.cta","message":"no action"}],"saved_to_draft":false}`,
+			want:       `{"step_ids":["screen"],"saved_steps":[],"also_changed":["other"],"saved_to_draft":false}`,
 		},
 		{
-			name:       "no edits and no issues",
+			name:       "no edits",
 			stream:     streamStarted + streamNoEdits,
 			saveStatus: http.StatusOK,
-			want:       `{"saved_steps":[],"also_changed":[],"validation_issues":[],"saved_to_draft":false}`,
+			want:       `{"saved_steps":[],"also_changed":[],"saved_to_draft":false}`,
 		},
 	}
 	for _, tt := range tests {
