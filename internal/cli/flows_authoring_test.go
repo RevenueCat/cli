@@ -85,6 +85,26 @@ func TestFlowValidationInvalidRendersIssuesAndFails(t *testing.T) {
 	}
 }
 
+func TestFlowValidationInvalidRendersIssueTableInHumanMode(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `{"object":"flow_validation","id":"wf_1","revision":4,"valid":false,"step_issues":{"step_b":[{"key":"k","message":"Missing title","severity":"warning","component_id":"cmp_1"}],"step_a":[{"key":"k","message":"Bad link","severity":"error"}]},"flow_issues":[{"key":"no_initial_step","message":"Choose a start step","severity":"error"}]}`)
+	}))
+	defer server.Close()
+	out, _, err := runProjectSetupCommand(t, server.URL, "flows", "validate", "wf_1", "--no-input")
+	if cli.ExitCodeFor(err) != 1 {
+		t.Fatalf("exit = %d, error = %v", cli.ExitCodeFor(err), err)
+	}
+	want := []string{"SEVERITY", "STEP", "COMPONENT", "MESSAGE", "Choose a start step", "step_a", "Bad link", "step_b", "cmp_1", "Missing title"}
+	last := -1
+	for _, w := range want {
+		i := strings.Index(out, w)
+		if i < last {
+			t.Fatalf("%q missing or out of order in:\n%s", w, out)
+		}
+		last = i
+	}
+}
+
 func TestFlowValidateRejectsNegativeRevisionBeforeRequest(t *testing.T) {
 	_, _, err := runProjectSetupCommand(t, "http://127.0.0.1:0", "flows", "validate", "wf_1", "--revision", "-1", "--no-input")
 	if err == nil || !strings.Contains(err.Error(), "--revision must be 0 or greater") {
