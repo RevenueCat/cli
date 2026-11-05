@@ -142,6 +142,25 @@ func TestListAllKeepsFilterWhileDraining(t *testing.T) {
 	}
 }
 
+func TestProductsListAllKeepsAppFilterWhileDraining(t *testing.T) {
+	srv, queries := pagedServer(t, map[string]string{
+		"":      `{"items":[{"id":"prod1"}],"next_page":"/v2/projects/p/products?app_id=app1&starting_after=prod1"}`,
+		"prod1": `{"items":[{"id":"prod2"}]}`,
+	}, "")
+	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+	page, err := c.Products.ListAll(context.Background(), "p", &api.ProductListOptions{AppID: "app1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Items) != 2 {
+		t.Fatalf("items = %d, want 2", len(page.Items))
+	}
+	want := []string{"app_id=app1", "app_id=app1&starting_after=prod1"}
+	if !slices.Equal(*queries, want) {
+		t.Fatalf("queries = %v, want %v", *queries, want)
+	}
+}
+
 func TestListReturnsOnlyFirstPage(t *testing.T) {
 	srv, queries := pagedServer(t, map[string]string{
 		"": `{"items":[{"id":"aud1"}],"next_page":"/v2/projects/p/audiences?starting_after=aud1"}`,
