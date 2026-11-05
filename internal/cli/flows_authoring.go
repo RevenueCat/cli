@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"slices"
 
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
+	"github.com/revenuecat/cli/internal/output"
 )
 
 const maxFlowConfigBytes = 5 << 20
@@ -188,6 +190,20 @@ func newFlowsDuplicateCmd() *cobra.Command {
 	return cmd
 }
 
+// flowValidationRows lists flow-level issues first, then step issues ordered by step ID.
+func flowValidationRows(v *api.FlowValidation) [][]string {
+	var rows [][]string
+	for _, i := range v.FlowIssues {
+		rows = append(rows, []string{string(i.Severity), "", "", i.Message})
+	}
+	for _, id := range slices.Sorted(maps.Keys(v.StepIssues)) {
+		for _, i := range v.StepIssues[id] {
+			rows = append(rows, []string{string(i.Severity), id, derefStr(i.ComponentID), i.Message})
+		}
+	}
+	return rows
+}
+
 func newFlowsValidateCmd() *cobra.Command {
 	var revision int64
 	cmd := &cobra.Command{
@@ -211,7 +227,19 @@ func newFlowsValidateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := rt.Out.Render(validation); err != nil {
+			rows := flowValidationRows(validation)
+			if validation.Valid && len(rows) == 0 {
+				if rt.Out.IsJSON() {
+					return rt.Out.Render(validation)
+				}
+				rt.Out.Success("Flow is valid")
+				return nil
+			}
+			if err := rt.Out.RenderTable(output.Table{
+				Columns: []string{"SEVERITY", "STEP", "COMPONENT", "MESSAGE"},
+				Rows:    rows,
+				Raw:     validation,
+			}); err != nil {
 				return err
 			}
 			if !validation.Valid {
