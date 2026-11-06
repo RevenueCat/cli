@@ -263,7 +263,7 @@ func TestFlowsEditJSONShape(t *testing.T) {
 			args:       []string{"--step-ids", "screen"},
 			stream:     streamStarted + streamSiblings,
 			saveStatus: http.StatusOK,
-			want:       `{"step_ids":["screen"],"saved_steps":["other","screen"],"also_changed":["other"],"saved_to_draft":true}`,
+			want:       `{"dashboard_url":"https://app.revenuecat.com/projects//flows/wf_1/editor","step_ids":["screen"],"saved_steps":["other","screen"],"also_changed":["other"],"saved_to_draft":true}`,
 		},
 		{
 			name:       "whole-flow run has no sibling steps",

@@ -259,6 +259,9 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		if len(alsoChanged) > 0 {
 			rt.Out.Field("Also changed", strings.Join(alsoChanged, ", "), "not in --step-ids")
 		}
+		if errored := countErroredActivity(event.Activity); errored > 0 {
+			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywalls AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
+		}
 		// The editor renders the requested step only when exactly one was named.
 		previewLabel, darkLabel := "Preview", "Preview (dark)"
 		if len(stepIDs) == 1 {
@@ -273,6 +276,7 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		if len(screenshots) == 0 {
 			rt.Out.Info("No preview was returned for the edited steps.")
 		}
+		rt.Out.Field("View it", flowEditorURL(projectID, draft.ID))
 		rt.Out.Field("Keep designing", editCmd)
 	default:
 		var apiErr *api.APIError
@@ -287,6 +291,7 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(map[string]any{
 			"flow_id":          draft.ID,
+			"dashboard_url":    flowEditorURL(projectID, draft.ID),
 			"step_ids":         stepIDs,
 			"saved_steps":      saved,
 			"also_changed":     alsoChanged,
@@ -298,6 +303,71 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 			"activity":         event.Activity,
 		})
 	}
+}
+
+// finishStale reports edits made against a stale revision, which are never replayed automatically.
+func (r *flowEditRun) finishStale(event *paywallai.Event) error {
+	out := r.outcome(event)
+	r.rt.Out.Warn("The draft changed while this edit ran, so nothing was saved.")
+	r.rt.Out.Hint("Re-run to have the editor redo the edit on the latest draft:  " + r.editCmd)
+	return r.renderJSON(event, out)
+}
+
+// finish reports a completed run.
+func (r *flowEditRun) finish(event *paywallai.Event) error {
+	out := r.outcome(event)
+	if event.Revision == nil {
+		r.rt.Out.Info("The editor made no changes to the flow.")
+		return r.renderJSON(event, out)
+	}
+	msg := fmt.Sprintf("Design saved to flow draft %s", r.draft.ID)
+	if len(out.saved) > 0 {
+		msg += " (" + strings.Join(out.saved, ", ") + ")"
+	}
+	r.rt.Out.Success(fmt.Sprintf("%s at revision %d", msg, *event.Revision))
+	if len(out.alsoChanged) > 0 {
+		r.rt.Out.Field("Also changed", strings.Join(out.alsoChanged, ", "), "not in --step-ids")
+	}
+	if errored := countErroredActivity(event.Activity); errored > 0 {
+		r.rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by RevenueCat's AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
+	}
+	// The editor renders the requested step only when exactly one was named.
+	previewLabel, darkLabel := "Preview", "Preview (dark)"
+	if id := singleStepID(r.stepIDs); id != "" {
+		previewLabel, darkLabel = "Preview ("+id+")", "Preview ("+id+", dark)"
+	}
+	if path, ok := out.screenshots["light"]; ok {
+		r.rt.Out.Field(previewLabel, path)
+	}
+	if path, ok := out.screenshots["dark"]; ok {
+		r.rt.Out.Field(darkLabel, path)
+	}
+	if len(out.screenshots) == 0 {
+		r.rt.Out.Info("No preview was returned for the edited steps.")
+	}
+	r.rt.Out.Field("View it", out.editorURL)
+	r.rt.Out.Field("Keep designing", r.editCmd)
+	return r.renderJSON(event, out)
+}
+
+func (r *flowEditRun) renderJSON(event *paywallai.Event, out flowEditOutcome) error {
+	if !r.rt.Out.IsJSON() {
+		return nil
+	}
+	return r.rt.Out.Render(map[string]any{
+		"flow_id":          r.draft.ID,
+		"dashboard_url":    out.editorURL,
+		"step_ids":         r.stepIDs,
+		"saved_steps":      out.saved,
+		"also_changed":     out.alsoChanged,
+		"saved_to_draft":   event.Revision != nil,
+		"revision":         event.Revision,
+		"session_id":       r.session.SessionID,
+		"trace_id":         r.session.TraceID,
+		"session_file":     r.opts.sessionPath,
+		"screenshot_paths": out.screenshots,
+		"activity":         event.Activity,
+	})
 }
 
 // siblingSteps lists edited steps the request did not name; a whole-flow
