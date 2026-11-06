@@ -19,7 +19,7 @@ import (
 )
 
 // paywallAIFlowSession is the conversation memory for one Flow, shared by every
-// --step-ids scope. Astra reads the content from the Flow itself, so no paywall
+// --step-ids scope. The Paywalls AI Editor reads the content from the Flow itself, so no paywall
 // is stored.
 type paywallAIFlowSession struct {
 	SessionID        string            `json:"session_id,omitempty"`
@@ -30,7 +30,7 @@ type paywallAIFlowSession struct {
 	AppContext       json.RawMessage   `json:"app_context,omitempty"`
 }
 
-// flowPreviewSessionPath keys previews by step: Astra renders only the requested
+// flowPreviewSessionPath keys previews by step: the Paywalls AI Editor renders only the requested
 // step when exactly one is named, so that step owns the file. Other runs return
 // no step id and keep the flow-wide name.
 func flowPreviewSessionPath(sessionPath string, stepIDs []string) string {
@@ -135,7 +135,7 @@ instructions are remembered. See rc paywalls edit --help for prompting guidance.
 	return cmd
 }
 
-// runFlowEdit drives one Astra run against screen steps of a Flow and saves
+// runFlowEdit drives one Paywalls AI Editor run against screen steps of a Flow and saves
 // the edited steps onto the Flow draft itself.
 func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID string, opts paywallAIOptions, flowID string, stepIDs []string) error {
 	draft, err := client.Flows.Get(ctx, projectID, flowID, api.FlowExpandSteps)
@@ -173,7 +173,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 	// Previews from an earlier run must never be mistaken for this run's.
 	removePaywallScreenshots(opts.sessionPath)
 
-	astra, err := paywallAIClient(rt, opts.baseURL)
+	editor, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 	defer cancel()
 
 	rt.Out.Info("Designing with the Paywalls AI Editor — this can take a few minutes…")
-	stream, err := astra.StreamV3(ctx, paywallai.EditorRequestV3{
+	stream, err := editor.StreamV3(ctx, paywallai.EditorRequestV3{
 		ProjectID:        projectID,
 		SessionID:        session.SessionID,
 		UIConfig:         session.UIConfig,
@@ -252,7 +252,7 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		if len(alsoChanged) > 0 {
 			rt.Out.Field("Also changed", strings.Join(alsoChanged, ", "), "not in --step-ids")
 		}
-		// Astra renders the requested step only when exactly one was named.
+		// The editor renders the requested step only when exactly one was named.
 		previewLabel, darkLabel := "Preview", "Preview (dark)"
 		if len(stepIDs) == 1 {
 			previewLabel, darkLabel = "Preview ("+stepIDs[0]+")", "Preview ("+stepIDs[0]+", dark)"
