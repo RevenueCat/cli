@@ -443,3 +443,27 @@ func TestFlowsEditCustomSessionKeysStepPreview(t *testing.T) {
 		t.Errorf("custom-session preview survived the next run (stat err = %v)", err)
 	}
 }
+
+func TestFlowsEditHintsCarryUserSession(t *testing.T) {
+	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
+	tests := []struct {
+		name       string
+		saveStatus int
+		want       string
+	}{
+		{"keep designing", http.StatusOK, "rc flows edit wf_1 --step-ids screen --session " + sessionPath},
+		{"stale revision re-run", http.StatusConflict, "rc flows edit wf_1 --step-ids screen --session " + sessionPath},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := flowEditServer(t, streamStarted+streamEdited, tt.saveStatus)
+			stdout, stderr, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--step-ids", "screen", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if out := stdout + stderr; !strings.Contains(out, tt.want) {
+				t.Errorf("output missing %q: %s", tt.want, out)
+			}
+		})
+	}
+}
