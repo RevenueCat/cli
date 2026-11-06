@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -38,7 +37,7 @@ func flowPreviewSessionPath(sessionPath string, stepIDs []string) string {
 	if len(stepIDs) != 1 {
 		return sessionPath
 	}
-	return filepath.Join(filepath.Dir(sessionPath), "session."+stepIDs[0]+paywallSessionSuffix)
+	return screenshotBase(sessionPath) + "." + stepIDs[0] + paywallSessionSuffix
 }
 
 func flowEditCommand(flowID string, stepIDs []string) string {
