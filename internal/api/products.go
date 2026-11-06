@@ -62,7 +62,7 @@ func (s *ProductsService) List(ctx context.Context, projectID string, opts *Prod
 
 // ListAll keeps opts' filters and follows next_page until every Product is loaded, for pickers.
 func (s *ProductsService) ListAll(ctx context.Context, projectID string, opts *ProductListOptions) (*Page[Product], error) {
-	return listAll[Product](ctx, s.c, productsListPath(projectID, opts))
+	return listAll[Product](ctx, s.c, productsListPath(projectID, opts), maxPageSize)
 }
 
 func (s *ProductsService) Create(ctx context.Context, projectID string, body ProductCreate) (*Product, error) {

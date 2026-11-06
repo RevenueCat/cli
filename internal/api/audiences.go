@@ -90,7 +90,7 @@ func (s *AudiencesService) List(ctx context.Context, projectID string) (*Page[Au
 
 // ListAll follows next_page until every Audience is loaded, for pickers.
 func (s *AudiencesService) ListAll(ctx context.Context, projectID string) (*Page[Audience], error) {
-	return listAll[Audience](ctx, s.c, pathAudiences(projectID))
+	return listAll[Audience](ctx, s.c, pathAudiences(projectID), 0)
 }
 
 func (s *AudiencesService) Get(ctx context.Context, projectID, id string, expand ...AudienceExpand) (*Audience, error) {

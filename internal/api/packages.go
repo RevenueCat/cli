@@ -17,7 +17,7 @@ func (s *PackagesService) List(ctx context.Context, projectID, offeringID string
 
 // ListAll follows next_page until every Package is loaded, for pickers.
 func (s *PackagesService) ListAll(ctx context.Context, projectID, offeringID string) (*Page[Package], error) {
-	return listAll[Package](ctx, s.c, pathOfferingPackages(projectID, offeringID))
+	return listAll[Package](ctx, s.c, pathOfferingPackages(projectID, offeringID), maxPageSize)
 }
 
 func (s *PackagesService) Get(ctx context.Context, projectID, id string) (*Package, error) {

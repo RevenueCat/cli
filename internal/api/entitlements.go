@@ -30,7 +30,7 @@ func (s *EntitlementsService) List(ctx context.Context, projectID string) (*Page
 
 // ListAll follows next_page until every Entitlement is loaded, for pickers.
 func (s *EntitlementsService) ListAll(ctx context.Context, projectID string) (*Page[Entitlement], error) {
-	return listAll[Entitlement](ctx, s.c, pathEntitlements(projectID))
+	return listAll[Entitlement](ctx, s.c, pathEntitlements(projectID), maxPageSize)
 }
 
 // GET /projects/{project_id}/entitlements/{id}

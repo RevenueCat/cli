@@ -123,20 +123,20 @@ func TestListAllErrorOnLaterPage(t *testing.T) {
 	}
 }
 
-func TestListAllKeepsFilterWhileDraining(t *testing.T) {
+func TestListAllSendsMaxLimitWhileDraining(t *testing.T) {
 	srv, queries := pagedServer(t, map[string]string{
-		"":      `{"items":[{"id":"flow1"}],"next_page":"/v2/projects/p/flows?type=paywall&starting_after=flow1"}`,
+		"":      `{"items":[{"id":"flow1"}],"next_page":"/v2/projects/p/flows?limit=100&starting_after=flow1"}`,
 		"flow1": `{"items":[{"id":"flow2"}]}`,
 	}, "")
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	page, err := c.Flows.ListAll(context.Background(), "p", api.FlowListOptions{Type: []string{"paywall"}})
+	page, err := c.Flows.ListAll(context.Background(), "p")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page.Items) != 2 {
 		t.Fatalf("items = %d, want 2", len(page.Items))
 	}
-	want := []string{"type=paywall", "type=paywall&starting_after=flow1"}
+	want := []string{"limit=100", "limit=100&starting_after=flow1"}
 	if !slices.Equal(*queries, want) {
 		t.Fatalf("queries = %v, want %v", *queries, want)
 	}
@@ -155,9 +155,45 @@ func TestProductsListAllKeepsAppFilterWhileDraining(t *testing.T) {
 	if len(page.Items) != 2 {
 		t.Fatalf("items = %d, want 2", len(page.Items))
 	}
-	want := []string{"app_id=app1", "app_id=app1&starting_after=prod1"}
+	want := []string{"app_id=app1&limit=100", "app_id=app1&limit=100&starting_after=prod1"}
 	if !slices.Equal(*queries, want) {
 		t.Fatalf("queries = %v, want %v", *queries, want)
+	}
+}
+
+func TestListAllSendsMaxLimit(t *testing.T) {
+	ctx := context.Background()
+	calls := map[string]func(c *api.Client) error{
+		"entitlements": func(c *api.Client) error { _, err := c.Entitlements.ListAll(ctx, "p"); return err },
+		"offerings":    func(c *api.Client) error { _, err := c.Offerings.ListAll(ctx, "p"); return err },
+		"packages":     func(c *api.Client) error { _, err := c.Packages.ListAll(ctx, "p", "o"); return err },
+		"paywalls":     func(c *api.Client) error { _, err := c.Paywalls.ListAll(ctx, "p"); return err },
+		"products":     func(c *api.Client) error { _, err := c.Products.ListAll(ctx, "p", nil); return err },
+		"webhooks":     func(c *api.Client) error { _, err := c.Webhooks.ListAll(ctx, "p"); return err },
+		"flows":        func(c *api.Client) error { _, err := c.Flows.ListAll(ctx, "p"); return err },
+	}
+	for name, call := range calls {
+		t.Run(name, func(t *testing.T) {
+			srv, queries := pagedServer(t, map[string]string{"": `{"items":[]}`}, "")
+			c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+			if err := call(c); err != nil {
+				t.Fatal(err)
+			}
+			if !slices.Equal(*queries, []string{"limit=100"}) {
+				t.Fatalf("queries = %v, want limit=100", *queries)
+			}
+		})
+	}
+}
+
+func TestAudiencesListAllOmitsLimit(t *testing.T) {
+	srv, queries := pagedServer(t, map[string]string{"": `{"items":[{"id":"aud1"}]}`}, "")
+	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+	if _, err := c.Audiences.ListAll(context.Background(), "p"); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(*queries, []string{""}) {
+		t.Fatalf("queries = %v, want no limit", *queries)
 	}
 }
 
