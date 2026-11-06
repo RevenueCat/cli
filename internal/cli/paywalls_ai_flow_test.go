@@ -147,11 +147,6 @@ func TestFlowsEdit(t *testing.T) {
 			wantErr: "only screens can be edited",
 		},
 		{
-			name:    "session file is rejected",
-			args:    []string{"wf_1", "--step-ids", "screen", "--session", "x.paywall.json"},
-			wantErr: "drop --session",
-		},
-		{
 			name:        "omitted --step-ids sends an empty list",
 			args:        []string{"wf_1"},
 			stream:      streamStarted + streamEdited,
@@ -380,6 +375,29 @@ func TestFlowsEditSessionIsPerFlow(t *testing.T) {
 	}
 }
 
+func TestFlowsEditHonoursSessionFlag(t *testing.T) {
+	server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
+	sessionPath := filepath.Join(t.TempDir(), "custom.paywall.json")
+	if err := os.WriteFile(sessionPath, []byte(`{"session_id":"resume-me","ui_config":{},"product_variables":{},"__unstable_session_items":{}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--step-ids", "screen", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, sessionPath) {
+		t.Errorf("session_file is not %s: %s", sessionPath, out)
+	}
+	written, err := os.ReadFile(sessionPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// streamEdited reports session_id sess1, so the file was rewritten after being loaded.
+	if !strings.Contains(string(written), `"session_id": "sess1"`) {
+		t.Errorf("custom session file not written: %s", written)
+	}
+}
+
 func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 	server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
 	configDir := t.TempDir()
@@ -389,8 +407,12 @@ func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	stale := []string{filepath.Join(dir, "session.screen.light.png"), filepath.Join(dir, "session.screen.dark.png")}
-	for _, path := range stale {
+	stale := []string{
+		filepath.Join(dir, "session.screen.light.png"), filepath.Join(dir, "session.screen.dark.png"),
+		filepath.Join(dir, "session.other.light.png"), filepath.Join(dir, "session.light.png"),
+	}
+	keep := filepath.Join(dir, "notes.light.png")
+	for _, path := range append(stale, keep) {
 		if err := os.WriteFile(path, []byte("old"), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -407,6 +429,9 @@ func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			t.Errorf("stale preview %s survived the run (stat err = %v)", path, err)
 		}
+	}
+	if _, err := os.Stat(keep); err != nil {
+		t.Errorf("unrelated file removed: %v", err)
 	}
 	if !strings.Contains(out.String(), "No preview was returned") {
 		t.Errorf("output missing the no-preview note: %s", out.String())

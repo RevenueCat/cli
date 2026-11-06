@@ -99,19 +99,16 @@ but is scoped to --step-ids (comma-separated or repeated); it may also adjust
 other screens, which are reported as "also changed". Omit --step-ids to edit
 the whole Flow. Find step ids with rc flows show.
 
-Each Flow keeps one editor session in the CLI data dir. --step-ids only scopes
-a single run, so you can edit some steps, check them, then continue on other
-steps (or the whole Flow) and the earlier instructions are remembered. See rc
-paywalls edit --help for prompting guidance.`,
+Each Flow keeps one editor session in the CLI data dir (--session overrides
+the file). --step-ids only scopes a single run, so you can edit some steps,
+check them, then continue on other steps (or the whole Flow) and the earlier
+instructions are remembered. See rc paywalls edit --help for prompting guidance.`,
 		Example: `  rc flows edit wf_abc --step-ids welcome --prompt "Bolder CTA, keep the layout"
   rc flows edit wf_abc --step-ids welcome,pricing --prompt "same button style on both"
   rc flows edit wf_abc --step-ids welcome --prompt "match this" --attachment DESIGN.md --image home.png`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			if opts.sessionPath != "" {
-				return fmt.Errorf("rc flows edit keeps one session per flow; drop --session")
-			}
 			client, err := rt.API()
 			if err != nil {
 				return err
@@ -126,7 +123,7 @@ paywalls edit --help for prompting guidance.`,
 			if err != nil {
 				return err
 			}
-			return runFlowEdit(cmd.Context(), rt, opts, flowID, stepIDs)
+			return runFlowEdit(cmd.Context(), rt, client, projectID, opts, flowID, stepIDs)
 		},
 	}
 	addPaywallAIFlags(cmd, &opts)
@@ -136,15 +133,7 @@ paywalls edit --help for prompting guidance.`,
 
 // runFlowEdit drives one Astra run against screen steps of a Flow and saves
 // the edited steps onto the Flow draft itself.
-func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID string, stepIDs []string) error {
-	client, err := rt.API()
-	if err != nil {
-		return err
-	}
-	projectID, err := requireProject(rt)
-	if err != nil {
-		return err
-	}
+func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID string, opts paywallAIOptions, flowID string, stepIDs []string) error {
 	draft, err := client.Flows.Get(ctx, projectID, flowID, api.FlowExpandSteps)
 	if err != nil {
 		if api.IsNotFound(err) {
@@ -167,15 +156,17 @@ func runFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, flowID
 	if err := requirePaywallAIPrompt(rt, &opts.prompt, "What should change?"); err != nil {
 		return err
 	}
-	if opts.sessionPath, err = defaultPaywallSessionPath(projectID, flowID); err != nil {
-		return err
+	if opts.sessionPath == "" {
+		if opts.sessionPath, err = defaultPaywallSessionPath(projectID, flowID); err != nil {
+			return err
+		}
 	}
 	session, err := loadFlowSession(opts.sessionPath)
 	if err != nil {
 		return err
 	}
 	// Previews from an earlier run must never be mistaken for this run's.
-	removePaywallScreenshots(flowPreviewSessionPath(opts.sessionPath, stepIDs))
+	removePaywallScreenshots(opts.sessionPath)
 
 	astra, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
