@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/revenuecat/cli/internal/api"
@@ -13,13 +16,15 @@ func newFlowsCmd() *cobra.Command {
 		Aliases: []string{"flow"},
 		// Hidden from --help until Checkpoint rules roll out.
 		Annotations: map[string]string{annotationSurface: surfaceExperimental},
-		Short:       "View Flows (paywalls, web funnels, and multi-step experiences)",
+		Short:       "Manage Flows (paywalls, web funnels, and multi-step experiences)",
 		Long: `A Flow is a paywall, web funnel, or other multi-step experience built in the
 RevenueCat dashboard. Checkpoint rules decide which Flow a customer sees.`,
 		Example: `  rc flows list
   rc flows list --type paywall`,
 	}
 	cmd.AddCommand(newFlowsListCmd())
+	cmd.AddCommand(newFlowsShowCmd(), newFlowsExportCmd(), newFlowsUpdateCmd(),
+		newFlowsCreateCmd(), newFlowsDuplicateCmd(), newFlowsValidateCmd())
 	return cmd
 }
 
@@ -78,4 +83,16 @@ func flowPublishState(f api.Flow) string {
 	default:
 		return formatMillis(int64(*f.PublishedAt))
 	}
+}
+
+func flowPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
+	page, err := client.Flows.List(ctx, projectID, api.FlowListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PickerItem, len(page.Items))
+	for i, f := range page.Items {
+		items[i] = PickerItem{ID: f.ID, Label: fmt.Sprintf("%s  (%s)", f.Name, f.Type)}
+	}
+	return items, nil
 }
