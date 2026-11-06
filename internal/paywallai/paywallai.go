@@ -78,7 +78,7 @@ type WorkflowContext struct {
 	WorkflowRevision  int      `json:"workflow_revision"`
 }
 
-// EditorRequestV3 is the POST /editor/v3/stream body. Astra reads the Flow
+// EditorRequestV3 is the POST /editor/v3/stream body. The Paywalls AI Editor reads the Flow
 // itself, so no paywall is sent.
 type EditorRequestV3 struct {
 	ProjectID                string            `json:"project_id"`
