@@ -3,4 +3,5 @@ $ rc flows edit wf_sibling --step-ids welcome --prompt Bolder CTA --no-input --p
 ✓ Design saved to flow draft wf_sibling (pricing, welcome)
   Also changed                pricing          · not in --step-ids
 · No preview was returned for the edited steps.
+  View it                     https://app.revenuecat.com/projects/snap/flows/wf_sibling/editor
   Keep designing              rc flows edit wf_sibling --step-ids welcome

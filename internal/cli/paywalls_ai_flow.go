@@ -252,6 +252,9 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		if len(alsoChanged) > 0 {
 			rt.Out.Field("Also changed", strings.Join(alsoChanged, ", "), "not in --step-ids")
 		}
+		if errored := countErroredActivity(event.Activity); errored > 0 {
+			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywalls AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
+		}
 		// The editor renders the requested step only when exactly one was named.
 		previewLabel, darkLabel := "Preview", "Preview (dark)"
 		if len(stepIDs) == 1 {
@@ -266,6 +269,7 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		if len(screenshots) == 0 {
 			rt.Out.Info("No preview was returned for the edited steps.")
 		}
+		rt.Out.Field("View it", flowEditorURL(projectID, draft.ID))
 		rt.Out.Field("Keep designing", editCmd)
 	default:
 		var apiErr *api.APIError
@@ -280,6 +284,7 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 	if rt.Out.IsJSON() {
 		return rt.Out.Render(map[string]any{
 			"flow_id":          draft.ID,
+			"dashboard_url":    flowEditorURL(projectID, draft.ID),
 			"step_ids":         stepIDs,
 			"saved_steps":      saved,
 			"also_changed":     alsoChanged,
@@ -292,6 +297,10 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		})
 	}
 	return nil
+}
+
+func flowEditorURL(projectID, flowID string) string {
+	return dashboardURL(projectID, "flows", flowID, "editor")
 }
 
 // siblingSteps lists edited steps the request did not name; a whole-flow
