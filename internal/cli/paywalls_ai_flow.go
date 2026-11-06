@@ -40,10 +40,15 @@ func flowPreviewSessionPath(sessionPath string, stepIDs []string) string {
 	return screenshotBase(sessionPath) + "." + stepIDs[0] + paywallSessionSuffix
 }
 
-func flowEditCommand(flowID string, stepIDs []string) string {
+// flowEditCommand is the follow-up invocation; sessionFlag is the user's own
+// --session value, so a default session path never leaks into the hint.
+func flowEditCommand(flowID string, stepIDs []string, sessionFlag string) string {
 	cmd := "rc flows edit " + flowID
 	if len(stepIDs) > 0 {
 		cmd += " --step-ids " + strings.Join(stepIDs, ",")
+	}
+	if sessionFlag != "" {
+		cmd += " --session " + sessionFlag
 	}
 	return cmd
 }
@@ -155,6 +160,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 	if err := requirePaywallAIPrompt(rt, &opts.prompt, "What should change?"); err != nil {
 		return err
 	}
+	editCmd := flowEditCommand(flowID, stepIDs, opts.sessionPath)
 	if opts.sessionPath == "" {
 		if opts.sessionPath, err = defaultPaywallSessionPath(projectID, flowID); err != nil {
 			return err
@@ -226,12 +232,12 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 			if err := savePaywallAISession(opts.sessionPath, session); err != nil {
 				return err
 			}
-			return finishFlowEdit(ctx, rt, opts, client, projectID, draft, stepIDs, session, event)
+			return finishFlowEdit(ctx, rt, opts, client, projectID, draft, stepIDs, editCmd, session, event)
 		}
 	}
 }
 
-func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.Flow, stepIDs []string, session *paywallAIFlowSession, event *paywallai.Event) error {
+func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.Flow, stepIDs []string, editCmd string, session *paywallAIFlowSession, event *paywallai.Event) error {
 	screenshots := savePaywallScreenshots(rt, flowPreviewSessionPath(opts.sessionPath, stepIDs), event.ResultScreenshots)
 	saved, err := saveEditedSteps(ctx, client, projectID, draft, event.EditedPaywallsByStepID)
 	if saved == nil {
@@ -260,13 +266,13 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		if len(screenshots) == 0 {
 			rt.Out.Info("No preview was returned for the edited steps.")
 		}
-		rt.Out.Field("Keep designing", flowEditCommand(draft.ID, stepIDs))
+		rt.Out.Field("Keep designing", editCmd)
 	default:
 		var apiErr *api.APIError
 		if errors.As(err, &apiErr) && apiErr.Status == 409 {
 			// The edits were made against a stale revision, so they are never replayed automatically.
 			rt.Out.Warn("Nothing was saved: the flow changed during the run (dashboard or another client).")
-			rt.Out.Hint("Re-run against the current draft:  " + flowEditCommand(draft.ID, stepIDs))
+			rt.Out.Hint("Re-run against the current draft:  " + editCmd)
 		} else {
 			return WithHint(err, "Nothing was saved. Re-run the command to try again.")
 		}
