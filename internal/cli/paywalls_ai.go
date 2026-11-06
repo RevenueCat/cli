@@ -740,6 +740,20 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	return nil
 }
 
+// removePaywallScreenshots deletes every preview for the session, including
+// step-keyed ones (<base>.<step>.light.png), so a stale png never survives a
+// run that returns none.
+func removePaywallScreenshots(sessionPath string) {
+	dir, prefix := filepath.Split(screenshotBase(sessionPath))
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, prefix+".") && (strings.HasSuffix(name, ".light.png") || strings.HasSuffix(name, ".dark.png")) {
+			os.Remove(filepath.Join(dir, name))
+		}
+	}
+}
+
 // savePaywallScreenshots writes the run's rendered previews next to the
 // session file (<base>.light.png / .dark.png) and returns the paths by color
 // scheme. Best-effort: a decode or write failure warns, never fails the turn.
@@ -882,7 +896,7 @@ func loadPaywallAISession(rt *Runtime, path string) (*paywallAISession, error) {
 	return &session, nil
 }
 
-func savePaywallAISession(path string, session *paywallAISession) error {
+func savePaywallAISession(path string, session any) error {
 	payload, err := json.MarshalIndent(session, "", "  ")
 	if err != nil {
 		return err
