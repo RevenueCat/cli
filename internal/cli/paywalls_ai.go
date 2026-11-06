@@ -740,12 +740,18 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	return nil
 }
 
-// removePaywallScreenshots deletes the session's preview files so a stale png
-// never survives a run that returns none.
+// removePaywallScreenshots deletes every preview for the session, including
+// step-keyed ones (<base>.<step>.light.png), so a stale png never survives a
+// run that returns none.
 func removePaywallScreenshots(sessionPath string) {
-	base := screenshotBase(sessionPath)
-	os.Remove(base + ".light.png")
-	os.Remove(base + ".dark.png")
+	dir, prefix := filepath.Split(screenshotBase(sessionPath))
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, prefix+".") && (strings.HasSuffix(name, ".light.png") || strings.HasSuffix(name, ".dark.png")) {
+			os.Remove(filepath.Join(dir, name))
+		}
+	}
 }
 
 // savePaywallScreenshots writes the run's rendered previews next to the
