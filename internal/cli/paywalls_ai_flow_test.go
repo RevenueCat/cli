@@ -421,3 +421,25 @@ func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 		t.Errorf("output missing the no-preview note: %s", out.String())
 	}
 }
+
+func TestFlowsEditCustomSessionKeysStepPreview(t *testing.T) {
+	const streamWithPreview = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}},\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n"
+	dir := t.TempDir()
+	sessionPath := filepath.Join(dir, "mine.paywall.json")
+	preview := filepath.Join(dir, "mine.screen.light.png")
+	run := func(stream string) {
+		t.Helper()
+		server := flowEditServer(t, streamStarted+stream, http.StatusOK)
+		if _, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--step-ids", "screen", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	run(streamWithPreview)
+	if _, err := os.Stat(preview); err != nil {
+		t.Fatalf("step preview not under the custom base: %v", err)
+	}
+	run(streamEdited)
+	if _, err := os.Stat(preview); !os.IsNotExist(err) {
+		t.Errorf("custom-session preview survived the next run (stat err = %v)", err)
+	}
+}

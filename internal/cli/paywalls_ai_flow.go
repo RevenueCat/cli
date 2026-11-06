@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -38,7 +37,15 @@ func flowPreviewSessionPath(sessionPath string, stepIDs []string) string {
 	if id := singleStepID(stepIDs); id != "" {
 		return screenshotBase(sessionPath) + "." + id + paywallSessionSuffix
 	}
-	return filepath.Join(filepath.Dir(sessionPath), "session."+stepIDs[0]+paywallSessionSuffix)
+	return sessionPath
+}
+
+// singleStepID is the one step a request names, or "" for none or several.
+func singleStepID(stepIDs []string) string {
+	if len(stepIDs) == 1 {
+		return stepIDs[0]
+	}
+	return ""
 }
 
 func flowEditCommand(flowID string, stepIDs []string) string {
