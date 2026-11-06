@@ -343,13 +343,13 @@ eligibility criteria. Omit the ID in a terminal to pick from a list.`,
 // ── picker helpers ───────────────────────────────────────────────────────────
 
 func allPackagePickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
-	offerings, err := client.Offerings.List(ctx, projectID)
+	offerings, err := client.Offerings.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	var items []PickerItem
 	for _, o := range offerings.Items {
-		pkgs, err := client.Packages.List(ctx, projectID, o.ID)
+		pkgs, err := client.Packages.ListAll(ctx, projectID, o.ID)
 		if err != nil {
 			return nil, fmt.Errorf("listing packages for offering %s: %w", o.ID, err)
 		}

@@ -126,7 +126,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return err
 			}
 
-			products, err := client.Products.List(cmd.Context(), projectID, &api.ProductListOptions{AppID: appID})
+			products, err := client.Products.ListAll(cmd.Context(), projectID, &api.ProductListOptions{AppID: appID})
 			if err != nil {
 				return err
 			}
@@ -782,7 +782,7 @@ pick from the list interactively.`,
 			}
 			customerID := args[0]
 			entitlementID, err := requireID(rt, argAt(args, 1), "entitlement", func() ([]PickerItem, error) {
-				page, err := client.Entitlements.List(cmd.Context(), projectID)
+				page, err := client.Entitlements.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
@@ -856,7 +856,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			}
 			customerID := args[0]
 			entitlementID, err := requireID(rt, argAt(args, 1), "entitlement", func() ([]PickerItem, error) {
-				page, err := client.Entitlements.List(cmd.Context(), projectID)
+				page, err := client.Entitlements.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}

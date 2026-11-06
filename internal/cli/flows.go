@@ -86,7 +86,7 @@ func flowPublishState(f api.Flow) string {
 }
 
 func flowPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
-	page, err := client.Flows.List(ctx, projectID, api.FlowListOptions{})
+	page, err := client.Flows.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}

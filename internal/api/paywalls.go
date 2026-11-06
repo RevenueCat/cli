@@ -56,6 +56,11 @@ func (s *PaywallsService) List(ctx context.Context, projectID string) (*Page[Pay
 	return &out, err
 }
 
+// ListAll follows next_page until every Paywall is loaded, for pickers.
+func (s *PaywallsService) ListAll(ctx context.Context, projectID string) (*Page[Paywall], error) {
+	return listAll[Paywall](ctx, s.c, pathPaywalls(projectID), maxPageSize)
+}
+
 func (s *PaywallsService) Get(ctx context.Context, projectID, id string) (*Paywall, error) {
 	var out Paywall
 	err := s.c.do(ctx, http.MethodGet, pathPaywall(projectID, id), nil, &out)

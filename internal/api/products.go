@@ -46,14 +46,23 @@ type ProductPriceUpdate struct {
 	AmountMicros int64 `json:"amount_micros"`
 }
 
-func (s *ProductsService) List(ctx context.Context, projectID string, opts *ProductListOptions) (*Page[Product], error) {
+func productsListPath(projectID string, opts *ProductListOptions) string {
 	path := pathProducts(projectID)
 	if opts != nil && opts.AppID != "" {
 		path += "?app_id=" + url.QueryEscape(opts.AppID)
 	}
+	return path
+}
+
+func (s *ProductsService) List(ctx context.Context, projectID string, opts *ProductListOptions) (*Page[Product], error) {
 	var out Page[Product]
-	err := s.c.do(ctx, http.MethodGet, path, nil, &out)
+	err := s.c.do(ctx, http.MethodGet, productsListPath(projectID, opts), nil, &out)
 	return &out, err
+}
+
+// ListAll keeps opts' filters and follows next_page until every Product is loaded, for pickers.
+func (s *ProductsService) ListAll(ctx context.Context, projectID string, opts *ProductListOptions) (*Page[Product], error) {
+	return listAll[Product](ctx, s.c, productsListPath(projectID, opts), maxPageSize)
 }
 
 func (s *ProductsService) Create(ctx context.Context, projectID string, body ProductCreate) (*Product, error) {

@@ -249,7 +249,7 @@ func audienceToItem(projectID string, a api.Audience) tui.BrowserItem {
 }
 
 func audiencePickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
-	page, err := client.Audiences.List(ctx, projectID)
+	page, err := client.Audiences.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}

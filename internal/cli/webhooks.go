@@ -259,7 +259,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 // ── picker helpers ───────────────────────────────────────────────────────────
 
 func webhookPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
-	page, err := client.Webhooks.List(ctx, projectID)
+	page, err := client.Webhooks.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}

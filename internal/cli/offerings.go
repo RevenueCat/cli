@@ -766,7 +766,7 @@ terminal to pick from a list.`,
 // ── picker helpers ───────────────────────────────────────────────────────────
 
 func offeringPickerItems(ctx context.Context, client *api.Client, projectID string) ([]PickerItem, error) {
-	page, err := client.Offerings.List(ctx, projectID)
+	page, err := client.Offerings.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
