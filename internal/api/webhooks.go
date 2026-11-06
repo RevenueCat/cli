@@ -45,7 +45,7 @@ func (s *WebhooksService) List(ctx context.Context, projectID string) (*Page[Web
 
 // ListAll follows next_page until every Webhook is loaded, for pickers.
 func (s *WebhooksService) ListAll(ctx context.Context, projectID string) (*Page[Webhook], error) {
-	return listAll[Webhook](ctx, s.c, pathIntegrationsWebhooks(projectID))
+	return listAll[Webhook](ctx, s.c, pathIntegrationsWebhooks(projectID), maxPageSize)
 }
 
 func (s *WebhooksService) Get(ctx context.Context, projectID, id string) (*Webhook, error) {

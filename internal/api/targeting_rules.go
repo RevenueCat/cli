@@ -51,6 +51,11 @@ func (s *TargetingRulesService) List(ctx context.Context, projectID string, opts
 	return &out, err
 }
 
+// ListAll follows next_page until every targeting rule is loaded, for pickers.
+func (s *TargetingRulesService) ListAll(ctx context.Context, projectID string) (*Page[TargetingRule], error) {
+	return listAll[TargetingRule](ctx, s.c, pathTargetingRules(projectID), maxPageSize)
+}
+
 func (s *TargetingRulesService) Get(ctx context.Context, projectID, id string) (*TargetingRule, error) {
 	var out TargetingRule
 	err := s.c.do(ctx, http.MethodGet, pathTargetingRule(projectID, id), nil, &out)

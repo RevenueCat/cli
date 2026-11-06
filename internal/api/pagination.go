@@ -44,11 +44,23 @@ func (p Page[T]) NextCursor() string {
 	return u.Query().Get("starting_after")
 }
 
+// maxPageSize is the largest limit the API accepts; drains use it to minimise round trips.
+const maxPageSize = 100
+
 // listAll GETs path and follows next_page until drained, so callers that need
 // the complete set (pickers, lookups) don't silently truncate at the first
-// page. path may already carry a query string. Object/URL come from the first
-// page; NextPage is always empty on return.
-func listAll[T any](ctx context.Context, c *Client, path string) (*Page[T], error) {
+// page. path may already carry a query string. pageSize > 0 sends it as limit;
+// 0 omits it for endpoints without pagination params. Object/URL come from the
+// first page; NextPage is always empty on return.
+func listAll[T any](ctx context.Context, c *Client, path string, pageSize int) (*Page[T], error) {
+	sep := "?"
+	if strings.Contains(path, "?") {
+		sep = "&"
+	}
+	if pageSize > 0 {
+		path += sep + "limit=" + strconv.Itoa(pageSize)
+		sep = "&"
+	}
 	// Non-nil so an empty collection still encodes as "items": [].
 	out := Page[T]{Items: []T{}}
 	next := path
@@ -64,10 +76,6 @@ func listAll[T any](ctx context.Context, c *Client, path string) (*Page[T], erro
 		cursor := page.NextCursor()
 		if cursor == "" {
 			return &out, nil
-		}
-		sep := "?"
-		if strings.Contains(path, "?") {
-			sep = "&"
 		}
 		next = path + sep + "starting_after=" + url.QueryEscape(cursor)
 	}

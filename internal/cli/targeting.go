@@ -70,21 +70,15 @@ func newTargetingListCmd() *cobra.Command {
 }
 
 func targetingPickerItems(cmd *cobra.Command, client *api.Client, projectID string) ([]PickerItem, error) {
-	var items []PickerItem
-	cursor := ""
-	for {
-		page, err := client.TargetingRules.List(cmd.Context(), projectID, api.ListTargetingRulesOptions{Limit: 100, StartingAfter: cursor})
-		if err != nil {
-			return nil, err
-		}
-		for _, rule := range page.Items {
-			items = append(items, PickerItem{ID: rule.ID, Label: fmt.Sprintf("%s  (%s)", rule.DisplayName, rule.State)})
-		}
-		cursor = page.NextCursor()
-		if cursor == "" {
-			return items, nil
-		}
+	page, err := client.TargetingRules.ListAll(cmd.Context(), projectID)
+	if err != nil {
+		return nil, err
 	}
+	var items []PickerItem
+	for _, rule := range page.Items {
+		items = append(items, PickerItem{ID: rule.ID, Label: fmt.Sprintf("%s  (%s)", rule.DisplayName, rule.State)})
+	}
+	return items, nil
 }
 
 func newTargetingShowCmd() *cobra.Command {

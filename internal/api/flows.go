@@ -86,10 +86,9 @@ func (s *FlowsService) List(ctx context.Context, projectID string, opts FlowList
 	return &out, nil
 }
 
-// ListAll keeps opts' type filters and follows next_page until every Flow is loaded.
-func (s *FlowsService) ListAll(ctx context.Context, projectID string, opts FlowListOptions) (*Page[Flow], error) {
-	opts.ListOptions = ListOptions{}
-	return listAll[Flow](ctx, s.c, pathFlows(projectID)+opts.query())
+// ListAll follows next_page until every Flow is loaded.
+func (s *FlowsService) ListAll(ctx context.Context, projectID string) (*Page[Flow], error) {
+	return listAll[Flow](ctx, s.c, pathFlows(projectID), maxPageSize)
 }
 
 // FlowExpand names the optional sections get-flow can embed.
