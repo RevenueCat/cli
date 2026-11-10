@@ -339,7 +339,7 @@ Using it well:
 				if err == nil {
 					session, err = preflightSessionRevision(cmd.Context(), rt, session)
 				}
-			case argAt(args, 0) != "" || (!rt.Globals.NoInput && tui.IsInteractive()):
+			case argAt(args, 0) != "" || rt.CanPrompt():
 				client, cerr := rt.API()
 				if cerr != nil {
 					return cerr
@@ -378,7 +378,7 @@ Using it well:
 // default session; any other err passes through.
 func explicitSessionNotFound(path, noun string, err error) error {
 	if errors.Is(err, fs.ErrNotExist) {
-		return WithHint(fmt.Errorf("session file not found: %s", path), "omit --session to resume the default session for this "+noun)
+		return WithHint(fmt.Errorf("session file not found: %s", path), "pass the "+noun+" ID without --session to use its default session")
 	}
 	return err
 }

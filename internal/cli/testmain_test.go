@@ -14,5 +14,6 @@ import (
 // this only bites locally; the mock makes tests deterministic everywhere.
 func TestMain(m *testing.M) {
 	keyring.MockInit()
+	os.Unsetenv("RC_PROJECT_ID")
 	os.Exit(m.Run())
 }

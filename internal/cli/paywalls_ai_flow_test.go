@@ -398,6 +398,35 @@ func TestFlowsEditSessionAloneInfersFlow(t *testing.T) {
 	}
 }
 
+func TestFlowsEditSessionProjectScopesFlowRequests(t *testing.T) {
+	var paths []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/editor/v3/stream":
+			_, _ = io.WriteString(w, streamStarted+streamEdited)
+		case r.Method == http.MethodGet:
+			paths = append(paths, r.Method+" "+r.URL.Path)
+			_, _ = io.WriteString(w, flowDraftJSON)
+		default:
+			paths = append(paths, r.Method+" "+r.URL.Path)
+			_, _ = io.WriteString(w, `{"id":"wf_1","revision":5}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
+	if err := os.WriteFile(sessionPath, []byte(`{"project_id":"other","flow_id":"wf_1","__unstable_session_items":{}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// An empty --project-id leaves the project unset so the session's wins.
+	if _, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input", "--project-id", ""); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"GET /projects/other/flows/wf_1", "PATCH /projects/other/flows/wf_1"}
+	if !slices.Equal(paths, want) {
+		t.Errorf("flow requests = %v, want %v", paths, want)
+	}
+}
+
 func TestFlowsEditSessionRecordsFlow(t *testing.T) {
 	server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
 	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")

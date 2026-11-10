@@ -131,13 +131,13 @@ prompting guidance.`,
 				return err
 			}
 			flowID, projectID := argAt(args, 0), ""
+			var stored *paywallAIFlowSession
 			if opts.sessionPath != "" {
 				_, statErr := os.Stat(opts.sessionPath)
 				if err := explicitSessionNotFound(opts.sessionPath, "flow", statErr); err != nil {
 					return err
 				}
-				stored, err := loadFlowSession(opts.sessionPath)
-				if err != nil {
+				if stored, err = loadFlowSession(opts.sessionPath); err != nil {
 					return err
 				}
 				if flowID, err = sessionTargetID(opts.sessionPath, "flow", stored.FlowID, flowID); err != nil {
@@ -159,7 +159,7 @@ prompting guidance.`,
 			if err != nil {
 				return err
 			}
-			return runFlowEdit(cmd.Context(), rt, client, projectID, opts, flowID, stepIDs)
+			return runFlowEdit(cmd.Context(), rt, client, projectID, opts, stored, flowID, stepIDs)
 		},
 	}
 	addPaywallAIFlags(cmd, &opts)
@@ -169,7 +169,7 @@ prompting guidance.`,
 
 // runFlowEdit drives one Paywalls AI Editor run against screen steps of a Flow and saves
 // the edited steps onto the Flow draft itself.
-func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID string, opts paywallAIOptions, flowID string, stepIDs []string) error {
+func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID string, opts paywallAIOptions, session *paywallAIFlowSession, flowID string, stepIDs []string) error {
 	draft, err := client.Flows.Get(ctx, projectID, flowID, api.FlowExpandSteps)
 	if err != nil {
 		if api.IsNotFound(err) {
@@ -199,9 +199,10 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 			return err
 		}
 	}
-	session, err := loadFlowSession(opts.sessionPath)
-	if err != nil {
-		return err
+	if session == nil {
+		if session, err = loadFlowSession(opts.sessionPath); err != nil {
+			return err
+		}
 	}
 	session.ProjectID, session.FlowID = projectID, flowID
 	// Previews from an earlier run must never be mistaken for this run's.

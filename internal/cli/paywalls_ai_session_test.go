@@ -118,6 +118,7 @@ type rcPaywallMock struct {
 	stateDeclarations          string // raw JSON served on the draft; omitted when empty
 	automaticallyScaleFontSize string // raw JSON served on the draft; omitted when empty
 	patched                    []map[string]any
+	paths                      []string
 }
 
 func (m *rcPaywallMock) paywallJSON(rev int) string {
@@ -135,6 +136,9 @@ func (m *rcPaywallMock) server(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		m.mu.Lock()
+		m.paths = append(m.paths, r.URL.Path)
+		m.mu.Unlock()
 		switch r.Method {
 		case http.MethodGet:
 			m.mu.Lock()
@@ -333,12 +337,15 @@ func TestPaywallsEdit_SessionProjectConflict(t *testing.T) {
 			rc := &rcPaywallMock{}
 			rcServer := rc.server(t)
 			defer rcServer.Close()
+			editorServer := (&echoEditorServer{}).server(t)
+			defer editorServer.Close()
 
 			sessionPath := filepath.Join(t.TempDir(), "custom"+paywallSessionSuffix)
 			if err := savePaywallAISession(sessionPath, newTestSession()); err != nil {
 				t.Fatal(err)
 			}
 			t.Setenv("RC_CONFIG_DIR", t.TempDir())
+			t.Setenv("RC_PAYWALL_AI_BASE_URL", editorServer.URL)
 			t.Setenv("RC_PROJECT_ID", tt.env)
 			rt := newSessionTestRuntime(rcServer.URL)
 			rt.Globals.ProjectID = tt.flag
@@ -354,6 +361,16 @@ func TestPaywallsEdit_SessionProjectConflict(t *testing.T) {
 			conflict := err != nil && strings.Contains(err.Error(), "is for project proj, not proj_other")
 			if conflict != tt.wantFail {
 				t.Fatalf("project conflict = %v (err = %v), want %v", conflict, err, tt.wantFail)
+			}
+			if !tt.wantFail {
+				if err != nil {
+					t.Fatal(err)
+				}
+				rc.mu.Lock()
+				defer rc.mu.Unlock()
+				if len(rc.paths) == 0 || !strings.Contains(rc.paths[0], "/projects/proj/") {
+					t.Fatalf("RC paths = %v, want the session's project proj", rc.paths)
+				}
 			}
 		})
 	}
