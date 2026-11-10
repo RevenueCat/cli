@@ -1,4 +1,4 @@
 $ rc flows edit wf_stale --step-ids welcome --prompt Bolder CTA --no-input --project-id proj_snap --api-key sk_snap
-· Designing with the Paywalls AI Editor — this can take a few minutes…
-! Nothing was saved: the flow changed during the run (dashboard or another client).
-  Re-run against the current draft:  rc flows edit wf_stale --step-ids welcome
+· Designing with RevenueCat's AI Editor — this can take a few minutes…
+! The draft changed while this edit ran, so nothing was saved.
+  Re-run to have the editor redo the edit on the latest draft:  rc flows edit wf_stale --step-ids welcome

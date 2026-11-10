@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"slices"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -96,7 +96,7 @@ func newFlowsEditCmd() *cobra.Command {
 	opts := paywallAIOptions{
 		prompt:  os.Getenv("RC_PAYWALL_PROMPT"),
 		baseURL: devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
-		timeout: 10 * time.Minute,
+		timeout: aiEditTimeout,
 	}
 	cmd := &cobra.Command{
 		Use:   "edit [flow-id] [--step-ids <step-id>[,<step-id>...]]",
@@ -168,8 +168,15 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 		return err
 	}
 	editCmd := flowEditCommand(flowID, stepIDs, opts.sessionPath)
-	if opts.sessionPath == "" {
+	explicitSession := opts.sessionPath != ""
+	if !explicitSession {
 		if opts.sessionPath, err = defaultPaywallSessionPath(projectID, flowID); err != nil {
+			return err
+		}
+	}
+	if explicitSession {
+		_, err := os.Stat(opts.sessionPath)
+		if err = explicitSessionNotFound(opts.sessionPath, "flow", err); err != nil {
 			return err
 		}
 	}
@@ -178,7 +185,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 		return err
 	}
 	// Previews from an earlier run must never be mistaken for this run's.
-	removePaywallScreenshots(opts.sessionPath)
+	removePaywallScreenshots(opts.sessionPath, !explicitSession, slices.Collect(maps.Keys(draft.Steps)))
 
 	editor, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
@@ -192,7 +199,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 	ctx, cancel := context.WithTimeout(ctx, opts.timeout)
 	defer cancel()
 
-	rt.Out.Info("Designing with the Paywalls AI Editor — this can take a few minutes…")
+	rt.Out.Info("Designing with RevenueCat's AI Editor — this can take a few minutes…")
 	stream, err := editor.StreamV3(ctx, paywallai.EditorRequestV3{
 		ProjectID:        projectID,
 		SessionID:        session.SessionID,
@@ -249,7 +256,9 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 
 func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.Flow, stepIDs []string, editCmd string, session *paywallAIFlowSession, event *paywallai.Event) error {
 	screenshots := savePaywallScreenshots(rt, flowPreviewSessionPath(opts.sessionPath, stepIDs), event.ResultScreenshots)
-	saved, err := saveEditedSteps(ctx, client, projectID, draft, event.EditedPaywallsByStepID)
+	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), aiSaveTimeout)
+	defer cancel()
+	saved, err := saveEditedSteps(saveCtx, client, projectID, draft, event.EditedPaywallsByStepID)
 	if saved == nil {
 		saved = []string{}
 	}
@@ -263,7 +272,7 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 			rt.Out.Field("Also changed", strings.Join(alsoChanged, ", "), "not in --step-ids")
 		}
 		if errored := countErroredActivity(event.Activity); errored > 0 {
-			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywalls AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
+			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by RevenueCat's AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
 		}
 		// The editor renders the requested step only when exactly one was named.
 		previewLabel, darkLabel := "Preview", "Preview (dark)"
@@ -285,8 +294,8 @@ func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, cli
 		var apiErr *api.APIError
 		if errors.As(err, &apiErr) && apiErr.Status == 409 {
 			// The edits were made against a stale revision, so they are never replayed automatically.
-			rt.Out.Warn("Nothing was saved: the flow changed during the run (dashboard or another client).")
-			rt.Out.Hint("Re-run against the current draft:  " + editCmd)
+			rt.Out.Warn("The draft changed while this edit ran, so nothing was saved.")
+			rt.Out.Hint("Re-run to have the editor redo the edit on the latest draft:  " + editCmd)
 		} else {
 			return WithHint(err, "Nothing was saved. Re-run the command to try again.")
 		}

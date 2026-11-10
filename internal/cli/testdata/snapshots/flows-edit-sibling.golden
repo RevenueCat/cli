@@ -1,5 +1,5 @@
 $ rc flows edit wf_sibling --step-ids welcome --prompt Bolder CTA --no-input --project-id proj_snap --api-key sk_snap
-· Designing with the Paywalls AI Editor — this can take a few minutes…
+· Designing with RevenueCat's AI Editor — this can take a few minutes…
 ✓ Design saved to flow draft wf_sibling (pricing, welcome)
   Also changed                pricing          · not in --step-ids
 · No preview was returned for the edited steps.

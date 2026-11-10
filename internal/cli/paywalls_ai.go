@@ -763,16 +763,28 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	return nil
 }
 
-// removePaywallScreenshots deletes every preview for the session, including
-// step-keyed ones (<base>.<step>.light.png), so a stale png never survives a
-// run that returns none.
-func removePaywallScreenshots(sessionPath string) {
-	dir, prefix := filepath.Split(screenshotBase(sessionPath))
-	entries, _ := os.ReadDir(dir)
-	for _, e := range entries {
-		name := e.Name()
-		if strings.HasPrefix(name, prefix+".") && (strings.HasSuffix(name, ".light.png") || strings.HasSuffix(name, ".dark.png")) {
-			os.Remove(filepath.Join(dir, name))
+// removePaywallScreenshots deletes the session's previews so a stale png never
+// survives a run that returns none. A session that owns its directory
+// (ownDir) loses every step-keyed preview (<base>.<step>.<scheme>.png), which
+// catches steps deleted since the last run; otherwise only the previews of
+// stepIDs are removed, leaving other sessions sharing the directory untouched.
+func removePaywallScreenshots(sessionPath string, ownDir bool, stepIDs []string) {
+	base := screenshotBase(sessionPath)
+	if ownDir {
+		dir, prefix := filepath.Split(base)
+		entries, _ := os.ReadDir(dir)
+		for _, e := range entries {
+			name := e.Name()
+			if strings.HasPrefix(name, prefix+".") && (strings.HasSuffix(name, ".light.png") || strings.HasSuffix(name, ".dark.png")) {
+				os.Remove(filepath.Join(dir, name))
+			}
+		}
+		return
+	}
+	for _, scheme := range []string{"light", "dark"} {
+		os.Remove(base + "." + scheme + ".png")
+		for _, id := range stepIDs {
+			os.Remove(base + "." + id + "." + scheme + ".png")
 		}
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -383,42 +384,90 @@ func TestFlowsEditHonoursSessionFlag(t *testing.T) {
 }
 
 func TestFlowsEditRemovesStalePreviews(t *testing.T) {
+	tests := []struct {
+		name     string
+		explicit bool
+		stale    []string
+		keep     []string
+	}{
+		{
+			name: "default session clears every preview in its own directory",
+			stale: []string{
+				"session.screen.light.png", "session.screen.dark.png", "session.other.light.png",
+				"session.light.png", "session.deleted-step.light.png",
+			},
+			keep: []string{"notes.light.png"},
+		},
+		{
+			name:     "explicit session clears only its own current-step previews",
+			explicit: true,
+			stale:    []string{"mine.screen.light.png", "mine.screen.dark.png", "mine.other.light.png", "mine.light.png"},
+			keep:     []string{"notes.light.png", "mine.bar.light.png", "mine.bar.screen.dark.png"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
+			configDir := t.TempDir()
+			t.Setenv("RC_CONFIG_DIR", configDir)
+			t.Setenv("RC_BASE_URL", server.URL)
+			dir := filepath.Join(configDir, "paywalls", "proj", "wf_1")
+			args := []string{"flows", "edit", "wf_1", "--step-ids", "screen", "--prompt", "x", "--base-url", server.URL, "--no-input", "--api-key", "sk_test", "--project-id", "proj"}
+			if tt.explicit {
+				dir = t.TempDir()
+				sessionPath := filepath.Join(dir, "mine.paywall.json")
+				seedFlowSession(t, sessionPath)
+				args = append(args, "--session", sessionPath)
+			}
+			if err := os.MkdirAll(dir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range slices.Concat(tt.stale, tt.keep) {
+				if err := os.WriteFile(filepath.Join(dir, name), []byte("old"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var out bytes.Buffer
+			root := cli.NewRootCmd("test")
+			root.SetOut(&out)
+			root.SetErr(&out)
+			root.SetArgs(args)
+			if err := root.ExecuteContext(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range tt.stale {
+				if _, err := os.Stat(filepath.Join(dir, name)); !os.IsNotExist(err) {
+					t.Errorf("stale preview %s survived the run (stat err = %v)", name, err)
+				}
+			}
+			for _, name := range tt.keep {
+				if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+					t.Errorf("unrelated file %s removed: %v", name, err)
+				}
+			}
+			if !strings.Contains(out.String(), "No preview was returned") {
+				t.Errorf("output missing the no-preview note: %s", out.String())
+			}
+		})
+	}
+}
+
+func seedFlowSession(t *testing.T, path string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(`{"__unstable_session_items":{}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFlowsEditExplicitMissingSessionErrors(t *testing.T) {
 	server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
-	configDir := t.TempDir()
-	t.Setenv("RC_CONFIG_DIR", configDir)
-	t.Setenv("RC_BASE_URL", server.URL)
-	dir := filepath.Join(configDir, "paywalls", "proj", "wf_1")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		t.Fatal(err)
+	sessionPath := filepath.Join(t.TempDir(), "missing.paywall.json")
+	_, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "session file not found: "+sessionPath) {
+		t.Fatalf("err = %v, want session file not found", err)
 	}
-	stale := []string{
-		filepath.Join(dir, "session.screen.light.png"), filepath.Join(dir, "session.screen.dark.png"),
-		filepath.Join(dir, "session.other.light.png"), filepath.Join(dir, "session.light.png"),
-	}
-	keep := filepath.Join(dir, "notes.light.png")
-	for _, path := range append(stale, keep) {
-		if err := os.WriteFile(path, []byte("old"), 0o600); err != nil {
-			t.Fatal(err)
-		}
-	}
-	var out bytes.Buffer
-	root := cli.NewRootCmd("test")
-	root.SetOut(&out)
-	root.SetErr(&out)
-	root.SetArgs([]string{"flows", "edit", "wf_1", "--step-ids", "screen", "--prompt", "x", "--base-url", server.URL, "--no-input", "--api-key", "sk_test", "--project-id", "proj"})
-	if err := root.ExecuteContext(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	for _, path := range stale {
-		if _, err := os.Stat(path); !os.IsNotExist(err) {
-			t.Errorf("stale preview %s survived the run (stat err = %v)", path, err)
-		}
-	}
-	if _, err := os.Stat(keep); err != nil {
-		t.Errorf("unrelated file removed: %v", err)
-	}
-	if !strings.Contains(out.String(), "No preview was returned") {
-		t.Errorf("output missing the no-preview note: %s", out.String())
+	if _, statErr := os.Stat(sessionPath); !os.IsNotExist(statErr) {
+		t.Errorf("session file was created (stat err = %v)", statErr)
 	}
 }
 
@@ -427,6 +476,7 @@ func TestFlowsEditCustomSessionKeysStepPreview(t *testing.T) {
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "mine.paywall.json")
 	preview := filepath.Join(dir, "mine.screen.light.png")
+	seedFlowSession(t, sessionPath)
 	run := func(stream string) {
 		t.Helper()
 		server := flowEditServer(t, streamStarted+stream, http.StatusOK)
@@ -446,6 +496,7 @@ func TestFlowsEditCustomSessionKeysStepPreview(t *testing.T) {
 
 func TestFlowsEditHintsCarryUserSession(t *testing.T) {
 	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
+	seedFlowSession(t, sessionPath)
 	tests := []struct {
 		name       string
 		saveStatus int
