@@ -256,7 +256,7 @@ func newPaywallsEditCmd() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "edit [paywall-id]",
-		Short: "Edit a Paywall with the Paywalls AI Editor",
+		Short: "Edit Paywalls from a prompt using RevenueCat's AI Editor",
 		Long: `Applies a natural-language edit to a paywall.
 
 Given a paywall ID, the current draft (or published) components are fetched
@@ -265,6 +265,9 @@ dashboard-authored ones. Given --session (written by a previous generate or
 edit turn), the design conversation continues with its full context. Each
 completed turn saves the design back onto the RevenueCat draft
 (revision-guarded) and prints the dashboard builder URL to view it.
+
+The editor can also generate, replace, or update hero and background images
+when the prompt asks for it; image-generation edits can take several minutes.
 
 Using it well:
 
@@ -289,7 +292,7 @@ Using it well:
     --image attachments are visual references only, never placed.
   - Keep the SAME --session file across turns — it is the conversation
     memory. A lost session file starts the design conversation over.
-  - The Paywalls AI Editor may reply with a clarifying question instead of a design (it
+  - The editor may reply with a clarifying question instead of a design (it
     appears in the streamed activity / the --json activity array). Answer it
     with another edit turn on the same session.
   - Each completed turn writes a preview screenshot next to the session file
@@ -503,7 +506,7 @@ turn are removed.`,
 		},
 	}
 	cmd.Flags().StringVar(&sessionPath, "session", "", "editor session file")
-	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "Paywalls AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
+	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "RevenueCat's AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	return cmd
 }
 
@@ -513,7 +516,7 @@ func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 	cmd.Flags().StringArrayVar(&opts.attachments, "attachment", nil, "design reference file: images (png/jpeg/webp) attach visually, text files (DESIGN.md, style guides) travel with the direction")
 	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: in the CLI data dir, per project and paywall)")
 	cmd.Flags().StringArrayVar(&opts.images, "image", nil, "reference image to attach (png/jpeg/webp, max 3)")
-	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Paywalls AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
+	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "RevenueCat's AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait")
 }
 
