@@ -263,16 +263,18 @@ func newPaywallsEditCmd() *cobra.Command {
 		timeout: aiEditTimeout,
 	}
 	cmd := &cobra.Command{
-		Use:   "edit [paywall-id]",
+		Use:   "edit [paywall-id] [--session <file>]",
 		Short: "Edit Paywalls from a prompt using RevenueCat's AI Editor",
 		Long: `Applies a natural-language edit to a paywall.
 
 Given a paywall ID, the current draft (or published) components are fetched
 from RevenueCat as the starting state — any paywall is editable, including
-dashboard-authored ones. Given --session (written by a previous generate or
-edit turn), the design conversation continues with its full context. Each
-completed turn saves the design back onto the RevenueCat draft
-(revision-guarded) and prints the dashboard builder URL to view it.
+dashboard-authored ones. Each paywall keeps one editor session in the CLI data
+dir. Given --session (written by a previous generate or edit turn), that
+session file is resumed with its full context and the paywall comes from the
+file; a paywall ID passed alongside it must match. Each completed turn saves
+the design back onto the RevenueCat draft (revision-guarded) and prints the
+dashboard builder URL to view it.
 
 The editor can also generate, replace, or update hero and background images
 when the prompt asks for it; image-generation edits can take several minutes.
@@ -328,6 +330,9 @@ Using it well:
 				session, err = loadPaywallAISession(rt, opts.sessionPath)
 				err = explicitSessionNotFound(opts.sessionPath, "paywall", err)
 				if err == nil {
+					_, err = sessionTargetID(opts.sessionPath, "paywall", session.PaywallID, argAt(args, 0))
+				}
+				if err == nil {
 					session, err = preflightSessionRevision(cmd.Context(), rt, session)
 				}
 			case argAt(args, 0) != "" || (!rt.Globals.NoInput && tui.IsInteractive()):
@@ -372,6 +377,21 @@ func explicitSessionNotFound(path, noun string, err error) error {
 		return WithHint(fmt.Errorf("session file not found: %s", path), "omit --session to resume the default session for this "+noun)
 	}
 	return err
+}
+
+// sessionTargetID resolves which resource a --session file edits: the id the
+// file stores, which an explicit arg must match. A file that predates stored
+// ids falls back to the arg.
+func sessionTargetID(path, noun, stored, arg string) (string, error) {
+	switch {
+	case stored == "" && arg == "":
+		return "", fmt.Errorf("session file %s doesn't record its %s: pass the %s ID", path, noun, noun)
+	case stored == "":
+		return arg, nil
+	case arg != "" && arg != stored:
+		return "", fmt.Errorf("session %s is for %s %s, not %s", path, noun, stored, arg)
+	}
+	return stored, nil
 }
 
 // preflightSessionRevision guards a file-loaded session against a draft that

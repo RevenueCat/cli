@@ -188,7 +188,7 @@ rc paywalls                                              # help; under npx a TTY
 rc paywalls list
 rc paywalls show <id>
 rc paywalls generate [--offering-id <id>] --prompt "..." # create a paywall; standalone unless --offering-id attaches it to an offering
-rc paywalls edit <paywall-id>|--session <file> --prompt  # AI-edit any paywall (draft components fetched via v2) or continue a session
+rc paywalls edit [paywall-id] [--session <file>] --prompt  # AI-edit a paywall's draft; one editor session per paywall in the CLI data dir; --session resumes an existing session file (the paywall comes from the file)
 rc paywalls rewind --session <file>                      # undo the last editor action
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes
@@ -204,7 +204,7 @@ rc flows update [id] --config <path|->                   # save the exported JSO
 rc flows create --config <path|->                       # create an unpublished web-funnel or general flow (type paywall is rejected)
 rc flows duplicate [id] [--name <name>] # create an unpublished copy of the draft
 rc flows validate [id] [--revision <revision>]           # return saved-draft validation issues
-rc flows edit [id] [--step-ids <step-id,...>] --prompt # AI-edit a flow's draft; omit --step-ids to edit the whole flow; one editor session per flow in the CLI data dir (--session overrides the file); --step-ids scopes a single run
+rc flows edit [flow-id] [--session <file>] --prompt [--step-ids <id,...>]  # AI-edit a flow's draft; one editor session per flow in the CLI data dir; --session resumes an existing session file (the flow comes from the file); --step-ids scopes one run to those screens (default: whole flow, same session)
 # Experiments — development v2 endpoints, normal discoverable CLI surface
 rc experiments list [--status <status>]
 rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline

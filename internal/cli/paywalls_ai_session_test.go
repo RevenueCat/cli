@@ -295,6 +295,27 @@ func TestPaywallsEdit_ExplicitSessionOverridesDefault(t *testing.T) {
 	}
 }
 
+func TestPaywallsEdit_SessionPaywallMismatchErrors(t *testing.T) {
+	rc := &rcPaywallMock{}
+	rcServer := rc.server(t)
+	defer rcServer.Close()
+
+	sessionPath := filepath.Join(t.TempDir(), "custom"+paywallSessionSuffix)
+	if err := savePaywallAISession(sessionPath, newTestSession()); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	cmd := newPaywallsEditCmd()
+	cmd.SetContext(WithRuntime(context.Background(), newSessionTestRuntime(rcServer.URL)))
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"pw_other", "--session", sessionPath, "--prompt", "tweak it"})
+	err := cmd.Execute()
+	if err == nil || !strings.Contains(err.Error(), "is for paywall pw_test, not pw_other") {
+		t.Fatalf("err = %v, want session/paywall mismatch", err)
+	}
+}
+
 func TestPaywallsEdit_ExplicitMissingSessionErrors(t *testing.T) {
 	rc := &rcPaywallMock{}
 	rcServer := rc.server(t)

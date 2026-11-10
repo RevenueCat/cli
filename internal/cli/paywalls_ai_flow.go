@@ -22,12 +22,12 @@ import (
 // --step-ids scope. The Paywalls AI Editor reads the content from the Flow itself, so no paywall
 // is stored.
 type paywallAIFlowSession struct {
-	SessionID        string            `json:"session_id,omitempty"`
-	TraceID          string            `json:"trace_id,omitempty"`
-	UIConfig         json.RawMessage   `json:"ui_config"`
-	ProductVariables map[string]string `json:"product_variables"`
-	SessionItems     json.RawMessage   `json:"__unstable_session_items"`
-	AppContext       json.RawMessage   `json:"app_context,omitempty"`
+	ProjectID    string          `json:"project_id,omitempty"`
+	FlowID       string          `json:"flow_id,omitempty"`
+	SessionID    string          `json:"session_id,omitempty"`
+	TraceID      string          `json:"trace_id,omitempty"`
+	SessionItems json.RawMessage `json:"__unstable_session_items"`
+	AppContext   json.RawMessage `json:"app_context,omitempty"`
 }
 
 // flowPreviewSessionPath keys previews by step: the Paywalls AI Editor renders only the requested
@@ -99,7 +99,7 @@ func newFlowsEditCmd() *cobra.Command {
 		timeout: aiEditTimeout,
 	}
 	cmd := &cobra.Command{
-		Use:   "edit [flow-id] [--step-ids <step-id>[,<step-id>...]]",
+		Use:   "edit [flow-id] [--session <file>] [--step-ids <step-id>[,<step-id>...]]",
 		Short: "Edit Flows and screens from a prompt using RevenueCat's AI Editor",
 		Long: `Applies a natural-language edit to screen steps of a Flow and saves the
 result onto the Flow draft (revision-guarded). The editor sees the whole Flow
@@ -110,13 +110,16 @@ the whole Flow. Find step ids with rc flows show.
 The editor can also generate images for a screen when the prompt asks for it;
 image-generation edits can take several minutes.
 
-Each Flow keeps one editor session in the CLI data dir (--session overrides
-the file). --step-ids only scopes a single run, so you can edit some steps,
-check them, then continue on other steps (or the whole Flow) and the earlier
-instructions are remembered. See rc paywalls edit --help for prompting guidance.`,
+Each Flow keeps one editor session in the CLI data dir. Given --session, that
+session file is resumed and the Flow comes from the file; a Flow ID passed
+alongside it must match. --step-ids only scopes a single run, so you can edit
+some steps, check them, then continue on other steps (or the whole Flow) and
+the earlier instructions are remembered. See rc paywalls edit --help for
+prompting guidance.`,
 		Example: `  rc flows edit wf_abc --step-ids welcome --prompt "Bolder CTA, keep the layout"
   rc flows edit wf_abc --step-ids welcome,pricing --prompt "same button style on both"
-  rc flows edit wf_abc --step-ids welcome --prompt "match this" --attachment DESIGN.md --image home.png`,
+  rc flows edit wf_abc --step-ids welcome --prompt "match this" --attachment DESIGN.md --image home.png
+  rc flows edit --session wf_abc.paywall.json --prompt "Softer headline copy"`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
@@ -124,11 +127,27 @@ instructions are remembered. See rc paywalls edit --help for prompting guidance.
 			if err != nil {
 				return err
 			}
-			projectID, err := requireProject(rt)
-			if err != nil {
-				return err
+			flowID, projectID := argAt(args, 0), ""
+			if opts.sessionPath != "" {
+				_, statErr := os.Stat(opts.sessionPath)
+				if err := explicitSessionNotFound(opts.sessionPath, "flow", statErr); err != nil {
+					return err
+				}
+				stored, err := loadFlowSession(opts.sessionPath)
+				if err != nil {
+					return err
+				}
+				if flowID, err = sessionTargetID(opts.sessionPath, "flow", stored.FlowID, flowID); err != nil {
+					return err
+				}
+				projectID = stored.ProjectID
 			}
-			flowID, err := requireID(rt, argAt(args, 0), "flow", func() ([]PickerItem, error) {
+			if projectID == "" {
+				if projectID, err = requireProject(rt); err != nil {
+					return err
+				}
+			}
+			flowID, err = requireID(rt, flowID, "flow", func() ([]PickerItem, error) {
 				return flowPickerItems(cmd.Context(), client, projectID)
 			})
 			if err != nil {
@@ -174,16 +193,11 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 			return err
 		}
 	}
-	if explicitSession {
-		_, err := os.Stat(opts.sessionPath)
-		if err = explicitSessionNotFound(opts.sessionPath, "flow", err); err != nil {
-			return err
-		}
-	}
 	session, err := loadFlowSession(opts.sessionPath)
 	if err != nil {
 		return err
 	}
+	session.ProjectID, session.FlowID = projectID, flowID
 	// Previews from an earlier run must never be mistaken for this run's.
 	removePaywallScreenshots(opts.sessionPath, !explicitSession, slices.Collect(maps.Keys(draft.Steps)))
 
