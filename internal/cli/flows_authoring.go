@@ -104,7 +104,7 @@ func newFlowsUpdateCmd() *cobra.Command {
 	var config string
 	cmd := &cobra.Command{
 		Use: "update [id]", Short: "Save changes to a Flow draft", Args: cobra.MaximumNArgs(1),
-		Long: "Saves settings and step changes atomically. The config must include the revision from flows export or flows show. Omitted steps are preserved; deleted_step_ids removes steps explicitly. A stale revision fails without saving. Does not publish.",
+		Long: "Saves settings and step changes atomically. The config must include the revision from flows export or flows show. Omitted steps are preserved; deleted_step_ids removes steps explicitly. A stale revision fails without saving. Does not publish. For prompt-based edits, use rc flows edit.",
 		Example: `  rc flows update wf_abc --config flow.json
   cat flow.json | rc flows update wf_abc --config -`,
 		RunE: func(cmd *cobra.Command, args []string) error {

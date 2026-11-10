@@ -100,12 +100,15 @@ func newFlowsEditCmd() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "edit [flow-id] [--step-ids <step-id>[,<step-id>...]]",
-		Short: "Edit a Flow screen with the Paywalls AI Editor",
+		Short: "Edit Flows and screens from a prompt using RevenueCat's AI Editor",
 		Long: `Applies a natural-language edit to screen steps of a Flow and saves the
 result onto the Flow draft (revision-guarded). The editor sees the whole Flow
 but is scoped to --step-ids (comma-separated or repeated); it may also adjust
 other screens, which are reported as "also changed". Omit --step-ids to edit
 the whole Flow. Find step ids with rc flows show.
+
+The editor can also generate images for a screen when the prompt asks for it;
+image-generation edits can take several minutes.
 
 Each Flow keeps one editor session in the CLI data dir (--session overrides
 the file). --step-ids only scopes a single run, so you can edit some steps,
