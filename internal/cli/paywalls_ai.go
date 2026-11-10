@@ -111,8 +111,7 @@ type paywallAIOptions struct {
 	createdDraft bool
 }
 
-// Must stay above Astra's Envoy route timeout (900s,
-// infrastructure/projects/rc-services/astra/envoy.yaml); update together.
+// Must stay above the editor service's 900s route timeout so the server's deadline fires first.
 const aiEditTimeout = 16 * time.Minute
 
 // aiSaveTimeout bounds the final draft save, which runs after the editor run's own deadline may have passed.
