@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -291,6 +292,24 @@ func TestPaywallsEdit_ExplicitSessionOverridesDefault(t *testing.T) {
 	editor.mu.Unlock()
 	if len(received) != 1 || received[0] != "sess_explicit" {
 		t.Fatalf("--session did not drive the request session id: %v", received)
+	}
+}
+
+func TestPaywallsEdit_ExplicitMissingSessionErrors(t *testing.T) {
+	rc := &rcPaywallMock{}
+	rcServer := rc.server(t)
+	defer rcServer.Close()
+
+	sessionPath := filepath.Join(t.TempDir(), "missing"+paywallSessionSuffix)
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	cmd := newPaywallsEditCmd()
+	cmd.SetContext(WithRuntime(context.Background(), newSessionTestRuntime(rcServer.URL)))
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"--session", sessionPath, "--prompt", "tweak it"})
+	err := cmd.Execute()
+	if err == nil || !strings.Contains(err.Error(), "session file not found: "+sessionPath) {
+		t.Fatalf("err = %v, want session file not found", err)
 	}
 }
 
