@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -333,6 +334,9 @@ Using it well:
 					_, err = sessionTargetID(opts.sessionPath, "paywall", session.PaywallID, argAt(args, 0))
 				}
 				if err == nil {
+					err = checkSessionProject(rt, opts.sessionPath, session.ProjectID)
+				}
+				if err == nil {
 					session, err = preflightSessionRevision(cmd.Context(), rt, session)
 				}
 			case argAt(args, 0) != "" || (!rt.Globals.NoInput && tui.IsInteractive()):
@@ -392,6 +396,17 @@ func sessionTargetID(path, noun, stored, arg string) (string, error) {
 		return "", fmt.Errorf("session %s is for %s %s, not %s", path, noun, stored, arg)
 	}
 	return stored, nil
+}
+
+// checkSessionProject rejects an explicitly passed project (--project-id or
+// RC_PROJECT_ID) that differs from the session's; a profile or per-directory
+// default never conflicts, so the session's project wins.
+func checkSessionProject(rt *Runtime, path, stored string) error {
+	explicit := cmp.Or(rt.Globals.ProjectID, os.Getenv("RC_PROJECT_ID"))
+	if stored != "" && explicit != "" && explicit != stored {
+		return fmt.Errorf("session %s is for project %s, not %s", path, stored, explicit)
+	}
+	return nil
 }
 
 // preflightSessionRevision guards a file-loaded session against a draft that

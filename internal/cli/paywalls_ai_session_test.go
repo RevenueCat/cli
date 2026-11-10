@@ -316,6 +316,49 @@ func TestPaywallsEdit_SessionPaywallMismatchErrors(t *testing.T) {
 	}
 }
 
+func TestPaywallsEdit_SessionProjectConflict(t *testing.T) {
+	tests := []struct {
+		name     string
+		flag     string
+		env      string
+		active   string
+		wantFail bool
+	}{
+		{name: "explicit flag differs", flag: "proj_other", wantFail: true},
+		{name: "env differs", env: "proj_other", wantFail: true},
+		{name: "active project differs", active: "proj_other"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rc := &rcPaywallMock{}
+			rcServer := rc.server(t)
+			defer rcServer.Close()
+
+			sessionPath := filepath.Join(t.TempDir(), "custom"+paywallSessionSuffix)
+			if err := savePaywallAISession(sessionPath, newTestSession()); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("RC_CONFIG_DIR", t.TempDir())
+			t.Setenv("RC_PROJECT_ID", tt.env)
+			rt := newSessionTestRuntime(rcServer.URL)
+			rt.Globals.ProjectID = tt.flag
+			if tt.active != "" {
+				rt.Config.ProjectID = tt.active
+			}
+			cmd := newPaywallsEditCmd()
+			cmd.SetContext(WithRuntime(context.Background(), rt))
+			cmd.SetOut(io.Discard)
+			cmd.SetErr(io.Discard)
+			cmd.SetArgs([]string{"--session", sessionPath, "--prompt", "tweak it"})
+			err := cmd.Execute()
+			conflict := err != nil && strings.Contains(err.Error(), "is for project proj, not proj_other")
+			if conflict != tt.wantFail {
+				t.Fatalf("project conflict = %v (err = %v), want %v", conflict, err, tt.wantFail)
+			}
+		})
+	}
+}
+
 func TestPaywallsEdit_ExplicitMissingSessionErrors(t *testing.T) {
 	rc := &rcPaywallMock{}
 	rcServer := rc.server(t)

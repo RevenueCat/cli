@@ -123,6 +123,9 @@ prompting guidance.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
+			if argAt(args, 0) == "" && opts.sessionPath == "" && !rt.CanPrompt() {
+				return fmt.Errorf("pass a flow ID or --session <file>")
+			}
 			client, err := rt.API()
 			if err != nil {
 				return err
@@ -138,6 +141,9 @@ prompting guidance.`,
 					return err
 				}
 				if flowID, err = sessionTargetID(opts.sessionPath, "flow", stored.FlowID, flowID); err != nil {
+					return err
+				}
+				if err := checkSessionProject(rt, opts.sessionPath, stored.ProjectID); err != nil {
 					return err
 				}
 				projectID = stored.ProjectID

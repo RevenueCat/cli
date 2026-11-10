@@ -151,7 +151,7 @@ func TestFlowsEdit(t *testing.T) {
 		{
 			name:    "flow id is required without a prompt for it",
 			args:    []string{"--step-ids", "screen"},
-			wantErr: "flow ID is required",
+			wantErr: "pass a flow ID or --session <file>",
 		},
 	}
 	for _, tt := range tests {
@@ -433,6 +433,11 @@ func TestFlowsEditSessionTargetErrors(t *testing.T) {
 			name:    "session without a stored flow needs the id",
 			session: `{"__unstable_session_items":{}}`,
 			wantErr: "pass the flow ID",
+		},
+		{
+			name:    "explicit project differs from the session's",
+			session: `{"project_id":"other","flow_id":"wf_1","__unstable_session_items":{}}`,
+			wantErr: "is for project other, not proj",
 		},
 	}
 	for _, tt := range tests {
