@@ -550,9 +550,7 @@ turn are removed.`,
 				return err
 			}
 			// Drop saved screenshots — they show the pre-rewind design.
-			base := screenshotBase(sessionPath)
-			os.Remove(base + ".light.png")
-			os.Remove(base + ".dark.png")
+			removePaywallScreenshots(sessionPath, false, nil)
 			rt.Out.Success("Rewound last editor action")
 			return rt.Out.Render(map[string]any{"ok": true, "session_id": session.SessionID})
 		},

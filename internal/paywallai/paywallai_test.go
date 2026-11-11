@@ -182,13 +182,13 @@ func TestFeedbackAndRewind(t *testing.T) {
 func TestStreamV3PostsWorkflowContext(t *testing.T) {
 	var gotBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/editor/v3/stream" {
+		if r.URL.Path != "/editor/v3/stream/apply" {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
 			t.Errorf("decode body: %v", err)
 		}
-		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"a\":1},\"components_localizations\":{}}}}\n\n")
+		io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"revision\":5,\"editor_url\":\"https://editor.test/wf\",\"edited_step_ids\":[\"screen\"]}\n\n")
 	}))
 	defer server.Close()
 
@@ -216,7 +216,7 @@ func TestStreamV3PostsWorkflowContext(t *testing.T) {
 	if err != nil || event.Type != EventRunCompleted {
 		t.Fatalf("event = %+v, err %v", event, err)
 	}
-	if got := event.EditedPaywallsByStepID["screen"]; string(got.ComponentsConfig) != `{"a":1}` {
-		t.Errorf("edited paywalls = %+v", event.EditedPaywallsByStepID)
+	if event.Revision == nil || *event.Revision != 5 || event.EditorURL != "https://editor.test/wf" || len(event.EditedStepIDs) != 1 || event.EditedStepIDs[0] != "screen" {
+		t.Errorf("event = %+v", event)
 	}
 }

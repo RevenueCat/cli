@@ -34,17 +34,8 @@ func snapshotServer(t *testing.T) *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
 		case r.URL.Path == "/projects/proj_snap/flows/wf_snap" || r.URL.Path == "/projects/proj_snap/flows/wf_stale" || r.URL.Path == "/projects/proj_snap/flows/wf_sibling":
-			if r.Method == http.MethodPatch {
-				if strings.HasSuffix(r.URL.Path, "wf_stale") {
-					w.WriteHeader(http.StatusConflict)
-					io.WriteString(w, `{"object":"error","type":"resource_conflict","message":"revision mismatch"}`)
-					return
-				}
-				io.WriteString(w, `{"id":"wf_snap","revision":5}`)
-				return
-			}
 			fmt.Fprintf(w, `{"id":%q,"object":"flow","revision":4,"type":"paywall","steps":{"welcome":{"type":"screen","screen":{"components_config":{}}},"pricing":{"type":"screen","screen":{"components_config":{}}}}}`, path.Base(r.URL.Path))
-		case r.URL.Path == "/editor/v3/stream":
+		case r.URL.Path == "/editor/v3/stream/apply":
 			io.WriteString(w, "data: {\"type\":\"run.started\",\"session_id\":\"sess_snap\"}\n\n")
 			var req struct {
 				WorkflowContext struct {
@@ -54,11 +45,14 @@ func snapshotServer(t *testing.T) *httptest.Server {
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Error(err)
 			}
-			if req.WorkflowContext.WorkflowID == "wf_sibling" {
-				io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"edited_paywalls_by_step_id\":{\"welcome\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}},\"pricing\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}}}\n\n")
-				return
+			switch req.WorkflowContext.WorkflowID {
+			case "wf_sibling":
+				io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"revision\":5,\"editor_url\":\"https://app.revenuecat.com/projects/snap/flows/wf_sibling/editor\",\"edited_step_ids\":[\"pricing\",\"welcome\"]}\n\n")
+			case "wf_stale":
+				io.WriteString(w, "data: {\"type\":\"run.failed\",\"session_id\":\"sess_snap\",\"error\":{\"code\":\"save_stale\",\"message\":\"The flow changed while Astra was editing it. Try again.\"}}\n\n")
+			default:
+				io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"revision\":5,\"editor_url\":\"https://app.revenuecat.com/projects/snap/flows/wf_snap/editor\",\"edited_step_ids\":[\"welcome\"],\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"},{\"color_scheme\":\"dark\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n")
 			}
-			io.WriteString(w, "data: {\"type\":\"run.completed\",\"session_id\":\"sess_snap\",\"edited_paywalls_by_step_id\":{\"welcome\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}},\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"},{\"color_scheme\":\"dark\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n")
 		case strings.HasSuffix(r.URL.Path, "/experiments/exp_snap/actions/stop"):
 			io.WriteString(w, `{"id":"exp_snap","display_name":"Price paywall","status":"stopped"}`)
 		case strings.HasSuffix(r.URL.Path, "/targeting_rules/chkptrule_snap"):

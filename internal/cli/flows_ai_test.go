@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,97 +25,103 @@ const flowDraftJSON = `{"id":"wf_1","object":"flow","revision":4,"type":"paywall
 	`"auth":{"type":"auth"}}}`
 
 const (
-	streamStarted    = "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n"
-	streamEdited     = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"offering_id\":null,\"components_config\":{\"new\":true},\"components_localizations\":{\"en_US\":{}}}}}\n\n"
-	streamEditedFull = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{" +
-		"\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{\"a\":1},\"components_localizations\":{},\"state_declarations\":{\"x\":1},\"automatically_scale_font_size\":false}," +
-		"\"other\":{\"default_locale\":\"fr_FR\",\"state_declarations\":null,\"components_config\":{\"b\":2},\"components_localizations\":{}}}}\n\n"
-	streamSiblings = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{" +
-		"\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}," +
-		"\"other\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}}}\n\n"
-	streamNoEdits = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{}}\n\n"
-	streamFailed  = "data: {\"type\":\"run.failed\",\"session_id\":\"sess1\",\"error\":{\"code\":\"internal\",\"message\":\"boom\"},\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{\"partial\":true},\"components_localizations\":{}}}}\n\n"
+	streamStarted = "data: {\"type\":\"run.started\",\"session_id\":\"sess1\"}\n\n"
+	streamEdited  = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"revision\":5,\"editor_url\":\"https://editor.test/wf_1\",\"edited_step_ids\":[\"screen\"]}\n\n"
+	// Ids are sorted by the service.
+	streamSiblings = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"revision\":5,\"editor_url\":\"https://editor.test/wf_1\",\"edited_step_ids\":[\"other\",\"screen\"]}\n\n"
+	streamNoEdits  = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"revision\":null,\"editor_url\":\"https://editor.test/wf_1\",\"edited_step_ids\":[]}\n\n"
+	streamFailed   = "data: {\"type\":\"run.failed\",\"session_id\":\"sess1\",\"error\":{\"code\":\"internal\",\"message\":\"boom\"}}\n\n"
+	streamStale    = "data: {\"type\":\"run.failed\",\"session_id\":\"sess1\",\"error\":{\"code\":\"save_stale\",\"message\":\"The flow changed while Astra was editing it. Try again.\"}}\n\n"
+	streamLocked   = "data: {\"type\":\"run.failed\",\"session_id\":\"sess1\",\"error\":{\"code\":\"save_locked\",\"message\":\"The flow is locked, so Astra's edits could not be saved. Try again shortly.\"}}\n\n"
+	streamRejected = "data: {\"type\":\"run.failed\",\"session_id\":\"sess1\",\"error\":{\"code\":\"save_rejected\",\"message\":\"step screen: invalid component\"}}\n\n"
 )
 
 func TestFlowsEdit(t *testing.T) {
 	tests := []struct {
-		name        string
-		draft       string
-		args        []string
-		stream      string
-		saveStatus  int
-		wantErr     string
-		wantStream  bool
-		wantPatches int
-		wantOut     string
-		wantPatch   string
-		streamCode  int
-		wantRefs    []string
-		wantSession string
+		name          string
+		draft         string
+		args          []string
+		stream        string
+		wantErr       string
+		wantStream    bool
+		wantOut       string
+		streamCode    int
+		wantRefs      []string
+		wantSession   string
+		refetchedRev  int // revision the Flow reports on the second GET; 0 keeps the draft's
+		refetchStatus int // HTTP status for the second GET; 0 is 200
 	}{
 		{
-			name:        "saves the edited step against the draft revision",
-			args:        []string{"wf_1", "--step-ids", "screen"},
-			stream:      streamStarted + streamEdited,
-			saveStatus:  http.StatusOK,
-			wantStream:  true,
-			wantPatches: 1,
-			wantOut:     "saved_to_draft",
-			wantPatch:   `{"revision":4,"updated_steps":{"screen":{"screen":{"default_locale":"en_US","components_config":{"new":true},"components_localizations":{"en_US":{}}}}}}`,
+			name:       "completed run reports the saved revision and editor link",
+			args:       []string{"wf_1", "--step-ids", "screen"},
+			stream:     streamStarted + streamEdited,
+			wantStream: true,
+			wantOut:    `"revision": 5`,
 		},
 		{
-			name:        "every edited step sends only its screen",
-			args:        []string{"wf_1", "--step-ids", "screen"},
-			stream:      streamStarted + streamEditedFull,
-			saveStatus:  http.StatusOK,
-			wantStream:  true,
-			wantPatches: 1,
-			wantOut:     "saved_to_draft",
-			wantPatch: `{"revision":4,"updated_steps":{` +
-				`"screen":{"screen":{"default_locale":"en_US","components_config":{"a":1},"components_localizations":{},"state_declarations":{"x":1},"automatically_scale_font_size":false}},` +
-				`"other":{"screen":{"default_locale":"fr_FR","components_config":{"b":2},"components_localizations":{}}}}}`,
+			name:       "no edits means nothing saved",
+			args:       []string{"wf_1", "--step-ids", "screen"},
+			stream:     streamStarted + streamNoEdits,
+			wantStream: true,
+			wantOut:    `"saved_to_draft": false`,
 		},
 		{
-			name:        "no edits means no save",
-			args:        []string{"wf_1", "--step-ids", "screen"},
-			stream:      streamStarted + streamNoEdits,
-			wantStream:  true,
-			wantPatches: 0,
-			wantOut:     `"saved_to_draft": false`,
+			name:       "failed run saves nothing",
+			args:       []string{"wf_1", "--step-ids", "screen"},
+			stream:     streamStarted + streamFailed,
+			wantStream: true,
+			wantErr:    "boom",
 		},
 		{
-			name:        "failed run saves nothing",
-			args:        []string{"wf_1", "--step-ids", "screen"},
-			stream:      streamStarted + streamFailed,
-			wantStream:  true,
-			wantErr:     "boom",
-			wantPatches: 0,
+			name:       "stale save is reported and not retried",
+			args:       []string{"wf_1", "--step-ids", "screen"},
+			stream:     streamStarted + streamStale,
+			wantStream: true,
+			wantOut:    `"saved_to_draft": false`,
 		},
 		{
-			name:        "revision conflict is reported and not retried",
-			args:        []string{"wf_1", "--step-ids", "screen"},
-			stream:      streamStarted + streamEdited,
-			saveStatus:  http.StatusConflict,
-			wantStream:  true,
-			wantPatches: 1,
-			wantOut:     `"saved_to_draft": false`,
+			name:       "locked save returns the error",
+			args:       []string{"wf_1", "--step-ids", "screen"},
+			stream:     streamStarted + streamLocked,
+			wantStream: true,
+			wantErr:    "The flow is locked",
 		},
 		{
-			name:        "failed save returns the error",
-			args:        []string{"wf_1", "--step-ids", "screen"},
-			stream:      streamStarted + streamEdited,
-			saveStatus:  http.StatusForbidden,
-			wantStream:  true,
-			wantErr:     "403",
-			wantPatches: 1,
+			name:       "rejected save shows the validation message",
+			args:       []string{"wf_1", "--step-ids", "screen"},
+			stream:     streamStarted + streamRejected,
+			wantStream: true,
+			wantErr:    "the flow rejected the editor's edits: step screen: invalid component",
+		},
+		{
+			name:         "missing final event with a moved revision counts as saved",
+			args:         []string{"wf_1", "--step-ids", "screen"},
+			stream:       streamStarted,
+			refetchedRev: 5,
+			wantStream:   true,
+			wantOut:      `"revision": 5`,
+		},
+		{
+			name:         "missing final event with an unchanged revision saves nothing",
+			args:         []string{"wf_1", "--step-ids", "screen"},
+			stream:       streamStarted,
+			refetchedRev: 4,
+			wantStream:   true,
+			wantErr:      "stream ended before the run finished",
+		},
+		{
+			name:          "missing final event and a failed re-fetch says the edit may be saved",
+			args:          []string{"wf_1", "--step-ids", "screen"},
+			stream:        streamStarted,
+			refetchStatus: http.StatusInternalServerError,
+			wantStream:    true,
+			wantErr:       "could not be re-checked",
 		},
 		{
 			name:        "repeated --step-ids sends every id to the editor",
 			args:        []string{"wf_1", "--step-ids", "screen,other", "--step-ids", "screen"},
-			stream:      streamStarted + streamEditedFull,
-			saveStatus:  http.StatusOK,
+			stream:      streamStarted + streamSiblings,
 			wantStream:  true,
-			wantPatches: 1,
 			wantOut:     `"step_ids": [`,
 			wantRefs:    []string{"screen", "other"},
 			wantSession: "/wf_1/session.paywall.json",
@@ -141,9 +148,7 @@ func TestFlowsEdit(t *testing.T) {
 			name:        "omitted --step-ids sends an empty list",
 			args:        []string{"wf_1"},
 			stream:      streamStarted + streamEdited,
-			saveStatus:  http.StatusOK,
 			wantStream:  true,
-			wantPatches: 1,
 			wantOut:     `"step_ids": []`,
 			wantRefs:    []string{},
 			wantSession: "/wf_1/session.paywall.json",
@@ -157,25 +162,29 @@ func TestFlowsEdit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var streamed bool
-			var patchBody []byte
-			var patches int
+			var gets int
 			var streamBody map[string]any
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch {
 				case r.Method == http.MethodGet && r.URL.Path == "/projects/proj/flows/wf_1":
-					_, _ = io.WriteString(w, cmp.Or(tt.draft, flowDraftJSON))
-				case r.Method == http.MethodPost && r.URL.Path == "/editor/v3/stream":
+					gets++
+					body := cmp.Or(tt.draft, flowDraftJSON)
+					if gets > 1 {
+						if tt.refetchStatus != 0 {
+							w.WriteHeader(tt.refetchStatus)
+						}
+						if tt.refetchedRev != 0 {
+							body = strings.Replace(body, `"revision":4`, fmt.Sprintf(`"revision":%d`, tt.refetchedRev), 1)
+						}
+					}
+					_, _ = io.WriteString(w, body)
+				case r.Method == http.MethodPost && r.URL.Path == "/editor/v3/stream/apply":
 					streamed = true
 					_ = json.NewDecoder(r.Body).Decode(&streamBody)
 					if tt.streamCode != 0 {
 						w.WriteHeader(tt.streamCode)
 					}
 					_, _ = io.WriteString(w, tt.stream)
-				case r.Method == http.MethodPatch && r.URL.Path == "/projects/proj/flows/wf_1":
-					patchBody, _ = io.ReadAll(r.Body)
-					patches++
-					w.WriteHeader(tt.saveStatus)
-					_, _ = io.WriteString(w, `{"id":"wf_1","revision":5}`)
 				default:
 					t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
 					http.NotFound(w, r)
@@ -196,9 +205,6 @@ func TestFlowsEdit(t *testing.T) {
 			if streamed != tt.wantStream {
 				t.Fatalf("streamed = %v, want %v", streamed, tt.wantStream)
 			}
-			if patches != tt.wantPatches {
-				t.Fatalf("patches = %d, want %d", patches, tt.wantPatches)
-			}
 			if tt.wantOut != "" && !strings.Contains(out, tt.wantOut) {
 				t.Fatalf("output missing %q: %s", tt.wantOut, out)
 			}
@@ -218,33 +224,21 @@ func TestFlowsEdit(t *testing.T) {
 					t.Fatalf("workflow_context = %v", streamBody["workflow_context"])
 				}
 			}
-			if tt.wantPatch != "" {
-				var want, got any
-				if err := json.Unmarshal([]byte(tt.wantPatch), &want); err != nil {
-					t.Fatal(err)
-				}
-				if err := json.Unmarshal(patchBody, &got); err != nil {
-					t.Fatal(err)
-				}
-				if !reflect.DeepEqual(got, want) {
-					t.Fatalf("PATCH body = %s\nwant %s", patchBody, tt.wantPatch)
-				}
-			}
 		})
 	}
 }
 
-func flowEditServer(t *testing.T, stream string, saveStatus int) *httptest.Server {
+func flowEditServer(t *testing.T, stream string) *httptest.Server {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.Method == http.MethodGet:
 			_, _ = io.WriteString(w, flowDraftJSON)
-		case r.URL.Path == "/editor/v3/stream":
+		case r.URL.Path == "/editor/v3/stream/apply":
 			_, _ = io.WriteString(w, stream)
 		default:
-			w.WriteHeader(saveStatus)
-			_, _ = io.WriteString(w, `{"id":"wf_1","revision":5}`)
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			http.NotFound(w, r)
 		}
 	}))
 	t.Cleanup(server.Close)
@@ -253,42 +247,37 @@ func flowEditServer(t *testing.T, stream string, saveStatus int) *httptest.Serve
 
 func TestFlowsEditJSONShape(t *testing.T) {
 	tests := []struct {
-		name       string
-		args       []string
-		stream     string
-		saveStatus int
-		want       string
+		name   string
+		args   []string
+		stream string
+		want   string
 	}{
 		{
-			name:       "sibling edit",
-			args:       []string{"--step-ids", "screen"},
-			stream:     streamStarted + streamSiblings,
-			saveStatus: http.StatusOK,
-			want:       `{"dashboard_url":"https://app.revenuecat.com/projects//flows/wf_1/editor","step_ids":["screen"],"saved_steps":["other","screen"],"also_changed":["other"],"saved_to_draft":true}`,
+			name:   "sibling edit",
+			args:   []string{"--step-ids", "screen"},
+			stream: streamStarted + streamSiblings,
+			want:   `{"dashboard_url":"https://editor.test/wf_1","step_ids":["screen"],"saved_steps":["other","screen"],"also_changed":["other"],"saved_to_draft":true,"revision":5}`,
 		},
 		{
-			name:       "whole-flow run has no sibling steps",
-			stream:     streamStarted + streamSiblings,
-			saveStatus: http.StatusOK,
-			want:       `{"step_ids":[],"saved_steps":["other","screen"],"also_changed":[],"saved_to_draft":true}`,
+			name:   "whole-flow run has no sibling steps",
+			stream: streamStarted + streamSiblings,
+			want:   `{"step_ids":[],"saved_steps":["other","screen"],"also_changed":[],"saved_to_draft":true}`,
 		},
 		{
-			name:       "stale revision saves nothing but still reports the arrays",
-			args:       []string{"--step-ids", "screen"},
-			stream:     streamStarted + streamSiblings,
-			saveStatus: http.StatusConflict,
-			want:       `{"step_ids":["screen"],"saved_steps":[],"also_changed":["other"],"saved_to_draft":false}`,
+			name:   "stale save reports empty arrays and no revision",
+			args:   []string{"--step-ids", "screen"},
+			stream: streamStarted + streamStale,
+			want:   `{"step_ids":["screen"],"saved_steps":[],"also_changed":[],"saved_to_draft":false,"revision":null}`,
 		},
 		{
-			name:       "no edits",
-			stream:     streamStarted + streamNoEdits,
-			saveStatus: http.StatusOK,
-			want:       `{"saved_steps":[],"also_changed":[],"saved_to_draft":false}`,
+			name:   "no edits",
+			stream: streamStarted + streamNoEdits,
+			want:   `{"saved_steps":[],"also_changed":[],"saved_to_draft":false,"revision":null}`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := flowEditServer(t, tt.stream, tt.saveStatus)
+			server := flowEditServer(t, tt.stream)
 			args := append([]string{"flows", "edit", "wf_1"}, tt.args...)
 			args = append(args, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input")
 			out, _, err := runProjectSetupCommand(t, server.URL, args...)
@@ -319,7 +308,7 @@ func TestFlowsEditSessionIsPerFlow(t *testing.T) {
 		switch {
 		case r.Method == http.MethodGet:
 			_, _ = io.WriteString(w, flowDraftJSON)
-		case r.URL.Path == "/editor/v3/stream":
+		case r.URL.Path == "/editor/v3/stream/apply":
 			_, _ = io.WriteString(w, streamStarted+streamEdited)
 		default:
 			_, _ = io.WriteString(w, `{"id":"wf","revision":5}`)
@@ -359,7 +348,7 @@ func TestFlowsEditSessionIsPerFlow(t *testing.T) {
 }
 
 func TestFlowsEditHonoursSessionFlag(t *testing.T) {
-	server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
+	server := flowEditServer(t, streamStarted+streamEdited)
 	sessionPath := filepath.Join(t.TempDir(), "custom.paywall.json")
 	if err := os.WriteFile(sessionPath, []byte(`{"session_id":"resume-me","__unstable_session_items":{}}`), 0o600); err != nil {
 		t.Fatal(err)
@@ -384,7 +373,7 @@ func TestFlowsEditHonoursSessionFlag(t *testing.T) {
 }
 
 func TestFlowsEditSessionAloneInfersFlow(t *testing.T) {
-	server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
+	server := flowEditServer(t, streamStarted+streamEdited)
 	sessionPath := filepath.Join(t.TempDir(), "custom.paywall.json")
 	if err := os.WriteFile(sessionPath, []byte(`{"project_id":"proj","flow_id":"wf_1","session_id":"resume-me","__unstable_session_items":{}}`), 0o600); err != nil {
 		t.Fatal(err)
@@ -402,7 +391,7 @@ func TestFlowsEditSessionProjectScopesFlowRequests(t *testing.T) {
 	var paths []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.URL.Path == "/editor/v3/stream":
+		case r.URL.Path == "/editor/v3/stream/apply":
 			_, _ = io.WriteString(w, streamStarted+streamEdited)
 		case r.Method == http.MethodGet:
 			paths = append(paths, r.Method+" "+r.URL.Path)
@@ -421,27 +410,9 @@ func TestFlowsEditSessionProjectScopesFlowRequests(t *testing.T) {
 	if _, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input", "--project-id", ""); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"GET /projects/other/flows/wf_1", "PATCH /projects/other/flows/wf_1"}
+	want := []string{"GET /projects/other/flows/wf_1"}
 	if !slices.Equal(paths, want) {
 		t.Errorf("flow requests = %v, want %v", paths, want)
-	}
-}
-
-func TestFlowsEditSessionRecordsFlow(t *testing.T) {
-	server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
-	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
-	seedFlowSession(t, sessionPath)
-	if _, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input"); err != nil {
-		t.Fatal(err)
-	}
-	written, err := os.ReadFile(sessionPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, want := range []string{`"project_id": "proj"`, `"flow_id": "wf_1"`} {
-		if !strings.Contains(string(written), want) {
-			t.Errorf("session missing %s: %s", want, written)
-		}
 	}
 }
 
@@ -471,7 +442,7 @@ func TestFlowsEditSessionTargetErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
+			server := flowEditServer(t, streamStarted+streamEdited)
 			sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
 			if err := os.WriteFile(sessionPath, []byte(tt.session), 0o600); err != nil {
 				t.Fatal(err)
@@ -510,7 +481,7 @@ func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
+			server := flowEditServer(t, streamStarted+streamEdited)
 			configDir := t.TempDir()
 			t.Setenv("RC_CONFIG_DIR", configDir)
 			t.Setenv("RC_BASE_URL", server.URL)
@@ -562,8 +533,25 @@ func seedFlowSession(t *testing.T, path string) {
 	}
 }
 
+func TestFlowsEditSessionWriteFailureAfterSaveWarns(t *testing.T) {
+	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
+	seedFlowSession(t, sessionPath)
+	if err := os.Chmod(sessionPath, 0o400); err != nil {
+		t.Fatal(err)
+	}
+	server := flowEditServer(t, streamStarted+streamEdited)
+	stdout, stderr, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := stdout + stderr
+	if !strings.Contains(out, "Design saved to flow draft") || !strings.Contains(out, "session file could not be written") {
+		t.Errorf("output missing save and warning: %s", out)
+	}
+}
+
 func TestFlowsEditExplicitMissingSessionErrors(t *testing.T) {
-	server := flowEditServer(t, streamStarted+streamEdited, http.StatusOK)
+	server := flowEditServer(t, streamStarted+streamEdited)
 	sessionPath := filepath.Join(t.TempDir(), "missing.paywall.json")
 	_, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
 	if err == nil || !strings.Contains(err.Error(), "session file not found: "+sessionPath) {
@@ -575,14 +563,14 @@ func TestFlowsEditExplicitMissingSessionErrors(t *testing.T) {
 }
 
 func TestFlowsEditCustomSessionKeysStepPreview(t *testing.T) {
-	const streamWithPreview = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"edited_paywalls_by_step_id\":{\"screen\":{\"default_locale\":\"en_US\",\"components_config\":{},\"components_localizations\":{}}},\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n"
+	const streamWithPreview = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"revision\":5,\"edited_step_ids\":[\"screen\"],\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n"
 	dir := t.TempDir()
 	sessionPath := filepath.Join(dir, "mine.paywall.json")
 	preview := filepath.Join(dir, "mine.screen.light.png")
 	seedFlowSession(t, sessionPath)
 	run := func(stream string) {
 		t.Helper()
-		server := flowEditServer(t, streamStarted+stream, http.StatusOK)
+		server := flowEditServer(t, streamStarted+stream)
 		if _, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--step-ids", "screen", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input"); err != nil {
 			t.Fatal(err)
 		}
@@ -601,22 +589,22 @@ func TestFlowsEditHintsCarryUserSession(t *testing.T) {
 	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
 	seedFlowSession(t, sessionPath)
 	tests := []struct {
-		name       string
-		saveStatus int
-		want       string
+		name   string
+		stream string
 	}{
-		{"keep designing", http.StatusOK, "rc flows edit wf_1 --step-ids screen --session " + sessionPath},
-		{"stale revision re-run", http.StatusConflict, "rc flows edit wf_1 --step-ids screen --session " + sessionPath},
+		{"keep designing", streamEdited},
+		{"stale save re-run", streamStale},
 	}
+	want := "rc flows edit wf_1 --step-ids screen --session " + sessionPath
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := flowEditServer(t, streamStarted+streamEdited, tt.saveStatus)
+			server := flowEditServer(t, streamStarted+tt.stream)
 			stdout, stderr, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--step-ids", "screen", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
 			if err != nil {
 				t.Fatal(err)
 			}
-			if out := stdout + stderr; !strings.Contains(out, tt.want) {
-				t.Errorf("output missing %q: %s", tt.want, out)
+			if out := stdout + stderr; !strings.Contains(out, want) {
+				t.Errorf("output missing %q: %s", want, out)
 			}
 		})
 	}

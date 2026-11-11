@@ -78,7 +78,7 @@ type WorkflowContext struct {
 	WorkflowRevision  int      `json:"workflow_revision"`
 }
 
-// EditorRequestV3 is the POST /editor/v3/stream body. The Paywalls AI Editor reads the Flow
+// EditorRequestV3 is the POST /editor/v3/stream/apply body. The Paywalls AI Editor reads the Flow
 // itself, so no paywall is sent.
 type EditorRequestV3 struct {
 	ProjectID                string            `json:"project_id"`
@@ -131,8 +131,10 @@ type Event struct {
 	SessionItems      json.RawMessage    `json:"__unstable_session_items,omitempty"`
 	AppContext        json.RawMessage    `json:"app_context,omitempty"`
 	ResultScreenshots []ResultScreenshot `json:"result_screenshots,omitempty"`
-	// v3 only: every step the run edited, keyed by step id.
-	EditedPaywallsByStepID map[string]PaywallData `json:"edited_paywalls_by_step_id,omitempty"`
+	// v3 final event: the service saves the Flow itself. Revision is nil when nothing was saved.
+	Revision      *int     `json:"revision,omitempty"`
+	EditorURL     string   `json:"editor_url,omitempty"`
+	EditedStepIDs []string `json:"edited_step_ids,omitempty"`
 }
 
 func (e *Event) Terminal() bool {
@@ -261,10 +263,10 @@ func (c *Client) Stream(ctx context.Context, request EditorRequest) (*Stream, er
 	return c.openStream(ctx, "/editor/v1/stream", request)
 }
 
-// StreamV3 starts a Flow-step editor run and returns the live event stream.
+// StreamV3 starts a Flow-step editor run that the service saves onto the Flow draft, and returns the live event stream.
 func (c *Client) StreamV3(ctx context.Context, request EditorRequestV3) (*Stream, error) {
 	request.Source = editorSource
-	return c.openStream(ctx, "/editor/v3/stream", request)
+	return c.openStream(ctx, "/editor/v3/stream/apply", request)
 }
 
 func (c *Client) openStream(ctx context.Context, path string, body any) (*Stream, error) {

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,7 +10,6 @@ import (
 	"maps"
 	"os"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -248,7 +248,7 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 	for {
 		event, err := stream.Next()
 		if err != nil {
-			return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", err), "Nothing was saved. Re-run the command to try again.")
+			return run.finishUnconfirmed(ctx, client, err)
 		}
 		switch event.Type {
 		case paywallai.EventRunStarted, paywallai.EventTurnSnapshot:
@@ -258,83 +258,79 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 		case paywallai.EventRunFailed:
 			applyFlowEvent(session, event)
 			_ = writeJSONFile(opts.sessionPath, session)
-			// Nothing is saved on a failed run, even if it carries partial edits.
-			if event.SessionID != "" {
-				session.SessionID = event.SessionID
-				_ = savePaywallAISession(opts.sessionPath, session)
+			code := event.Error.Code
+			switch code {
+			case saveStaleCode:
+				return run.finishStale(event)
+			case saveLockedCode:
+				return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", code, event.Error.Message), "Nothing was saved. Wait a moment, then re-run:  "+editCmd)
+			case saveRejectedCode:
+				return WithHint(fmt.Errorf("the flow rejected the editor's edits: %s", event.Error.Message), "Nothing was saved. Re-run with a different prompt:  "+editCmd)
 			}
-			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), "Nothing was saved. Re-run the command to try again.")
+			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", code, event.Error.Message), "Nothing was saved. Re-run the command to try again.")
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			applyFlowEvent(session, event)
 			if err := writeJSONFile(opts.sessionPath, session); err != nil {
-				return err
+				rt.Out.Warn(fmt.Sprintf("The edit was saved, but the session file could not be written (%v), so the next --session resume won't include this turn.", err))
 			}
-			return finishFlowEdit(ctx, rt, opts, client, projectID, draft, stepIDs, editCmd, session, event)
+			return run.finish(event)
 		}
 	}
 }
 
-func finishFlowEdit(ctx context.Context, rt *Runtime, opts paywallAIOptions, client *api.Client, projectID string, draft *api.Flow, stepIDs []string, editCmd string, session *paywallAIFlowSession, event *paywallai.Event) error {
-	screenshots := savePaywallScreenshots(rt, flowPreviewSessionPath(opts.sessionPath, stepIDs), event.ResultScreenshots)
-	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), aiSaveTimeout)
+// Error codes the editor service reports when saving a finished run fails.
+const (
+	saveStaleCode    = "save_stale"
+	saveLockedCode   = "save_locked"
+	saveRejectedCode = "save_rejected"
+)
+
+// flowEditRun is the state a finished run reports from.
+type flowEditRun struct {
+	rt        *Runtime
+	opts      paywallAIOptions
+	projectID string
+	draft     *api.Flow
+	stepIDs   []string
+	editCmd   string
+	session   *paywallAIFlowSession
+}
+
+// finishUnconfirmed handles a stream that ended without a final event:
+// the service may still have saved, which only the Flow's revision shows.
+func (r *flowEditRun) finishUnconfirmed(ctx context.Context, client *api.Client, streamErr error) error {
+	checkCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), aiSaveTimeout)
 	defer cancel()
-	saved, err := saveEditedSteps(saveCtx, client, projectID, draft, event.EditedPaywallsByStepID)
+	current, err := client.Flows.Get(checkCtx, r.projectID, r.draft.ID)
+	switch {
+	case err != nil:
+		return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished (%v), and the flow could not be re-checked: %w", streamErr, err), "The edit may have been saved. Check the flow before re-running:  rc flows show "+r.draft.ID)
+	case current.Revision == r.draft.Revision:
+		return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", streamErr), "The flow is unchanged, so nothing was saved. Re-run the command to try again.")
+	}
+	r.rt.Out.Warn("The editor stream ended before the final result arrived, but the flow has changed since the run started, so the edit was saved.")
+	return r.finish(&paywallai.Event{Revision: &current.Revision})
+}
+
+// flowEditOutcome is what both a completed and a stale run report.
+type flowEditOutcome struct {
+	screenshots map[string]string
+	saved       []string
+	alsoChanged []string
+	editorURL   string
+}
+
+func (r *flowEditRun) outcome(event *paywallai.Event) flowEditOutcome {
+	saved := event.EditedStepIDs
 	if saved == nil {
 		saved = []string{}
 	}
-	alsoChanged := siblingSteps(event.EditedPaywallsByStepID, stepIDs)
-	switch {
-	case err == nil && len(saved) == 0:
-		rt.Out.Info("The editor made no changes to the flow.")
-	case err == nil:
-		rt.Out.Success(fmt.Sprintf("Design saved to flow draft %s (%s)", draft.ID, strings.Join(saved, ", ")))
-		if len(alsoChanged) > 0 {
-			rt.Out.Field("Also changed", strings.Join(alsoChanged, ", "), "not in --step-ids")
-		}
-		if errored := countErroredActivity(event.Activity); errored > 0 {
-			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by RevenueCat's AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
-		}
-		// The editor renders the requested step only when exactly one was named.
-		previewLabel, darkLabel := "Preview", "Preview (dark)"
-		if len(stepIDs) == 1 {
-			previewLabel, darkLabel = "Preview ("+stepIDs[0]+")", "Preview ("+stepIDs[0]+", dark)"
-		}
-		if path, ok := screenshots["light"]; ok {
-			rt.Out.Field(previewLabel, path)
-		}
-		if path, ok := screenshots["dark"]; ok {
-			rt.Out.Field(darkLabel, path)
-		}
-		if len(screenshots) == 0 {
-			rt.Out.Info("No preview was returned for the edited steps.")
-		}
-		rt.Out.Field("View it", flowEditorURL(projectID, draft.ID))
-		rt.Out.Field("Keep designing", editCmd)
-	default:
-		var apiErr *api.APIError
-		if errors.As(err, &apiErr) && apiErr.Status == 409 {
-			// The edits were made against a stale revision, so they are never replayed automatically.
-			rt.Out.Warn("The draft changed while this edit ran, so nothing was saved.")
-			rt.Out.Hint("Re-run to have the editor redo the edit on the latest draft:  " + editCmd)
-		} else {
-			return WithHint(err, "Nothing was saved. Re-run the command to try again.")
-		}
-	}
-	if rt.Out.IsJSON() {
-		return rt.Out.Render(map[string]any{
-			"flow_id":          draft.ID,
-			"dashboard_url":    flowEditorURL(projectID, draft.ID),
-			"step_ids":         stepIDs,
-			"saved_steps":      saved,
-			"also_changed":     alsoChanged,
-			"saved_to_draft":   len(saved) > 0,
-			"session_id":       session.SessionID,
-			"trace_id":         session.TraceID,
-			"session_file":     opts.sessionPath,
-			"screenshot_paths": screenshots,
-			"activity":         event.Activity,
-		})
+	return flowEditOutcome{
+		screenshots: savePaywallScreenshots(r.rt, flowPreviewSessionPath(r.opts.sessionPath, r.stepIDs), event.ResultScreenshots),
+		saved:       saved,
+		alsoChanged: siblingSteps(saved, r.stepIDs),
+		editorURL:   cmp.Or(event.EditorURL, dashboardURL(r.projectID, "flows", r.draft.ID, "editor")),
 	}
 }
 
@@ -403,68 +399,19 @@ func (r *flowEditRun) renderJSON(event *paywallai.Event, out flowEditOutcome) er
 	})
 }
 
-// siblingSteps lists edited steps the request did not name; a whole-flow
+// siblingSteps lists saved steps the request did not name; a whole-flow
 // request (no ids) has none. Never nil, so it serialises as [].
-func siblingSteps(edited map[string]paywallai.PaywallData, requested []string) []string {
+func siblingSteps(saved, requested []string) []string {
 	siblings := []string{}
 	if len(requested) == 0 {
 		return siblings
 	}
-	for id := range edited {
+	for _, id := range saved {
 		if !slices.Contains(requested, id) {
 			siblings = append(siblings, id)
 		}
 	}
-	sort.Strings(siblings)
 	return siblings
-}
-
-// saveEditedSteps writes every step the run edited back in one draft update,
-// guarded by the revision the run started from.
-func saveEditedSteps(ctx context.Context, client *api.Client, projectID string, draft *api.Flow, edited map[string]paywallai.PaywallData) ([]string, error) {
-	if len(edited) == 0 {
-		return nil, nil
-	}
-	updated := map[string]json.RawMessage{}
-	for stepID, paywall := range edited {
-		if _, ok := draft.Steps[stepID]; !ok {
-			return nil, fmt.Errorf("the editor returned step %q, which is not in flow %s", stepID, draft.ID)
-		}
-		patch, err := editedStepPatch(paywall)
-		if err != nil {
-			return nil, err
-		}
-		updated[stepID] = patch
-	}
-	if _, err := client.Flows.Update(ctx, projectID, draft.ID, api.UpdateFlow{
-		Revision:     draft.Revision,
-		UpdatedSteps: updated,
-	}); err != nil {
-		return nil, err
-	}
-	ids := make([]string, 0, len(updated))
-	for id := range updated {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
-	return ids, nil
-}
-
-// editedStepPatch is the updated_steps entry for an edited screen: only the
-// editable screen fields, which the server merges onto the stored step.
-func editedStepPatch(paywall paywallai.PaywallData) (json.RawMessage, error) {
-	pw := map[string]any{
-		"default_locale":           paywall.DefaultLocale,
-		"components_config":        paywall.ComponentsConfig,
-		"components_localizations": paywall.ComponentsLocalizations,
-	}
-	if raw := presentJSON(paywall.StateDeclarations); raw != nil {
-		pw["state_declarations"] = raw
-	}
-	if paywall.AutomaticallyScaleFontSize != nil {
-		pw["automatically_scale_font_size"] = *paywall.AutomaticallyScaleFontSize
-	}
-	return json.Marshal(map[string]any{"screen": pw})
 }
 
 func requireScreenStep(draft *api.Flow, stepID string) error {
