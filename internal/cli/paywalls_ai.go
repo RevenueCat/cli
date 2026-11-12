@@ -23,7 +23,7 @@ import (
 )
 
 // paywallAISession is the state file round-tripped between editor turns. The
-// Paywalls AI Editor keeps no server-side paywall state between requests: the client must resend
+// RevenueCat's AI Editor keeps no server-side paywall state between requests: the client must resend
 // the full paywall plus the opaque session blobs every turn, so the CLI
 // persists them here (the dashboard holds the same data in builder state).
 type paywallAISession struct {
@@ -126,9 +126,9 @@ func newPaywallsGenerateCmd() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate a Paywall draft with the Paywalls AI Editor",
+		Short: "Generate a Paywall draft with RevenueCat's AI Editor",
 		Long: `Creates a draft paywall and designs it from a natural-language prompt using
-the Paywalls AI Editor — the same engine behind the dashboard's AI mode.
+RevenueCat's AI Editor — the same engine behind the dashboard's AI mode.
 
 The draft is standalone unless --offering-id attaches it to an offering; an
 offering can only have one paywall, so attaching fails if it already has one.
@@ -522,7 +522,7 @@ func newPaywallsRewindCmd() *cobra.Command {
 	baseURL := devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:   "rewind --session <file>",
-		Short: "Rewind the last Paywalls AI Editor action",
+		Short: "Rewind the last AI Editor action",
 		Long: `Use rewind when the last turn made the design worse: rewind, then re-prompt
 with more specific direction on the same --session.
 
@@ -561,10 +561,15 @@ turn are removed.`,
 }
 
 func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
+	addAIEditorFlags(cmd, opts)
+	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: in the CLI data dir, per project and paywall)")
+}
+
+// addAIEditorFlags registers the editor flags shared by paywalls and flows edit.
+func addAIEditorFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "natural-language direction (or RC_PAYWALL_PROMPT)")
 	cmd.Flags().StringVar(&opts.context, "context", "", "product/audience/brand context sent alongside the direction")
 	cmd.Flags().StringArrayVar(&opts.attachments, "attachment", nil, "design reference file: images (png/jpeg/webp) attach visually, text files (DESIGN.md, style guides) travel with the direction")
-	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: in the CLI data dir, per project and paywall)")
 	cmd.Flags().StringArrayVar(&opts.images, "image", nil, "reference image to attach (png/jpeg/webp, max 3)")
 	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "RevenueCat's AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait")
@@ -634,7 +639,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 				session.SessionID = event.SessionID
 			}
 			_ = savePaywallAISession(opts.sessionPath, session)
-			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRunFailedHint(opts, checkpointed))
+			return WithHint(fmt.Errorf("AI Editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRunFailedHint(opts, checkpointed))
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			return finishPaywallAI(ctx, rt, opts, session, event)
@@ -731,7 +736,7 @@ func paywallRunFailedHint(opts paywallAIOptions, checkpointed bool) string {
 }
 
 func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
-	return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", err), paywallRecoveryHint(opts, checkpointed))
+	return WithHint(fmt.Errorf("RevenueCat's AI Editor stream ended before the run finished: %w", err), paywallRecoveryHint(opts, checkpointed))
 }
 
 func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession, event *paywallai.Event) error {
@@ -923,7 +928,7 @@ func reportPaywallAIActivity(rt *Runtime, activity []paywallai.ToolActivity, alr
 	for _, item := range activity[min(alreadyReported, len(activity)):] {
 		switch item.Type {
 		case "assistant_message":
-			rt.Out.Info("Paywalls AI: " + item.Content)
+			rt.Out.Info("AI Editor: " + item.Content)
 		default:
 			text := item.Display.Text
 			if text == "" {
@@ -1037,7 +1042,7 @@ func requirePaywallAIPrompt(rt *Runtime, prompt *string, title string) error {
 		Run()
 }
 
-// withPaywallContext folds --context into the direction sent to the Paywalls AI Editor: the
+// withPaywallContext folds --context into the direction sent to RevenueCat's AI Editor: the
 // skills document the flag (product/audience/brand context) and agents were
 // burning generation attempts on unknown-flag errors before hand-merging it.
 func withPaywallContext(prompt, context string) string {
@@ -1058,7 +1063,7 @@ func countErroredActivity(activity []paywallai.ToolActivity) int {
 }
 
 // loadPaywallAIAttachments routes --image and --attachment by type: image
-// files become real Paywalls AI Editor attachments (the server accepts only
+// files become real AI Editor attachments (the server accepts only
 // png/jpeg/webp, max 3, 10MB); text design references (DESIGN.md, style
 // guides) are folded into the message, which is the only channel the editor
 // API has for them today. Anything else (fonts, binaries) errors clearly.

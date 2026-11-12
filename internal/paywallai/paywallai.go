@@ -1,4 +1,4 @@
-// Package paywallai is a client for the Paywall AI editor backend
+// Package paywallai is a client for RevenueCat's AI Editor backend
 // (astra.revenuecat.com), speaking the same SSE contract as the dashboard
 // and mobile apps.
 package paywallai
@@ -78,7 +78,7 @@ type WorkflowContext struct {
 	WorkflowRevision  int      `json:"workflow_revision"`
 }
 
-// EditorRequestV3 is the POST /editor/v3/stream/apply body. The Paywalls AI Editor reads the Flow
+// EditorRequestV3 is the POST /editor/v3/stream/apply body. RevenueCat's AI Editor reads the Flow
 // itself, so no paywall is sent.
 type EditorRequestV3 struct {
 	ProjectID                string            `json:"project_id"`
@@ -188,7 +188,7 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
-	return fmt.Sprintf("the Paywall AI editor returned HTTP %d: %s", e.StatusCode, e.Message)
+	return fmt.Sprintf("RevenueCat's AI Editor returned HTTP %d: %s", e.StatusCode, e.Message)
 }
 
 func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.Request, error) {
@@ -200,7 +200,7 @@ func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	// Bearer only: the Paywall AI editor accepts CLI OAuth tokens in the Authorization
+	// Bearer only: RevenueCat's AI Editor accepts CLI OAuth tokens in the Authorization
 	// header. Do not also send an rc_auth_token cookie — an invalid cookie
 	// shadows a valid bearer token and fails the whole request.
 	req.Header.Set("Authorization", "Bearer "+c.token)
@@ -277,7 +277,7 @@ func (c *Client) openStream(ctx context.Context, path string, body any) (*Stream
 	req.Header.Set("Accept", "text/event-stream")
 	resp, err := c.stream.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("calling the Paywall AI editor: %w", err)
+		return nil, fmt.Errorf("calling RevenueCat's AI Editor: %w", err)
 	}
 	if err := checkStatus(resp); err != nil {
 		resp.Body.Close()
@@ -293,7 +293,7 @@ func (c *Client) doJSON(ctx context.Context, path string, body any) error {
 	}
 	resp, err := c.rest.Do(req)
 	if err != nil {
-		return fmt.Errorf("calling the Paywall AI editor: %w", err)
+		return fmt.Errorf("calling RevenueCat's AI Editor: %w", err)
 	}
 	defer resp.Body.Close()
 	return checkStatus(resp)
@@ -336,7 +336,7 @@ func (s *Stream) Next() (*Event, error) {
 		}
 		var event Event
 		if err := json.Unmarshal([]byte(frame.Data), &event); err != nil {
-			return nil, fmt.Errorf("decoding Paywall AI editor event: %w", err)
+			return nil, fmt.Errorf("decoding RevenueCat's AI Editor event: %w", err)
 		}
 		return &event, nil
 	}

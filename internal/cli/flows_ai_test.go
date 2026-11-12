@@ -156,7 +156,7 @@ func TestFlowsEdit(t *testing.T) {
 		{
 			name:    "flow id is required without a prompt for it",
 			args:    []string{"--step-ids", "screen"},
-			wantErr: "pass a flow ID or --session <file>",
+			wantErr: "pass a flow ID",
 		},
 	}
 	for _, tt := range tests {
@@ -347,122 +347,11 @@ func TestFlowsEditSessionIsPerFlow(t *testing.T) {
 	}
 }
 
-func TestFlowsEditHonoursSessionFlag(t *testing.T) {
-	server := flowEditServer(t, streamStarted+streamEdited)
-	sessionPath := filepath.Join(t.TempDir(), "custom.paywall.json")
-	if err := os.WriteFile(sessionPath, []byte(`{"session_id":"resume-me","__unstable_session_items":{}}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	out, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--step-ids", "screen", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(out, sessionPath) {
-		t.Errorf("session_file is not %s: %s", sessionPath, out)
-	}
-	written, err := os.ReadFile(sessionPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// streamEdited reports session_id sess1, so the file was rewritten after being loaded; it also records the target.
-	for _, want := range []string{`"session_id": "sess1"`, `"project_id": "proj"`, `"flow_id": "wf_1"`} {
-		if !strings.Contains(string(written), want) {
-			t.Errorf("session missing %s: %s", want, written)
-		}
-	}
-}
-
-func TestFlowsEditSessionAloneInfersFlow(t *testing.T) {
-	server := flowEditServer(t, streamStarted+streamEdited)
-	sessionPath := filepath.Join(t.TempDir(), "custom.paywall.json")
-	if err := os.WriteFile(sessionPath, []byte(`{"project_id":"proj","flow_id":"wf_1","session_id":"resume-me","__unstable_session_items":{}}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	out, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(out, "wf_1") {
-		t.Errorf("flow not inferred from the session: %s", out)
-	}
-}
-
-func TestFlowsEditSessionProjectScopesFlowRequests(t *testing.T) {
-	var paths []string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/editor/v3/stream/apply":
-			_, _ = io.WriteString(w, streamStarted+streamEdited)
-		case r.Method == http.MethodGet:
-			paths = append(paths, r.Method+" "+r.URL.Path)
-			_, _ = io.WriteString(w, flowDraftJSON)
-		default:
-			paths = append(paths, r.Method+" "+r.URL.Path)
-			_, _ = io.WriteString(w, `{"id":"wf_1","revision":5}`)
-		}
-	}))
-	t.Cleanup(server.Close)
-	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
-	if err := os.WriteFile(sessionPath, []byte(`{"project_id":"other","flow_id":"wf_1","__unstable_session_items":{}}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	// An empty --project-id leaves the project unset so the session's wins.
-	if _, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input", "--project-id", ""); err != nil {
-		t.Fatal(err)
-	}
-	want := []string{"GET /projects/other/flows/wf_1"}
-	if !slices.Equal(paths, want) {
-		t.Errorf("flow requests = %v, want %v", paths, want)
-	}
-}
-
-func TestFlowsEditSessionTargetErrors(t *testing.T) {
-	tests := []struct {
-		name    string
-		session string
-		args    []string
-		wantErr string
-	}{
-		{
-			name:    "id differs from the session's flow",
-			session: `{"project_id":"proj","flow_id":"wf_1","__unstable_session_items":{}}`,
-			args:    []string{"wf_2"},
-			wantErr: "is for flow wf_1, not wf_2",
-		},
-		{
-			name:    "session without a stored flow needs the id",
-			session: `{"__unstable_session_items":{}}`,
-			wantErr: "pass the flow ID",
-		},
-		{
-			name:    "explicit project differs from the session's",
-			session: `{"project_id":"other","flow_id":"wf_1","__unstable_session_items":{}}`,
-			wantErr: "is for project other, not proj",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := flowEditServer(t, streamStarted+streamEdited)
-			sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
-			if err := os.WriteFile(sessionPath, []byte(tt.session), 0o600); err != nil {
-				t.Fatal(err)
-			}
-			args := append([]string{"flows", "edit"}, tt.args...)
-			args = append(args, "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
-			_, _, err := runProjectSetupCommand(t, server.URL, args...)
-			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
-				t.Fatalf("err = %v, want %q", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 	tests := []struct {
-		name     string
-		explicit bool
-		stale    []string
-		keep     []string
+		name  string
+		stale []string
+		keep  []string
 	}{
 		{
 			name: "default session clears every preview in its own directory",
@@ -471,12 +360,6 @@ func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 				"session.light.png", "session.deleted-step.light.png",
 			},
 			keep: []string{"notes.light.png"},
-		},
-		{
-			name:     "explicit session clears only its own current-step previews",
-			explicit: true,
-			stale:    []string{"mine.screen.light.png", "mine.screen.dark.png", "mine.other.light.png", "mine.light.png"},
-			keep:     []string{"notes.light.png", "mine.bar.light.png", "mine.bar.screen.dark.png"},
 		},
 	}
 	for _, tt := range tests {
@@ -487,12 +370,6 @@ func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 			t.Setenv("RC_BASE_URL", server.URL)
 			dir := filepath.Join(configDir, "paywalls", "proj", "wf_1")
 			args := []string{"flows", "edit", "wf_1", "--step-ids", "screen", "--prompt", "x", "--base-url", server.URL, "--no-input", "--api-key", "sk_test", "--project-id", "proj"}
-			if tt.explicit {
-				dir = t.TempDir()
-				sessionPath := filepath.Join(dir, "mine.paywall.json")
-				seedFlowSession(t, sessionPath)
-				args = append(args, "--session", sessionPath)
-			}
 			if err := os.MkdirAll(dir, 0o755); err != nil {
 				t.Fatal(err)
 			}
@@ -521,90 +398,6 @@ func TestFlowsEditRemovesStalePreviews(t *testing.T) {
 			}
 			if !strings.Contains(out.String(), "No preview was returned") {
 				t.Errorf("output missing the no-preview note: %s", out.String())
-			}
-		})
-	}
-}
-
-func seedFlowSession(t *testing.T, path string) {
-	t.Helper()
-	if err := os.WriteFile(path, []byte(`{"__unstable_session_items":{}}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestFlowsEditSessionWriteFailureAfterSaveWarns(t *testing.T) {
-	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
-	seedFlowSession(t, sessionPath)
-	if err := os.Chmod(sessionPath, 0o400); err != nil {
-		t.Fatal(err)
-	}
-	server := flowEditServer(t, streamStarted+streamEdited)
-	stdout, stderr, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
-	if err != nil {
-		t.Fatal(err)
-	}
-	out := stdout + stderr
-	if !strings.Contains(out, "Design saved to flow draft") || !strings.Contains(out, "session file could not be written") {
-		t.Errorf("output missing save and warning: %s", out)
-	}
-}
-
-func TestFlowsEditExplicitMissingSessionErrors(t *testing.T) {
-	server := flowEditServer(t, streamStarted+streamEdited)
-	sessionPath := filepath.Join(t.TempDir(), "missing.paywall.json")
-	_, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
-	if err == nil || !strings.Contains(err.Error(), "session file not found: "+sessionPath) {
-		t.Fatalf("err = %v, want session file not found", err)
-	}
-	if _, statErr := os.Stat(sessionPath); !os.IsNotExist(statErr) {
-		t.Errorf("session file was created (stat err = %v)", statErr)
-	}
-}
-
-func TestFlowsEditCustomSessionKeysStepPreview(t *testing.T) {
-	const streamWithPreview = "data: {\"type\":\"run.completed\",\"session_id\":\"sess1\",\"revision\":5,\"edited_step_ids\":[\"screen\"],\"result_screenshots\":[{\"color_scheme\":\"light\",\"mime_type\":\"image/png\",\"data_base64\":\"UE5H\"}]}\n\n"
-	dir := t.TempDir()
-	sessionPath := filepath.Join(dir, "mine.paywall.json")
-	preview := filepath.Join(dir, "mine.screen.light.png")
-	seedFlowSession(t, sessionPath)
-	run := func(stream string) {
-		t.Helper()
-		server := flowEditServer(t, streamStarted+stream)
-		if _, _, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--step-ids", "screen", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--json", "--no-input"); err != nil {
-			t.Fatal(err)
-		}
-	}
-	run(streamWithPreview)
-	if _, err := os.Stat(preview); err != nil {
-		t.Fatalf("step preview not under the custom base: %v", err)
-	}
-	run(streamEdited)
-	if _, err := os.Stat(preview); !os.IsNotExist(err) {
-		t.Errorf("custom-session preview survived the next run (stat err = %v)", err)
-	}
-}
-
-func TestFlowsEditHintsCarryUserSession(t *testing.T) {
-	sessionPath := filepath.Join(t.TempDir(), "mine.paywall.json")
-	seedFlowSession(t, sessionPath)
-	tests := []struct {
-		name   string
-		stream string
-	}{
-		{"keep designing", streamEdited},
-		{"stale save re-run", streamStale},
-	}
-	want := "rc flows edit wf_1 --step-ids screen --session " + sessionPath
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := flowEditServer(t, streamStarted+tt.stream)
-			stdout, stderr, err := runProjectSetupCommand(t, server.URL, "flows", "edit", "wf_1", "--step-ids", "screen", "--session", sessionPath, "--prompt", "x", "--base-url", server.URL, "--no-input")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if out := stdout + stderr; !strings.Contains(out, want) {
-				t.Errorf("output missing %q: %s", want, out)
 			}
 		})
 	}

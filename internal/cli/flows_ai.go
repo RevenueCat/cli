@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"maps"
 	"os"
 	"slices"
 	"strings"
@@ -19,7 +18,7 @@ import (
 )
 
 // paywallAIFlowSession is the conversation memory for one Flow, shared by every
-// --step-ids scope. The Paywalls AI Editor reads the content from the Flow itself, so no paywall
+// --step-ids scope. RevenueCat's AI Editor reads the content from the Flow itself, so no paywall
 // is stored.
 type paywallAIFlowSession struct {
 	ProjectID    string          `json:"project_id,omitempty"`
@@ -30,7 +29,7 @@ type paywallAIFlowSession struct {
 	AppContext   json.RawMessage `json:"app_context,omitempty"`
 }
 
-// flowPreviewSessionPath keys previews by step: the Paywalls AI Editor renders only the requested
+// flowPreviewSessionPath keys previews by step: RevenueCat's AI Editor renders only the requested
 // step when exactly one is named, so that step owns the file. Other runs return
 // no step id and keep the flow-wide name.
 func flowPreviewSessionPath(sessionPath string, stepIDs []string) string {
@@ -48,15 +47,11 @@ func singleStepID(stepIDs []string) string {
 	return ""
 }
 
-// flowEditCommand is the follow-up invocation; sessionFlag is the user's own
-// --session value, so a default session path never leaks into the hint.
-func flowEditCommand(flowID string, stepIDs []string, sessionFlag string) string {
+// flowEditCommand is the follow-up invocation.
+func flowEditCommand(flowID string, stepIDs []string) string {
 	cmd := "rc flows edit " + flowID
 	if len(stepIDs) > 0 {
 		cmd += " --step-ids " + strings.Join(stepIDs, ",")
-	}
-	if sessionFlag != "" {
-		cmd += " --session " + sessionFlag
 	}
 	return cmd
 }
@@ -99,7 +94,7 @@ func newFlowsEditCmd() *cobra.Command {
 		timeout: aiEditTimeout,
 	}
 	cmd := &cobra.Command{
-		Use:   "edit [flow-id] [--session <file>] [--step-ids <step-id>[,<step-id>...]]",
+		Use:   "edit [flow-id] [--step-ids <step-id>[,<step-id>...]]",
 		Short: "Edit Flows and screens from a prompt using RevenueCat's AI Editor",
 		Long: `Applies a natural-language edit to screen steps of a Flow and saves the
 result onto the Flow draft (revision-guarded). The editor sees the whole Flow
@@ -110,70 +105,48 @@ the whole Flow. Find step ids with rc flows show.
 The editor can also generate images for a screen when the prompt asks for it;
 image-generation edits can take several minutes.
 
-Each Flow keeps one editor session in the CLI data dir. Given --session, that
-session file is resumed and the Flow comes from the file; a Flow ID passed
-alongside it must match. --step-ids only scopes a single run, so you can edit
-some steps, check them, then continue on other steps (or the whole Flow) and
-the earlier instructions are remembered. See rc paywalls edit --help for
+Each Flow keeps one editor session in the CLI data dir. --step-ids only scopes
+a single run, so you can edit some steps, check them, then continue on other
+steps (or the whole Flow) and the earlier instructions are remembered. See rc paywalls edit --help for
 prompting guidance.`,
 		Example: `  rc flows edit wf_abc --step-ids welcome --prompt "Bolder CTA, keep the layout"
   rc flows edit wf_abc --step-ids welcome,pricing --prompt "same button style on both"
-  rc flows edit wf_abc --step-ids welcome --prompt "match this" --attachment DESIGN.md --image home.png
-  rc flows edit --session wf_abc.paywall.json --prompt "Softer headline copy"`,
+  rc flows edit wf_abc --step-ids welcome --prompt "match this" --attachment DESIGN.md --image home.png`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rt := RuntimeFrom(cmd.Context())
-			if argAt(args, 0) == "" && opts.sessionPath == "" && !rt.CanPrompt() {
-				return fmt.Errorf("pass a flow ID or --session <file>")
+			if argAt(args, 0) == "" && !rt.CanPrompt() {
+				return fmt.Errorf("pass a flow ID")
 			}
 			client, err := rt.API()
 			if err != nil {
 				return err
 			}
-			flowID, projectID := argAt(args, 0), ""
-			var stored *paywallAIFlowSession
-			if opts.sessionPath != "" {
-				_, statErr := os.Stat(opts.sessionPath)
-				if err := explicitSessionNotFound(opts.sessionPath, "flow", statErr); err != nil {
-					return err
-				}
-				if stored, err = loadFlowSession(opts.sessionPath); err != nil {
-					return err
-				}
-				if flowID, err = sessionTargetID(opts.sessionPath, "flow", stored.FlowID, flowID); err != nil {
-					return err
-				}
-				if err := checkSessionProject(rt, opts.sessionPath, stored.ProjectID); err != nil {
-					return err
-				}
-				projectID = stored.ProjectID
+			projectID, err := requireProject(rt)
+			if err != nil {
+				return err
 			}
-			if projectID == "" {
-				if projectID, err = requireProject(rt); err != nil {
-					return err
-				}
-			}
-			flowID, err = requireID(rt, flowID, "flow", func() ([]PickerItem, error) {
+			flowID, err := requireID(rt, argAt(args, 0), "flow", func() ([]PickerItem, error) {
 				return flowPickerItems(cmd.Context(), client, projectID)
 			})
 			if err != nil {
 				return err
 			}
-			return runFlowEdit(cmd.Context(), rt, client, projectID, opts, stored, flowID, stepIDs)
+			return runFlowEdit(cmd.Context(), rt, client, projectID, opts, flowID, stepIDs)
 		},
 	}
-	addPaywallAIFlags(cmd, &opts)
+	addAIEditorFlags(cmd, &opts)
 	cmd.Flags().StringSliceVar(&stepIDs, "step-ids", nil, "screen steps to edit, comma-separated or repeated (default: the whole flow)")
 	return cmd
 }
 
-// runFlowEdit drives one Paywalls AI Editor run against screen steps of a Flow and saves
+// runFlowEdit drives one AI Editor run against screen steps of a Flow and saves
 // the edited steps onto the Flow draft itself.
-func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID string, opts paywallAIOptions, session *paywallAIFlowSession, flowID string, stepIDs []string) error {
+func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID string, opts paywallAIOptions, flowID string, stepIDs []string) error {
 	draft, err := client.Flows.Get(ctx, projectID, flowID, api.FlowExpandSteps)
 	if err != nil {
 		if api.IsNotFound(err) {
-			return WithHint(err, "Pass the flow id: rc flows list --type paywall")
+			return WithHint(err, "Pass the flow id: rc flows list")
 		}
 		return err
 	}
@@ -192,21 +165,17 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 	if err := requirePaywallAIPrompt(rt, &opts.prompt, "What should change?"); err != nil {
 		return err
 	}
-	editCmd := flowEditCommand(flowID, stepIDs, opts.sessionPath)
-	explicitSession := opts.sessionPath != ""
-	if !explicitSession {
-		if opts.sessionPath, err = defaultPaywallSessionPath(projectID, flowID); err != nil {
-			return err
-		}
+	editCmd := flowEditCommand(flowID, stepIDs)
+	if opts.sessionPath, err = defaultPaywallSessionPath(projectID, flowID); err != nil {
+		return err
 	}
-	if session == nil {
-		if session, err = loadFlowSession(opts.sessionPath); err != nil {
-			return err
-		}
+	session, err := loadFlowSession(opts.sessionPath)
+	if err != nil {
+		return err
 	}
 	session.ProjectID, session.FlowID = projectID, flowID
 	// Previews from an earlier run must never be mistaken for this run's.
-	removePaywallScreenshots(opts.sessionPath, !explicitSession, slices.Collect(maps.Keys(draft.Steps)))
+	removePaywallScreenshots(opts.sessionPath, true, nil)
 
 	editor, err := paywallAIClient(rt, opts.baseURL)
 	if err != nil {
@@ -263,16 +232,16 @@ func runFlowEdit(ctx context.Context, rt *Runtime, client *api.Client, projectID
 			case saveStaleCode:
 				return run.finishStale(event)
 			case saveLockedCode:
-				return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", code, event.Error.Message), "Nothing was saved. Wait a moment, then re-run:  "+editCmd)
+				return WithHint(fmt.Errorf("AI Editor run failed (%s): %s", code, event.Error.Message), "Nothing was saved. Wait a moment, then re-run:  "+editCmd)
 			case saveRejectedCode:
 				return WithHint(fmt.Errorf("the flow rejected the editor's edits: %s", event.Error.Message), "Nothing was saved. Re-run with a different prompt:  "+editCmd)
 			}
-			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", code, event.Error.Message), "Nothing was saved. Re-run the command to try again.")
+			return WithHint(fmt.Errorf("AI Editor run failed (%s): %s", code, event.Error.Message), "Nothing was saved. Re-run the command to try again.")
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			applyFlowEvent(session, event)
 			if err := writeJSONFile(opts.sessionPath, session); err != nil {
-				rt.Out.Warn(fmt.Sprintf("The edit was saved, but the session file could not be written (%v), so the next --session resume won't include this turn.", err))
+				rt.Out.Warn(fmt.Sprintf("The edit was saved, but the session file could not be written (%v), so the next run won't include this turn.", err))
 			}
 			return run.finish(event)
 		}
@@ -305,9 +274,9 @@ func (r *flowEditRun) finishUnconfirmed(ctx context.Context, client *api.Client,
 	current, err := client.Flows.Get(checkCtx, r.projectID, r.draft.ID)
 	switch {
 	case err != nil:
-		return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished (%v), and the flow could not be re-checked: %w", streamErr, err), "The edit may have been saved. Check the flow before re-running:  rc flows show "+r.draft.ID)
+		return WithHint(fmt.Errorf("RevenueCat's AI Editor stream ended before the run finished (%v), and the flow could not be re-checked: %w", streamErr, err), "The edit may have been saved. Check the flow before re-running:  rc flows show "+r.draft.ID)
 	case current.Revision == r.draft.Revision:
-		return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", streamErr), "The flow is unchanged, so nothing was saved. Re-run the command to try again.")
+		return WithHint(fmt.Errorf("RevenueCat's AI Editor stream ended before the run finished: %w", streamErr), "The flow is unchanged, so nothing was saved. Re-run the command to try again.")
 	}
 	r.rt.Out.Warn("The editor stream ended before the final result arrived, but the flow has changed since the run started, so the edit was saved.")
 	return r.finish(&paywallai.Event{Revision: &current.Revision})

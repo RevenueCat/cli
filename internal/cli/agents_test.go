@@ -218,8 +218,7 @@ func stubEditorServer(t *testing.T) (*httptest.Server, *int) {
 	return server, &requests
 }
 
-// paywallAITestServers stubs both the v2 API (draft creation) and the Paywall AI
-// editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
+// paywallAITestServers stubs both the v2 API (draft creation) and the AI Editor. offeringID == "" makes the v2 API stubs serve a standalone paywall.
 // The editor stream echoes offering_id as null, as the live service does
 // after a template load.
 func paywallAITestServers(t *testing.T, offeringID string) (apiURL, paywallAIURL string, editorInputs, createInputs *[]map[string]any) {
