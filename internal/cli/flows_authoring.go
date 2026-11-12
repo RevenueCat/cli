@@ -36,7 +36,7 @@ func resolveFlowTarget(cmd *cobra.Command, args []string) (rt *Runtime, client *
 
 func newFlowsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use: "show [id]", Short: "Show a Flow's editable draft", Args: cobra.MaximumNArgs(1),
+		Use: "show [id]", Aliases: []string{"get"}, Short: "Show a Flow's editable draft", Args: cobra.MaximumNArgs(1),
 		Example: `  rc flows show wf_abc
   rc flows show wf_abc --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -89,6 +89,17 @@ func newFlowsExportCmd() *cobra.Command {
 	return cmd
 }
 
+// renderFlowSaved prints only the id and revision in human mode; --json keeps the full Flow.
+func renderFlowSaved(rt *Runtime, flow *api.Flow) error {
+	if rt.Out.IsJSON() {
+		return rt.Out.Render(flow)
+	}
+	return rt.Out.Render(struct {
+		ID       string `json:"id"`
+		Revision int    `json:"revision"`
+	}{flow.ID, flow.Revision})
+}
+
 func newFlowsUpdateCmd() *cobra.Command {
 	var config string
 	cmd := &cobra.Command{
@@ -119,7 +130,7 @@ func newFlowsUpdateCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Saved draft of %s", flow.ID))
-			return rt.Out.Render(flow)
+			return renderFlowSaved(rt, flow)
 		},
 	}
 	cmd.Flags().StringVar(&config, "config", "", "JSON update file, or - for stdin (up to 5 MiB)")
@@ -153,7 +164,7 @@ func newFlowsCreateCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Created %s", flow.ID))
-			return rt.Out.Render(flow)
+			return renderFlowSaved(rt, flow)
 		},
 	}
 	cmd.Flags().StringVar(&config, "config", "", "JSON flow file, or - for stdin (up to 5 MiB)")
@@ -180,7 +191,7 @@ func newFlowsDuplicateCmd() *cobra.Command {
 				return err
 			}
 			rt.Out.Success(fmt.Sprintf("Duplicated %s as %s", flowID, flow.ID))
-			return rt.Out.Render(flow)
+			return renderFlowSaved(rt, flow)
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "name of the duplicate")
@@ -202,7 +213,7 @@ func flowValidationRows(v *api.FlowValidation) [][]string {
 }
 
 func newFlowsValidateCmd() *cobra.Command {
-	var revision int64
+	var revision int
 	cmd := &cobra.Command{
 		Use: "validate [id]", Short: "Validate a saved Flow draft", Args: cobra.MaximumNArgs(1),
 		Long: "Returns flow issues and step issues for the saved draft. Returns a nonzero exit status when the draft is invalid. Does not save or publish.",
@@ -215,7 +226,8 @@ func newFlowsValidateCmd() *cobra.Command {
 			}
 			var body api.ValidateFlow
 			if cmd.Flags().Changed("revision") {
-				body.Revision = &revision
+				rev := int64(revision)
+				body.Revision = &rev
 			}
 			validation, err := client.Flows.Validate(cmd.Context(), projectID, flowID, body)
 			if err != nil {
@@ -242,6 +254,6 @@ func newFlowsValidateCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().Int64Var(&revision, "revision", 0, "require this draft revision")
+	cmd.Flags().IntVar(&revision, "revision", 0, "require this draft revision")
 	return cmd
 }

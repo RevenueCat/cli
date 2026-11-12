@@ -105,6 +105,36 @@ func TestFlowValidationInvalidRendersIssueTableInHumanMode(t *testing.T) {
 	}
 }
 
+func TestFlowValidationWarningsOnlyRendersTableAndSucceeds(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `{"object":"flow_validation","id":"wf_1","revision":4,"valid":true,"step_issues":{"step_a":[{"key":"k","message":"Missing title","severity":"warning"}]},"flow_issues":[]}`)
+	}))
+	defer server.Close()
+	out, _, err := runProjectSetupCommand(t, server.URL, "flows", "validate", "wf_1", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, w := range []string{"SEVERITY", "warning", "step_a", "Missing title"} {
+		if !strings.Contains(out, w) {
+			t.Fatalf("%q missing in:\n%s", w, out)
+		}
+	}
+}
+
+func TestFlowGetIsAliasOfShow(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/projects/proj/flows/wf_1" || r.Method != "GET" {
+			t.Errorf("request = %s %s", r.Method, r.URL.Path)
+		}
+		_, _ = io.WriteString(w, `{"id":"wf_1","revision":2,"published_at":null}`)
+	}))
+	defer server.Close()
+	out, _, err := runProjectSetupCommand(t, server.URL, "flows", "get", "wf_1", "--json", "--no-input")
+	if err != nil || !strings.Contains(out, `"id": "wf_1"`) {
+		t.Fatalf("out = %s, err = %v", out, err)
+	}
+}
+
 func TestFlowUpdateRejectsInvalidConfigsBeforeRequest(t *testing.T) {
 	for _, data := range []string{`{"revision":1,"unknown":true}`, `{"revision":1} {"revision":2}`, `{"display_name":"x"}`} {
 		path := filepath.Join(t.TempDir(), "flow.json")
@@ -155,5 +185,37 @@ func TestFlowCreateAndDuplicateRemainUnpublished(t *testing.T) {
 	}
 	if len(paths) != 2 {
 		t.Fatalf("requests = %v", paths)
+	}
+}
+
+func TestFlowWritesPrintOnlyIDAndRevisionInHumanMode(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `{"id":"wf_copy","name":"Verbose name","revision":3,"published_at":null}`)
+	}))
+	defer server.Close()
+	dir := t.TempDir()
+	updatePath, createPath := filepath.Join(dir, "update.json"), filepath.Join(dir, "create.json")
+	if err := os.WriteFile(updatePath, []byte(`{"revision":2}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(createPath, []byte(`{"display_name":"x","type":"general","steps":{}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"flows", "update", "wf_1", "--config", updatePath},
+		{"flows", "create", "--config", createPath},
+		{"flows", "duplicate", "wf_1"},
+	} {
+		out, _, err := runProjectSetupCommand(t, server.URL, append(args, "--no-input")...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(out, "wf_copy") || !strings.Contains(out, "3") || strings.Contains(out, "Verbose name") {
+			t.Fatalf("%v output = %q", args, out)
+		}
+		jsonOut, _, err := runProjectSetupCommand(t, server.URL, append(args, "--json", "--no-input")...)
+		if err != nil || !strings.Contains(jsonOut, "Verbose name") {
+			t.Fatalf("%v json output = %q, err = %v", args, jsonOut, err)
+		}
 	}
 }
