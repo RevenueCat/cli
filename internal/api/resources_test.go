@@ -29,7 +29,7 @@ func TestAppsList_DecodesMultipleStoreTypes(t *testing.T) {
 		"GET /projects/" + projID + "/apps": "projects_PROJ_apps.json",
 	})
 	c := newClient(t, srv.URL)
-	page, err := c.Apps.List(context.Background(), projID)
+	page, err := c.Apps.ListAll(context.Background(), projID)
 	if err != nil {
 		t.Fatal(err)
 	}

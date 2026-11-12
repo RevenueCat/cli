@@ -112,7 +112,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return err
 			}
 			appID, err = requireID(rt, appID, "app", func() ([]PickerItem, error) {
-				apps, err := client.Apps.List(cmd.Context(), projectID)
+				apps, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
@@ -564,7 +564,7 @@ func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	page, err := client.Projects.List(ctx)
+	page, err := client.Projects.ListAll(ctx)
 	if err != nil {
 		return "", fmt.Errorf("fetching projects: %w", err)
 	}

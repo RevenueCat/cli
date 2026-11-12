@@ -19,7 +19,7 @@ func TestClient_SetsAuthAndHeaders(t *testing.T) {
 	defer srv.Close()
 
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL, UserAgent: "rc-test/1"})
-	page, err := c.Projects.List(context.Background())
+	page, err := c.Projects.ListAll(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestClient_ParsesAPIError(t *testing.T) {
 	defer srv.Close()
 
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	_, err := c.Projects.List(context.Background())
+	_, err := c.Projects.ListAll(context.Background())
 	var apiErr *api.APIError
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("want *api.APIError, got %T: %v", err, err)
@@ -70,7 +70,7 @@ func TestClient_NonJSONErrorBodyFallsBack(t *testing.T) {
 	defer srv.Close()
 
 	c := api.NewClient(api.Options{APIKey: "sk", BaseURL: srv.URL})
-	_, err := c.Projects.List(context.Background())
+	_, err := c.Projects.ListAll(context.Background())
 	var apiErr *api.APIError
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("want *api.APIError, got %T", err)
@@ -99,10 +99,10 @@ func TestClient_ETagCachingServes304(t *testing.T) {
 	defer srv.Close()
 
 	c := api.NewClient(api.Options{APIKey: "sk", BaseURL: srv.URL})
-	if _, err := c.Projects.List(context.Background()); err != nil {
+	if _, err := c.Projects.ListAll(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	second, err := c.Projects.List(context.Background())
+	second, err := c.Projects.ListAll(context.Background())
 	if err != nil {
 		t.Fatalf("304 should serve from cache, not error: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestClient_RespectsContextCancellation(t *testing.T) {
 	c := api.NewClient(api.Options{APIKey: "sk", BaseURL: srv.URL})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := c.Projects.List(ctx); err == nil {
+	if _, err := c.Projects.ListAll(ctx); err == nil {
 		t.Fatal("expected an error from a canceled context")
 	}
 }

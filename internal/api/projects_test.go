@@ -41,7 +41,7 @@ func TestProjectsList(t *testing.T) {
 		"GET /projects": "projects.json",
 	})
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	page, err := c.Projects.List(context.Background())
+	page, err := c.Projects.ListAll(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,9 +81,9 @@ func TestProjectsGetWorkaround(t *testing.T) {
 	}
 }
 
-// List must follow next_page: an account with more projects than fit on one
+// ListAll must follow next_page: an account with more projects than fit on one
 // page should return them all, not just the first page.
-func TestProjectsList_Paginates(t *testing.T) {
+func TestProjectsListAll_Paginates(t *testing.T) {
 	var srv *httptest.Server
 	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -96,7 +96,7 @@ func TestProjectsList_Paginates(t *testing.T) {
 	defer srv.Close()
 
 	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
-	page, err := c.Projects.List(context.Background())
+	page, err := c.Projects.ListAll(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +115,7 @@ func TestNewClient_InvalidBaseURLDoesNotPanic(t *testing.T) {
 	c := api.NewClient(api.Options{APIKey: "x", BaseURL: "://not-a-url"})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail fast at the transport, after buildURL has run
-	if _, err := c.Projects.List(ctx); err == nil {
+	if _, err := c.Projects.ListAll(ctx); err == nil {
 		t.Skip("request unexpectedly succeeded; test only guards against a panic")
 	}
 }

@@ -80,13 +80,13 @@ names.`,
 			// page, so it renders a synthetic one.
 			var page *api.Page[api.App]
 			if allProjects {
-				projects, err := client.Projects.List(cmd.Context())
+				projects, err := client.Projects.ListAll(cmd.Context())
 				if err != nil {
 					return err
 				}
 				page = &api.Page[api.App]{Object: "list"}
 				for _, p := range projects.Items {
-					apps, err := client.Apps.List(cmd.Context(), p.ID)
+					apps, err := client.Apps.ListAll(cmd.Context(), p.ID)
 					if err != nil {
 						return err
 					}
@@ -102,7 +102,7 @@ names.`,
 				if err != nil {
 					return err
 				}
-				page, err = client.Apps.List(cmd.Context(), projectID)
+				page, err = client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return err
 				}
@@ -229,7 +229,7 @@ func newAppsShowCmd() *cobra.Command {
 				return err
 			}
 			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
-				page, err := client.Apps.List(cmd.Context(), projectID)
+				page, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
@@ -445,7 +445,7 @@ func newAppsUpdateCmd() *cobra.Command {
 				return err
 			}
 			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
-				page, err := client.Apps.List(cmd.Context(), projectID)
+				page, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
@@ -498,7 +498,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return err
 			}
 			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
-				page, err := client.Apps.List(cmd.Context(), projectID)
+				page, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
@@ -593,7 +593,7 @@ These are client-side public keys, not secret RevenueCat API keys.`,
 				return err
 			}
 			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
-				page, err := client.Apps.List(cmd.Context(), projectID)
+				page, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
@@ -685,7 +685,7 @@ terminal to pick from a list.`,
 				return err
 			}
 			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
-				page, err := client.Apps.List(cmd.Context(), projectID)
+				page, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}

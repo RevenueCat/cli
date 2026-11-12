@@ -467,7 +467,7 @@ func resolvePlayApp(ctx context.Context, rt *Runtime, rc *api.Client, fl *tui.Fl
 		}
 		return app, nil
 	}
-	page, err := rc.Apps.List(ctx, projectID)
+	page, err := rc.Apps.ListAll(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}

@@ -257,7 +257,7 @@ sync/plan), not this command.`,
 				return err
 			}
 			appID, err = requireID(rt, appID, "app", func() ([]PickerItem, error) {
-				page, err := client.Apps.List(cmd.Context(), projectID)
+				page, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}

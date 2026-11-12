@@ -34,7 +34,7 @@ func TestAPIError_ScopeHintNamesEnv(t *testing.T) {
 	defer srv.Close()
 
 	c := api.NewClient(api.Options{APIKey: "sk_env", BaseURL: srv.URL, CredentialSource: "env"})
-	_, err := c.Projects.List(context.Background())
+	_, err := c.Projects.ListAll(context.Background())
 	var apiErr *api.APIError
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("want APIError, got %v", err)

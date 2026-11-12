@@ -213,7 +213,7 @@ ID in a terminal to pick from a list.`,
 				return err
 			}
 			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
-				apps, err := client.Apps.List(cmd.Context(), projectID)
+				apps, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}

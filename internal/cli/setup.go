@@ -598,7 +598,7 @@ func detectSetupStage(cmd *cobra.Command, rt *Runtime, platform string) setupSta
 		return fromNothing
 	}
 	ctx := cmd.Context()
-	apps, err := client.Apps.List(ctx, projectID)
+	apps, err := client.Apps.ListAll(ctx, projectID)
 	if err != nil {
 		return fromNothing
 	}

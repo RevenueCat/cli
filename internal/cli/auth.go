@@ -598,7 +598,7 @@ func loginWithAPIKeyOrigin(ctx context.Context, rt *Runtime, key, origin string)
 	}
 	// Validate before clearing or saving: a bad key fails fast instead of a
 	// false "Logged in", and a failed login won't announce a project clear.
-	if _, err := client.Projects.List(ctx); err != nil {
+	if _, err := client.Projects.ListAll(ctx); err != nil {
 		rt.Out.Hint("Check your key at https://app.revenuecat.com/projects/-/api-keys")
 		return fmt.Errorf("that API key didn't work: %w", err)
 	}

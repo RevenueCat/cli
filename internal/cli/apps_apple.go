@@ -333,7 +333,7 @@ func newAppsAppleWorkflowCmd(checkOnly bool, factory appleConnectFactory) *cobra
 				return err
 			}
 			appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
-				page, err := rc.Apps.List(cmd.Context(), projectID)
+				page, err := rc.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
