@@ -266,8 +266,8 @@ type flowEditRun struct {
 	session   *paywallAIFlowSession
 }
 
-// finishUnconfirmed handles a stream that ended without a final event:
-// the service may still have saved, which only the Flow's revision shows.
+// finishUnconfirmed handles a stream that ended without a final event: the service
+// may still have saved, but a moved revision can't be attributed to this run.
 func (r *flowEditRun) finishUnconfirmed(ctx context.Context, client *api.Client, streamErr error) error {
 	checkCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), aiSaveTimeout)
 	defer cancel()
@@ -277,9 +277,9 @@ func (r *flowEditRun) finishUnconfirmed(ctx context.Context, client *api.Client,
 		return WithHint(fmt.Errorf("RevenueCat's AI Editor stream ended before the run finished (%v), and the flow could not be re-checked: %w", streamErr, err), "The edit may have been saved. Check the flow before re-running:  rc flows show "+r.draft.ID)
 	case current.Revision == r.draft.Revision:
 		return WithHint(fmt.Errorf("RevenueCat's AI Editor stream ended before the run finished: %w", streamErr), "The flow is unchanged, so nothing was saved. Re-run the command to try again.")
+	default:
+		return WithHint(fmt.Errorf("RevenueCat's AI Editor stream ended before the run finished (%v), and the flow changed since the run started, so the edit may or may not have been saved", streamErr), "Check the flow before re-running:  rc flows show "+r.draft.ID)
 	}
-	r.rt.Out.Warn("The editor stream ended before the final result arrived, but the flow has changed since the run started, so the edit was saved.")
-	return r.finish(&paywallai.Event{Revision: &current.Revision})
 }
 
 // flowEditOutcome is what both a completed and a stale run report.

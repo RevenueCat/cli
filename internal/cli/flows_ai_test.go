@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,6 +44,7 @@ func TestFlowsEdit(t *testing.T) {
 		args          []string
 		stream        string
 		wantErr       string
+		wantHint      string
 		wantStream    bool
 		wantOut       string
 		streamCode    int
@@ -94,12 +96,13 @@ func TestFlowsEdit(t *testing.T) {
 			wantErr:    "the flow rejected the editor's edits: step screen: invalid component",
 		},
 		{
-			name:         "missing final event with a moved revision counts as saved",
+			name:         "missing final event with a moved revision may or may not have saved",
 			args:         []string{"wf_1", "--step-ids", "screen"},
 			stream:       streamStarted,
 			refetchedRev: 5,
 			wantStream:   true,
-			wantOut:      `"revision": 5`,
+			wantErr:      "the flow changed since the run started, so the edit may or may not have been saved",
+			wantHint:     "rc flows show wf_1",
 		},
 		{
 			name:         "missing final event with an unchanged revision saves nothing",
@@ -194,10 +197,19 @@ func TestFlowsEdit(t *testing.T) {
 
 			args := append([]string{"flows", "edit"}, tt.args...)
 			args = append(args, "--prompt", "make it blue", "--base-url", server.URL, "--json", "--no-input")
-			out, _, err := runProjectSetupCommand(t, server.URL, args...)
+			out, errOut, err := runProjectSetupCommand(t, server.URL, args...)
 			if tt.wantErr != "" {
 				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
 					t.Fatalf("error = %v, want %q", err, tt.wantErr)
+				}
+				if strings.Contains(out+errOut, "Design saved") {
+					t.Fatalf("failed run reported a save: %s%s", out, errOut)
+				}
+				if tt.wantHint != "" {
+					var hinted interface{ Hint() string }
+					if !errors.As(err, &hinted) || !strings.Contains(hinted.Hint(), tt.wantHint) {
+						t.Fatalf("hint not attached to error: %v", err)
+					}
 				}
 			} else if err != nil {
 				t.Fatal(err)
