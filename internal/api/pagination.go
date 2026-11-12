@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -63,7 +64,7 @@ func listAll[T any](ctx context.Context, c *Client, path string, pageSize int) (
 	}
 	// Non-nil so an empty collection still encodes as "items": [].
 	out := Page[T]{Items: []T{}}
-	next := path
+	next, prev := path, ""
 	for {
 		var page Page[T]
 		if err := c.do(ctx, http.MethodGet, next, nil, &page); err != nil {
@@ -77,6 +78,10 @@ func listAll[T any](ctx context.Context, c *Client, path string, pageSize int) (
 		if cursor == "" {
 			return &out, nil
 		}
+		if cursor == prev {
+			return nil, fmt.Errorf("pagination did not advance: next_page repeated cursor %q", cursor)
+		}
+		prev = cursor
 		next = path + sep + "starting_after=" + url.QueryEscape(cursor)
 	}
 }

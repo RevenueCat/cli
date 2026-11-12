@@ -109,6 +109,20 @@ func TestListAllErrorOnLaterPage(t *testing.T) {
 	}
 }
 
+func TestListAllErrorsWhenCursorRepeats(t *testing.T) {
+	srv, queries := pagedServer(t, map[string]string{
+		"":     `{"items":[{"id":"aud1"}],"next_page":"/v2/projects/p/audiences?starting_after=aud1"}`,
+		"aud1": `{"items":[{"id":"aud1"}],"next_page":"/v2/projects/p/audiences?starting_after=aud1"}`,
+	}, "")
+	c := api.NewClient(api.Options{APIKey: "sk_test", BaseURL: srv.URL})
+	if _, err := c.Audiences.ListAll(context.Background(), "p"); err == nil {
+		t.Fatal("want error for a repeated cursor")
+	}
+	if len(*queries) != 2 {
+		t.Fatalf("requests = %v, want 2", *queries)
+	}
+}
+
 func TestProductsListAllKeepsAppFilterWhileDraining(t *testing.T) {
 	srv, queries := pagedServer(t, map[string]string{
 		"":      `{"items":[{"id":"prod1"}],"next_page":"/v2/projects/p/products?app_id=app1&starting_after=prod1"}`,
