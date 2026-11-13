@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -117,6 +118,7 @@ type rcPaywallMock struct {
 	stateDeclarations          string // raw JSON served on the draft; omitted when empty
 	automaticallyScaleFontSize string // raw JSON served on the draft; omitted when empty
 	patched                    []map[string]any
+	paths                      []string
 }
 
 func (m *rcPaywallMock) paywallJSON(rev int) string {
@@ -134,6 +136,9 @@ func (m *rcPaywallMock) server(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		m.mu.Lock()
+		m.paths = append(m.paths, r.URL.Path)
+		m.mu.Unlock()
 		switch r.Method {
 		case http.MethodGet:
 			m.mu.Lock()
@@ -291,6 +296,101 @@ func TestPaywallsEdit_ExplicitSessionOverridesDefault(t *testing.T) {
 	editor.mu.Unlock()
 	if len(received) != 1 || received[0] != "sess_explicit" {
 		t.Fatalf("--session did not drive the request session id: %v", received)
+	}
+}
+
+func TestPaywallsEdit_SessionPaywallMismatchErrors(t *testing.T) {
+	rc := &rcPaywallMock{}
+	rcServer := rc.server(t)
+	defer rcServer.Close()
+
+	sessionPath := filepath.Join(t.TempDir(), "custom"+paywallSessionSuffix)
+	if err := savePaywallAISession(sessionPath, newTestSession()); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	cmd := newPaywallsEditCmd()
+	cmd.SetContext(WithRuntime(context.Background(), newSessionTestRuntime(rcServer.URL)))
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"pw_other", "--session", sessionPath, "--prompt", "tweak it"})
+	err := cmd.Execute()
+	if err == nil || !strings.Contains(err.Error(), "is for paywall pw_test, not pw_other") {
+		t.Fatalf("err = %v, want session/paywall mismatch", err)
+	}
+}
+
+func TestPaywallsEdit_SessionProjectConflict(t *testing.T) {
+	tests := []struct {
+		name     string
+		flag     string
+		env      string
+		active   string
+		wantFail bool
+	}{
+		{name: "explicit flag differs", flag: "proj_other", wantFail: true},
+		{name: "env differs", env: "proj_other", wantFail: true},
+		{name: "active project differs", active: "proj_other"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rc := &rcPaywallMock{}
+			rcServer := rc.server(t)
+			defer rcServer.Close()
+			editorServer := (&echoEditorServer{}).server(t)
+			defer editorServer.Close()
+
+			sessionPath := filepath.Join(t.TempDir(), "custom"+paywallSessionSuffix)
+			if err := savePaywallAISession(sessionPath, newTestSession()); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("RC_CONFIG_DIR", t.TempDir())
+			t.Setenv("RC_PAYWALL_AI_BASE_URL", editorServer.URL)
+			t.Setenv("RC_PROJECT_ID", tt.env)
+			rt := newSessionTestRuntime(rcServer.URL)
+			rt.Globals.ProjectID = tt.flag
+			if tt.active != "" {
+				rt.Config.ProjectID = tt.active
+			}
+			cmd := newPaywallsEditCmd()
+			cmd.SetContext(WithRuntime(context.Background(), rt))
+			cmd.SetOut(io.Discard)
+			cmd.SetErr(io.Discard)
+			cmd.SetArgs([]string{"--session", sessionPath, "--prompt", "tweak it"})
+			err := cmd.Execute()
+			conflict := err != nil && strings.Contains(err.Error(), "is for project proj, not proj_other")
+			if conflict != tt.wantFail {
+				t.Fatalf("project conflict = %v (err = %v), want %v", conflict, err, tt.wantFail)
+			}
+			if !tt.wantFail {
+				if err != nil {
+					t.Fatal(err)
+				}
+				rc.mu.Lock()
+				defer rc.mu.Unlock()
+				if len(rc.paths) == 0 || !strings.Contains(rc.paths[0], "/projects/proj/") {
+					t.Fatalf("RC paths = %v, want the session's project proj", rc.paths)
+				}
+			}
+		})
+	}
+}
+
+func TestPaywallsEdit_ExplicitMissingSessionErrors(t *testing.T) {
+	rc := &rcPaywallMock{}
+	rcServer := rc.server(t)
+	defer rcServer.Close()
+
+	sessionPath := filepath.Join(t.TempDir(), "missing"+paywallSessionSuffix)
+	t.Setenv("RC_CONFIG_DIR", t.TempDir())
+	cmd := newPaywallsEditCmd()
+	cmd.SetContext(WithRuntime(context.Background(), newSessionTestRuntime(rcServer.URL)))
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"--session", sessionPath, "--prompt", "tweak it"})
+	err := cmd.Execute()
+	if err == nil || !strings.Contains(err.Error(), "session file not found: "+sessionPath) {
+		t.Fatalf("err = %v, want session file not found", err)
 	}
 }
 

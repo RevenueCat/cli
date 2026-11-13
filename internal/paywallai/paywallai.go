@@ -1,4 +1,4 @@
-// Package paywallai is a client for the Paywall AI editor backend
+// Package paywallai is a client for RevenueCat's AI Editor backend
 // (astra.revenuecat.com), speaking the same SSE contract as the dashboard
 // and mobile apps.
 package paywallai
@@ -69,6 +69,31 @@ type EditorRequest struct {
 	Source                   string            `json:"source"`
 }
 
+// WorkflowContext scopes a v3 run to steps of a Flow; an empty ReferencedStepIDs
+// (never nil) means the whole Flow.
+type WorkflowContext struct {
+	Version           int      `json:"version"`
+	WorkflowID        string   `json:"workflow_id"`
+	ReferencedStepIDs []string `json:"referenced_step_ids"`
+	WorkflowRevision  int      `json:"workflow_revision"`
+}
+
+// EditorRequestV3 is the POST /editor/v3/stream/apply body. RevenueCat's AI Editor reads the Flow
+// itself, so no paywall is sent.
+type EditorRequestV3 struct {
+	ProjectID                string            `json:"project_id"`
+	SessionID                string            `json:"session_id,omitempty"`
+	UIConfig                 json.RawMessage   `json:"ui_config"`
+	ProductVariables         map[string]string `json:"product_variables"`
+	Message                  string            `json:"message"`
+	InputAttachments         []InputAttachment `json:"input_attachments,omitempty"`
+	SessionItems             json.RawMessage   `json:"__unstable_session_items"`
+	AppContext               json.RawMessage   `json:"app_context,omitempty"`
+	WorkflowContext          WorkflowContext   `json:"workflow_context"`
+	IncludeResultScreenshots bool              `json:"include_result_screenshots,omitempty"`
+	Source                   string            `json:"source"`
+}
+
 type ToolActivity struct {
 	ID         string `json:"id"`
 	Type       string `json:"type"` // "tool" | "assistant_message"
@@ -106,6 +131,10 @@ type Event struct {
 	SessionItems      json.RawMessage    `json:"__unstable_session_items,omitempty"`
 	AppContext        json.RawMessage    `json:"app_context,omitempty"`
 	ResultScreenshots []ResultScreenshot `json:"result_screenshots,omitempty"`
+	// v3 final event: the service saves the Flow itself. Revision is nil when nothing was saved.
+	Revision      *int     `json:"revision,omitempty"`
+	EditorURL     string   `json:"editor_url,omitempty"`
+	EditedStepIDs []string `json:"edited_step_ids,omitempty"`
 }
 
 func (e *Event) Terminal() bool {
@@ -159,7 +188,7 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
-	return fmt.Sprintf("the Paywall AI editor returned HTTP %d: %s", e.StatusCode, e.Message)
+	return fmt.Sprintf("RevenueCat's AI Editor returned HTTP %d: %s", e.StatusCode, e.Message)
 }
 
 func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.Request, error) {
@@ -171,7 +200,7 @@ func (c *Client) newRequest(ctx context.Context, path string, body any) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	// Bearer only: the Paywall AI editor accepts CLI OAuth tokens in the Authorization
+	// Bearer only: RevenueCat's AI Editor accepts CLI OAuth tokens in the Authorization
 	// header. Do not also send an rc_auth_token cookie — an invalid cookie
 	// shadows a valid bearer token and fails the whole request.
 	req.Header.Set("Authorization", "Bearer "+c.token)
@@ -192,14 +221,31 @@ func checkStatus(resp *http.Response) error {
 	return &APIError{StatusCode: resp.StatusCode, Message: errorMessage(body)}
 }
 
+// errorMessage prefers the server's own text: FastAPI sends "detail" as a string,
+// or as a list of {msg} objects for validation errors.
 func errorMessage(body []byte) string {
 	var envelope struct {
-		Detail  string `json:"detail"`
-		Message string `json:"message"`
+		Detail  json.RawMessage `json:"detail"`
+		Message string          `json:"message"`
 	}
 	if err := json.Unmarshal(body, &envelope); err == nil {
-		if envelope.Detail != "" {
-			return envelope.Detail
+		var text string
+		var items []struct {
+			Msg string `json:"msg"`
+		}
+		if json.Unmarshal(envelope.Detail, &text) == nil && text != "" {
+			return text
+		}
+		if json.Unmarshal(envelope.Detail, &items) == nil {
+			var msgs []string
+			for _, item := range items {
+				if item.Msg != "" {
+					msgs = append(msgs, strings.TrimPrefix(item.Msg, "Value error, "))
+				}
+			}
+			if len(msgs) > 0 {
+				return strings.Join(msgs, "; ")
+			}
 		}
 		if envelope.Message != "" {
 			return envelope.Message
@@ -214,14 +260,24 @@ func errorMessage(body []byte) string {
 // Stream starts an editor run and returns the live event stream.
 func (c *Client) Stream(ctx context.Context, request EditorRequest) (*Stream, error) {
 	request.Source = editorSource
-	req, err := c.newRequest(ctx, "/editor/v1/stream", request)
+	return c.openStream(ctx, "/editor/v1/stream", request)
+}
+
+// StreamV3 starts a Flow-step editor run that the service saves onto the Flow draft, and returns the live event stream.
+func (c *Client) StreamV3(ctx context.Context, request EditorRequestV3) (*Stream, error) {
+	request.Source = editorSource
+	return c.openStream(ctx, "/editor/v3/stream/apply", request)
+}
+
+func (c *Client) openStream(ctx context.Context, path string, body any) (*Stream, error) {
+	req, err := c.newRequest(ctx, path, body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Accept", "text/event-stream")
 	resp, err := c.stream.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("calling the Paywall AI editor: %w", err)
+		return nil, fmt.Errorf("calling RevenueCat's AI Editor: %w", err)
 	}
 	if err := checkStatus(resp); err != nil {
 		resp.Body.Close()
@@ -237,7 +293,7 @@ func (c *Client) doJSON(ctx context.Context, path string, body any) error {
 	}
 	resp, err := c.rest.Do(req)
 	if err != nil {
-		return fmt.Errorf("calling the Paywall AI editor: %w", err)
+		return fmt.Errorf("calling RevenueCat's AI Editor: %w", err)
 	}
 	defer resp.Body.Close()
 	return checkStatus(resp)
@@ -280,7 +336,7 @@ func (s *Stream) Next() (*Event, error) {
 		}
 		var event Event
 		if err := json.Unmarshal([]byte(frame.Data), &event); err != nil {
-			return nil, fmt.Errorf("decoding Paywall AI editor event: %w", err)
+			return nil, fmt.Errorf("decoding RevenueCat's AI Editor event: %w", err)
 		}
 		return &event, nil
 	}

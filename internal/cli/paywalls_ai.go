@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +23,7 @@ import (
 )
 
 // paywallAISession is the state file round-tripped between editor turns. The
-// Paywalls AI Editor keeps no server-side paywall state between requests: the client must resend
+// RevenueCat's AI Editor keeps no server-side paywall state between requests: the client must resend
 // the full paywall plus the opaque session blobs every turn, so the CLI
 // persists them here (the dashboard holds the same data in builder state).
 type paywallAISession struct {
@@ -109,18 +111,24 @@ type paywallAIOptions struct {
 	createdDraft bool
 }
 
+// Must stay above the editor service's 900s route timeout so the server's deadline fires first.
+const aiEditTimeout = 16 * time.Minute
+
+// aiSaveTimeout bounds the final draft save, which runs after the editor run's own deadline may have passed.
+const aiSaveTimeout = 30 * time.Second
+
 func newPaywallsGenerateCmd() *cobra.Command {
 	opts := paywallAIOptions{
 		prompt:     os.Getenv("RC_PAYWALL_PROMPT"),
 		offeringID: os.Getenv("RC_OFFERING_ID"),
 		baseURL:    devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
-		timeout:    12 * time.Minute,
+		timeout:    aiEditTimeout,
 	}
 	cmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate a Paywall draft with the Paywalls AI Editor",
+		Short: "Generate a Paywall draft with RevenueCat's AI Editor",
 		Long: `Creates a draft paywall and designs it from a natural-language prompt using
-the Paywalls AI Editor — the same engine behind the dashboard's AI mode.
+RevenueCat's AI Editor — the same engine behind the dashboard's AI mode.
 
 The draft is standalone unless --offering-id attaches it to an offering; an
 offering can only have one paywall, so attaching fails if it already has one.
@@ -252,19 +260,24 @@ func newPaywallsEditCmd() *cobra.Command {
 	opts := paywallAIOptions{
 		prompt:  os.Getenv("RC_PAYWALL_PROMPT"),
 		baseURL: devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL),
-		timeout: 10 * time.Minute,
+		timeout: aiEditTimeout,
 	}
 	cmd := &cobra.Command{
-		Use:   "edit [paywall-id]",
-		Short: "Edit a Paywall with the Paywalls AI Editor",
+		Use:   "edit [paywall-id] [--session <file>]",
+		Short: "Edit Paywalls from a prompt using RevenueCat's AI Editor",
 		Long: `Applies a natural-language edit to a paywall.
 
 Given a paywall ID, the current draft (or published) components are fetched
 from RevenueCat as the starting state — any paywall is editable, including
-dashboard-authored ones. Given --session (written by a previous generate or
-edit turn), the design conversation continues with its full context. Each
-completed turn saves the design back onto the RevenueCat draft
-(revision-guarded) and prints the dashboard builder URL to view it.
+dashboard-authored ones. Each paywall keeps one editor session in the CLI data
+dir. Given --session (written by a previous generate or edit turn), that
+session file is resumed with its full context and the paywall comes from the
+file; a paywall ID passed alongside it must match. Each completed turn saves
+the design back onto the RevenueCat draft (revision-guarded) and prints the
+dashboard builder URL to view it.
+
+The editor can also generate, replace, or update hero and background images
+when the prompt asks for it; image-generation edits can take several minutes.
 
 Using it well:
 
@@ -289,7 +302,7 @@ Using it well:
     --image attachments are visual references only, never placed.
   - Keep the SAME --session file across turns — it is the conversation
     memory. A lost session file starts the design conversation over.
-  - The Paywalls AI Editor may reply with a clarifying question instead of a design (it
+  - The editor may reply with a clarifying question instead of a design (it
     appears in the streamed activity / the --json activity array). Answer it
     with another edit turn on the same session.
   - Each completed turn writes a preview screenshot next to the session file
@@ -315,10 +328,17 @@ Using it well:
 			switch {
 			case opts.sessionPath != "":
 				session, err = loadPaywallAISession(rt, opts.sessionPath)
+				err = explicitSessionNotFound(opts.sessionPath, "paywall", err)
+				if err == nil {
+					_, err = sessionTargetID(opts.sessionPath, "paywall", session.PaywallID, argAt(args, 0))
+				}
+				if err == nil {
+					err = checkSessionProject(rt, opts.sessionPath, session.ProjectID)
+				}
 				if err == nil {
 					session, err = preflightSessionRevision(cmd.Context(), rt, session)
 				}
-			case argAt(args, 0) != "" || (!rt.Globals.NoInput && tui.IsInteractive()):
+			case argAt(args, 0) != "" || rt.CanPrompt():
 				client, cerr := rt.API()
 				if cerr != nil {
 					return cerr
@@ -351,6 +371,41 @@ Using it well:
 	}
 	addPaywallAIFlags(cmd, &opts)
 	return cmd
+}
+
+// explicitSessionNotFound turns a missing --session file into a pointer at the
+// default session; any other err passes through.
+func explicitSessionNotFound(path, noun string, err error) error {
+	if errors.Is(err, fs.ErrNotExist) {
+		return WithHint(fmt.Errorf("session file not found: %s", path), "pass the "+noun+" ID without --session to use its default session")
+	}
+	return err
+}
+
+// sessionTargetID resolves which resource a --session file edits: the id the
+// file stores, which an explicit arg must match. A file that predates stored
+// ids falls back to the arg.
+func sessionTargetID(path, noun, stored, arg string) (string, error) {
+	switch {
+	case stored == "" && arg == "":
+		return "", fmt.Errorf("session file %s doesn't record its %s: pass the %s ID", path, noun, noun)
+	case stored == "":
+		return arg, nil
+	case arg != "" && arg != stored:
+		return "", fmt.Errorf("session %s is for %s %s, not %s", path, noun, stored, arg)
+	}
+	return stored, nil
+}
+
+// checkSessionProject rejects an explicitly passed project (--project-id or
+// RC_PROJECT_ID) that differs from the session's; a profile or per-directory
+// default never conflicts, so the session's project wins.
+func checkSessionProject(rt *Runtime, path, stored string) error {
+	explicit := cmp.Or(rt.Globals.ProjectID, os.Getenv("RC_PROJECT_ID"))
+	if stored != "" && explicit != "" && explicit != stored {
+		return fmt.Errorf("session %s is for project %s, not %s", path, stored, explicit)
+	}
+	return nil
 }
 
 // preflightSessionRevision guards a file-loaded session against a draft that
@@ -467,7 +522,7 @@ func newPaywallsRewindCmd() *cobra.Command {
 	baseURL := devEnvOrDefault("RC_PAYWALL_AI_BASE_URL", paywallai.DefaultBaseURL)
 	cmd := &cobra.Command{
 		Use:   "rewind --session <file>",
-		Short: "Rewind the last Paywalls AI Editor action",
+		Short: "Rewind the last AI Editor action",
 		Long: `Use rewind when the last turn made the design worse: rewind, then re-prompt
 with more specific direction on the same --session.
 
@@ -495,25 +550,28 @@ turn are removed.`,
 				return err
 			}
 			// Drop saved screenshots — they show the pre-rewind design.
-			base := screenshotBase(sessionPath)
-			os.Remove(base + ".light.png")
-			os.Remove(base + ".dark.png")
+			removePaywallScreenshots(sessionPath, false, nil)
 			rt.Out.Success("Rewound last editor action")
 			return rt.Out.Render(map[string]any{"ok": true, "session_id": session.SessionID})
 		},
 	}
 	cmd.Flags().StringVar(&sessionPath, "session", "", "editor session file")
-	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "Paywalls AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
+	cmd.Flags().StringVar(&baseURL, "base-url", baseURL, "RevenueCat's AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	return cmd
 }
 
 func addPaywallAIFlags(cmd *cobra.Command, opts *paywallAIOptions) {
+	addAIEditorFlags(cmd, opts)
+	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: in the CLI data dir, per project and paywall)")
+}
+
+// addAIEditorFlags registers the editor flags shared by paywalls and flows edit.
+func addAIEditorFlags(cmd *cobra.Command, opts *paywallAIOptions) {
 	cmd.Flags().StringVar(&opts.prompt, "prompt", opts.prompt, "natural-language direction (or RC_PAYWALL_PROMPT)")
 	cmd.Flags().StringVar(&opts.context, "context", "", "product/audience/brand context sent alongside the direction")
 	cmd.Flags().StringArrayVar(&opts.attachments, "attachment", nil, "design reference file: images (png/jpeg/webp) attach visually, text files (DESIGN.md, style guides) travel with the direction")
-	cmd.Flags().StringVar(&opts.sessionPath, "session", opts.sessionPath, "editor session file (default: in the CLI data dir, per project and paywall)")
 	cmd.Flags().StringArrayVar(&opts.images, "image", nil, "reference image to attach (png/jpeg/webp, max 3)")
-	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "Paywalls AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
+	cmd.Flags().StringVar(&opts.baseURL, "base-url", opts.baseURL, "RevenueCat's AI Editor endpoint (or RC_PAYWALL_AI_BASE_URL)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", opts.timeout, "maximum time to wait")
 }
 
@@ -534,7 +592,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 	ctx, cancel := context.WithTimeout(ctx, opts.timeout)
 	defer cancel()
 
-	rt.Out.Info("Designing with the Paywalls AI Editor — this can take a few minutes…")
+	rt.Out.Info("Designing with RevenueCat's AI Editor — this can take a few minutes…")
 	stream, err := client.Stream(ctx, paywallai.EditorRequest{
 		ProjectID:        session.ProjectID,
 		PaywallID:        session.PaywallID,
@@ -581,7 +639,7 @@ func runPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, sessi
 				session.SessionID = event.SessionID
 			}
 			_ = savePaywallAISession(opts.sessionPath, session)
-			return WithHint(fmt.Errorf("paywall AI editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRunFailedHint(opts, checkpointed))
+			return WithHint(fmt.Errorf("AI Editor run failed (%s): %s", event.Error.Code, event.Error.Message), paywallRunFailedHint(opts, checkpointed))
 		case paywallai.EventRunCompleted:
 			reportPaywallAIActivity(rt, event.Activity, reportedActivity)
 			return finishPaywallAI(ctx, rt, opts, session, event)
@@ -678,7 +736,7 @@ func paywallRunFailedHint(opts paywallAIOptions, checkpointed bool) string {
 }
 
 func streamDropError(opts paywallAIOptions, checkpointed bool, err error) error {
-	return WithHint(fmt.Errorf("the Paywall AI editor stream ended before the run finished: %w", err), paywallRecoveryHint(opts, checkpointed))
+	return WithHint(fmt.Errorf("RevenueCat's AI Editor stream ended before the run finished: %w", err), paywallRecoveryHint(opts, checkpointed))
 }
 
 func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, session *paywallAISession, event *paywallai.Event) error {
@@ -690,11 +748,13 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 	// what the session file holds.
 	screenshots := savePaywallScreenshots(rt, opts.sessionPath, event.ResultScreenshots)
 	saved := false
-	if err := persistPaywallDesign(ctx, rt, session); err != nil {
+	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), aiSaveTimeout)
+	defer cancel()
+	if err := persistPaywallDesign(saveCtx, rt, session); err != nil {
 		var apiErr *api.APIError
 		if errors.As(err, &apiErr) && apiErr.Status == 409 {
-			rt.Out.Warn("Could not save the design: the draft changed during the run (dashboard, its AI editor, or API), and this session can't be saved over it.")
-			rt.Out.Hint("Start fresh from the current draft:  rc paywalls edit " + session.PaywallID)
+			rt.Out.Warn("The draft changed while this edit ran, so nothing was saved.")
+			rt.Out.Hint("Re-run to have the editor redo the edit on the latest draft:  rc paywalls edit " + session.PaywallID)
 		} else {
 			rt.Out.Warn("Could not save the design to RevenueCat: " + err.Error())
 			rt.Out.Hint("The design is safe in " + opts.sessionPath + " — re-run rc paywalls edit to retry saving.")
@@ -708,7 +768,7 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		}
 		rt.Out.Success("Design saved to paywall draft " + session.PaywallID)
 		if errored := countErroredActivity(event.Activity); errored > 0 {
-			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by the Paywalls AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
+			rt.Out.Info(fmt.Sprintf("%d editor step(s) errored during the run and were retried by RevenueCat's AI Editor — the saved draft is the complete final state (nothing partial is ever saved).", errored))
 		}
 		rt.Out.Blank()
 		if path, ok := screenshots["light"]; ok {
@@ -738,6 +798,32 @@ func finishPaywallAI(ctx context.Context, rt *Runtime, opts paywallAIOptions, se
 		})
 	}
 	return nil
+}
+
+// removePaywallScreenshots deletes the session's previews so a stale png never
+// survives a run that returns none. A session that owns its directory
+// (ownDir) loses every step-keyed preview (<base>.<step>.<scheme>.png), which
+// catches steps deleted since the last run; otherwise only the previews of
+// stepIDs are removed, leaving other sessions sharing the directory untouched.
+func removePaywallScreenshots(sessionPath string, ownDir bool, stepIDs []string) {
+	base := screenshotBase(sessionPath)
+	if ownDir {
+		dir, prefix := filepath.Split(base)
+		entries, _ := os.ReadDir(dir)
+		for _, e := range entries {
+			name := e.Name()
+			if strings.HasPrefix(name, prefix+".") && (strings.HasSuffix(name, ".light.png") || strings.HasSuffix(name, ".dark.png")) {
+				os.Remove(filepath.Join(dir, name))
+			}
+		}
+		return
+	}
+	for _, scheme := range []string{"light", "dark"} {
+		os.Remove(base + "." + scheme + ".png")
+		for _, id := range stepIDs {
+			os.Remove(base + "." + id + "." + scheme + ".png")
+		}
+	}
 }
 
 // savePaywallScreenshots writes the run's rendered previews next to the
@@ -842,14 +928,14 @@ func reportPaywallAIActivity(rt *Runtime, activity []paywallai.ToolActivity, alr
 	for _, item := range activity[min(alreadyReported, len(activity)):] {
 		switch item.Type {
 		case "assistant_message":
-			rt.Out.Info("Paywalls AI: " + item.Content)
+			rt.Out.Info("AI Editor: " + item.Content)
 		default:
 			text := item.Display.Text
 			if text == "" {
 				text = item.ToolName
 			}
 			if item.Status == "error" {
-				rt.Out.Warn("⚙ " + text + "  (errored — the Paywalls AI Editor retries these itself)")
+				rt.Out.Warn("⚙ " + text + "  (errored — RevenueCat's AI Editor retries these itself)")
 			} else {
 				rt.Out.Info("⚙ " + text)
 			}
@@ -883,7 +969,11 @@ func loadPaywallAISession(rt *Runtime, path string) (*paywallAISession, error) {
 }
 
 func savePaywallAISession(path string, session *paywallAISession) error {
-	payload, err := json.MarshalIndent(session, "", "  ")
+	return writeJSONFile(path, session)
+}
+
+func writeJSONFile(path string, v any) error {
+	payload, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -952,7 +1042,7 @@ func requirePaywallAIPrompt(rt *Runtime, prompt *string, title string) error {
 		Run()
 }
 
-// withPaywallContext folds --context into the direction sent to the Paywalls AI Editor: the
+// withPaywallContext folds --context into the direction sent to RevenueCat's AI Editor: the
 // skills document the flag (product/audience/brand context) and agents were
 // burning generation attempts on unknown-flag errors before hand-merging it.
 func withPaywallContext(prompt, context string) string {
@@ -973,7 +1063,7 @@ func countErroredActivity(activity []paywallai.ToolActivity) int {
 }
 
 // loadPaywallAIAttachments routes --image and --attachment by type: image
-// files become real Paywalls AI Editor attachments (the server accepts only
+// files become real AI Editor attachments (the server accepts only
 // png/jpeg/webp, max 3, 10MB); text design references (DESIGN.md, style
 // guides) are folded into the message, which is the only channel the editor
 // API has for them today. Anything else (fonts, binaries) errors clearly.
@@ -996,7 +1086,7 @@ func loadPaywallAIAttachments(images, attachments []string) ([]paywallai.InputAt
 			}
 			textBlocks = append(textBlocks, "Design reference ("+filepath.Base(path)+"):\n```\n"+string(data)+"\n```")
 		default:
-			return nil, "", fmt.Errorf("unsupported attachment %q: the Paywalls AI Editor accepts images (png/jpeg/webp) and text design references (md/txt/json/yaml/css) — fonts and other binaries are not supported by the editor API yet", path)
+			return nil, "", fmt.Errorf("unsupported attachment %q: RevenueCat's AI Editor accepts images (png/jpeg/webp) and text design references (md/txt/json/yaml/css) — fonts and other binaries are not supported by the editor API yet", path)
 		}
 	}
 	loaded, err := loadPaywallAIImages(imagePaths)

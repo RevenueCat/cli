@@ -2155,6 +2155,39 @@ func (e ExtendSubscriptionUntilDateExtendReasonCode) Valid() bool {
 	}
 }
 
+// Defines values for FlowValidationObject.
+const (
+	FlowValidationObjectFlowValidation FlowValidationObject = "flow_validation"
+)
+
+// Valid indicates whether the value is a known member of the FlowValidationObject enum.
+func (e FlowValidationObject) Valid() bool {
+	switch e {
+	case FlowValidationObjectFlowValidation:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FlowValidationIssueSeverity.
+const (
+	FlowValidationIssueSeverityError   FlowValidationIssueSeverity = "error"
+	FlowValidationIssueSeverityWarning FlowValidationIssueSeverity = "warning"
+)
+
+// Valid indicates whether the value is a known member of the FlowValidationIssueSeverity enum.
+func (e FlowValidationIssueSeverity) Valid() bool {
+	switch e {
+	case FlowValidationIssueSeverityError:
+		return true
+	case FlowValidationIssueSeverityWarning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IndicativePriceObject.
 const (
 	IndicativePriceObjectIndicativePrice IndicativePriceObject = "indicative_price"
@@ -17146,6 +17179,21 @@ const (
 func (e GetProductsFromEntitlement503JSONResponseBodyType) Valid() bool {
 	switch e {
 	case GetProductsFromEntitlement503JSONResponseBodyTypeServerError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetFlowParamsExpand.
+const (
+	Steps GetFlowParamsExpand = "steps"
+)
+
+// Valid indicates whether the value is a known member of the GetFlowParamsExpand enum.
+func (e GetFlowParamsExpand) Valid() bool {
+	switch e {
+	case Steps:
 		return true
 	default:
 		return false
@@ -35643,6 +35691,14 @@ type DeletedObject struct {
 // DeletedObjectObject The type of the deleted object
 type DeletedObjectObject string
 
+// DuplicateFlow defines model for DuplicateFlow.
+type DuplicateFlow struct {
+	// DisplayName Name of the duplicate.
+	//
+	// Example: Onboarding Copy
+	DisplayName *string `json:"display_name,omitempty"`
+}
+
 // Duration The duration of the product subscription. This field is only supported for the test store and it is ignored for other stores.
 //
 // Example: P1W
@@ -35786,6 +35842,99 @@ type ExtendSubscriptionUntilDate struct {
 //
 // Example: customer_satisfaction
 type ExtendSubscriptionUntilDateExtendReasonCode string
+
+// FlowValidation defines model for FlowValidation.
+type FlowValidation struct {
+	// FlowIssues Issues affecting the whole flow.
+	//
+	// Example: []
+	FlowIssues []FlowValidationIssue `json:"flow_issues"`
+
+	// ID Flow ID.
+	//
+	// Example: wf_123456789a
+	ID string `json:"id"`
+
+	// Object Type of this object.
+	//
+	// Example: flow_validation
+	Object FlowValidationObject `json:"object"`
+
+	// Revision Draft revision that was validated.
+	//
+	// Example: 1
+	Revision int64 `json:"revision"`
+
+	// StepIssues Issues keyed by step ID.
+	//
+	// Example: {}
+	StepIssues map[string][]FlowValidationIssue `json:"step_issues"`
+
+	// Valid Whether the draft can be published. Warnings do not prevent publication.
+	//
+	// Example: false
+	Valid                bool                   `json:"valid"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// FlowValidationObject Type of this object.
+//
+// Example: flow_validation
+type FlowValidationObject string
+
+// FlowValidationIssue defines model for FlowValidationIssue.
+type FlowValidationIssue struct {
+	// Action Suggested action to resolve the issue.
+	//
+	// Example: add_screen
+	Action *string `json:"action,omitempty"`
+
+	// ComponentID The component associated with the issue.
+	//
+	// Example: main_stack
+	ComponentID *string `json:"component_id,omitempty"`
+
+	// Key Validation issue key.
+	//
+	// Example: Step_Unreachable
+	Key string `json:"key"`
+
+	// Locale The locale associated with the issue.
+	//
+	// Example: en_US
+	Locale *string `json:"locale,omitempty"`
+
+	// LocalizationID The localization identifier associated with the issue.
+	//
+	// Example: title
+	LocalizationID *string `json:"localization_id,omitempty"`
+
+	// Message A human-readable description of the issue.
+	//
+	// Example: Add a name to your paywall.
+	Message string `json:"message"`
+
+	// Path The schema path associated with the issue.
+	//
+	// Example: paywall.components_config.base.stack
+	Path *string `json:"path,omitempty"`
+
+	// Property The component property associated with the issue.
+	//
+	// Example: font_size
+	Property *string `json:"property,omitempty"`
+
+	// Severity The severity of the validation issue.
+	//
+	// Example: error
+	Severity             FlowValidationIssueSeverity `json:"severity"`
+	AdditionalProperties map[string]interface{}      `json:"-"`
+}
+
+// FlowValidationIssueSeverity The severity of the validation issue.
+//
+// Example: error
+type FlowValidationIssueSeverity string
 
 // IndicativePrice An indicative price for a product, in the default currency/country (USD / US). Uses the same price source as the get-offering-prices endpoint.
 type IndicativePrice struct {
@@ -38073,6 +38222,14 @@ type UpdateWebhookIntegrationInput struct {
 
 // UpdateWebhookIntegrationInputEnvironment The environment the webhook integration is configured for
 type UpdateWebhookIntegrationInputEnvironment string
+
+// ValidateFlow defines model for ValidateFlow.
+type ValidateFlow struct {
+	// Revision Current draft revision. Saves must supply this value to reject stale writes.
+	//
+	// Example: 1
+	Revision *int64 `json:"revision,omitempty"`
+}
 
 // VirtualCurrency defines model for VirtualCurrency.
 type VirtualCurrency struct {
@@ -41595,6 +41752,15 @@ type GetProductsFromEntitlement503JSONResponseBodyObject string
 
 // GetProductsFromEntitlement503JSONResponseBodyType defines parameters for GetProductsFromEntitlement.
 type GetProductsFromEntitlement503JSONResponseBodyType string
+
+// GetFlowParams defines parameters for GetFlow.
+type GetFlowParams struct {
+	// Expand Accepted values are `steps` (adds the draft steps and settings; requires `project_configuration:offerings:read`).
+	Expand *[]GetFlowParamsExpand `form:"expand,omitempty" json:"expand,omitempty"`
+}
+
+// GetFlowParamsExpand defines parameters for GetFlow.
+type GetFlowParamsExpand string
 
 // ListWebhookIntegrationsParams defines parameters for ListWebhookIntegrations.
 type ListWebhookIntegrationsParams struct {
@@ -45432,6 +45598,12 @@ type AttachProductsToEntitlementJSONRequestBody AttachProductsToEntitlementJSONB
 // DetachProductsFromEntitlementJSONRequestBody defines body for DetachProductsFromEntitlement for application/json ContentType.
 type DetachProductsFromEntitlementJSONRequestBody DetachProductsFromEntitlementJSONBody
 
+// DuplicateFlowJSONRequestBody defines body for DuplicateFlow for application/json ContentType.
+type DuplicateFlowJSONRequestBody = DuplicateFlow
+
+// ValidateFlowJSONRequestBody defines body for ValidateFlow for application/json ContentType.
+type ValidateFlowJSONRequestBody = ValidateFlow
+
 // CreateWebhookIntegrationJSONRequestBody defines body for CreateWebhookIntegration for application/json ContentType.
 type CreateWebhookIntegrationJSONRequestBody = CreateWebhookIntegrationInput
 
@@ -46489,6 +46661,323 @@ func (a ChartSeries) MarshalJSON() ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'unit': %w", err)
 		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for FlowValidation. Returns the specified
+// element and whether it was found
+func (a FlowValidation) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for FlowValidation
+func (a *FlowValidation) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for FlowValidation to handle AdditionalProperties
+func (a *FlowValidation) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["flow_issues"]; found {
+		err = json.Unmarshal(raw, &a.FlowIssues)
+		if err != nil {
+			return fmt.Errorf("error reading 'flow_issues': %w", err)
+		}
+		delete(object, "flow_issues")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["object"]; found {
+		err = json.Unmarshal(raw, &a.Object)
+		if err != nil {
+			return fmt.Errorf("error reading 'object': %w", err)
+		}
+		delete(object, "object")
+	}
+
+	if raw, found := object["revision"]; found {
+		err = json.Unmarshal(raw, &a.Revision)
+		if err != nil {
+			return fmt.Errorf("error reading 'revision': %w", err)
+		}
+		delete(object, "revision")
+	}
+
+	if raw, found := object["step_issues"]; found {
+		err = json.Unmarshal(raw, &a.StepIssues)
+		if err != nil {
+			return fmt.Errorf("error reading 'step_issues': %w", err)
+		}
+		delete(object, "step_issues")
+	}
+
+	if raw, found := object["valid"]; found {
+		err = json.Unmarshal(raw, &a.Valid)
+		if err != nil {
+			return fmt.Errorf("error reading 'valid': %w", err)
+		}
+		delete(object, "valid")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for FlowValidation to handle AdditionalProperties
+func (a FlowValidation) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.FlowIssues != nil {
+		object["flow_issues"], err = json.Marshal(a.FlowIssues)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'flow_issues': %w", err)
+		}
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	object["object"], err = json.Marshal(a.Object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'object': %w", err)
+	}
+
+	object["revision"], err = json.Marshal(a.Revision)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'revision': %w", err)
+	}
+
+	if a.StepIssues != nil {
+		object["step_issues"], err = json.Marshal(a.StepIssues)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'step_issues': %w", err)
+		}
+	}
+
+	object["valid"], err = json.Marshal(a.Valid)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'valid': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for FlowValidationIssue. Returns the specified
+// element and whether it was found
+func (a FlowValidationIssue) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for FlowValidationIssue
+func (a *FlowValidationIssue) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for FlowValidationIssue to handle AdditionalProperties
+func (a *FlowValidationIssue) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["action"]; found {
+		err = json.Unmarshal(raw, &a.Action)
+		if err != nil {
+			return fmt.Errorf("error reading 'action': %w", err)
+		}
+		delete(object, "action")
+	}
+
+	if raw, found := object["component_id"]; found {
+		err = json.Unmarshal(raw, &a.ComponentID)
+		if err != nil {
+			return fmt.Errorf("error reading 'component_id': %w", err)
+		}
+		delete(object, "component_id")
+	}
+
+	if raw, found := object["key"]; found {
+		err = json.Unmarshal(raw, &a.Key)
+		if err != nil {
+			return fmt.Errorf("error reading 'key': %w", err)
+		}
+		delete(object, "key")
+	}
+
+	if raw, found := object["locale"]; found {
+		err = json.Unmarshal(raw, &a.Locale)
+		if err != nil {
+			return fmt.Errorf("error reading 'locale': %w", err)
+		}
+		delete(object, "locale")
+	}
+
+	if raw, found := object["localization_id"]; found {
+		err = json.Unmarshal(raw, &a.LocalizationID)
+		if err != nil {
+			return fmt.Errorf("error reading 'localization_id': %w", err)
+		}
+		delete(object, "localization_id")
+	}
+
+	if raw, found := object["message"]; found {
+		err = json.Unmarshal(raw, &a.Message)
+		if err != nil {
+			return fmt.Errorf("error reading 'message': %w", err)
+		}
+		delete(object, "message")
+	}
+
+	if raw, found := object["path"]; found {
+		err = json.Unmarshal(raw, &a.Path)
+		if err != nil {
+			return fmt.Errorf("error reading 'path': %w", err)
+		}
+		delete(object, "path")
+	}
+
+	if raw, found := object["property"]; found {
+		err = json.Unmarshal(raw, &a.Property)
+		if err != nil {
+			return fmt.Errorf("error reading 'property': %w", err)
+		}
+		delete(object, "property")
+	}
+
+	if raw, found := object["severity"]; found {
+		err = json.Unmarshal(raw, &a.Severity)
+		if err != nil {
+			return fmt.Errorf("error reading 'severity': %w", err)
+		}
+		delete(object, "severity")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for FlowValidationIssue to handle AdditionalProperties
+func (a FlowValidationIssue) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Action != nil {
+		object["action"], err = json.Marshal(a.Action)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'action': %w", err)
+		}
+	}
+
+	if a.ComponentID != nil {
+		object["component_id"], err = json.Marshal(a.ComponentID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'component_id': %w", err)
+		}
+	}
+
+	object["key"], err = json.Marshal(a.Key)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'key': %w", err)
+	}
+
+	if a.Locale != nil {
+		object["locale"], err = json.Marshal(a.Locale)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'locale': %w", err)
+		}
+	}
+
+	if a.LocalizationID != nil {
+		object["localization_id"], err = json.Marshal(a.LocalizationID)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'localization_id': %w", err)
+		}
+	}
+
+	object["message"], err = json.Marshal(a.Message)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'message': %w", err)
+	}
+
+	if a.Path != nil {
+		object["path"], err = json.Marshal(a.Path)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'path': %w", err)
+		}
+	}
+
+	if a.Property != nil {
+		object["property"], err = json.Marshal(a.Property)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'property': %w", err)
+		}
+	}
+
+	object["severity"], err = json.Marshal(a.Severity)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'severity': %w", err)
 	}
 
 	for fieldName, field := range a.AdditionalProperties {

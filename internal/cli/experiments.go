@@ -94,21 +94,15 @@ func newExperimentsListCmd() *cobra.Command {
 }
 
 func experimentPickerItems(cmd *cobra.Command, client *api.Client, projectID string) ([]PickerItem, error) {
-	items := []PickerItem{}
-	cursor := ""
-	for {
-		page, err := client.Experiments.List(cmd.Context(), projectID, api.ListExperimentsOptions{Limit: 100, StartingAfter: cursor})
-		if err != nil {
-			return nil, err
-		}
-		for _, experiment := range page.Items {
-			items = append(items, PickerItem{ID: experiment.ID, Label: fmt.Sprintf("%s  (%s)", experiment.DisplayName, experiment.Status)})
-		}
-		cursor = page.NextCursor()
-		if cursor == "" {
-			return items, nil
-		}
+	page, err := client.Experiments.ListAll(cmd.Context(), projectID)
+	if err != nil {
+		return nil, err
 	}
+	items := []PickerItem{}
+	for _, experiment := range page.Items {
+		items = append(items, PickerItem{ID: experiment.ID, Label: fmt.Sprintf("%s  (%s)", experiment.DisplayName, experiment.Status)})
+	}
+	return items, nil
 }
 
 func newExperimentsShowCmd() *cobra.Command {

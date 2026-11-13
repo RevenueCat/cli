@@ -12,8 +12,37 @@ func configFieldsFor(cmd *cobra.Command) map[string]any {
 		return targetingConfigFields(true)
 	case "rc targeting update":
 		return targetingConfigFields(false)
+	case "rc flows create":
+		return flowConfigFields(true)
+	case "rc flows update":
+		return flowConfigFields(false)
 	}
 	return nil
+}
+
+func flowConfigFields(create bool) map[string]any {
+	nullable := func(kind, description string) map[string]any {
+		return map[string]any{"type": []string{kind, "null"}, "description": description + " Null clears it."}
+	}
+	steps := "Object keyed by step ID; each value has type, screen content under screen, triggers, and outputs. rc flows export writes valid steps."
+	fields := map[string]any{
+		"display_name":            configField("string", "Flow name"),
+		"initial_step_id":         nullable("string", "Step ID the Flow starts at."),
+		"single_step_fallback_id": nullable("string", "Step ID used as the single-step fallback."),
+		"app_id":                  nullable("string", "ID of the app in the project the Flow is served under."),
+		"content_max_width":       map[string]any{"description": "Maximum content width. Null clears it."},
+		"metadata":                map[string]any{"type": []string{"object", "null"}, "description": "Only cookie_consent, dark_mode_enabled and safe_area_fallback_color; merged key by key, and a null value deletes that key."},
+		"custom_parameters":       map[string]any{"description": "Custom URL parameters keyed by ID, each {name, type}; replaces the whole map. Null clears it."},
+	}
+	if create {
+		fields["type"] = configEnum("Flow type; defaults to general", "web-funnel", "general")
+		fields["steps"] = map[string]any{"type": "object", "description": steps}
+		return map[string]any{"type": "object", "properties": fields, "required": []string{"display_name"}, "description": "Creates an unpublished draft."}
+	}
+	fields["revision"] = map[string]any{"type": "integer", "description": "Current revision from flows export or flows show; a stale revision fails without saving."}
+	fields["updated_steps"] = map[string]any{"type": "object", "description": "Step patches keyed by step ID; omitted steps are preserved. " + steps}
+	fields["deleted_step_ids"] = map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "IDs of steps to remove."}
+	return map[string]any{"type": "object", "properties": fields, "required": []string{"revision"}, "description": "Partial update of a draft; rc flows export produces a valid file. Does not publish."}
 }
 
 func targetingConfigFields(create bool) map[string]any {

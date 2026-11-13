@@ -112,7 +112,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return err
 			}
 			appID, err = requireID(rt, appID, "app", func() ([]PickerItem, error) {
-				apps, err := client.Apps.List(cmd.Context(), projectID)
+				apps, err := client.Apps.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
@@ -126,7 +126,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 				return err
 			}
 
-			products, err := client.Products.List(cmd.Context(), projectID, &api.ProductListOptions{AppID: appID})
+			products, err := client.Products.ListAll(cmd.Context(), projectID, &api.ProductListOptions{AppID: appID})
 			if err != nil {
 				return err
 			}
@@ -564,7 +564,7 @@ func pickProjectInteractive(ctx context.Context, rt *Runtime) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	page, err := client.Projects.List(ctx)
+	page, err := client.Projects.ListAll(ctx)
 	if err != nil {
 		return "", fmt.Errorf("fetching projects: %w", err)
 	}
@@ -782,7 +782,7 @@ pick from the list interactively.`,
 			}
 			customerID := args[0]
 			entitlementID, err := requireID(rt, argAt(args, 1), "entitlement", func() ([]PickerItem, error) {
-				page, err := client.Entitlements.List(cmd.Context(), projectID)
+				page, err := client.Entitlements.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}
@@ -856,7 +856,7 @@ Confirmation: prompts under TTY; pass --yes to skip. Required under --no-input.`
 			}
 			customerID := args[0]
 			entitlementID, err := requireID(rt, argAt(args, 1), "entitlement", func() ([]PickerItem, error) {
-				page, err := client.Entitlements.List(cmd.Context(), projectID)
+				page, err := client.Entitlements.ListAll(cmd.Context(), projectID)
 				if err != nil {
 					return nil, err
 				}

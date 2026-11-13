@@ -320,7 +320,7 @@ func resolveStoreStateApp(cmd *cobra.Command, args []string) (string, *api.App, 
 		return "", nil, nil, err
 	}
 	appID, err := requireID(rt, argAt(args, 0), "app", func() ([]PickerItem, error) {
-		page, err := client.Apps.List(cmd.Context(), projectID)
+		page, err := client.Apps.ListAll(cmd.Context(), projectID)
 		if err != nil {
 			return nil, err
 		}

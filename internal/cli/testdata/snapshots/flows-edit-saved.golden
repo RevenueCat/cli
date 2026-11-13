@@ -1,0 +1,7 @@
+$ rc flows edit wf_snap --step-ids welcome --prompt Bolder CTA --no-input --project-id proj_snap --api-key sk_snap
+· Designing with RevenueCat's AI Editor — this can take a few minutes…
+✓ Design saved to flow draft wf_snap (welcome) at revision 5
+  Preview (welcome)           <config-dir>/paywalls/proj_snap/wf_snap/session.welcome.light.png
+  Preview (welcome, dark)     <config-dir>/paywalls/proj_snap/wf_snap/session.welcome.dark.png
+  View it                     https://app.revenuecat.com/projects/snap/flows/wf_snap/editor
+  Keep designing              rc flows edit wf_snap --step-ids welcome

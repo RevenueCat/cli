@@ -188,7 +188,7 @@ rc paywalls                                              # help; under npx a TTY
 rc paywalls list
 rc paywalls show <id>
 rc paywalls generate [--offering-id <id>] --prompt "..." # create a paywall; standalone unless --offering-id attaches it to an offering
-rc paywalls edit <paywall-id>|--session <file> --prompt  # AI-edit any paywall (draft components fetched via v2) or continue a session
+rc paywalls edit [paywall-id] [--session <file>] --prompt  # AI-edit a paywall's draft; one editor session per paywall in the CLI data dir; --session resumes an existing session file (the paywall comes from the file)
 rc paywalls rewind --session <file>                      # undo the last editor action
 rc paywalls publish [id]                                 # publish the current draft; confirmation/--yes
 rc paywalls unpublish [id]                               # remove the published paywall; confirmation/--yes
@@ -198,6 +198,13 @@ rc paywalls delete <id> [--force]                        # attached/published pa
 
 # Flows (paywalls, web funnels, and multi-step experiences)
 rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # experimental (hidden from --help until Checkpoint rules roll out); repeatable; shows type and publish state
+rc flows show [id]                                      # editable draft, including steps and screen content (GET /flows/{id}?expand=steps)
+rc flows export [id] --output <path>                     # save an update request containing the current revision and all steps
+rc flows update [id] --config <path|->                   # save the exported JSON or a partial update; only deleted_step_ids removes steps (PATCH /flows/{id})
+rc flows create --config <path|->                       # create an unpublished web-funnel or general flow (type paywall is rejected)
+rc flows duplicate [id] [--name <name>] # create an unpublished copy of the draft
+rc flows validate [id] [--revision <revision>]           # return saved-draft validation issues
+rc flows edit <flow-id> --prompt [--step-ids <id,...>]  # AI-edit a flow's draft; one editor session per flow in the CLI data dir; --step-ids scopes one run to those screens (default: whole flow, same session)
 # Experiments — development v2 endpoints, normal discoverable CLI surface
 rc experiments list [--status <status>]
 rc experiments show <id>                              # human detail view shows variants, targeting, placements, and chronological timeline

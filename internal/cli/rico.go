@@ -709,10 +709,10 @@ func ricoClient(rt *Runtime, baseURL string) (*rico.Client, error) {
 	}), nil
 }
 
-// agentAuthToken returns the credential sent to the Rico / Paywall AI editor
+// agentAuthToken returns the credential sent to the Rico / RevenueCat's AI Editor
 // backends — the CLI's own bearer token. Both accept CLI OAuth tokens
 // (verified live 2026-07-17). Secret keys differ (verified against backend
-// auth 2026-08-31): the Paywall AI editor accepts sk_ keys carrying the
+// auth 2026-08-31): RevenueCat's AI Editor accepts sk_ keys carrying the
 // project_configuration:offerings:read_write scope; Rico rejects sk_ keys
 // entirely — ricoClient guards that before any request.
 func agentAuthToken(rt *Runtime) string {

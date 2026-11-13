@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
@@ -261,7 +262,10 @@ func runProjectSetupCommand(t *testing.T, baseURL string, args ...string) (strin
 	root := cli.NewRootCmd("test")
 	root.SetOut(&stdout)
 	root.SetErr(&stderr)
-	args = append(args, "--api-key", "sk_test", "--project-id", "proj")
+	args = append(args, "--api-key", "sk_test")
+	if !slices.Contains(args, "--project-id") {
+		args = append(args, "--project-id", "proj")
+	}
 	root.SetArgs(args)
 	err := root.ExecuteContext(context.Background())
 	return stdout.String(), stderr.String(), err

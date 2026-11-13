@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"net/http"
-	"net/url"
 )
 
 type AppsService struct{ c *Client }
@@ -107,29 +106,9 @@ type StripeAppConfig struct {
 	StripeAccountID *string `json:"stripe_account_id,omitempty"`
 }
 
-// List follows next_page until the project's apps are drained, like
-// Projects.List — callers (pickers, org-wide identifier lookups) treat the
-// result as the complete set, so a single-page fetch would silently truncate.
-// Object/URL come from the first page; NextPage is always empty on return.
-func (s *AppsService) List(ctx context.Context, projectID string) (*Page[App], error) {
-	var out Page[App]
-	path := pathApps(projectID)
-	for {
-		var page Page[App]
-		if err := s.c.do(ctx, http.MethodGet, path, nil, &page); err != nil {
-			return nil, err
-		}
-		if out.Object == "" {
-			out.Object, out.URL = page.Object, page.URL
-		}
-		out.Items = append(out.Items, page.Items...)
-		cursor := page.NextCursor()
-		if cursor == "" {
-			break
-		}
-		path = pathApps(projectID) + "?starting_after=" + url.QueryEscape(cursor)
-	}
-	return &out, nil
+// ListAll drains every page of the project's apps.
+func (s *AppsService) ListAll(ctx context.Context, projectID string) (*Page[App], error) {
+	return listAll[App](ctx, s.c, pathApps(projectID), 0)
 }
 
 func (s *AppsService) Get(ctx context.Context, projectID, id string) (*App, error) {

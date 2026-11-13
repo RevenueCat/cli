@@ -15,6 +15,11 @@ func (s *PackagesService) List(ctx context.Context, projectID, offeringID string
 	return &out, err
 }
 
+// ListAll follows next_page until every Package is loaded, for pickers.
+func (s *PackagesService) ListAll(ctx context.Context, projectID, offeringID string) (*Page[Package], error) {
+	return listAll[Package](ctx, s.c, pathOfferingPackages(projectID, offeringID), maxPageSize)
+}
+
 func (s *PackagesService) Get(ctx context.Context, projectID, id string) (*Package, error) {
 	var out Package
 	path := pathPackage(projectID, id) + "?expand=product"

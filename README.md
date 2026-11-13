@@ -298,7 +298,7 @@ toolkit discovers every command with `rc commands --json` and
 ## Custom request headers
 
 `RC_HEADERS` sends extra HTTP headers on every CLI-originated RevenueCat request
-(v2 API, signup/OAuth, v1 SDK requests, Rico, and the Paywall AI editor), as
+(v2 API, signup/OAuth, v1 SDK requests, Rico, and RevenueCat's AI Editor), as
 newline-separated `Name: Value` pairs. Use it to route or tag traffic without
 baking anything into the binary:
 
@@ -311,7 +311,7 @@ One header per line; supplied headers override the CLI's defaults, except `Autho
 ## Usage analytics
 
 Every CLI-originated RevenueCat API request carries a few headers, including
-signup, OAuth token exchange/refresh, v1 SDK requests, Rico, and Paywall AI.
+signup, OAuth token exchange/refresh, v1 SDK requests, Rico, and RevenueCat's AI Editor.
 RevenueCat can see which commands are used and the CLI invocation mode from
 normal request logs, with no separate telemetry or user/account identifiers:
 

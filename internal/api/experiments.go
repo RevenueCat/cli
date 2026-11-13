@@ -111,6 +111,11 @@ func (s *ExperimentsService) List(ctx context.Context, projectID string, opts Li
 	return &out, err
 }
 
+// ListAll follows next_page until every Experiment is loaded, for pickers.
+func (s *ExperimentsService) ListAll(ctx context.Context, projectID string) (*Page[Experiment], error) {
+	return listAll[Experiment](ctx, s.c, pathExperiments(projectID), maxPageSize)
+}
+
 func (s *ExperimentsService) Get(ctx context.Context, projectID, id string) (*Experiment, error) {
 	var out Experiment
 	err := s.c.do(ctx, http.MethodGet, pathExperiment(projectID, id), nil, &out)

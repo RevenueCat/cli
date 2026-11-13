@@ -64,6 +64,24 @@ func TestTargetingCreateSchemaRequiresExactlyOneCheckpoint(t *testing.T) {
 	}
 }
 
+func TestFlowConfigSchemaDescribesCreateAndUpdateFields(t *testing.T) {
+	root := NewRootCmd("test")
+	for path, wants := range map[string][]string{
+		"flows create": {"display_name", "web-funnel", "steps", "initial_step_id"},
+		"flows update": {"revision", "updated_steps", "deleted_step_ids", "initial_step_id"},
+	} {
+		data, err := json.Marshal(commandSchema(findCommand(t, root, path))["config_fields"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range wants {
+			if !strings.Contains(string(data), want) {
+				t.Errorf("%s schema missing %q", path, want)
+			}
+		}
+	}
+}
+
 func findCommand(t *testing.T, root *cobra.Command, path string) *cobra.Command {
 	t.Helper()
 	cur := root

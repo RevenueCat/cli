@@ -58,6 +58,7 @@ Agent-friendly entrypoints:
   rc commands --json     full command tree
   rc schema <cmd>        per-command flag/arg/example schema
   rc skills install      official RevenueCat AI Toolkit workflows
+  rc paywalls edit       AI Editor: edit a paywall from a prompt
   rc <cmd> --json        machine-readable output
   rc <cmd> --no-input    fail rather than prompt
   rc <cmd> --yes         skip confirmations`,

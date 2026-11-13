@@ -53,7 +53,7 @@ func runProjectsList(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	page, err := client.Projects.List(cmd.Context())
+	page, err := client.Projects.ListAll(cmd.Context())
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ The chosen project is written to the active profile file (default:
 				// non-interactive select otherwise resolves to.
 				return fmt.Errorf("no project specified: pass a project ID (e.g. `rc projects use proj_abc`); the interactive picker is unavailable under --json/--no-input")
 			} else {
-				page, err := client.Projects.List(cmd.Context())
+				page, err := client.Projects.ListAll(cmd.Context())
 				if err != nil {
 					return err
 				}

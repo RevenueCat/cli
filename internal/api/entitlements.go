@@ -28,6 +28,11 @@ func (s *EntitlementsService) List(ctx context.Context, projectID string) (*Page
 	return &out, nil
 }
 
+// ListAll follows next_page until every Entitlement is loaded, for pickers.
+func (s *EntitlementsService) ListAll(ctx context.Context, projectID string) (*Page[Entitlement], error) {
+	return listAll[Entitlement](ctx, s.c, pathEntitlements(projectID), maxPageSize)
+}
+
 // GET /projects/{project_id}/entitlements/{id}
 func (s *EntitlementsService) Get(ctx context.Context, projectID, id string) (*Entitlement, error) {
 	var out Entitlement

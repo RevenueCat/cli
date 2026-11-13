@@ -936,6 +936,125 @@ paths:
       responses:
         '200':
           description: OK
+    post:
+      summary: Create a Flow draft
+      operationId: create-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read_write
+      - project_configuration:offerings:read_write
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/flows/{flow_id}/actions/duplicate:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Duplicate a Flow
+      operationId: duplicate-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read_write
+      - project_configuration:offerings:read_write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DuplicateFlow'
+      responses:
+        '200':
+          description: OK
+  /projects/{project_id}/flows/{flow_id}/actions/validate:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Validate a Flow draft
+      operationId: validate-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read
+      - project_configuration:offerings:read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateFlow'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowValidation'
+  /projects/{project_id}/flows/{flow_id}:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: flow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Get a Flow
+      operationId: get-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read
+      x-expandable-fields:
+      - steps: project_configuration:offerings:read
+      parameters:
+      - name: expand
+        in: query
+        description: Accepted values are `steps` (adds the draft steps and settings; requires `project_configuration:offerings:read`).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - steps
+      responses:
+        '200':
+          description: OK
+    patch:
+      summary: Update a Flow
+      operationId: update-flow
+      x-release-status: development
+      x-revenuecat-release-gatekeeping: false
+      x-scopes:
+      - project_configuration:workflows:read_write
+      - project_configuration:offerings:read_write
+      responses:
+        '200':
+          description: OK
   /projects/{project_id}/checkpoints:
     parameters:
     - name: project_id
@@ -1416,3 +1535,122 @@ components:
       - ZAR
       - ZMW
       - ZWL
+    DuplicateFlow:
+      type: object
+      additionalProperties: false
+      properties:
+        display_name:
+          type: string
+          description: Name of the duplicate.
+          minLength: 1
+          maxLength: 1500
+          example: Onboarding Copy
+    ValidateFlow:
+      type: object
+      additionalProperties: false
+      properties:
+        revision:
+          type: integer
+          description: Current draft revision. Saves must supply this value to reject
+            stale writes.
+          example: 1
+          format: int64
+          minimum: 0
+    FlowValidation:
+      type: object
+      additionalProperties: true
+      required:
+      - object
+      - id
+      - valid
+      - revision
+      - step_issues
+      - flow_issues
+      properties:
+        object:
+          type: string
+          enum:
+          - flow_validation
+          description: Type of this object.
+          example: flow_validation
+        id:
+          type: string
+          description: Flow ID.
+          example: wf_123456789a
+        valid:
+          type: boolean
+          description: Whether the draft can be published. Warnings do not prevent publication.
+          example: false
+        revision:
+          type: integer
+          description: Draft revision that was validated.
+          example: 1
+          format: int64
+          minimum: 0
+        step_issues:
+          type: object
+          description: Issues keyed by step ID.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/FlowValidationIssue'
+          example: {}
+        flow_issues:
+          type: array
+          description: Issues affecting the whole flow.
+          items:
+            $ref: '#/components/schemas/FlowValidationIssue'
+          example: []
+    FlowValidationIssue:
+      type: object
+      additionalProperties: true
+      required:
+      - key
+      - message
+      - severity
+      properties:
+        key:
+          type: string
+          description: Validation issue key.
+          example: Step_Unreachable
+        message:
+          description: A human-readable description of the issue.
+          type: string
+          example: Add a name to your paywall.
+        severity:
+          description: The severity of the validation issue.
+          type: string
+          enum:
+          - error
+          - warning
+          example: error
+        component_id:
+          description: The component associated with the issue.
+          type: string
+          nullable: true
+          example: main_stack
+        property:
+          description: The component property associated with the issue.
+          type: string
+          nullable: true
+          example: font_size
+        locale:
+          description: The locale associated with the issue.
+          type: string
+          nullable: true
+          example: en_US
+        localization_id:
+          description: The localization identifier associated with the issue.
+          type: string
+          nullable: true
+          example: title
+        path:
+          description: The schema path associated with the issue.
+          type: string
+          nullable: true
+          example: paywall.components_config.base.stack
+        action:
+          description: Suggested action to resolve the issue.
+          type: string
+          nullable: true
+          example: add_screen

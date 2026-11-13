@@ -158,7 +158,7 @@ func loginWithMCPCredential(ctx context.Context, rt *Runtime, cred mcpCredential
 	// Validate before clearing or saving: a dead token fails here instead of
 	// faking a "Logged in" that breaks on first use, and a failed import won't
 	// announce a project clear that never saved.
-	if _, err := client.Projects.List(ctx); err != nil {
+	if _, err := client.Projects.ListAll(ctx); err != nil {
 		rt.Out.Hint("Run `rc login` and choose browser login instead.")
 		return fmt.Errorf("that %s token didn't work (it may have already expired — they last about an hour): %w", cred.Source, err)
 	}
