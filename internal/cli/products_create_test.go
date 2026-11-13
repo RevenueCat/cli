@@ -209,3 +209,53 @@ func TestProductsCreate_TitleRequiredForTestStore(t *testing.T) {
 		t.Fatalf("missing --title still reached the server: %v", requests)
 	}
 }
+
+func TestProductsCreate_StripePriceIDIsSent(t *testing.T) {
+	_, body, err := runProductsCreate(t, "stripe",
+		"--store-id", "prod_abc", "--price-id", "price_123", "--type", "subscription", "--app-id", "app")
+	if err != nil {
+		t.Fatalf("create failed: %v", err)
+	}
+	if got, _ := body["store_identifier"].(string); got != "prod_abc" {
+		t.Fatalf("store_identifier = %q, want prod_abc", got)
+	}
+	if got, _ := body["price_identifier"].(string); got != "price_123" {
+		t.Fatalf("price_identifier = %q, want price_123", got)
+	}
+}
+
+func TestProductsCreate_PriceIDOmittedWhenUnset(t *testing.T) {
+	_, body, err := runProductsCreate(t, "stripe",
+		"--store-id", "prod_abc", "--type", "subscription", "--app-id", "app")
+	if err != nil {
+		t.Fatalf("create failed: %v", err)
+	}
+	if _, ok := body["price_identifier"]; ok {
+		t.Fatalf("price_identifier should be omitted when --price-id is unset, body: %v", body)
+	}
+}
+
+func TestProductsCreate_StripePriceIDAsStoreIDIsRejected(t *testing.T) {
+	requests, _, err := runProductsCreate(t, "stripe",
+		"--store-id", "price_123", "--type", "subscription", "--app-id", "app")
+	if err == nil {
+		t.Fatal("expected a price ID in --store-id to be rejected for a Stripe app")
+	}
+	if !strings.Contains(err.Error(), "--price-id price_123") {
+		t.Fatalf("error should point at --price-id, got: %v", err)
+	}
+	if postedProducts(requests) {
+		t.Fatalf("create must not reach the server: %v", requests)
+	}
+}
+
+func TestProductsCreate_PriceLikeStoreIDAllowedOutsideStripe(t *testing.T) {
+	requests, _, err := runProductsCreate(t, "app_store",
+		"--store-id", "price_tier_1", "--type", "consumable", "--app-id", "app")
+	if err != nil {
+		t.Fatalf("non-Stripe store IDs are the server's call, got: %v", err)
+	}
+	if !postedProducts(requests) {
+		t.Fatalf("create did not reach the create endpoint: %v", requests)
+	}
+}
