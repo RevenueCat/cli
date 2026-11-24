@@ -112,13 +112,6 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 	return nil
 }
 
-func experimentOfferingID(offering *api.ExperimentOffering) string {
-	if offering == nil {
-		return ""
-	}
-	return offering.ID
-}
-
 func experimentVariantLabel(variant api.ExperimentVariant) string {
 	if variant.IsControl {
 		return "Control (" + variant.Key + ")"

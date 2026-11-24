@@ -74,10 +74,14 @@ func newExperimentsListCmd() *cobra.Command {
 				control := ""
 				offeringByKey := map[string]string{}
 				for _, variant := range experiment.Variants {
+					offering := "No offering"
+					if variant.Offering != nil {
+						offering = variant.Offering.ID
+					}
 					if variant.IsControl {
-						control = experimentOfferingID(variant.Offering)
+						control = offering
 					} else {
-						offeringByKey[variant.Key] = experimentOfferingID(variant.Offering)
+						offeringByKey[variant.Key] = offering
 					}
 				}
 				row := []string{experiment.ID, experiment.DisplayName, experiment.Status, control}
