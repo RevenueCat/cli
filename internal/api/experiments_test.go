@@ -71,7 +71,7 @@ func TestExperimentsReadRoutesAndFilters(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/projects/proj/experiments":
-			fmt.Fprint(w, `{"object":"list","items":[{"object":"experiment","id":"exp1","display_name":"Onboarding","status":"running","created_at":1,"updated_at":2,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}],"next_page":null,"url":"/projects/proj/experiments"}`)
+			fmt.Fprint(w, `{"object":"list","items":[{"object":"experiment","id":"exp1","display_name":"Onboarding","status":"running","created_at":1,"updated_at":2,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}]}],"next_page":null,"url":"/projects/proj/experiments"}`)
 		case "/projects/proj/experiments/exp1":
 			fmt.Fprint(w, `{"object":"experiment","id":"exp1","display_name":"Onboarding","status":"running","created_at":1,"updated_at":2}`)
 		case "/projects/proj/experiments/exp1/results":
@@ -87,7 +87,7 @@ func TestExperimentsReadRoutesAndFilters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(page.Items) != 1 || page.Items[0].OfferingB.ID != "ofrng_b" {
+	if len(page.Items) != 1 || len(page.Items[0].Variants) != 2 || page.Items[0].Variants[1].Offering.ID != "ofrng_b" {
 		t.Fatalf("unexpected page: %+v", page)
 	}
 	if _, err := client.Experiments.Get(ctx, "proj", "exp1"); err != nil {

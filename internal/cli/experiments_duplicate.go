@@ -61,14 +61,26 @@ func newExperimentsDuplicateCmd() *cobra.Command {
 }
 
 func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, error) {
-	if source.OfferingA == nil || source.OfferingB == nil || source.EnrollmentPercent == nil {
+	offeringIDs := map[string]string{}
+	hasPlacements := false
+	for _, variant := range source.Variants {
+		// Creating an experiment still takes the a–d fields, so a later key has nowhere to go.
+		if len(variant.Key) != 1 || variant.Key < "a" || variant.Key > "d" {
+			return api.ExperimentCreate{}, fmt.Errorf("experiment %s has variant %s; duplicate supports only variants a to d", source.ID, variant.Key)
+		}
+		if variant.Offering != nil {
+			offeringIDs[variant.Key] = variant.Offering.ID
+		}
+		hasPlacements = hasPlacements || variant.Placements != nil
+	}
+	if offeringIDs["a"] == "" || offeringIDs["b"] == "" || source.EnrollmentPercent == nil {
 		return api.ExperimentCreate{}, fmt.Errorf("experiment %s lacks configuration needed to duplicate it", source.ID)
 	}
 	body := api.ExperimentCreate{
 		DisplayName:          "Copy of " + source.DisplayName,
 		EnrollmentPercentage: *source.EnrollmentPercent,
-		OfferingAID:          source.OfferingA.ID,
-		OfferingBID:          source.OfferingB.ID,
+		OfferingAID:          offeringIDs["a"],
+		OfferingBID:          offeringIDs["b"],
 		Notes:                source.Notes,
 		ExperimentType:       source.ExperimentType,
 		PrimaryMetric:        source.PrimaryMetric,
@@ -76,11 +88,11 @@ func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, er
 		EnrollmentMode:       source.EnrollmentMode,
 		AudienceID:           source.AudienceID,
 	}
-	if source.OfferingC != nil {
-		body.OfferingCID = &source.OfferingC.ID
+	if id, ok := offeringIDs["c"]; ok {
+		body.OfferingCID = &id
 	}
-	if source.OfferingD != nil {
-		body.OfferingDID = &source.OfferingD.ID
+	if id, ok := offeringIDs["d"]; ok {
+		body.OfferingDID = &id
 	}
 	if len(source.TargetingConditions) > 0 && source.AudienceID == nil {
 		body.TargetingConditions, _ = json.Marshal(source.TargetingConditions)
@@ -88,43 +100,37 @@ func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, er
 	if source.DurationSettings != nil {
 		body.ExperimentDurationSettings, _ = json.Marshal(source.DurationSettings)
 	}
-	if source.Placements != nil {
-		placement := map[string]any{}
-		for _, variant := range []struct {
-			key      string
-			offering *api.ExperimentOffering
-		}{
-			{"fallback_offering_a_id", source.Placements.FallbackOfferingA},
-			{"fallback_offering_b_id", source.Placements.FallbackOfferingB},
-			{"fallback_offering_c_id", source.Placements.FallbackOfferingC},
-			{"fallback_offering_d_id", source.Placements.FallbackOfferingD},
-		} {
-			if variant.offering != nil {
-				placement[variant.key] = variant.offering.ID
-			}
-		}
-		rows := make([]map[string]string, 0, len(source.Placements.PlacementOfferings))
-		for _, item := range source.Placements.PlacementOfferings {
-			row := map[string]string{"placement_identifier": item.PlacementIdentifier}
-			for _, variant := range []struct {
-				key      string
-				offering *api.ExperimentOffering
-			}{
-				{"offering_a_id", item.OfferingA},
-				{"offering_b_id", item.OfferingB},
-				{"offering_c_id", item.OfferingC},
-				{"offering_d_id", item.OfferingD},
-			} {
-				if variant.offering != nil {
-					row[variant.key] = variant.offering.ID
-				}
-			}
-			rows = append(rows, row)
-		}
-		if len(rows) > 0 {
-			placement["placement_offerings"] = rows
-		}
-		body.Placements, _ = json.Marshal(placement)
+	if hasPlacements {
+		body.Placements, _ = json.Marshal(duplicatePlacementsConfig(source.Variants))
 	}
 	return body, nil
+}
+
+func duplicatePlacementsConfig(variants []api.ExperimentVariant) map[string]any {
+	placements := map[string]any{}
+	rows := []map[string]string{}
+	rowByPlacement := map[string]map[string]string{}
+	for _, variant := range variants {
+		if variant.Placements == nil {
+			continue
+		}
+		if variant.Placements.FallbackOffering != nil {
+			placements["fallback_offering_"+variant.Key+"_id"] = variant.Placements.FallbackOffering.ID
+		}
+		for _, item := range variant.Placements.PlacementOfferings {
+			row, seen := rowByPlacement[item.PlacementIdentifier]
+			if !seen {
+				row = map[string]string{"placement_identifier": item.PlacementIdentifier}
+				rowByPlacement[item.PlacementIdentifier] = row
+				rows = append(rows, row)
+			}
+			if item.Offering != nil {
+				row["offering_"+variant.Key+"_id"] = item.Offering.ID
+			}
+		}
+	}
+	if len(rows) > 0 {
+		placements["placement_offerings"] = rows
+	}
+	return placements
 }
