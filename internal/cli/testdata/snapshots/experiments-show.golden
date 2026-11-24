@@ -11,8 +11,8 @@ Audience
   Condition 1:  platform in ios
 
 Placements
-  Fallback:    Control (a) No offering · Variant b No offering · Variant e No offering
-  onboarding:  Control (a) ofrng_control · Variant b ofrng_treatment · Variant e No offering
+  onboarding:       Control (a) ofrng_control · Variant b ofrng_treatment · Variant e No offering
+  All other cases:  Control (a) No offering · Variant b No offering · Variant e No offering
 
 Setup
   Enrollment:         50%

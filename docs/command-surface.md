@@ -309,8 +309,10 @@ include the key (`CONTROL (a)`, `VARIANT b`), so a key has no implied role beyon
 key. The control comes from `is_control`. Labels follow the results tables
 (`Control (a)`, `Variant b`). In `list`, the variant columns are the union of the
 page's non-control keys, sorted for display; keys of different experiments are
-unrelated. Placements come from each variant's `placements`; a placement listed
-without an offering shows no paywall.
+unrelated. Placements come from each variant's `placements`, with every variant
+in each line. The fallback offering shows last, as `All other cases` like the
+dashboard. An empty offering shows `No offering`: the SDK returns no offering
+there.
 
 ## What's intentionally NOT here
 

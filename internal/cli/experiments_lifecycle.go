@@ -286,7 +286,11 @@ func showExperimentEnrollmentState(rt *Runtime, current *api.Experiment, lead st
 		rt.Out.Field("Audience", "All eligible customers")
 	}
 	for _, placement := range experimentPlacementLines(current.Variants) {
-		rt.Out.Field("Placement "+placement.Key, placement.Value)
+		key := placement.Key
+		if key != experimentOtherPlacementsLabel {
+			key = "Placement " + key
+		}
+		rt.Out.Field(key, placement.Value)
 	}
 	if current.ExperimentType != nil {
 		rt.Out.Field("Type", *current.ExperimentType)
