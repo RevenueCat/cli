@@ -65,7 +65,9 @@ func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, er
 	hasPlacements := false
 	for _, variant := range source.Variants {
 		// Creating an experiment still takes the a–d fields, so a later key has nowhere to go.
-		if len(variant.Key) != 1 || variant.Key < "a" || variant.Key > "d" {
+		switch variant.Key {
+		case "a", "b", "c", "d":
+		default:
 			return api.ExperimentCreate{}, fmt.Errorf("experiment %s has variant %s; duplicate supports only variants a to d", source.ID, variant.Key)
 		}
 		if variant.Offering != nil {

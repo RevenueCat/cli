@@ -119,11 +119,18 @@ func experimentVariantLabel(key string, isControl bool) string {
 	return "Variant " + key
 }
 
-func experimentOfferingLabel(offering *api.ExperimentOffering) string {
+func experimentOfferingID(offering *api.ExperimentOffering) string {
 	if offering == nil {
 		return "No offering"
 	}
-	label := offering.ID
+	return offering.ID
+}
+
+func experimentOfferingLabel(offering *api.ExperimentOffering) string {
+	label := experimentOfferingID(offering)
+	if offering == nil {
+		return label
+	}
 	if offering.DisplayName != "" {
 		label += " (" + offering.DisplayName + ")"
 	}
