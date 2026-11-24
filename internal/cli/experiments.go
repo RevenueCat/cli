@@ -374,10 +374,7 @@ func experimentResultVariantKey(variant string) string {
 
 func experimentResultVariantLabel(variant, control string) string {
 	key := experimentResultVariantKey(variant)
-	if key == control {
-		return "Control (" + key + ")"
-	}
-	return "Variant " + key
+	return experimentVariantLabel(key, key == control)
 }
 
 func chanceToWinLabel(stat api.ExperimentResultVariantStatistic) string {

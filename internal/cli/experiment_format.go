@@ -17,7 +17,7 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 
 	variants := []output.CardLine{}
 	for _, variant := range experiment.Variants {
-		variants = append(variants, output.CardLine{Key: experimentVariantLabel(variant), Value: experimentOfferingLabel(variant.Offering)})
+		variants = append(variants, output.CardLine{Key: experimentVariantLabel(variant.Key, variant.IsControl), Value: experimentOfferingLabel(variant.Offering)})
 	}
 
 	audience := []output.CardLine{}
@@ -112,11 +112,11 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 	return nil
 }
 
-func experimentVariantLabel(variant api.ExperimentVariant) string {
-	if variant.IsControl {
-		return "Control (" + variant.Key + ")"
+func experimentVariantLabel(key string, isControl bool) string {
+	if isControl {
+		return "Control (" + key + ")"
 	}
-	return "Variant " + variant.Key
+	return "Variant " + key
 }
 
 func experimentOfferingLabel(offering *api.ExperimentOffering) string {
@@ -165,7 +165,7 @@ func experimentPlacementLines(variants []api.ExperimentVariant) []output.CardLin
 		if variant.Placements == nil {
 			continue
 		}
-		label := experimentVariantLabel(variant)
+		label := experimentVariantLabel(variant.Key, variant.IsControl)
 		fallback = append(fallback, label+" "+experimentOfferingLabel(variant.Placements.FallbackOffering))
 		for _, placement := range variant.Placements.PlacementOfferings {
 			if _, seen := byPlacement[placement.PlacementIdentifier]; !seen {

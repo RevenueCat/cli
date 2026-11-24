@@ -271,7 +271,7 @@ func showExperimentEnrollmentState(rt *Runtime, current *api.Experiment, lead st
 	rt.Out.Lead(lead)
 	rt.Out.Field("Status", current.Status)
 	for _, variant := range current.Variants {
-		rt.Out.Field(experimentVariantLabel(variant), experimentOfferingLabel(variant.Offering))
+		rt.Out.Field(experimentVariantLabel(variant.Key, variant.IsControl), experimentOfferingLabel(variant.Offering))
 	}
 	if current.EnrollmentPercent != nil {
 		rt.Out.Field("Enrollment", fmt.Sprintf("%d%%", *current.EnrollmentPercent))
