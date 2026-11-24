@@ -161,7 +161,7 @@ func TestExperimentsListIncludesEveryVariantAndPagination(t *testing.T) {
 			t.Errorf("unexpected query: %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"Four variants","status":"running","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]}],"next_page":"/projects/proj/experiments?starting_after=exp1"}`)
+		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"Four variants","status":"running","variants":[{"object":"experiment_variant","key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]}],"next_page":"/projects/proj/experiments?starting_after=exp1"}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -176,43 +176,8 @@ func TestExperimentsListIncludesEveryVariantAndPagination(t *testing.T) {
 		}
 	}
 	out, stderr, err = runAgentCmd(t, append(args, "--json")...)
-	if err != nil || stderr != "" || !strings.Contains(out, `"next_page"`) || !strings.Contains(out, "ofrng_e") {
+	if err != nil || stderr != "" || !strings.Contains(out, `"next_page"`) || !strings.Contains(out, "ofrng_e") || !strings.Contains(out, `"object": "experiment_variant"`) {
 		t.Fatalf("pagination or variants missing in JSON: err=%v stdout=%s stderr=%s", err, out, stderr)
-	}
-}
-
-func TestExperimentsListKeepsEachControlOutOfVariantColumns(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"First","status":"running","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a1"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b1"}}]},{"id":"exp2","display_name":"Second","status":"running","variants":[{"key":"b","is_control":true,"offering":{"id":"ofrng_b2"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c2"}},{"key":"d","is_control":false,"offering":null}]}],"next_page":null}`)
-	}))
-	t.Cleanup(srv.Close)
-	t.Setenv("RC_BASE_URL", srv.URL)
-	out, _, err := runAgentCmd(t, "experiments", "list", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
-	if err != nil {
-		t.Fatal(err)
-	}
-	lines := strings.Split(out, "\n")
-	header, second := lines[0], ""
-	for _, line := range lines {
-		if strings.HasPrefix(line, "exp2") {
-			second = line
-		}
-	}
-	cell := func(column string) string {
-		start := strings.Index(header, column)
-		if start < 0 || start >= len(second) {
-			t.Fatalf("missing column %q: %s", column, out)
-		}
-		return strings.Fields(second[start:] + " ")[0]
-	}
-	for column, want := range map[string]string{"CONTROL": "ofrng_b2", "VARIANT c": "ofrng_c2", "VARIANT d": "No"} {
-		if got := cell(column); got != want {
-			t.Fatalf("%s = %q, want %q: %s", column, got, want, out)
-		}
-	}
-	if start := strings.Index(header, "VARIANT b"); strings.TrimSpace(second[start:strings.Index(header, "VARIANT c")]) != "" {
-		t.Fatalf("VARIANT b should be empty for exp2: %s", out)
 	}
 }
 

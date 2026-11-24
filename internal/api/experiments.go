@@ -51,6 +51,7 @@ type ExperimentVariantPlacements struct {
 }
 
 type ExperimentVariant struct {
+	Object     string                       `json:"object"`
 	Key        string                       `json:"key"`
 	IsControl  bool                         `json:"is_control"`
 	Offering   *ExperimentOffering          `json:"offering"`
