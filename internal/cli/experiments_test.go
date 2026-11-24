@@ -627,7 +627,7 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet {
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":{"fallback_offering":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pa"}},{"placement_identifier":"settings","offering":null}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pb"}},{"placement_identifier":"settings","offering":null}]}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"},"placements":null}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":{"fallback_offering":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pa"}},{"placement_identifier":"settings","offering":null}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pb"}},{"placement_identifier":"settings","offering":null}]}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"},"placements":{"fallback_offering":{"id":"ofrng_fc"},"placement_offerings":[{"placement_identifier":"onboarding","offering":null},{"placement_identifier":"settings","offering":null}]}}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
 			return
 		}
 		if r.URL.Path != "/projects/proj/experiments" {
@@ -649,7 +649,7 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 	}
 	placements := posted["placements"].(map[string]any)
 	rows := placements["placement_offerings"].([]any)
-	if placements["fallback_offering_a_id"] != "ofrng_fa" || placements["fallback_offering_b_id"] != nil || len(rows) != 2 {
+	if placements["fallback_offering_a_id"] != "ofrng_fa" || placements["fallback_offering_b_id"] != nil || placements["fallback_offering_c_id"] != "ofrng_fc" || len(rows) != 2 {
 		t.Fatalf("placement IDs not copied: %#v", placements)
 	}
 	onboarding, settings := rows[0].(map[string]any), rows[1].(map[string]any)
