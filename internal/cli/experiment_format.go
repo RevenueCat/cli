@@ -157,9 +157,6 @@ func experimentConditionSummary(conditions []api.ExperimentCondition) string {
 	return strings.Join(parts, "; ")
 }
 
-// experimentOtherPlacementsLabel names the fallback offering the way the dashboard does.
-const experimentOtherPlacementsLabel = "All other cases"
-
 func experimentPlacementLines(variants []api.ExperimentVariant) []output.CardLine {
 	fallback := []string{}
 	byPlacement := map[string][]string{}
@@ -181,8 +178,9 @@ func experimentPlacementLines(variants []api.ExperimentVariant) []output.CardLin
 	for _, identifier := range placementOrder {
 		lines = append(lines, output.CardLine{Key: identifier, Value: strings.Join(byPlacement[identifier], " · ")})
 	}
+	// "All other cases" is the dashboard's name for the fallback offering.
 	if len(fallback) > 0 {
-		lines = append(lines, output.CardLine{Key: experimentOtherPlacementsLabel, Value: strings.Join(fallback, " · ")})
+		lines = append(lines, output.CardLine{Key: "All other cases", Value: strings.Join(fallback, " · ")})
 	}
 	return lines
 }

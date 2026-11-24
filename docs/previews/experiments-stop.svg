@@ -21,8 +21,8 @@
 </text><text x="12.00px" y="178.20px" xml:space="preserve">  Variant e                   ofrng_extra
 </text><text x="12.00px" y="195.00px" xml:space="preserve">  Enrollment                  50%
 </text><text x="12.00px" y="211.80px" xml:space="preserve">  Condition 1                 platform in ios
-</text><text x="12.00px" y="228.60px" xml:space="preserve">  Placement onboarding        Control (a) ofrng_control · Variant b ofrng_treatment · Variant e No offering
-</text><text x="12.00px" y="245.40px" xml:space="preserve">  All other cases             Control (a) No offering · Variant b No offering · Variant e No offering
+</text><text x="12.00px" y="228.60px" xml:space="preserve">  Placement: onboarding       Control (a) ofrng_control · Variant b ofrng_treatment · Variant e No offering
+</text><text x="12.00px" y="245.40px" xml:space="preserve">  Placement: All other cases  Control (a) No offering · Variant b No offering · Variant e No offering
 </text><text x="12.00px" y="262.20px" xml:space="preserve">  Type                        paywall_design
 </text><text x="12.00px" y="279.00px" xml:space="preserve">  Primary metric              initial_conversion_rate
 </text><text x="12.00px" y="295.80px" xml:space="preserve">  Secondary metrics           realized_ltv_per_customer, trial_conversion_rate

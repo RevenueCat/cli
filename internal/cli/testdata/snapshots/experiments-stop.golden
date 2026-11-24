@@ -9,8 +9,8 @@ $ rc experiments stop exp_snap --yes --no-input --project-id proj_snap --api-key
   Variant e                   ofrng_extra
   Enrollment                  50%
   Condition 1                 platform in ios
-  Placement onboarding        Control (a) ofrng_control · Variant b ofrng_treatment · Variant e No offering
-  All other cases             Control (a) No offering · Variant b No offering · Variant e No offering
+  Placement: onboarding       Control (a) ofrng_control · Variant b ofrng_treatment · Variant e No offering
+  Placement: All other cases  Control (a) No offering · Variant b No offering · Variant e No offering
   Type                        paywall_design
   Primary metric              initial_conversion_rate
   Secondary metrics           realized_ltv_per_customer, trial_conversion_rate
