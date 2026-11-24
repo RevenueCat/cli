@@ -119,15 +119,6 @@ func experimentOfferingID(offering *api.ExperimentOffering) string {
 	return offering.ID
 }
 
-func experimentControlOfferingID(experiment api.Experiment) string {
-	for _, variant := range experiment.Variants {
-		if variant.IsControl {
-			return experimentOfferingID(variant.Offering)
-		}
-	}
-	return ""
-}
-
 func experimentVariantLabel(variant api.ExperimentVariant) string {
 	if variant.IsControl {
 		return "Control (" + variant.Key + ")"

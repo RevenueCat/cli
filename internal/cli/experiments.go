@@ -71,11 +71,16 @@ func newExperimentsListCmd() *cobra.Command {
 			}
 			rows := make([][]string, 0, len(page.Items))
 			for _, experiment := range page.Items {
+				control := ""
 				offeringByKey := map[string]string{}
 				for _, variant := range experiment.Variants {
-					offeringByKey[variant.Key] = experimentOfferingID(variant.Offering)
+					if variant.IsControl {
+						control = experimentOfferingID(variant.Offering)
+					} else {
+						offeringByKey[variant.Key] = experimentOfferingID(variant.Offering)
+					}
 				}
-				row := []string{experiment.ID, experiment.DisplayName, experiment.Status, experimentControlOfferingID(experiment)}
+				row := []string{experiment.ID, experiment.DisplayName, experiment.Status, control}
 				for _, key := range keys {
 					row = append(row, offeringByKey[key])
 				}

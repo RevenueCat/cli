@@ -181,6 +181,27 @@ func TestExperimentsListIncludesEveryVariantAndPagination(t *testing.T) {
 	}
 }
 
+func TestExperimentsListKeepsEachControlOutOfVariantColumns(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"First","status":"running","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a1"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b1"}}]},{"id":"exp2","display_name":"Second","status":"running","variants":[{"key":"b","is_control":true,"offering":{"id":"ofrng_b2"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c2"}}]}],"next_page":null}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	out, _, err := runAgentCmd(t, "experiments", "list", "--project-id", "proj", "--api-key", "sk_test", "--no-input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(out, "ofrng_b2") != 1 {
+		t.Fatalf("control offering of exp2 should appear once, in CONTROL: %s", out)
+	}
+	for _, want := range []string{"VARIANT b", "VARIANT c", "ofrng_b1", "ofrng_c2"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q: %s", want, out)
+		}
+	}
+}
+
 func TestExperimentShowIncludesPaywallsAndTargeting(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("expand") != "offering.paywall" {
