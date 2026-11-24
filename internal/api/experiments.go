@@ -90,7 +90,7 @@ type Experiment struct {
 	OfferingB           *ExperimentOffering         `json:"offering_b,omitempty"`
 	OfferingC           *ExperimentOffering         `json:"offering_c,omitempty"`
 	OfferingD           *ExperimentOffering         `json:"offering_d,omitempty"`
-	Variants            []ExperimentVariant         `json:"variants,omitempty"`
+	Variants            []ExperimentVariant         `json:"variants"`
 	Notes               *string                     `json:"notes,omitempty"`
 	ExperimentType      *string                     `json:"experiment_type,omitempty"`
 	PrimaryMetric       *string                     `json:"primary_metric,omitempty"`

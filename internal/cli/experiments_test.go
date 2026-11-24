@@ -161,7 +161,7 @@ func TestExperimentsListIncludesEveryVariantAndPagination(t *testing.T) {
 			t.Errorf("unexpected query: %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"Four variants","status":"running","variants":[{"object":"experiment_variant","key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]}],"next_page":"/projects/proj/experiments?starting_after=exp1"}`)
+		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"Four variants","status":"running","variants":[{"object":"experiment_variant","key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]},{"id":"exp2","display_name":"No variants","status":"running","variants":[]}],"next_page":"/projects/proj/experiments?starting_after=exp1"}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -176,7 +176,7 @@ func TestExperimentsListIncludesEveryVariantAndPagination(t *testing.T) {
 		}
 	}
 	out, stderr, err = runAgentCmd(t, append(args, "--json")...)
-	if err != nil || stderr != "" || !strings.Contains(out, `"next_page"`) || !strings.Contains(out, "ofrng_e") || !strings.Contains(out, `"object": "experiment_variant"`) {
+	if err != nil || stderr != "" || !strings.Contains(out, `"next_page"`) || !strings.Contains(out, "ofrng_e") || !strings.Contains(out, `"object": "experiment_variant"`) || !strings.Contains(out, `"variants": []`) {
 		t.Fatalf("pagination or variants missing in JSON: err=%v stdout=%s stderr=%s", err, out, stderr)
 	}
 }
