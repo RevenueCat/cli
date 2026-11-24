@@ -40,6 +40,23 @@ type ExperimentPlacements struct {
 	PlacementOfferings []ExperimentPlacementOffering `json:"placement_offerings,omitempty"`
 }
 
+type ExperimentVariantPlacementOffering struct {
+	PlacementIdentifier string              `json:"placement_identifier"`
+	Offering            *ExperimentOffering `json:"offering"`
+}
+
+type ExperimentVariantPlacements struct {
+	FallbackOffering   *ExperimentOffering                  `json:"fallback_offering"`
+	PlacementOfferings []ExperimentVariantPlacementOffering `json:"placement_offerings"`
+}
+
+type ExperimentVariant struct {
+	Key        string                       `json:"key"`
+	IsControl  bool                         `json:"is_control"`
+	Offering   *ExperimentOffering          `json:"offering"`
+	Placements *ExperimentVariantPlacements `json:"placements"`
+}
+
 type ExperimentDurationSettings struct {
 	ConversionRatePercentage          *float64 `json:"conversion_rate_percentage,omitempty"`
 	DailyEnrolledCustomers            *int     `json:"daily_enrolled_customers,omitempty"`
@@ -72,6 +89,7 @@ type Experiment struct {
 	OfferingB           *ExperimentOffering         `json:"offering_b,omitempty"`
 	OfferingC           *ExperimentOffering         `json:"offering_c,omitempty"`
 	OfferingD           *ExperimentOffering         `json:"offering_d,omitempty"`
+	Variants            []ExperimentVariant         `json:"variants,omitempty"`
 	Notes               *string                     `json:"notes,omitempty"`
 	ExperimentType      *string                     `json:"experiment_type,omitempty"`
 	PrimaryMetric       *string                     `json:"primary_metric,omitempty"`

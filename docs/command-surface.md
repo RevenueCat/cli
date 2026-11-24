@@ -304,6 +304,14 @@ presentation. This is display order, not experiment iteration order. Labels
 include the key (`CONTROL (a)`, `VARIANT b`), so a key has no implied role beyond
 `control_variant`. The legacy label mapping remains only for compatibility.
 
+`rc experiments list`, `show`, and the lifecycle reviews read the experiment's
+`variants` list, not `offering_a` to `offering_d`, so they show every variant
+key. The control comes from `is_control`. Labels follow the results tables
+(`Control (a)`, `Variant b`). In `list`, the variant columns are the union of the
+page's non-control keys, sorted for display; keys of different experiments are
+unrelated. Placements come from each variant's `placements`; a placement listed
+without an offering shows no paywall.
+
 ## What's intentionally NOT here
 
 - **No `update` on `projects`** — API doesn't expose it. Paywall draft update is

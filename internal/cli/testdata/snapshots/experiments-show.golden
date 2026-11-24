@@ -3,15 +3,15 @@ $ rc experiments show exp_snap --no-input --project-id proj_snap --api-key sk_sn
   exp_snap · draft
 
 Variants
-  Control:      ofrng_control (Control) · paywall pw_control
-  Treatment:    ofrng_treatment (Treatment) · paywall pw_treatment
-  Treatment C:  ofrng_extra
+  Control (a):  ofrng_control (Control) · paywall pw_control
+  Variant b:    ofrng_treatment (Treatment) · paywall pw_treatment
+  Variant e:    ofrng_extra
 
 Audience
   Condition 1:  platform in ios
 
 Placements
-  onboarding:  Control ofrng_control · Treatment ofrng_treatment
+  onboarding:  Control (a) ofrng_control · Variant b ofrng_treatment · Variant e no paywall
 
 Setup
   Enrollment:         50%

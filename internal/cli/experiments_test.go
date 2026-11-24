@@ -154,14 +154,14 @@ func TestExperimentResultsPreservesPercentageUnitsAndShowsFilters(t *testing.T) 
 	}
 }
 
-func TestExperimentsListIncludesFourVariantsAndPagination(t *testing.T) {
+func TestExperimentsListIncludesEveryVariantAndPagination(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		if q.Get("limit") != "5" || q.Get("starting_after") != "exp0" || q.Get("status") != "running" {
 			t.Errorf("unexpected query: %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"Four variants","status":"running","offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"},"offering_c":{"id":"ofrng_c"},"offering_d":{"id":"ofrng_d"}}],"next_page":"/projects/proj/experiments?starting_after=exp1"}`)
+		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"Four variants","status":"running","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]}],"next_page":"/projects/proj/experiments?starting_after=exp1"}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -170,13 +170,13 @@ func TestExperimentsListIncludesFourVariantsAndPagination(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"ofrng_a", "ofrng_b", "ofrng_c", "ofrng_d", "--cursor exp1"} {
+	for _, want := range []string{"VARIANT e", "ofrng_a", "ofrng_b", "ofrng_c", "ofrng_e", "--cursor exp1"} {
 		if !strings.Contains(out+stderr, want) {
 			t.Fatalf("missing %q: stdout=%s stderr=%s", want, out, stderr)
 		}
 	}
 	out, stderr, err = runAgentCmd(t, append(args, "--json")...)
-	if err != nil || stderr != "" || !strings.Contains(out, `"next_page"`) || !strings.Contains(out, "ofrng_d") {
+	if err != nil || stderr != "" || !strings.Contains(out, `"next_page"`) || !strings.Contains(out, "ofrng_e") {
 		t.Fatalf("pagination or variants missing in JSON: err=%v stdout=%s stderr=%s", err, out, stderr)
 	}
 }
@@ -187,7 +187,7 @@ func TestExperimentShowIncludesPaywallsAndTargeting(t *testing.T) {
 			t.Errorf("missing paywall expansion: %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Four variants","status":"draft","offering_a":{"id":"ofrng_a","paywall_id":"pw_a"},"offering_b":{"id":"ofrng_b"},"offering_c":{"id":"ofrng_c","paywall_id":"pw_c"},"offering_d":{"id":"ofrng_d"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]},{"field":"country","operator":"in","value":["US"]}]}`)
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Four variants","status":"draft","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a","paywall_id":"pw_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c","paywall_id":"pw_c"}},{"key":"e","is_control":false,"offering":null}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]},{"field":"country","operator":"in","value":["US"]}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -200,7 +200,11 @@ func TestExperimentShowIncludesPaywallsAndTargeting(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, want := range []string{"pw_a", "pw_c", "ofrng_c", "ofrng_d", "platform", "ios", "country", "US"} {
+		want := []string{"pw_a", "pw_c", "ofrng_c", "platform", "ios", "country", "US"}
+		if !jsonOutput {
+			want = append(want, "Control (a)", "Variant e:", "No offering")
+		}
+		for _, want := range want {
 			if !strings.Contains(out, want) {
 				t.Fatalf("missing %q (json=%v): %s", want, jsonOutput, out)
 			}
@@ -504,7 +508,7 @@ func TestExperimentResumeRequiresApprovalBeforeMutation(t *testing.T) {
 			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"running"}`)
 			return
 		}
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"paused","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"paused","enrollment_percentage":50,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -529,7 +533,7 @@ func TestExperimentPauseShowsReadableResult(t *testing.T) {
 			mutations++
 			status = "paused"
 		}
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Paywall test","status":"`+status+`","offering_a":{"id":"ofrng_a","display_name":"Control"},"offering_b":{"id":"ofrng_b","display_name":"Treatment"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}]}}`)
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Paywall test","status":"`+status+`","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a","display_name":"Control"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_a"}}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b","display_name":"Treatment"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_b"}}]}}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -545,7 +549,7 @@ func TestExperimentPauseShowsReadableResult(t *testing.T) {
 	if mutations != 1 {
 		t.Fatalf("approved pause made %d mutations, want 1", mutations)
 	}
-	for _, want := range []string{"ofrng_a (Control)", "platform in ios", "onboarding", "Treatment ofrng_b"} {
+	for _, want := range []string{"ofrng_a (Control)", "platform in ios", "onboarding", "Variant b ofrng_b"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q from pause result: %s", want, out)
 		}

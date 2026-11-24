@@ -16,18 +16,8 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 	}
 
 	variants := []output.CardLine{}
-	for _, variant := range []struct {
-		name     string
-		offering *api.ExperimentOffering
-	}{
-		{"Control", experiment.OfferingA},
-		{"Treatment", experiment.OfferingB},
-		{"Treatment C", experiment.OfferingC},
-		{"Treatment D", experiment.OfferingD},
-	} {
-		if variant.offering != nil {
-			variants = append(variants, output.CardLine{Key: variant.name, Value: experimentOfferingLabel(variant.offering)})
-		}
+	for _, variant := range experiment.Variants {
+		variants = append(variants, output.CardLine{Key: experimentVariantLabel(variant), Value: experimentOfferingLabel(variant.Offering)})
 	}
 
 	audience := []output.CardLine{}
@@ -103,7 +93,7 @@ func renderExperimentShow(rt *Runtime, experiment *api.Experiment) error {
 	sections := []output.CardSection{
 		{Heading: "Variants", Lines: variants},
 		{Heading: "Audience", Lines: audience},
-		{Heading: "Placements", Lines: experimentPlacementLines(experiment.Placements), Empty: "No placement overrides"},
+		{Heading: "Placements", Lines: experimentPlacementLines(experiment.Variants), Empty: "No placement overrides"},
 		{Heading: "Setup", Lines: measurements},
 		{Heading: "Timeline", Lines: timeline},
 	}
@@ -129,7 +119,26 @@ func experimentOfferingID(offering *api.ExperimentOffering) string {
 	return offering.ID
 }
 
+func experimentControlOfferingID(experiment api.Experiment) string {
+	for _, variant := range experiment.Variants {
+		if variant.IsControl {
+			return experimentOfferingID(variant.Offering)
+		}
+	}
+	return ""
+}
+
+func experimentVariantLabel(variant api.ExperimentVariant) string {
+	if variant.IsControl {
+		return "Control (" + variant.Key + ")"
+	}
+	return "Variant " + variant.Key
+}
+
 func experimentOfferingLabel(offering *api.ExperimentOffering) string {
+	if offering == nil {
+		return "No offering"
+	}
 	label := offering.ID
 	if offering.DisplayName != "" {
 		label += " (" + offering.DisplayName + ")"
@@ -164,46 +173,38 @@ func experimentConditionSummary(conditions []api.ExperimentCondition) string {
 	return strings.Join(parts, "; ")
 }
 
-func experimentPlacementLines(placements *api.ExperimentPlacements) []output.CardLine {
-	if placements == nil {
-		return nil
+func experimentPlacementLines(variants []api.ExperimentVariant) []output.CardLine {
+	fallback := []string{}
+	byPlacement := map[string][]string{}
+	placementOrder := []string{}
+	for _, variant := range variants {
+		if variant.Placements == nil {
+			continue
+		}
+		label := experimentVariantLabel(variant)
+		if variant.Placements.FallbackOffering != nil {
+			fallback = append(fallback, label+" "+experimentOfferingLabel(variant.Placements.FallbackOffering))
+		}
+		for _, placement := range variant.Placements.PlacementOfferings {
+			if _, seen := byPlacement[placement.PlacementIdentifier]; !seen {
+				placementOrder = append(placementOrder, placement.PlacementIdentifier)
+			}
+			// A listed placement without an offering shows no paywall.
+			value := "no paywall"
+			if placement.Offering != nil {
+				value = experimentOfferingLabel(placement.Offering)
+			}
+			byPlacement[placement.PlacementIdentifier] = append(byPlacement[placement.PlacementIdentifier], label+" "+value)
+		}
 	}
 	lines := []output.CardLine{}
-	if fallback := experimentVariantOfferings(placements.FallbackOfferingA, placements.FallbackOfferingB, placements.FallbackOfferingC, placements.FallbackOfferingD); fallback != "" {
-		lines = append(lines, output.CardLine{Key: "Fallback", Value: fallback})
+	if len(fallback) > 0 {
+		lines = append(lines, output.CardLine{Key: "Fallback", Value: strings.Join(fallback, " · ")})
 	}
-	for _, placement := range placements.PlacementOfferings {
-		value := experimentVariantOfferings(placement.OfferingA, placement.OfferingB, placement.OfferingC, placement.OfferingD)
-		if value == "" {
-			value = "Uses variant defaults"
-		}
-		lines = append(lines, output.CardLine{Key: placement.PlacementIdentifier, Value: value})
+	for _, identifier := range placementOrder {
+		lines = append(lines, output.CardLine{Key: identifier, Value: strings.Join(byPlacement[identifier], " · ")})
 	}
 	return lines
-}
-
-func experimentPlacementSummary(placements *api.ExperimentPlacements) string {
-	lines := experimentPlacementLines(placements)
-	parts := make([]string, len(lines))
-	for i, line := range lines {
-		parts[i] = line.Key + ": " + line.Value
-	}
-	return strings.Join(parts, "; ")
-}
-
-func experimentVariantOfferings(a, b, c, d *api.ExperimentOffering) string {
-	parts := []string{}
-	for _, variant := range []struct {
-		name     string
-		offering *api.ExperimentOffering
-	}{
-		{"Control", a}, {"Treatment", b}, {"Treatment C", c}, {"Treatment D", d},
-	} {
-		if variant.offering != nil {
-			parts = append(parts, variant.name+" "+experimentOfferingLabel(variant.offering))
-		}
-	}
-	return strings.Join(parts, " · ")
 }
 
 func experimentDurationSummary(settings *api.ExperimentDurationSettings) string {

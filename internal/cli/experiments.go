@@ -53,27 +53,31 @@ func newExperimentsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			hasC, hasD := false, false
+			seen := map[string]bool{}
+			keys := []string{}
 			for _, experiment := range page.Items {
-				hasC = hasC || experiment.OfferingC != nil
-				hasD = hasD || experiment.OfferingD != nil
+				for _, variant := range experiment.Variants {
+					if !variant.IsControl && !seen[variant.Key] {
+						seen[variant.Key] = true
+						keys = append(keys, variant.Key)
+					}
+				}
 			}
-			columns := []string{"ID", "NAME", "STATUS", "CONTROL", "TREATMENT"}
-			if hasC {
-				columns = append(columns, "TREATMENT C")
-			}
-			if hasD {
-				columns = append(columns, "TREATMENT D")
+			// Keys of different experiments are unrelated. Sort only for stable display.
+			sort.Strings(keys)
+			columns := []string{"ID", "NAME", "STATUS", "CONTROL"}
+			for _, key := range keys {
+				columns = append(columns, "VARIANT "+key)
 			}
 			rows := make([][]string, 0, len(page.Items))
 			for _, experiment := range page.Items {
-				row := []string{experiment.ID, experiment.DisplayName, experiment.Status,
-					experimentOfferingID(experiment.OfferingA), experimentOfferingID(experiment.OfferingB)}
-				if hasC {
-					row = append(row, experimentOfferingID(experiment.OfferingC))
+				offeringByKey := map[string]string{}
+				for _, variant := range experiment.Variants {
+					offeringByKey[variant.Key] = experimentOfferingID(variant.Offering)
 				}
-				if hasD {
-					row = append(row, experimentOfferingID(experiment.OfferingD))
+				row := []string{experiment.ID, experiment.DisplayName, experiment.Status, experimentControlOfferingID(experiment)}
+				for _, key := range keys {
+					row = append(row, offeringByKey[key])
 				}
 				rows = append(rows, row)
 			}
