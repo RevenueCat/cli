@@ -192,13 +192,27 @@ func TestExperimentsListKeepsEachControlOutOfVariantColumns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Count(out, "ofrng_b2") != 1 {
-		t.Fatalf("control offering of exp2 should appear once, in CONTROL: %s", out)
-	}
-	for _, want := range []string{"VARIANT b", "VARIANT c", "VARIANT d", "ofrng_b1", "ofrng_c2", "No offering"} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("missing %q: %s", want, out)
+	lines := strings.Split(out, "\n")
+	header, second := lines[0], ""
+	for _, line := range lines {
+		if strings.HasPrefix(line, "exp2") {
+			second = line
 		}
+	}
+	cell := func(column string) string {
+		start := strings.Index(header, column)
+		if start < 0 || start >= len(second) {
+			t.Fatalf("missing column %q: %s", column, out)
+		}
+		return strings.Fields(second[start:] + " ")[0]
+	}
+	for column, want := range map[string]string{"CONTROL": "ofrng_b2", "VARIANT c": "ofrng_c2", "VARIANT d": "No"} {
+		if got := cell(column); got != want {
+			t.Fatalf("%s = %q, want %q: %s", column, got, want, out)
+		}
+	}
+	if start := strings.Index(header, "VARIANT b"); strings.TrimSpace(second[start:strings.Index(header, "VARIANT c")]) != "" {
+		t.Fatalf("VARIANT b should be empty for exp2: %s", out)
 	}
 }
 
