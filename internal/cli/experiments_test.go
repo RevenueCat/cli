@@ -653,11 +653,34 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 		t.Fatalf("placement IDs not copied: %#v", placements)
 	}
 	onboarding, settings := rows[0].(map[string]any), rows[1].(map[string]any)
-	if onboarding["offering_a_id"] != "ofrng_pa" || onboarding["offering_b_id"] != "ofrng_pb" || settings["placement_identifier"] != "settings" || len(settings) != 1 {
+	if onboarding["offering_a_id"] != "ofrng_pa" || onboarding["offering_b_id"] != "ofrng_pb" || len(onboarding) != 3 || settings["placement_identifier"] != "settings" || len(settings) != 1 {
 		t.Fatalf("placement rows not copied: %#v", rows)
 	}
 	if _, exists := posted["status"]; exists {
 		t.Fatalf("status should not be copied: %#v", posted)
+	}
+}
+
+func TestExperimentDuplicateWithoutPlacementsSendsNone(t *testing.T) {
+	var posted map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":null},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":null}]}`)
+			return
+		}
+		if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+			t.Error(err)
+		}
+		_, _ = io.WriteString(w, `{"id":"exp2","display_name":"Copy of Original","status":"draft"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	if _, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input"); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := posted["placements"]; exists || posted["offering_b_id"] != "ofrng_b" {
+		t.Fatalf("want offerings and no placements: %#v", posted)
 	}
 }
 
