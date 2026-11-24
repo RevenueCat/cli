@@ -166,19 +166,12 @@ func experimentPlacementLines(variants []api.ExperimentVariant) []output.CardLin
 			continue
 		}
 		label := experimentVariantLabel(variant)
-		if variant.Placements.FallbackOffering != nil {
-			fallback = append(fallback, label+" "+experimentOfferingLabel(variant.Placements.FallbackOffering))
-		}
+		fallback = append(fallback, label+" "+experimentOfferingLabel(variant.Placements.FallbackOffering))
 		for _, placement := range variant.Placements.PlacementOfferings {
 			if _, seen := byPlacement[placement.PlacementIdentifier]; !seen {
 				placementOrder = append(placementOrder, placement.PlacementIdentifier)
 			}
-			// A listed placement without an offering shows no paywall.
-			value := "no paywall"
-			if placement.Offering != nil {
-				value = experimentOfferingLabel(placement.Offering)
-			}
-			byPlacement[placement.PlacementIdentifier] = append(byPlacement[placement.PlacementIdentifier], label+" "+value)
+			byPlacement[placement.PlacementIdentifier] = append(byPlacement[placement.PlacementIdentifier], label+" "+experimentOfferingLabel(placement.Offering))
 		}
 	}
 	lines := []output.CardLine{}
