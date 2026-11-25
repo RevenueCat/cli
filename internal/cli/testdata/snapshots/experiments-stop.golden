@@ -4,12 +4,13 @@ $ rc experiments stop exp_snap --yes --no-input --project-id proj_snap --api-key
   Permanently stop the experiment.
 
   Status                      draft
-  Control                     ofrng_control (Control) · paywall pw_control
-  Treatment                   ofrng_treatment (Treatment) · paywall pw_treatment
-  Treatment C                 ofrng_extra
+  Control (a)                 ofrng_control (Control) · paywall pw_control
+  Variant b                   ofrng_treatment (Treatment) · paywall pw_treatment
+  Variant e                   ofrng_extra
   Enrollment                  50%
   Condition 1                 platform in ios
-  Placement onboarding        Control ofrng_control · Treatment ofrng_treatment
+  Placement: onboarding       Control (a) ofrng_control · Variant b ofrng_treatment · Variant e No offering
+  Placement: All other cases  Control (a) No offering · Variant b No offering · Variant e No offering
   Type                        paywall_design
   Primary metric              initial_conversion_rate
   Secondary metrics           realized_ltv_per_customer, trial_conversion_rate

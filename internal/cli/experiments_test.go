@@ -154,14 +154,14 @@ func TestExperimentResultsPreservesPercentageUnitsAndShowsFilters(t *testing.T) 
 	}
 }
 
-func TestExperimentsListIncludesFourVariantsAndPagination(t *testing.T) {
+func TestExperimentsListIncludesEveryVariantAndPagination(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		if q.Get("limit") != "5" || q.Get("starting_after") != "exp0" || q.Get("status") != "running" {
 			t.Errorf("unexpected query: %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"Four variants","status":"running","offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"},"offering_c":{"id":"ofrng_c"},"offering_d":{"id":"ofrng_d"}}],"next_page":"/projects/proj/experiments?starting_after=exp1"}`)
+		_, _ = io.WriteString(w, `{"items":[{"id":"exp1","display_name":"Four variants","status":"running","variants":[{"object":"experiment_variant","key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]},{"id":"exp2","display_name":"No variants","status":"running","variants":[]}],"next_page":"/projects/proj/experiments?starting_after=exp1"}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -170,13 +170,13 @@ func TestExperimentsListIncludesFourVariantsAndPagination(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"ofrng_a", "ofrng_b", "ofrng_c", "ofrng_d", "--cursor exp1"} {
+	for _, want := range []string{"VARIANT e", "ofrng_a", "ofrng_b", "ofrng_c", "ofrng_e", "--cursor exp1"} {
 		if !strings.Contains(out+stderr, want) {
 			t.Fatalf("missing %q: stdout=%s stderr=%s", want, out, stderr)
 		}
 	}
 	out, stderr, err = runAgentCmd(t, append(args, "--json")...)
-	if err != nil || stderr != "" || !strings.Contains(out, `"next_page"`) || !strings.Contains(out, "ofrng_d") {
+	if err != nil || stderr != "" || !strings.Contains(out, `"next_page"`) || !strings.Contains(out, "ofrng_e") || !strings.Contains(out, `"object": "experiment_variant"`) || !strings.Contains(out, `"variants": []`) {
 		t.Fatalf("pagination or variants missing in JSON: err=%v stdout=%s stderr=%s", err, out, stderr)
 	}
 }
@@ -187,7 +187,7 @@ func TestExperimentShowIncludesPaywallsAndTargeting(t *testing.T) {
 			t.Errorf("missing paywall expansion: %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Four variants","status":"draft","offering_a":{"id":"ofrng_a","paywall_id":"pw_a"},"offering_b":{"id":"ofrng_b"},"offering_c":{"id":"ofrng_c","paywall_id":"pw_c"},"offering_d":{"id":"ofrng_d"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]},{"field":"country","operator":"in","value":["US"]}]}`)
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Four variants","status":"draft","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a","paywall_id":"pw_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c","paywall_id":"pw_c"}},{"key":"e","is_control":false,"offering":null}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]},{"field":"country","operator":"in","value":["US"]}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -200,7 +200,11 @@ func TestExperimentShowIncludesPaywallsAndTargeting(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, want := range []string{"pw_a", "pw_c", "ofrng_c", "ofrng_d", "platform", "ios", "country", "US"} {
+		want := []string{"pw_a", "pw_c", "ofrng_c", "platform", "ios", "country", "US"}
+		if !jsonOutput {
+			want = append(want, "Control (a)", "Variant e:", "No offering")
+		}
+		for _, want := range want {
 			if !strings.Contains(out, want) {
 				t.Fatalf("missing %q (json=%v): %s", want, jsonOutput, out)
 			}
@@ -441,7 +445,7 @@ func TestExperimentShowFallsBackOnlyOnExpandedForbidden(t *testing.T) {
 					_, _ = io.WriteString(w, `{"type":"forbidden","message":"Denied"}`)
 					return
 				}
-				_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft","offering_a":{"id":"ofrng_a"}}`)
+				_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}}]}`)
 			}))
 			t.Cleanup(srv.Close)
 			t.Setenv("RC_BASE_URL", srv.URL)
@@ -479,7 +483,7 @@ func TestExperimentStartRequiresApprovalBeforeMutation(t *testing.T) {
 			_, _ = io.WriteString(w, `{"object":"experiment","id":"exp1","display_name":"New paywall","status":"running","created_at":1,"updated_at":2}`)
 			return
 		}
-		_, _ = io.WriteString(w, `{"object":"experiment","id":"exp1","display_name":"New paywall","status":"draft","created_at":1,"updated_at":2,"enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		_, _ = io.WriteString(w, `{"object":"experiment","id":"exp1","display_name":"New paywall","status":"draft","created_at":1,"updated_at":2,"enrollment_percentage":50,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -504,7 +508,7 @@ func TestExperimentResumeRequiresApprovalBeforeMutation(t *testing.T) {
 			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"running"}`)
 			return
 		}
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"paused","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"paused","enrollment_percentage":50,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -529,7 +533,7 @@ func TestExperimentPauseShowsReadableResult(t *testing.T) {
 			mutations++
 			status = "paused"
 		}
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Paywall test","status":"`+status+`","offering_a":{"id":"ofrng_a","display_name":"Control"},"offering_b":{"id":"ofrng_b","display_name":"Treatment"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}]}}`)
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Paywall test","status":"`+status+`","variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a","display_name":"Control"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_a"}}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b","display_name":"Treatment"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_b"}}]}}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -545,7 +549,7 @@ func TestExperimentPauseShowsReadableResult(t *testing.T) {
 	if mutations != 1 {
 		t.Fatalf("approved pause made %d mutations, want 1", mutations)
 	}
-	for _, want := range []string{"ofrng_a (Control)", "platform in ios", "onboarding", "Treatment ofrng_b"} {
+	for _, want := range []string{"ofrng_a (Control)", "platform in ios", "onboarding", "Variant b ofrng_b"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q from pause result: %s", want, out)
 		}
@@ -559,7 +563,7 @@ func TestRunningExperimentUpdateShowsChangesBeforeApproval(t *testing.T) {
 		if r.Method == http.MethodPost {
 			mutations++
 		}
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"running","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"New paywall","status":"running","enrollment_percentage":50,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
@@ -623,7 +627,7 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet {
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"},"offering_c":{"id":"ofrng_c"},"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"placements":{"fallback_offering_a":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering_a":{"id":"ofrng_pa"},"offering_b":{"id":"ofrng_pb"}}]},"experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":{"fallback_offering":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pa"}},{"placement_identifier":"settings","offering":null}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pb"}},{"placement_identifier":"settings","offering":null}]}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"},"placements":{"fallback_offering":{"id":"ofrng_fc"},"placement_offerings":[{"placement_identifier":"onboarding","offering":null},{"placement_identifier":"settings","offering":null}]}}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
 			return
 		}
 		if r.URL.Path != "/projects/proj/experiments" {
@@ -645,11 +649,55 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 	}
 	placements := posted["placements"].(map[string]any)
 	rows := placements["placement_offerings"].([]any)
-	if placements["fallback_offering_a_id"] != "ofrng_fa" || rows[0].(map[string]any)["offering_b_id"] != "ofrng_pb" {
+	if placements["fallback_offering_a_id"] != "ofrng_fa" || placements["fallback_offering_b_id"] != nil || placements["fallback_offering_c_id"] != "ofrng_fc" || len(rows) != 2 {
 		t.Fatalf("placement IDs not copied: %#v", placements)
+	}
+	onboarding, settings := rows[0].(map[string]any), rows[1].(map[string]any)
+	if onboarding["offering_a_id"] != "ofrng_pa" || onboarding["offering_b_id"] != "ofrng_pb" || len(onboarding) != 3 || settings["placement_identifier"] != "settings" || len(settings) != 1 {
+		t.Fatalf("placement rows not copied: %#v", rows)
 	}
 	if _, exists := posted["status"]; exists {
 		t.Fatalf("status should not be copied: %#v", posted)
+	}
+}
+
+func TestExperimentDuplicateWithoutPlacementsSendsNone(t *testing.T) {
+	var posted map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":null},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":null}]}`)
+			return
+		}
+		if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+			t.Error(err)
+		}
+		_, _ = io.WriteString(w, `{"id":"exp2","display_name":"Copy of Original","status":"draft"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	if _, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input"); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := posted["placements"]; exists || posted["offering_b_id"] != "ofrng_b" {
+		t.Fatalf("want offerings and no placements: %#v", posted)
+	}
+}
+
+func TestExperimentDuplicateRejectsVariantsAfterD(t *testing.T) {
+	mutations := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodGet {
+			mutations++
+		}
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "variant e") || mutations != 0 {
+		t.Fatalf("want variant e error and no create: err=%v mutations=%d", err, mutations)
 	}
 }
 
@@ -725,14 +773,14 @@ func TestExperimentCreateAndApprovedUpdate(t *testing.T) {
 			if err := json.NewDecoder(r.Body).Decode(&created); err != nil {
 				t.Error(err)
 			}
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"draft","enrollment_percentage":50,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}]}`)
 		case r.Method == http.MethodGet && r.URL.Path == "/projects/proj/experiments/exp1":
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"running","enrollment_percentage":50,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"running","enrollment_percentage":50,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}]}`)
 		case r.Method == http.MethodPost && r.URL.Path == "/projects/proj/experiments/exp1":
 			if err := json.NewDecoder(r.Body).Decode(&updated); err != nil {
 				t.Error(err)
 			}
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"running","enrollment_percentage":60,"offering_a":{"id":"ofrng_a"},"offering_b":{"id":"ofrng_b"}}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Test","status":"running","enrollment_percentage":60,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}]}`)
 		default:
 			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}

@@ -270,17 +270,8 @@ func showExperimentEnrollmentState(rt *Runtime, current *api.Experiment, lead st
 	rt.Out.Title("Experiment — " + current.DisplayName)
 	rt.Out.Lead(lead)
 	rt.Out.Field("Status", current.Status)
-	if current.OfferingA != nil {
-		rt.Out.Field("Control", experimentOfferingLabel(current.OfferingA))
-	}
-	if current.OfferingB != nil {
-		rt.Out.Field("Treatment", experimentOfferingLabel(current.OfferingB))
-	}
-	if current.OfferingC != nil {
-		rt.Out.Field("Treatment C", experimentOfferingLabel(current.OfferingC))
-	}
-	if current.OfferingD != nil {
-		rt.Out.Field("Treatment D", experimentOfferingLabel(current.OfferingD))
+	for _, variant := range current.Variants {
+		rt.Out.Field(experimentVariantLabel(variant.Key, variant.IsControl), experimentOfferingLabel(variant.Offering))
 	}
 	if current.EnrollmentPercent != nil {
 		rt.Out.Field("Enrollment", fmt.Sprintf("%d%%", *current.EnrollmentPercent))
@@ -294,8 +285,8 @@ func showExperimentEnrollmentState(rt *Runtime, current *api.Experiment, lead st
 	} else {
 		rt.Out.Field("Audience", "All eligible customers")
 	}
-	for _, placement := range experimentPlacementLines(current.Placements) {
-		rt.Out.Field("Placement "+placement.Key, placement.Value)
+	for _, placement := range experimentPlacementLines(current.Variants) {
+		rt.Out.Field("Placement: "+placement.Key, placement.Value)
 	}
 	if current.ExperimentType != nil {
 		rt.Out.Field("Type", *current.ExperimentType)

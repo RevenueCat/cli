@@ -24,20 +24,22 @@ type ExperimentCondition struct {
 	Context  any    `json:"context,omitempty"`
 }
 
-type ExperimentPlacementOffering struct {
+type ExperimentVariantPlacementOffering struct {
 	PlacementIdentifier string              `json:"placement_identifier"`
-	OfferingA           *ExperimentOffering `json:"offering_a,omitempty"`
-	OfferingB           *ExperimentOffering `json:"offering_b,omitempty"`
-	OfferingC           *ExperimentOffering `json:"offering_c,omitempty"`
-	OfferingD           *ExperimentOffering `json:"offering_d,omitempty"`
+	Offering            *ExperimentOffering `json:"offering"`
 }
 
-type ExperimentPlacements struct {
-	FallbackOfferingA  *ExperimentOffering           `json:"fallback_offering_a,omitempty"`
-	FallbackOfferingB  *ExperimentOffering           `json:"fallback_offering_b,omitempty"`
-	FallbackOfferingC  *ExperimentOffering           `json:"fallback_offering_c,omitempty"`
-	FallbackOfferingD  *ExperimentOffering           `json:"fallback_offering_d,omitempty"`
-	PlacementOfferings []ExperimentPlacementOffering `json:"placement_offerings,omitempty"`
+type ExperimentVariantPlacements struct {
+	FallbackOffering   *ExperimentOffering                  `json:"fallback_offering"`
+	PlacementOfferings []ExperimentVariantPlacementOffering `json:"placement_offerings"`
+}
+
+type ExperimentVariant struct {
+	Object     string                       `json:"object"`
+	Key        string                       `json:"key"`
+	IsControl  bool                         `json:"is_control"`
+	Offering   *ExperimentOffering          `json:"offering"`
+	Placements *ExperimentVariantPlacements `json:"placements"`
 }
 
 type ExperimentDurationSettings struct {
@@ -68,10 +70,7 @@ type Experiment struct {
 	TotalRunningSeconds *int                        `json:"total_running_time_seconds,omitempty"`
 	EnrollmentPercent   *int                        `json:"enrollment_percentage,omitempty"`
 	Priority            *int                        `json:"priority,omitempty"`
-	OfferingA           *ExperimentOffering         `json:"offering_a,omitempty"`
-	OfferingB           *ExperimentOffering         `json:"offering_b,omitempty"`
-	OfferingC           *ExperimentOffering         `json:"offering_c,omitempty"`
-	OfferingD           *ExperimentOffering         `json:"offering_d,omitempty"`
+	Variants            []ExperimentVariant         `json:"variants"`
 	Notes               *string                     `json:"notes,omitempty"`
 	ExperimentType      *string                     `json:"experiment_type,omitempty"`
 	PrimaryMetric       *string                     `json:"primary_metric,omitempty"`
@@ -81,7 +80,6 @@ type Experiment struct {
 	TargetingConditions []ExperimentCondition       `json:"targeting_conditions,omitempty"`
 	PinnedAudience      any                         `json:"pinned_audience,omitempty"`
 	DurationSettings    *ExperimentDurationSettings `json:"experiment_duration_settings,omitempty"`
-	Placements          *ExperimentPlacements       `json:"placements,omitempty"`
 	Conflicts           []ExperimentConflict        `json:"conflicts,omitempty"`
 }
 
