@@ -88,11 +88,14 @@ rc charts show mrr
 |---|---|
 | **Setup** | `setup` (guided) · `setup apple` · `setup google` |
 | **Customers** | `show` · `list` · `grant` · `revoke` · `transfer` · `aliases` · `attributes` · `simulate-purchase` |
+| **Audiences** | `list` · `show` (rules, stats, sample, usage) |
+| **Experiments** | `list` · `show` · `results` · `create` · `duplicate` · `update` · `start` · `pause` · `resume` · `stop` · `delete` |
+| **Targeting** | `list` · `show` · `create` · `update` · `delete` |
 | **Subscriptions** | `show` · `cancel` · `extend` · `refund` · `transactions` |
 | **Entitlements** | `list` · `show` · `create` · `update` · `attach` · `detach` |
-| **Offerings** | `list` · `show` · `verify` · `preview` · `create` · `update` · `set-current` · `archive` |
-| **Packages** | `list` (across all offerings) · `show` · `products` · `create` · `update` · `delete` · `attach` · `detach` |
-| **Products** | `list` · `show` · `create` · `archive` · `restore` · `delete` · `store sync` |
+| **Offerings** | `list` · `show` · `verify` · `preview` · `create` · `update` · `set-current` · `archive` · `restore` · `delete` |
+| **Packages** | `list` (across offerings) · `show` · `products` · `create` · `update` · `delete` · `attach` · `detach` |
+| **Products** | `list` · `show` · `create` · `update` · `archive` · `restore` · `delete` · `push` · `prices` / `prices set` · `store sync` |
 | **Paywalls** | `list` · `show` · `create` · `generate` (AI) · `edit` (AI) · `rewind` · `publish` · `unpublish` · `attach` · `detach` · `delete` |
 | **Rico (AI assistant)** | `rico` (streaming chat, tool approvals) · `conversations list/show/delete` · `feedback` |
 | **Charts & metrics** | Interactive bar/line charts · daily/weekly/monthly/quarterly/yearly |
@@ -126,8 +129,9 @@ dashboard paywall.
 
 ### Product store-state plans
 
-Manage your App Store / Google Play catalog as a reviewable plan: describe the
-desired state, review the computed diff, then apply it.
+Manage your store product catalog as a reviewable plan: describe the desired
+state, review the computed diff, then apply it. The API validates supported
+stores and fields.
 
 ```bash
 rc products store sync app_abc                       # interactive: review, then apply
