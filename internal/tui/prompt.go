@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -135,7 +136,7 @@ func ConfirmDefault(noInput bool, msg string, defaultValue bool) (bool, error) {
 
 func Required(label string) func(string) error {
 	return func(s string) error {
-		if s == "" {
+		if strings.TrimSpace(s) == "" {
 			return errors.New(label + " is required")
 		}
 		return nil
