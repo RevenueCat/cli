@@ -218,14 +218,18 @@ func newProductsListCmd() *cobra.Command {
 }
 
 func newProductsCreateCmd() *cobra.Command {
-	var storeID, productType, appID, displayName, title, duration string
+	var storeID, priceID, productType, appID, displayName, title, duration string
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a Product",
 		Long: `Creates a Product in the project catalog.
 
 --store-id is the Product identifier on the platform store; it must match the
-store exactly (required).
+store exactly (required). For Stripe this is the Stripe product ID (prod_...),
+never a price ID.
+--price-id is the Stripe price ID (price_...) to sell this Product at. Stripe
+only; without it the server picks a price for you or stores the product with no
+price attached.
 --app-id is the RevenueCat app ID (required; picker shown in a terminal).
 --type is the Product type (required; picker shown in a terminal). Typical
 values per store: Test Store — subscription, consumable, non_consumable;
@@ -242,7 +246,8 @@ Web Billing products are created through store-state plans (rc products store
 sync/plan), not this command.`,
 		Example: `  rc products create --store-id premium_monthly --type subscription --app-id test_app --title "Premium Monthly" --duration P1M
   rc products create --store-id coins_100 --type consumable --app-id test_app --title "100 Coins"
-  rc products create --store-id com.example.once --type one_time --app-id app_x --display-name "Unlock Everything"`,
+  rc products create --store-id com.example.once --type one_time --app-id app_x --display-name "Unlock Everything"
+  rc products create --store-id prod_LryUFGrmehs0tk --price-id price_1MoBy5LkdIwHu7ixZhnattbh --type subscription --app-id app_stripe`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			rt := RuntimeFrom(cmd.Context())
 			projectID, err := requireProject(rt)
@@ -288,6 +293,11 @@ sync/plan), not this command.`,
 					return err
 				}
 			}
+			// The server accepts a price ID as a Stripe store identifier but creates a
+			// product it can never match to Stripe, so catch the mix-up here.
+			if isStripeApp(app) && strings.HasPrefix(storeID, "price_") {
+				return fmt.Errorf("--store-id %q is a Stripe price ID; pass the Stripe product ID (prod_...) as --store-id and the price as --price-id %s", storeID, storeID)
+			}
 			if isTestStoreApp(app) && title == "" {
 				return fmt.Errorf("--title is required for Test Store products")
 			}
@@ -296,6 +306,7 @@ sync/plan), not this command.`,
 			}
 			body := api.ProductCreate{
 				StoreIdentifier: storeID,
+				PriceIdentifier: priceID,
 				// Sent verbatim: Test Store takes consumable/non_consumable but reads back
 				// as one_time + is_consumable, so the sent type is the authoritative one.
 				Type:        productType,
@@ -321,6 +332,7 @@ sync/plan), not this command.`,
 		},
 	}
 	cmd.Flags().StringVar(&storeID, "store-id", "", "store product identifier (required)")
+	cmd.Flags().StringVar(&priceID, "price-id", "", "Stripe price ID (price_...) for Stripe products")
 	cmd.Flags().StringVar(&productType, "type", "", "product type (picker shown in TTY if omitted; the server validates the store/type combination)")
 	cmd.Flags().StringVar(&appID, "app-id", "", "app ID to associate with (picker shown in TTY if omitted)")
 	cmd.Flags().StringVar(&displayName, "display-name", "", "human-readable display name")
@@ -389,6 +401,10 @@ func productTypeLabel(t api.ProductType) string {
 
 func isTestStoreApp(app *api.App) bool {
 	return app != nil && string(app.Type) == string(api.TestStoreAppTypeTestStore)
+}
+
+func isStripeApp(app *api.App) bool {
+	return app != nil && string(app.Type) == string(api.StripeAppTypeStripe)
 }
 
 func newProductsPricesCmd() *cobra.Command {

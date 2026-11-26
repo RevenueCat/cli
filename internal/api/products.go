@@ -16,6 +16,7 @@ type ProductListOptions struct {
 
 type ProductCreate struct {
 	StoreIdentifier string                    `json:"store_identifier"`
+	PriceIdentifier string                    `json:"price_identifier,omitempty"`
 	Type            string                    `json:"type"` // "subscription" | "one_time"
 	AppID           string                    `json:"app_id"`
 	DisplayName     string                    `json:"display_name,omitempty"`
