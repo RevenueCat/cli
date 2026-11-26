@@ -52,18 +52,18 @@ func (s *CustomersService) Get(ctx context.Context, projectID, customerID string
 }
 
 // GET /projects/{project_id}/customers/{customer_id}/subscriptions
-func (s *CustomersService) Subscriptions(ctx context.Context, projectID, customerID string) (*Page[Subscription], error) {
+func (s *CustomersService) Subscriptions(ctx context.Context, projectID, customerID string, opts *ListOptions) (*Page[Subscription], error) {
 	var out Page[Subscription]
-	if err := s.c.do(ctx, http.MethodGet, pathCustomerSubscriptions(projectID, customerID), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathCustomerSubscriptions(projectID, customerID)+opts.query(), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
 }
 
 // GET /projects/{project_id}/customers/{customer_id}/purchases
-func (s *CustomersService) Purchases(ctx context.Context, projectID, customerID string) (*Page[Purchase], error) {
+func (s *CustomersService) Purchases(ctx context.Context, projectID, customerID string, opts *ListOptions) (*Page[Purchase], error) {
 	var out Page[Purchase]
-	if err := s.c.do(ctx, http.MethodGet, pathCustomerPurchases(projectID, customerID), nil, &out); err != nil {
+	if err := s.c.do(ctx, http.MethodGet, pathCustomerPurchases(projectID, customerID)+opts.query(), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

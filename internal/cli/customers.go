@@ -73,6 +73,8 @@ one Customer are aliases.`,
 	cmd.AddCommand(
 		newCustomerListCmd(),
 		newCustomerShowCmd(),
+		newCustomerSubscriptionsCmd(),
+		newCustomerPurchasesCmd(),
 		newCustomerGrantCmd(),
 		newCustomerRevokeCmd(),
 		newCustomerAliasesCmd(),
@@ -726,8 +728,8 @@ with drill-down. Use --json for the raw merged document.`,
 				item := customerToItem(cmd.Context(), client, projectID, *customer)
 				return tui.RunBrowser("Customer", []tui.BrowserItem{item})
 			}
-			subs, subsErr := client.Customers.Subscriptions(cmd.Context(), projectID, id)
-			purs, pursErr := client.Customers.Purchases(cmd.Context(), projectID, id)
+			subs, subsErr := client.Customers.Subscriptions(cmd.Context(), projectID, id, nil)
+			purs, pursErr := client.Customers.Purchases(cmd.Context(), projectID, id, nil)
 			raw := map[string]any{
 				"customer":      customer,
 				"subscriptions": subs,
@@ -1030,7 +1032,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 			}()
 			go func() {
 				defer wg.Done()
-				p, err := client.Customers.Subscriptions(ctx, projectID, c.ID)
+				p, err := client.Customers.Subscriptions(ctx, projectID, c.ID, nil)
 				if err != nil {
 					fetchErr(err)
 					return
@@ -1041,7 +1043,7 @@ func customerToItem(ctx context.Context, client *api.Client, projectID string, c
 			}()
 			go func() {
 				defer wg.Done()
-				p, err := client.Customers.Purchases(ctx, projectID, c.ID)
+				p, err := client.Customers.Purchases(ctx, projectID, c.ID, nil)
 				if err != nil {
 					fetchErr(err)
 					return
