@@ -31,16 +31,17 @@ func newExperimentsCreateCmd() *cobra.Command {
 			}
 			body := api.ExperimentCreate{}
 			if config != "" {
-				var raw json.RawMessage
-				if err := readJSONConfig(config, &raw); err != nil {
+				var input struct {
+					api.ExperimentCreate
+					TargetingConditions json.RawMessage `json:"targeting_conditions"`
+				}
+				if err := readJSONConfig(config, &input); err != nil {
 					return err
 				}
-				if err := rejectTargetingConditions(raw); err != nil {
-					return err
+				if input.TargetingConditions != nil {
+					return errTargetingConditionsUnsupported
 				}
-				if err := decodeJSONConfig(raw, &body); err != nil {
-					return err
-				}
+				body = input.ExperimentCreate
 			}
 			if cmd.Flags().Changed("name") {
 				body.DisplayName = name
