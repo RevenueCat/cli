@@ -17,6 +17,9 @@ jobs:
       - name: Install Python deps for codegen
         run: python3 -m pip install pyyaml
 
+      - name: Test OpenAPI spec diff
+        run: python3 scripts/test_spec_diff.py
+
       - name: Verify generated code is up to date
         run: |
           cp internal/api/types_gen.go /tmp/types_gen_committed.go

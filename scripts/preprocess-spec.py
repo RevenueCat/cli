@@ -82,6 +82,16 @@ def main():
         with open(overlay_path) as f:
             merge_overlay(spec, yaml.safe_load(f))
 
+    # Preserve the client types when the public spec moves these inline
+    # request bodies into named components.
+    schemas = spec.get("components", {}).get("schemas", {})
+    if "CreateMediaAssetRequest" in schemas:
+        upload = schemas["CreateMediaAssetRequest"]
+        upload["x-go-name"] = "CreateMediaAssetJSONBody"
+        upload["properties"]["content_type"]["x-go-type-name"] = "CreateMediaAssetJSONBodyContentType"
+    if "AttachProductsToPackageRequest" in schemas:
+        schemas["AttachProductsToPackageRequest"]["x-go-name"] = "AttachProductsToPackageJSONBody"
+
     spec = fix_nullable_allof(spec)
 
     with open(output_path, "w") as f:

@@ -26,6 +26,7 @@ Severity levels:
 import argparse
 import sys
 from pathlib import Path
+from urllib.parse import unquote
 
 try:
     import yaml
@@ -145,17 +146,17 @@ def diff_params(old_params: list, new_params: list) -> list[str]:
     return changes
 
 
-def diff_request_body(old_op: dict, new_op: dict) -> list[str]:
+def diff_request_body(old_op: dict, new_op: dict, old_spec: dict, new_spec: dict) -> list[str]:
     """Return change strings for requestBody schema properties (1-level deep)."""
-    old_schema = _extract_json_schema(old_op.get("requestBody") or {})
-    new_schema = _extract_json_schema(new_op.get("requestBody") or {})
+    old_schema = _extract_json_schema(old_op.get("requestBody") or {}, old_spec)
+    new_schema = _extract_json_schema(new_op.get("requestBody") or {}, new_spec)
     if old_schema is None and new_schema is None:
         return []
     if old_schema is None:
         return ["+ Request body added"]
     if new_schema is None:
         return ["- Request body removed"]
-    return _diff_object_schema(old_schema, new_schema, "request body")
+    return _diff_object_schema(old_schema, new_schema, old_spec, new_spec)
 
 
 def diff_responses(old_op: dict, new_op: dict) -> list[str]:
@@ -170,16 +171,31 @@ def diff_responses(old_op: dict, new_op: dict) -> list[str]:
     return changes
 
 
-def _extract_json_schema(body: dict) -> dict | None:
+def _resolve_ref(node: dict, spec: dict) -> dict:
+    """Follow local JSON pointers without expanding recursive schemas."""
+    seen = set()
+    while (ref := node.get("$ref")) and ref.startswith("#/") and ref not in seen:
+        seen.add(ref)
+        target = spec
+        for part in unquote(ref[2:]).split("/"):
+            key = part.replace("~1", "/").replace("~0", "~")
+            target = target.get(key) if isinstance(target, dict) else None
+        if not isinstance(target, dict):
+            break
+        node = target
+    return node
+
+
+def _extract_json_schema(body: dict, spec: dict) -> dict | None:
     """Drill into requestBody → content → application/json → schema."""
-    if not body:
-        return None
+    body = _resolve_ref(body, spec)
     content = body.get("content") or {}
     json_content = content.get("application/json") or {}
-    return json_content.get("schema") or None
+    schema = json_content.get("schema")
+    return _resolve_ref(schema, spec) if schema else None
 
 
-def _diff_object_schema(old_s: dict, new_s: dict, label: str) -> list[str]:
+def _diff_object_schema(old_s: dict, new_s: dict, old_spec: dict, new_spec: dict) -> list[str]:
     """Shallow diff of object schema properties."""
     old_props = old_s.get("properties") or {}
     new_props = new_s.get("properties") or {}
@@ -190,10 +206,10 @@ def _diff_object_schema(old_s: dict, new_s: dict, label: str) -> list[str]:
     for name in sorted(set(new_props) - set(old_props)):
         is_req = name in new_req
         label_str = "**required**" if is_req else "optional"
-        changes.append(f"+ New {label_str} {label} field: `{name}`")
+        changes.append(f"+ New {label_str} request body field: `{name}`")
 
     for name in sorted(set(old_props) - set(new_props)):
-        changes.append(f"- Removed {label} field: `{name}`")
+        changes.append(f"- Removed request body field: `{name}`")
 
     # Existing properties — check for type changes or required status change
     for name in sorted(set(old_props) & set(new_props)):
@@ -202,12 +218,14 @@ def _diff_object_schema(old_s: dict, new_s: dict, label: str) -> list[str]:
         now_req = name in new_req
         if was_req != now_req:
             sub.append(f"required: {was_req} → **{now_req}**")
-        old_type = _schema_type(old_props[name])
-        new_type = _schema_type(new_props[name])
+        old_field = _resolve_ref(old_props[name], old_spec)
+        new_field = _resolve_ref(new_props[name], new_spec)
+        old_type = _schema_type(old_field)
+        new_type = _schema_type(new_field)
         if old_type and new_type and old_type != new_type:
             sub.append(f"type: `{old_type}` → `{new_type}`")
         if sub:
-            changes.append(f"~ {label} field `{name}`: {'; '.join(sub)}")
+            changes.append(f"~ request body field `{name}`: {'; '.join(sub)}")
 
     return changes
 
@@ -297,7 +315,7 @@ def diff_specs(old: dict, new: dict, covered: set[str]) -> dict:
         param_changes = diff_params(
             old_op.get("parameters"), new_op.get("parameters")
         )
-        body_changes = diff_request_body(old_op, new_op)
+        body_changes = diff_request_body(old_op, new_op, old, new)
         resp_changes = diff_responses(old_op, new_op)
         depr_changed = bool(old_op.get("deprecated") != new_op.get("deprecated")
                             and new_op.get("deprecated"))
@@ -329,7 +347,7 @@ def diff_specs(old: dict, new: dict, covered: set[str]) -> dict:
 # Markdown rendering
 # ---------------------------------------------------------------------------
 
-def render_markdown(diff: dict, title: str, has_coverage: bool) -> str:
+def render_markdown(diff: dict, title: str, has_coverage: bool, spec_changed: bool) -> str:
     lines: list[str] = []
 
     n_critical = len(diff[CRITICAL])
@@ -346,7 +364,10 @@ def render_markdown(diff: dict, title: str, has_coverage: bool) -> str:
     lines.append("")
 
     if not has_any:
-        lines.append("_No changes detected._")
+        if spec_changed:
+            lines.append("_Spec updated. No endpoint or schema changes detected by the diff._")
+        else:
+            lines.append("_No changes detected._")
         return "\n".join(lines)
 
     # Summary verdict
@@ -454,20 +475,24 @@ def main() -> int:
         print(f"ERROR: coverage file {args.coverage} not found", file=sys.stderr)
         return 2
 
-    old = load_yaml(args.old)
-    new = load_yaml(args.new)
-    covered = load_coverage(args.coverage)
+    try:
+        old = load_yaml(args.old)
+        new = load_yaml(args.new)
+        covered = load_coverage(args.coverage)
+        for path, spec in ((args.old, old), (args.new, new)):
+            paths = spec.get("paths") if isinstance(spec, dict) else None
+            if not isinstance(paths, dict) or not all_endpoints(spec):
+                raise ValueError(f"{path} has no OpenAPI operations")
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
 
     diff = diff_specs(old, new, covered)
-    md = render_markdown(diff, args.title, has_coverage=bool(args.coverage))
+    spec_changed = old != new
+    md = render_markdown(diff, args.title, has_coverage=bool(args.coverage), spec_changed=spec_changed)
     print(md)
 
-    has_changes = any([
-        diff[CRITICAL], diff[WARNING], diff[NEW],
-        diff[INFO], diff["removed"],
-        diff["added_schemas"], diff["removed_schemas"],
-    ])
-    if has_changes and not args.no_exit_on_diff:
+    if spec_changed and not args.no_exit_on_diff:
         return 1
     return 0
 
