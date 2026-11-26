@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -48,3 +49,7 @@ func compactJSON(v any) string {
 	data, _ := json.Marshal(v)
 	return string(data)
 }
+
+// Developer API v2 rejects experiment targeting_conditions outright, so catch it
+// before any request with a pointer to audience_id instead of a generic unknown-field error.
+var errTargetingConditionsUnsupported = errors.New("targeting_conditions is no longer supported; use audience_id (an audience ID, or null to target everyone)")

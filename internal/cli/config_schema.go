@@ -150,7 +150,7 @@ func experimentConfigFields(create bool) map[string]any {
 	secondaryNames := append(append([]string{}, metricNames...), "exposed_customers")
 	audience := map[string]any{
 		"type":        []string{"string", "null"},
-		"description": "Audience ID; mutually exclusive with targeting_conditions. Omit or set null for all eligible customers when targeting_conditions is absent.",
+		"description": "Audience ID to target. Omit or set null to target all eligible customers. targeting_conditions is no longer supported; create an audience and use its ID instead.",
 	}
 	fields := map[string]any{
 		"display_name":                 configField("string", "Experiment name"),
@@ -160,7 +160,6 @@ func experimentConfigFields(create bool) map[string]any {
 		"offering_c_id":                configField("string", "Optional third variant Offering ID"),
 		"offering_d_id":                configField("string", "Optional fourth variant Offering ID"),
 		"audience_id":                  audience,
-		"targeting_conditions":         targetingConditionsSchema(),
 		"placements":                   placements,
 		"notes":                        configField("string", "Experiment notes"),
 		"experiment_type":              configEnum("Experiment type", "introductory_offer", "free_trial_offer", "paywall_design", "price_point", "subscription_duration", "subscription_ordering", "other"),
@@ -172,7 +171,7 @@ func experimentConfigFields(create bool) map[string]any {
 	if create {
 		return map[string]any{"type": "object", "properties": fields, "required": []string{"display_name", "enrollment_percentage", "offering_a_id", "offering_b_id"}}
 	}
-	audience["description"] = "Omit to keep current targeting unless targeting_conditions is supplied. Set null to clear the audience and conditions, or supply targeting_conditions to replace them. A string selects an audience and cannot be combined with targeting_conditions."
+	audience["description"] = "Omit to keep current targeting. Set null to clear the audience and any legacy conditions so the experiment targets all eligible customers. A string selects an audience. Targeting can change only on drafts; targeting_conditions is no longer supported."
 	audience["examples"] = []any{"aud_123", nil}
 	return map[string]any{"type": "object", "properties": fields, "description": "Partial update. Running experiments accept only enrollment_percentage; paused experiments cannot be edited."}
 }

@@ -208,7 +208,6 @@ type ExperimentCreate struct {
 	OfferingBID                string          `json:"offering_b_id"`
 	OfferingCID                *string         `json:"offering_c_id,omitempty"`
 	OfferingDID                *string         `json:"offering_d_id,omitempty"`
-	TargetingConditions        json.RawMessage `json:"targeting_conditions,omitempty"`
 	AudienceID                 *string         `json:"audience_id,omitempty"`
 	Placements                 json.RawMessage `json:"placements,omitempty"`
 	Notes                      *string         `json:"notes,omitempty"`

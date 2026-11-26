@@ -15,10 +15,13 @@ func TestExperimentConfigSchemaExplainsNestedFields(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, want := range []string{"primary_metric", "new_and_existing", "experiment_duration_settings", "placement_offerings", "app_version", "context"} {
+		for _, want := range []string{"primary_metric", "new_and_existing", "experiment_duration_settings", "placement_offerings", "audience_id"} {
 			if !strings.Contains(string(data), want) {
 				t.Errorf("%s schema missing %q", path, want)
 			}
+		}
+		if strings.Contains(string(data), "\"targeting_conditions\":") {
+			t.Errorf("%s schema still offers targeting_conditions", path)
 		}
 	}
 }
