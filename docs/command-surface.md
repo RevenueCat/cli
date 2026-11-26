@@ -113,6 +113,8 @@ rc apps apple setup [app-id]                             # hidden alias of rc se
 # Customers — busiest noun
 rc customers show [id]                                    # embeds active_entitlements
 rc customers list
+rc customers subscriptions <customer-id> [--limit <n>] [--cursor <id>]
+rc customers purchases <customer-id> [--limit <n>] [--cursor <id>]
 rc customers aliases <id>
 rc customers attributes <id>                              # GET all subscriber attributes
 rc customers set-attribute <id> <key> <value>            # set a single subscriber attribute
