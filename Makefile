@@ -56,7 +56,8 @@ gen: ## Regenerate API types from OpenAPI spec
 		PYTHON=python3; \
 	fi; \
 	$$PYTHON scripts/preprocess-spec.py docs/specs/v2-developer.yaml /tmp/v2-clean.yaml docs/specs/v2-beta-overlay.yaml && \
-	$$PYTHON scripts/gen-paths.py /tmp/v2-clean.yaml docs/specs/cli-coverage.yaml internal/api/paths_gen.go
+	$$PYTHON scripts/gen-paths.py /tmp/v2-clean.yaml docs/specs/cli-coverage.yaml internal/api/paths_gen.go && \
+	$$PYTHON scripts/gen-command-help.py /tmp/v2-clean.yaml internal/cli/openapi_help_gen.go
 	go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen \
 		--config oapi-codegen.yaml /tmp/v2-clean.yaml
 

@@ -98,7 +98,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add docs/specs/ internal/api/types_gen.go internal/api/paths_gen.go
+          git add docs/specs/ internal/api/types_gen.go internal/api/paths_gen.go internal/cli/openapi_help_gen.go
           git commit -m "chore(specs): sync OpenAPI snapshots + regenerate types $(date +%Y-%m-%d)"
           git push origin "$BRANCH"
 

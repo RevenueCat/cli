@@ -405,6 +405,25 @@ func TestSchemaCommand_ReturnsFlagSchema(t *testing.T) {
 	}
 }
 
+func TestProductCreateDurationHelpMatchesSchema(t *testing.T) {
+	help, _, err := runCmd(t, "products", "create", "--help")
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, _, err := runCmd(t, "schema", "products", "create", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"Required for Test Store subscriptions. Omit for other stores and for one-time products.",
+		"P1W, P1M, P2M, P3M, P6M, P1Y",
+	} {
+		if !strings.Contains(help, want) || !strings.Contains(schema, want) {
+			t.Errorf("help and schema must both contain %q", want)
+		}
+	}
+}
+
 func TestStorePlanSchema_ExplainsAgentHandoffAndStdin(t *testing.T) {
 	out, _, err := runCmd(t, "schema", "products", "store", "plan", "--json")
 	if err != nil {
