@@ -52515,7 +52515,7 @@ type ProductID = string
 
 // ProductSubscriptionInput Subscription parameters for product creation. Only supported for simulated store products.
 type ProductSubscriptionInput struct {
-	// Duration The duration of the subscription. Only supported for test store products.
+	// Duration Required for Test Store subscriptions. Omit for other stores and for one-time products.
 	Duration Duration `json:"duration"`
 }
 

@@ -26,7 +26,8 @@ Severity levels:
 import argparse
 import sys
 from pathlib import Path
-from urllib.parse import unquote
+
+from openapi_schema import resolve_ref
 
 try:
     import yaml
@@ -171,28 +172,13 @@ def diff_responses(old_op: dict, new_op: dict) -> list[str]:
     return changes
 
 
-def _resolve_ref(node: dict, spec: dict) -> dict:
-    """Follow local JSON pointers without expanding recursive schemas."""
-    seen = set()
-    while (ref := node.get("$ref")) and ref.startswith("#/") and ref not in seen:
-        seen.add(ref)
-        target = spec
-        for part in unquote(ref[2:]).split("/"):
-            key = part.replace("~1", "/").replace("~0", "~")
-            target = target.get(key) if isinstance(target, dict) else None
-        if not isinstance(target, dict):
-            break
-        node = target
-    return node
-
-
 def _extract_json_schema(body: dict, spec: dict) -> dict | None:
     """Drill into requestBody → content → application/json → schema."""
-    body = _resolve_ref(body, spec)
+    body = resolve_ref(body, spec)
     content = body.get("content") or {}
     json_content = content.get("application/json") or {}
     schema = json_content.get("schema")
-    return _resolve_ref(schema, spec) if schema else None
+    return resolve_ref(schema, spec) if schema else None
 
 
 def _diff_object_schema(old_s: dict, new_s: dict, old_spec: dict, new_spec: dict) -> list[str]:
@@ -218,8 +204,8 @@ def _diff_object_schema(old_s: dict, new_s: dict, old_spec: dict, new_spec: dict
         now_req = name in new_req
         if was_req != now_req:
             sub.append(f"required: {was_req} → **{now_req}**")
-        old_field = _resolve_ref(old_props[name], old_spec)
-        new_field = _resolve_ref(new_props[name], new_spec)
+        old_field = resolve_ref(old_props[name], old_spec)
+        new_field = resolve_ref(new_props[name], new_spec)
         old_type = _schema_type(old_field)
         new_type = _schema_type(new_field)
         if old_type and new_type and old_type != new_type:

@@ -234,9 +234,6 @@ non_renewing_subscription; Play Store — subscription, one_time, consumable,
 non_consumable; other stores — subscription, one_time. The server validates
 the combination; the CLI sends whatever you pass.
 --title is the Customer-facing Product title (required for Test Store Products).
---duration is an ISO 8601 duration, e.g. P1M, P1Y. It is required for Test
-Store subscription Products; for other stores it is passed through and the
-server decides whether it applies.
 
 Web Billing products are created through store-state plans (rc products store
 sync/plan), not this command.`,
@@ -325,7 +322,7 @@ sync/plan), not this command.`,
 	cmd.Flags().StringVar(&appID, "app-id", "", "app ID to associate with (picker shown in TTY if omitted)")
 	cmd.Flags().StringVar(&displayName, "display-name", "", "human-readable display name")
 	cmd.Flags().StringVar(&title, "title", "", "user-facing product title (required for Test Store products)")
-	cmd.Flags().StringVar(&duration, "duration", "", "subscription duration as ISO 8601 (e.g. P1M, P1Y); required for Test Store subscriptions, passed through elsewhere")
+	cmd.Flags().StringVar(&duration, "duration", "", productCreateDurationHelp)
 	return cmd
 }
 

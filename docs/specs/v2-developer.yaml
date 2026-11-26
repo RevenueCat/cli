@@ -19023,8 +19023,8 @@ components:
       properties:
         duration:
           $ref: '#/components/schemas/Duration'
-          description: The duration of the subscription. Only supported for test store
-            products.
+          description: Required for Test Store subscriptions. Omit for other stores and
+            for one-time products.
       additionalProperties: false
     ProductType:
       type: string
