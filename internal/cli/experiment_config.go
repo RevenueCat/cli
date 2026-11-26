@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -33,6 +34,10 @@ func readJSONConfigWithLimit(path string, out any, maxBytes int64) error {
 	if int64(len(data)) > maxBytes {
 		return fmt.Errorf("config exceeds %d MiB", maxBytes>>20)
 	}
+	return decodeJSONConfig(data, out)
+}
+
+func decodeJSONConfig(data []byte, out any) error {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(out); err != nil {
@@ -47,4 +52,19 @@ func readJSONConfigWithLimit(path string, out any, maxBytes int64) error {
 func compactJSON(v any) string {
 	data, _ := json.Marshal(v)
 	return string(data)
+}
+
+// Developer API v2 rejects experiment targeting_conditions outright, so catch it
+// before any request with a pointer to audience_id instead of a generic unknown-field error.
+var errTargetingConditionsUnsupported = errors.New("targeting_conditions is no longer supported; use audience_id (an audience ID, or null to target everyone)")
+
+func rejectTargetingConditions(config json.RawMessage) error {
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(config, &fields) != nil {
+		return nil
+	}
+	if _, ok := fields["targeting_conditions"]; ok {
+		return errTargetingConditionsUnsupported
+	}
+	return nil
 }

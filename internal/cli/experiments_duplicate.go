@@ -78,6 +78,10 @@ func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, er
 	if offeringIDs["a"] == "" || offeringIDs["b"] == "" || source.EnrollmentPercent == nil {
 		return api.ExperimentCreate{}, fmt.Errorf("experiment %s lacks configuration needed to duplicate it", source.ID)
 	}
+	// Copying without the conditions would silently widen the copy to every customer.
+	if len(source.TargetingConditions) > 0 && source.AudienceID == nil {
+		return api.ExperimentCreate{}, fmt.Errorf("experiment %s targets with conditions, which can no longer be copied; create an audience and pass its audience_id to rc experiments create --config", source.ID)
+	}
 	body := api.ExperimentCreate{
 		DisplayName:          "Copy of " + source.DisplayName,
 		EnrollmentPercentage: *source.EnrollmentPercent,
@@ -95,9 +99,6 @@ func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, er
 	}
 	if id, ok := offeringIDs["d"]; ok {
 		body.OfferingDID = &id
-	}
-	if len(source.TargetingConditions) > 0 && source.AudienceID == nil {
-		body.TargetingConditions, _ = json.Marshal(source.TargetingConditions)
 	}
 	if source.DurationSettings != nil {
 		body.ExperimentDurationSettings, _ = json.Marshal(source.DurationSettings)

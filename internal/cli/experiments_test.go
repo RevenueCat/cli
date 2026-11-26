@@ -627,7 +627,7 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet {
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":{"fallback_offering":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pa"}},{"placement_identifier":"settings","offering":null}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pb"}},{"placement_identifier":"settings","offering":null}]}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"},"placements":{"fallback_offering":{"id":"ofrng_fc"},"placement_offerings":[{"placement_identifier":"onboarding","offering":null},{"placement_identifier":"settings","offering":null}]}}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}],"experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":{"fallback_offering":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pa"}},{"placement_identifier":"settings","offering":null}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pb"}},{"placement_identifier":"settings","offering":null}]}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"},"placements":{"fallback_offering":{"id":"ofrng_fc"},"placement_offerings":[{"placement_identifier":"onboarding","offering":null},{"placement_identifier":"settings","offering":null}]}}],"audience_id":"aud1","experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
 			return
 		}
 		if r.URL.Path != "/projects/proj/experiments" {
@@ -644,7 +644,7 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if posted["display_name"] != "New test" || posted["offering_c_id"] != "ofrng_c" || posted["primary_metric"] != "initial_conversion_rate" {
+	if posted["display_name"] != "New test" || posted["offering_c_id"] != "ofrng_c" || posted["primary_metric"] != "initial_conversion_rate" || posted["audience_id"] != "aud1" {
 		t.Fatalf("missing copied fields: %#v", posted)
 	}
 	placements := posted["placements"].(map[string]any)
@@ -878,28 +878,51 @@ func TestExperimentUpdateSchemaExplainsAudienceOmissionAndNull(t *testing.T) {
 	}
 }
 
-func TestExperimentCreateAudienceWithEmptyConditions(t *testing.T) {
-	for _, conditions := range []string{"null", "[]", `[{"field":"country","operator":"in","value":["US"]}]`} {
-		t.Run(conditions, func(t *testing.T) {
-			posted := false
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				posted = true
-				w.Header().Set("Content-Type", "application/json")
-				_, _ = io.WriteString(w, `{"id":"exp1","status":"draft"}`)
-			}))
-			t.Cleanup(srv.Close)
-			t.Setenv("RC_BASE_URL", srv.URL)
-			path := filepath.Join(t.TempDir(), "create.json")
-			body := `{"display_name":"Test","offering_a_id":"a","offering_b_id":"b","enrollment_percentage":50,"audience_id":"aud1","targeting_conditions":` + conditions + `}`
-			if err := os.WriteFile(path, []byte(body), 0600); err != nil {
-				t.Fatal(err)
-			}
-			_, _, err := runAgentCmd(t, "experiments", "create", "--config", path, "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
-			wantSuccess := conditions == "null" || conditions == "[]"
-			if (err == nil) != wantSuccess || posted != wantSuccess {
-				t.Fatalf("err=%v posted=%v wantSuccess=%v", err, posted, wantSuccess)
-			}
-		})
+func TestExperimentCreateAndUpdateRejectTargetingConditions(t *testing.T) {
+	for _, command := range []string{"create", "update"} {
+		for _, conditions := range []string{"null", "[]", `[{"field":"country","operator":"in","value":["US"]}]`} {
+			t.Run(command+conditions, func(t *testing.T) {
+				requests := 0
+				srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					requests++
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = io.WriteString(w, `{"id":"exp1","status":"draft"}`)
+				}))
+				t.Cleanup(srv.Close)
+				t.Setenv("RC_BASE_URL", srv.URL)
+				path := filepath.Join(t.TempDir(), "config.json")
+				body := `{"display_name":"Test","offering_a_id":"a","offering_b_id":"b","enrollment_percentage":50,"audience_id":"aud1","targeting_conditions":` + conditions + `}`
+				if err := os.WriteFile(path, []byte(body), 0600); err != nil {
+					t.Fatal(err)
+				}
+				args := []string{"experiments", command}
+				if command == "update" {
+					args = append(args, "exp1")
+				}
+				args = append(args, "--config", path, "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+				_, _, err := runAgentCmd(t, args...)
+				if err == nil || !strings.Contains(err.Error(), "targeting_conditions is no longer supported; use audience_id") || requests != 0 {
+					t.Fatalf("err=%v requests=%d", err, requests)
+				}
+			})
+		}
+	}
+}
+
+func TestExperimentDuplicateRejectsLegacyConditions(t *testing.T) {
+	posted := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodGet {
+			posted = true
+		}
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"draft","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}}],"targeting_conditions":[{"field":"platform","operator":"in","value":["ios"]}]}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	_, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
+	if err == nil || !strings.Contains(err.Error(), "audience_id") || posted {
+		t.Fatalf("err=%v posted=%v", err, posted)
 	}
 }
 

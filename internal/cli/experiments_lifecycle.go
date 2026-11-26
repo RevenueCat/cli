@@ -20,7 +20,7 @@ func newExperimentsCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a draft experiment",
-		Long:  "Creates a draft comparing two Offerings. Use --config for audience_id or targeting_conditions, placements, offering_c_id/offering_d_id, primary_metric, secondary_metrics, enrollment_mode, and experiment_duration_settings. Run rc schema experiments create for config fields and accepted values. Creating a draft does not enroll customers.",
+		Long:  "Creates a draft comparing two Offerings. Use --config for audience_id (an audience ID, or omit/null to target all eligible customers), placements, offering_c_id/offering_d_id, primary_metric, secondary_metrics, enrollment_mode, and experiment_duration_settings. Run rc schema experiments create for config fields and accepted values. Creating a draft does not enroll customers.",
 		Example: `  rc experiments create --name "New paywall" --control ofrng_a --treatment ofrng_b --enrollment 50
   echo '{"display_name":"New paywall","offering_a_id":"ofrng_a","offering_b_id":"ofrng_b","enrollment_percentage":50,"audience_id":"aud_123","primary_metric":"initial_conversion_rate"}' | rc experiments create --config - --json --no-input`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -31,7 +31,14 @@ func newExperimentsCreateCmd() *cobra.Command {
 			}
 			body := api.ExperimentCreate{}
 			if config != "" {
-				if err := readJSONConfig(config, &body); err != nil {
+				var raw json.RawMessage
+				if err := readJSONConfig(config, &raw); err != nil {
+					return err
+				}
+				if err := rejectTargetingConditions(raw); err != nil {
+					return err
+				}
+				if err := decodeJSONConfig(raw, &body); err != nil {
 					return err
 				}
 			}
@@ -109,15 +116,6 @@ func newExperimentsCreateCmd() *cobra.Command {
 			}
 			if body.EnrollmentPercentage < 1 || body.EnrollmentPercentage > 100 {
 				return fmt.Errorf("enrollment must be an integer from 1 to 100")
-			}
-			if body.AudienceID != nil && len(body.TargetingConditions) > 0 {
-				var conditions []json.RawMessage
-				if err := json.Unmarshal(body.TargetingConditions, &conditions); err != nil {
-					return fmt.Errorf("targeting_conditions must be an array or null")
-				}
-				if len(conditions) > 0 {
-					return fmt.Errorf("audience_id and targeting_conditions cannot both be set")
-				}
 			}
 			client, err := rt.API()
 			if err != nil {
@@ -478,9 +476,12 @@ func validExperimentUpdate(body api.ExperimentUpdate) error {
 	allowed := map[string]bool{
 		"display_name": true, "enrollment_percentage": true, "offering_a_id": true,
 		"offering_b_id": true, "offering_c_id": true, "offering_d_id": true,
-		"targeting_conditions": true, "audience_id": true, "placements": true,
+		"audience_id": true, "placements": true,
 		"notes": true, "experiment_type": true, "primary_metric": true,
 		"secondary_metrics": true, "enrollment_mode": true, "experiment_duration_settings": true,
+	}
+	if _, ok := body["targeting_conditions"]; ok {
+		return errTargetingConditionsUnsupported
 	}
 	for key, value := range body {
 		if !allowed[key] {
