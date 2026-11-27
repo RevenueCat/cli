@@ -35,7 +35,10 @@ func resolveFlowTarget(cmd *cobra.Command, args []string) (rt *Runtime, client *
 	return rt, client, projectID, flowID, nil
 }
 
-var flowBuilderURL = regexp.MustCompile(`^https://app\.revenuecat\.com/projects/[a-zA-Z0-9_-]+/paywalls/(wf[a-zA-Z0-9_-]+)/builder/?([?#].*)?$`)
+var flowDashboardURLs = []*regexp.Regexp{
+	regexp.MustCompile(`^https://app\.revenuecat\.com/projects/[a-zA-Z0-9_-]+/paywalls/(wf[a-zA-Z0-9_-]+)/builder/?([?#].*)?$`),
+	regexp.MustCompile(`^https://app\.revenuecat\.com/projects/[a-zA-Z0-9_-]+/flows/(wf[a-zA-Z0-9_-]+)/editor/?([?#].*)?$`),
+}
 
 func newFlowsShowCmd() *cobra.Command {
 	return &cobra.Command{
@@ -43,8 +46,10 @@ func newFlowsShowCmd() *cobra.Command {
 		Example: `  rc flows show wf_abc
   rc flows show wf_abc --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if match := flowBuilderURL.FindStringSubmatch(argAt(args, 0)); match != nil {
-				return WithHint(usageError{errors.New("flows show requires a flow ID")}, "rc flows show "+match[1])
+			for _, route := range flowDashboardURLs {
+				if match := route.FindStringSubmatch(argAt(args, 0)); match != nil {
+					return WithHint(usageError{errors.New("flows show requires a flow ID")}, "rc flows show "+match[1])
+				}
 			}
 			rt, client, projectID, flowID, err := resolveFlowTarget(cmd, args)
 			if err != nil {

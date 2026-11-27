@@ -127,11 +127,15 @@ func TestFlowShowDashboardURLSuggestsFlowID(t *testing.T) {
 		t.Error("unexpected API request for a dashboard URL")
 	}))
 	defer server.Close()
-	link := "https://app.revenuecat.com/projects/abc12345/paywalls/wf_abc/builder?tab=design"
-	_, _, err := runProjectSetupCommand(t, server.URL, "flows", "show", link, "--json", "--no-input")
-	var hinted interface{ Hint() string }
-	if cli.ExitCodeFor(err) != 2 || !errors.As(err, &hinted) || hinted.Hint() != "rc flows show wf_abc" {
-		t.Fatalf("want a usage error with the corrected command, got %v", err)
+	for _, link := range []string{
+		"https://app.revenuecat.com/projects/abc12345/paywalls/wf_abc/builder?tab=design",
+		"https://app.revenuecat.com/projects/abc12345/flows/wf_abc/editor?returnTo=paywalls#ln=components&x=833&y=628&zm=1.00",
+	} {
+		_, _, err := runProjectSetupCommand(t, server.URL, "flows", "show", link, "--json", "--no-input")
+		var hinted interface{ Hint() string }
+		if cli.ExitCodeFor(err) != 2 || !errors.As(err, &hinted) || hinted.Hint() != "rc flows show wf_abc" {
+			t.Errorf("%s: want a usage error with the corrected command, got %v", link, err)
+		}
 	}
 }
 
