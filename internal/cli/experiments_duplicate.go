@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/spf13/cobra"
 
@@ -61,15 +63,13 @@ func newExperimentsDuplicateCmd() *cobra.Command {
 }
 
 func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, error) {
+	variants, err := withConsecutiveVariantKeys(source)
+	if err != nil {
+		return api.ExperimentCreate{}, err
+	}
 	offeringIDs := map[string]string{}
 	hasPlacements := false
-	for _, variant := range source.Variants {
-		// Creating an experiment still takes the a–d fields, so a later key has nowhere to go.
-		switch variant.Key {
-		case "a", "b", "c", "d":
-		default:
-			return api.ExperimentCreate{}, fmt.Errorf("experiment %s has variant %s; duplicate supports only variants a to d", source.ID, variant.Key)
-		}
+	for _, variant := range variants {
 		if variant.Offering != nil {
 			offeringIDs[variant.Key] = variant.Offering.ID
 		}
@@ -104,9 +104,27 @@ func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, er
 		body.ExperimentDurationSettings, _ = json.Marshal(source.DurationSettings)
 	}
 	if hasPlacements {
-		body.Placements, _ = json.Marshal(duplicatePlacementsConfig(source.Variants))
+		body.Placements, _ = json.Marshal(duplicatePlacementsConfig(variants))
 	}
 	return body, nil
+}
+
+// withConsecutiveVariantKeys renames the source's variants, in key order, to
+// a, b, c, d, because creating an experiment takes only the a–d fields: a copy
+// of a, b, d, e becomes a, b, c, d. Shorter keys sort first, so aa follows z.
+func withConsecutiveVariantKeys(source *api.Experiment) ([]api.ExperimentVariant, error) {
+	const keys = "abcd"
+	if len(source.Variants) > len(keys) {
+		return nil, fmt.Errorf("experiment %s has %d variants; duplicate supports at most %d", source.ID, len(source.Variants), len(keys))
+	}
+	variants := slices.Clone(source.Variants)
+	slices.SortFunc(variants, func(x, y api.ExperimentVariant) int {
+		return cmp.Or(cmp.Compare(len(x.Key), len(y.Key)), cmp.Compare(x.Key, y.Key))
+	})
+	for i := range variants {
+		variants[i].Key = string(keys[i])
+	}
+	return variants, nil
 }
 
 func duplicatePlacementsConfig(variants []api.ExperimentVariant) map[string]any {
