@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/spf13/cobra"
 
@@ -108,17 +109,16 @@ func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, er
 }
 
 // withConsecutiveVariantKeys renames the source's variants, in the order the
-// API returns them, to a, b, c, d: a copy of a, b, d, e becomes a, b, c, d.
+// API returns them, to a, b, c, d, because creating an experiment takes only
+// the a–d fields: a copy of a, b, d, e becomes a, b, c, d.
 func withConsecutiveVariantKeys(source *api.Experiment) ([]api.ExperimentVariant, error) {
-	// Creating an experiment takes only the a–d fields.
 	const keys = "abcd"
 	if len(source.Variants) > len(keys) {
 		return nil, fmt.Errorf("experiment %s has %d variants; duplicate supports at most %d", source.ID, len(source.Variants), len(keys))
 	}
-	variants := make([]api.ExperimentVariant, len(source.Variants))
-	for i, variant := range source.Variants {
-		variant.Key = string(keys[i])
-		variants[i] = variant
+	variants := slices.Clone(source.Variants)
+	for i := range variants {
+		variants[i].Key = string(keys[i])
 	}
 	return variants, nil
 }
