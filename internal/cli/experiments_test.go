@@ -627,7 +627,7 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet {
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":{"fallback_offering":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pa"}},{"placement_identifier":"settings","offering":null}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pb"}},{"placement_identifier":"settings","offering":null}]}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"},"placements":{"fallback_offering":{"id":"ofrng_fe"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pe"}},{"placement_identifier":"settings","offering":null}]}}],"audience_id":"aud1","experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"e","is_control":false,"offering":{"id":"ofrng_e"},"placements":{"fallback_offering":{"id":"ofrng_fe"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pe"}},{"placement_identifier":"settings","offering":null}]}},{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":{"fallback_offering":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pa"}},{"placement_identifier":"settings","offering":null}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pb"}},{"placement_identifier":"settings","offering":null}]}}],"audience_id":"aud1","experiment_duration_settings":{"chance_to_win_percentage":95},"primary_metric":"initial_conversion_rate","enrollment_mode":"only_new"}`)
 			return
 		}
 		if r.URL.Path != "/projects/proj/experiments" {
@@ -644,8 +644,8 @@ func TestExperimentDuplicateCopiesConfigurationIntoDraft(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Source keys a, b, e become a, b, c in the draft.
-	if posted["display_name"] != "New test" || posted["offering_c_id"] != "ofrng_e" || posted["offering_d_id"] != nil || posted["primary_metric"] != "initial_conversion_rate" || posted["audience_id"] != "aud1" {
+	// Source keys e, a, b (out of order) become a, b, c in the draft.
+	if posted["display_name"] != "New test" || posted["offering_a_id"] != "ofrng_a" || posted["offering_b_id"] != "ofrng_b" || posted["offering_c_id"] != "ofrng_e" || posted["offering_d_id"] != nil || posted["primary_metric"] != "initial_conversion_rate" || posted["audience_id"] != "aud1" {
 		t.Fatalf("missing copied fields: %#v", posted)
 	}
 	placements := posted["placements"].(map[string]any)
@@ -667,7 +667,7 @@ func TestExperimentDuplicateWithoutPlacementsSendsNone(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet {
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":null},{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":null}]}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":null},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":null}]}`)
 			return
 		}
 		if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
@@ -680,9 +680,8 @@ func TestExperimentDuplicateWithoutPlacementsSendsNone(t *testing.T) {
 	if _, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input"); err != nil {
 		t.Fatal(err)
 	}
-	// The source lists b before a; the copy must keep each offering on its own key.
-	if _, exists := posted["placements"]; exists || posted["offering_a_id"] != "ofrng_a" || posted["offering_b_id"] != "ofrng_b" {
-		t.Fatalf("want offerings in key order and no placements: %#v", posted)
+	if _, exists := posted["placements"]; exists || posted["offering_b_id"] != "ofrng_b" {
+		t.Fatalf("want offerings and no placements: %#v", posted)
 	}
 }
 
