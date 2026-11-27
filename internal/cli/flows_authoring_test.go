@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -118,6 +119,19 @@ func TestFlowValidationWarningsOnlyRendersTableAndSucceeds(t *testing.T) {
 		if !strings.Contains(out, w) {
 			t.Fatalf("%q missing in:\n%s", w, out)
 		}
+	}
+}
+
+func TestFlowShowDashboardURLSuggestsFlowID(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		t.Error("unexpected API request for a dashboard URL")
+	}))
+	defer server.Close()
+	link := "https://app.revenuecat.com/projects/abc12345/paywalls/wf_abc/builder?tab=design"
+	_, _, err := runProjectSetupCommand(t, server.URL, "flows", "show", link, "--json", "--no-input")
+	var hinted interface{ Hint() string }
+	if cli.ExitCodeFor(err) != 2 || !errors.As(err, &hinted) || hinted.Hint() != "rc flows show wf_abc" {
+		t.Fatalf("want a usage error with the corrected command, got %v", err)
 	}
 }
 
