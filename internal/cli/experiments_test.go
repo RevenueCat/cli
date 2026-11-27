@@ -667,7 +667,7 @@ func TestExperimentDuplicateWithoutPlacementsSendsNone(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet {
-			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":null},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":null}]}`)
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":null},{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":null}]}`)
 			return
 		}
 		if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
@@ -680,8 +680,9 @@ func TestExperimentDuplicateWithoutPlacementsSendsNone(t *testing.T) {
 	if _, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input"); err != nil {
 		t.Fatal(err)
 	}
-	if _, exists := posted["placements"]; exists || posted["offering_b_id"] != "ofrng_b" {
-		t.Fatalf("want offerings and no placements: %#v", posted)
+	// The source lists b before a; the copy must keep each offering on its own key.
+	if _, exists := posted["placements"]; exists || posted["offering_a_id"] != "ofrng_a" || posted["offering_b_id"] != "ofrng_b" {
+		t.Fatalf("want offerings in key order and no placements: %#v", posted)
 	}
 }
 
