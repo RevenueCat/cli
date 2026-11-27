@@ -60,9 +60,6 @@ func newExperimentsDuplicateCmd() *cobra.Command {
 	return cmd
 }
 
-// Creating an experiment takes only the a–d fields.
-var duplicateVariantKeys = []string{"a", "b", "c", "d"}
-
 func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, error) {
 	variants, err := withConsecutiveVariantKeys(source)
 	if err != nil {
@@ -113,12 +110,14 @@ func duplicateExperimentConfig(source *api.Experiment) (api.ExperimentCreate, er
 // withConsecutiveVariantKeys renames the source's variants, in the order the
 // API returns them, to a, b, c, d: a copy of a, b, d, e becomes a, b, c, d.
 func withConsecutiveVariantKeys(source *api.Experiment) ([]api.ExperimentVariant, error) {
-	if len(source.Variants) > len(duplicateVariantKeys) {
-		return nil, fmt.Errorf("experiment %s has %d variants; duplicate supports at most %d", source.ID, len(source.Variants), len(duplicateVariantKeys))
+	// Creating an experiment takes only the a–d fields.
+	const keys = "abcd"
+	if len(source.Variants) > len(keys) {
+		return nil, fmt.Errorf("experiment %s has %d variants; duplicate supports at most %d", source.ID, len(source.Variants), len(keys))
 	}
 	variants := make([]api.ExperimentVariant, len(source.Variants))
 	for i, variant := range source.Variants {
-		variant.Key = duplicateVariantKeys[i]
+		variant.Key = string(keys[i])
 		variants[i] = variant
 	}
 	return variants, nil
