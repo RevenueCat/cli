@@ -2,7 +2,6 @@ package cli_test
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -122,19 +121,21 @@ func TestFlowValidationWarningsOnlyRendersTableAndSucceeds(t *testing.T) {
 	}
 }
 
-func TestFlowShowDashboardURLSuggestsFlowID(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
-		t.Error("unexpected API request for a dashboard URL")
+func TestFlowShowUsesProjectAndFlowFromDashboardURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/projects/projabc12345/flows/wf_abc" || r.URL.Query().Get("expand") != "steps" {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL)
+		}
+		_, _ = io.WriteString(w, `{"id":"wf_abc","revision":42}`)
 	}))
 	defer server.Close()
 	for _, link := range []string{
 		"https://app.revenuecat.com/projects/abc12345/paywalls/wf_abc/builder?tab=design",
 		"https://app.revenuecat.com/projects/abc12345/flows/wf_abc/editor?returnTo=paywalls#ln=components&x=833&y=628&zm=1.00",
 	} {
-		_, _, err := runProjectSetupCommand(t, server.URL, "flows", "show", link, "--json", "--no-input")
-		var hinted interface{ Hint() string }
-		if cli.ExitCodeFor(err) != 2 || !errors.As(err, &hinted) || hinted.Hint() != "rc flows show wf_abc" {
-			t.Errorf("%s: want a usage error with the corrected command, got %v", link, err)
+		out, _, err := runProjectSetupCommand(t, server.URL, "flows", "show", link, "--project-id", "projother", "--json", "--no-input")
+		if err != nil || !strings.Contains(out, `"revision": 42`) {
+			t.Errorf("%s: out = %s, err = %v", link, out, err)
 		}
 	}
 }

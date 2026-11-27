@@ -198,7 +198,7 @@ rc paywalls delete <id> [--force]                        # attached/published pa
 
 # Flows (paywalls, web funnels, and multi-step experiences)
 rc flows list [--type paywall|web-funnel|general] [--exclude-type ...]   # experimental (hidden from --help until Checkpoint rules roll out); repeatable; shows type and publish state
-rc flows show [id]                                      # editable draft, including steps and screen content (GET /flows/{id}?expand=steps)
+rc flows show [id-or-url]                               # editable draft, including steps and screen content (GET /flows/{id}?expand=steps)
 rc flows export [id] --output <path>                     # save an update request containing the current revision and all steps
 rc flows update [id] --config <path|->                   # save the exported JSON or a partial update; only deleted_step_ids removes steps (PATCH /flows/{id})
 rc flows create --config <path|->                       # create an unpublished web-funnel or general flow (type paywall is rejected)

@@ -36,22 +36,30 @@ func resolveFlowTarget(cmd *cobra.Command, args []string) (rt *Runtime, client *
 }
 
 var flowDashboardURLs = []*regexp.Regexp{
-	regexp.MustCompile(`^https://app\.revenuecat\.com/projects/[a-zA-Z0-9_-]+/paywalls/(wf[a-zA-Z0-9_-]+)/builder/?([?#].*)?$`),
-	regexp.MustCompile(`^https://app\.revenuecat\.com/projects/[a-zA-Z0-9_-]+/flows/(wf[a-zA-Z0-9_-]+)/editor/?([?#].*)?$`),
+	regexp.MustCompile(`^https://app\.revenuecat\.com/projects/([a-zA-Z0-9_-]+)/paywalls/(wf[a-zA-Z0-9_-]+)/builder/?([?#].*)?$`),
+	regexp.MustCompile(`^https://app\.revenuecat\.com/projects/([a-zA-Z0-9_-]+)/flows/(wf[a-zA-Z0-9_-]+)/editor/?([?#].*)?$`),
+}
+
+func resolveFlowShowTarget(cmd *cobra.Command, args []string) (*Runtime, *api.Client, string, string, error) {
+	for _, route := range flowDashboardURLs {
+		if match := route.FindStringSubmatch(argAt(args, 0)); match != nil {
+			rt := RuntimeFrom(cmd.Context())
+			client, err := rt.API()
+			return rt, client, "proj" + match[1], match[2], err
+		}
+	}
+	return resolveFlowTarget(cmd, args)
 }
 
 func newFlowsShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use: "show [id]", Aliases: []string{"get"}, Short: "Show a Flow's editable draft", Args: cobra.MaximumNArgs(1),
+		Use: "show [id-or-url]", Aliases: []string{"get"}, Short: "Show a Flow's editable draft", Args: cobra.MaximumNArgs(1),
+		Long: "Show the editable draft by flow ID in the selected project, or use a dashboard URL to select both the project and flow.",
 		Example: `  rc flows show wf_abc
-  rc flows show wf_abc --json`,
+  rc flows show wf_abc --json
+  rc flows show 'https://app.revenuecat.com/projects/abc12345/flows/wf_abc/editor'`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			for _, route := range flowDashboardURLs {
-				if match := route.FindStringSubmatch(argAt(args, 0)); match != nil {
-					return WithHint(usageError{errors.New("flows show requires a flow ID")}, "rc flows show "+match[1])
-				}
-			}
-			rt, client, projectID, flowID, err := resolveFlowTarget(cmd, args)
+			rt, client, projectID, flowID, err := resolveFlowShowTarget(cmd, args)
 			if err != nil {
 				return err
 			}
