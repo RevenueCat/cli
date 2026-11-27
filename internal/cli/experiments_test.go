@@ -684,20 +684,51 @@ func TestExperimentDuplicateWithoutPlacementsSendsNone(t *testing.T) {
 	}
 }
 
-func TestExperimentDuplicateRejectsVariantsAfterD(t *testing.T) {
+func TestExperimentDuplicateGivesConsecutiveVariantKeys(t *testing.T) {
+	var posted map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"},"placements":{"fallback_offering":{"id":"ofrng_fa"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pa"}}]}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"},"placements":{"fallback_offering":null,"placement_offerings":[{"placement_identifier":"onboarding","offering":null}]}},{"key":"d","is_control":false,"offering":{"id":"ofrng_d"},"placements":{"fallback_offering":{"id":"ofrng_fd"},"placement_offerings":[{"placement_identifier":"onboarding","offering":null}]}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"},"placements":{"fallback_offering":{"id":"ofrng_fe"},"placement_offerings":[{"placement_identifier":"onboarding","offering":{"id":"ofrng_pe"}}]}}]}`)
+			return
+		}
+		if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+			t.Error(err)
+		}
+		_, _ = io.WriteString(w, `{"id":"exp2","display_name":"Copy of Original","status":"draft"}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("RC_BASE_URL", srv.URL)
+	if _, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input"); err != nil {
+		t.Fatal(err)
+	}
+	if posted["offering_a_id"] != "ofrng_a" || posted["offering_b_id"] != "ofrng_b" || posted["offering_c_id"] != "ofrng_d" || posted["offering_d_id"] != "ofrng_e" {
+		t.Fatalf("want a, b, d, e copied as a, b, c, d: %#v", posted)
+	}
+	placements := posted["placements"].(map[string]any)
+	if placements["fallback_offering_a_id"] != "ofrng_fa" || placements["fallback_offering_c_id"] != "ofrng_fd" || placements["fallback_offering_d_id"] != "ofrng_fe" {
+		t.Fatalf("want fallbacks under the new keys: %#v", placements)
+	}
+	onboarding := placements["placement_offerings"].([]any)[0].(map[string]any)
+	if onboarding["offering_a_id"] != "ofrng_pa" || onboarding["offering_d_id"] != "ofrng_pe" || len(onboarding) != 3 {
+		t.Fatalf("want placement offerings under the new keys: %#v", onboarding)
+	}
+}
+
+func TestExperimentDuplicateRejectsMoreThanFourVariants(t *testing.T) {
 	mutations := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method != http.MethodGet {
 			mutations++
 		}
-		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"running","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]}`)
+		_, _ = io.WriteString(w, `{"id":"exp1","display_name":"Original","status":"draft","enrollment_percentage":40,"variants":[{"key":"a","is_control":true,"offering":{"id":"ofrng_a"}},{"key":"b","is_control":false,"offering":{"id":"ofrng_b"}},{"key":"c","is_control":false,"offering":{"id":"ofrng_c"}},{"key":"d","is_control":false,"offering":{"id":"ofrng_d"}},{"key":"e","is_control":false,"offering":{"id":"ofrng_e"}}]}`)
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("RC_BASE_URL", srv.URL)
 	_, _, err := runAgentCmd(t, "experiments", "duplicate", "exp1", "--project-id", "proj", "--api-key", "sk_test", "--json", "--no-input")
-	if err == nil || !strings.Contains(err.Error(), "variant e") || mutations != 0 {
-		t.Fatalf("want variant e error and no create: err=%v mutations=%d", err, mutations)
+	if err == nil || !strings.Contains(err.Error(), "at most 4") || mutations != 0 {
+		t.Fatalf("want at most 4 error and no create: err=%v mutations=%d", err, mutations)
 	}
 }
 
